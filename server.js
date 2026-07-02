@@ -208,6 +208,69 @@ function isBufferImage(buf) {
   return null;
 }
 
+/**
+ * Try to extract a clean webpage URL from an uploaded HTML/webpage file
+ */
+async function tryExtractUrlFromHtmlFile(savedPath, mimeType) {
+  if (!savedPath || !fs.existsSync(savedPath)) return null;
+  try {
+    const ext = path.extname(savedPath).toLowerCase();
+    const isWebarchive = ext === '.webarchive';
+    const isHtmlExt = ext === '.html' || ext === '.htm' || (mimeType && mimeType.includes('html'));
+    
+    // Read file content
+    const content = fs.readFileSync(savedPath, 'utf8');
+    const trimmed = content.trim();
+    const isHtmlContent = trimmed.startsWith('<') || 
+                          trimmed.toLowerCase().startsWith('<!doctype') || 
+                          trimmed.toLowerCase().includes('<html') ||
+                          isWebarchive;
+
+    if (isHtmlContent || isHtmlExt) {
+      const canonicalMatch = content.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                             content.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+      const ogMatch = content.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
+                      content.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
+      const twitterMatch = content.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
+      
+      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
+      
+      if (!extractedUrl) {
+        // Fallback: search for absolute HTTP URL links that are not static assets or namespace schemas
+        const allUrls = content.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
+        if (allUrls) {
+          const cleanUrl = allUrls.find(u => {
+            const low = u.toLowerCase();
+            return !low.endsWith('.js') && 
+                   !low.endsWith('.css') && 
+                   !low.endsWith('.png') && 
+                   !low.endsWith('.jpg') && 
+                   !low.endsWith('.jpeg') && 
+                   !low.endsWith('.gif') && 
+                   !low.endsWith('.svg') && 
+                   !low.endsWith('.woff') && 
+                   !low.endsWith('.woff2') &&
+                   !low.includes('schema.org') &&
+                   !low.includes('w3.org');
+          });
+          if (cleanUrl) {
+            extractedUrl = cleanUrl;
+          }
+        }
+      }
+
+      if (extractedUrl) {
+        // Clean up the file
+        try { fs.unlinkSync(savedPath); } catch {}
+        return extractedUrl;
+      }
+    }
+  } catch (err) {
+    console.error('[URL-EXTRACT] Error parsing HTML file:', err.message);
+  }
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // API ROUTES
 // ═══════════════════════════════════════════════════════════════
@@ -243,6 +306,43 @@ app.post('/api/text', async (req, res) => {
 
     if (!text || (typeof text === 'string' && text.trim().length === 0)) {
       return res.status(400).json({ error: 'No text provided' });
+    }
+
+    // HTML Web Page detection & URL extraction
+    if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
+      const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                             text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+      const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
+                      text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
+      const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
+      
+      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
+      if (!extractedUrl) {
+        // Fallback: search for absolute HTTP URL links that are not static assets or namespace schemas
+        const allUrls = text.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
+        if (allUrls) {
+          const cleanUrl = allUrls.find(u => {
+            const low = u.toLowerCase();
+            return !low.endsWith('.js') && 
+                   !low.endsWith('.css') && 
+                   !low.endsWith('.png') && 
+                   !low.endsWith('.jpg') && 
+                   !low.endsWith('.jpeg') && 
+                   !low.endsWith('.gif') && 
+                   !low.endsWith('.svg') && 
+                   !low.endsWith('.woff') && 
+                   !low.endsWith('.woff2') &&
+                   !low.includes('schema.org') &&
+                   !low.includes('w3.org');
+          });
+          if (cleanUrl) {
+            extractedUrl = cleanUrl;
+          }
+        }
+      }
+      if (extractedUrl) {
+        text = extractedUrl;
+      }
     }
 
     // Copy to clipboard
@@ -310,6 +410,29 @@ app.post(['/api/image', '/api/file'], upload.fields([{ name: 'image', maxCount: 
       fs.writeFileSync(savedPath, req.body);
     } else {
       return res.status(400).json({ error: 'No file or binary buffer provided.' });
+    }
+
+    // Check if the uploaded file is actually a webpage/HTML file to extract its URL
+    const extractedUrl = await tryExtractUrlFromHtmlFile(savedPath, mimeType);
+    if (extractedUrl) {
+      const clipRes = await copyText(extractedUrl);
+      const item = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        type: 'text',
+        content: extractedUrl,
+        preview: extractedUrl,
+        timestamp: new Date().toISOString(),
+        clipboardSuccess: clipRes.success
+      };
+      addToHistory(item);
+      notifyText(extractedUrl);
+      console.log(`[FILE/URL-EXTRACT] Extracted URL from uploaded file: ${extractedUrl}`);
+      return res.json({
+        success: true,
+        id: item.id,
+        type: 'text',
+        message: 'URL link extracted and copied to clipboard'
+      });
     }
 
     const relativePath = path.relative(__dirname, savedPath);
@@ -641,6 +764,24 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
     }
 
     if (isFile) {
+      // Check if it's actually a webpage/HTML file to extract its URL
+      const extractedUrl = await tryExtractUrlFromHtmlFile(savedPath, mimeType);
+      if (extractedUrl) {
+        const clipRes = await copyText(extractedUrl);
+        const item = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          type: 'text',
+          content: extractedUrl,
+          preview: extractedUrl,
+          timestamp: new Date().toISOString(),
+          clipboardSuccess: clipRes.success
+        };
+        addToHistory(item);
+        notifyText(extractedUrl);
+        console.log(`[SEND/URL-EXTRACT] Extracted URL from uploaded file: ${extractedUrl}`);
+        return res.json({ success: true, id: item.id, type: 'text', message: 'URL link extracted and copied' });
+      }
+
       const relativePath = path.relative(__dirname, savedPath);
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -688,6 +829,43 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       }
     }
     if (typeof text !== 'string') text = String(text);
+
+    // HTML Web Page detection & URL extraction
+    if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
+      const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                             text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+      const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
+                      text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
+      const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
+      
+      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
+      if (!extractedUrl) {
+        // Fallback: search for absolute HTTP URL links that are not static assets or namespace schemas
+        const allUrls = text.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
+        if (allUrls) {
+          const cleanUrl = allUrls.find(u => {
+            const low = u.toLowerCase();
+            return !low.endsWith('.js') && 
+                   !low.endsWith('.css') && 
+                   !low.endsWith('.png') && 
+                   !low.endsWith('.jpg') && 
+                   !low.endsWith('.jpeg') && 
+                   !low.endsWith('.gif') && 
+                   !low.endsWith('.svg') && 
+                   !low.endsWith('.woff') && 
+                   !low.endsWith('.woff2') &&
+                   !low.includes('schema.org') &&
+                   !low.includes('w3.org');
+          });
+          if (cleanUrl) {
+            extractedUrl = cleanUrl;
+          }
+        }
+      }
+      if (extractedUrl) {
+        text = extractedUrl;
+      }
+    }
 
     if (text.trim()) {
       const clipResult = await copyText(text);
