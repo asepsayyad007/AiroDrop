@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Send to PC">
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="manifest" href="/manifest.json">
+  <title>Send to PC</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --card: rgba(255,255,255,0.05);
+      --card-border: rgba(255,255,255,0.08);
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --accent-glow: rgba(99,102,241,0.3);
+      --success: #22c55e;
+      --text: #f0f0f5;
+      --text2: #8888a0;
+      --text3: #55556a;
+      --radius: 16px;
+    }
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 500px 350px at 20% 0%, rgba(99,102,241,0.12), transparent),
+        radial-gradient(ellipse 400px 400px at 80% 90%, rgba(139,92,246,0.08), transparent);
+      pointer-events: none;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px;
+      padding-top: env(safe-area-inset-top, 20px);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 24px 0 20px;
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .header h1 span { color: var(--accent-light); }
+    .conn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--text3);
+    }
+    .conn .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text3);
+    }
+    .conn .dot.ok { background: var(--success); box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+    .conn .dot.err { background: #ef4444; }
+
+    /* Section titles */
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+      margin: 24px 0 10px;
+    }
+
+    /* Install Shortcut Buttons */
+    .install-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .install-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .install-card:active {
+      transform: scale(0.98);
+      background: rgba(255,255,255,0.08);
+    }
+    .install-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.4rem;
+    }
+    .install-icon.share { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .install-icon.clip { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .install-info h3 {
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .install-info p {
+      font-size: 0.78rem;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    .install-arrow {
+      margin-left: auto;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+
+    /* Sender UI */
+    .sender-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sender-card {
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+    }
+    .sender-card h3 {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .sender-card textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+    }
+    .sender-card textarea:focus {
+      border-color: var(--accent);
+    }
+    .sender-card textarea::placeholder { color: var(--text3); }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: white;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:active { transform: scale(0.97); background: var(--accent-light); }
+    .btn.success { background: var(--success); }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    .photo-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 24px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--text2);
+      background: rgba(0,0,0,0.2);
+      border: 2px dashed var(--card-border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .photo-btn:active {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.1);
+    }
+    .photo-btn .icon { font-size: 1.6rem; }
+
+    .photo-preview {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .photo-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    /* Receive from PC */
+    .receive-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .receive-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 0.82rem;
+    }
+    .receive-badge {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .receive-badge.text { background: rgba(99,102,241,0.15); color: var(--accent-light); }
+    .receive-badge.image { background: rgba(34,197,94,0.15); color: var(--success); }
+    .receive-content {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text2);
+    }
+    .receive-time {
+      font-size: 0.7rem;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+    .empty-receive {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.82rem;
+      color: var(--text3);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 12px 24px;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: 100px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 100;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Add to Home Screen banner */
+    .pwa-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      background: rgba(20,20,30,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--card-border);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 50;
+    }
+    .pwa-banner.show { display: flex; }
+    .pwa-banner .pwa-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .pwa-banner .pwa-text { flex: 1; font-size: 0.82rem; }
+    .pwa-banner .pwa-text strong { display: block; font-size: 0.88rem; }
+    .pwa-banner .pwa-close {
+      padding: 8px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .pwa-banner .pwa-add {
+      padding: 8px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--card-border);
+      margin: 20px 0;
+    }
+
+    /* Manual shortcut fallback */
+    .manual-fallback {
+      padding: 16px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.15);
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+    .manual-fallback strong { color: #f59e0b; }
+    .manual-fallback ol {
+      margin: 8px 0 0 16px;
+    }
+    .manual-fallback li { margin-bottom: 4px; }
+    .manual-fallback code {
+      display: inline;
+      padding: 1px 5px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      font-size: 0.76rem;
+      color: var(--accent-light);
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <div class="header">
+      <h1>Send <span>to PC</span></h1>
+      <div class="conn">
+        <span class="dot" id="connDot"></span>
+        <span id="connText">Connecting...</span>
+      </div>
+    </div>
+
+    <!-- INSTALL SHORTCUTS -->
+    <div class="section-title">Install Shortcuts (one tap)</div>
+    <div class="install-cards">
+      <a class="install-card" id="installShare" href="#">
+        <div class="install-icon share">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </div>
+        <div class="install-info">
+          <h3>Send to PC</h3>
+          <p>Share Sheet — appears when you tap Share in any app</p>
+        </div>
+        <span class="install-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      </a>
+
+      <a class="install-card" id="installClip" href="#">
+        <div class="install-icon clip">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        </div>
+        <div class="install-info">
+          <h3>Send Clipboard</h3>
+          <p>Home Screen widget — one tap to send copied text</p>
+        </div>
+        <span class="install-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      </a>
+    </div>
+
+    <!-- FALLBACK: if shortcut install doesn't work -->
+    <div class="manual-fallback" id="fallback" style="display:none;">
+      <strong>If the links above don't work</strong>, your iOS version may not support direct import. In that case, create the shortcut manually — it's now just <strong>1 action</strong> because of the unified endpoint:
+      <ol>
+        <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
+        <li>Tap <strong>ⓘ</strong> → turn on <strong>"Show in Share Sheet"</strong> → accept Images, Text, URLs</li>
+        <li>Add ONE action: <strong>"Get Contents of URL"</strong></li>
+        <li>URL: <code id="fallbackUrl"></code></li>
+        <li>Method: <strong>POST</strong> → Body: <strong>Form</strong> → Key: <code>content</code> → Value: <strong>Shortcut Input</strong></li>
+        <li>Name it "Send to PC" — done!</li>
+      </ol>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WEB SENDER (works without shortcuts) -->
+    <div class="section-title">Or send directly</div>
+    <div class="sender-cards">
+      <div class="sender-card">
+        <h3>Send Text</h3>
+        <textarea id="textInput" rows="3" placeholder="Type or paste text here..."></textarea>
+        <button class="btn" id="sendTextBtn">Send to PC</button>
+      </div>
+
+      <div class="sender-card">
+        <h3>Send Photo</h3>
+        <button class="photo-btn" id="photoBtn">
+          <span class="icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </span>
+          Tap to pick a photo
+        </button>
+        <div class="photo-preview" id="photoPreview">
+          <img id="previewImg" src="" alt="">
+          <button class="btn" id="sendPhotoBtn">Send Photo to PC</button>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" hidden>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- RECEIVE FROM PC -->
+    <div class="section-title">From PC → iPhone</div>
+    <div class="sender-card">
+      <h3>Inbox</h3>
+      <div class="receive-list" id="receiveList">
+        <div class="empty-receive">Nothing received from PC yet</div>
+      </div>
+      <button class="btn" id="checkPendingBtn" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top:12px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Check for new items
+      </button>
+    </div>
+
+    <div style="height: 30px;"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- PWA Install Banner -->
+  <div class="pwa-banner" id="pwaBanner">
+    <div class="pwa-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+    <div class="pwa-text">
+      <strong>Add to Home Screen</strong>
+      Quick access anytime
+    </div>
+    <button class="pwa-add" id="pwaAdd">Add</button>
+    <button class="pwa-close" id="pwaClose">&times;</button>
+  </div>
+
+  <script>
+    const SERVER = window.location.origin;
+    let pendingPhotoBase64 = null;
+    let pendingPhotoFile = null;
+
+    // ─── Init ─────────────────────────────────────────────────
+    async function init() {
+      setupShortcutLinks();
+      setupSenderUI();
+      setupPWA();
+      checkConnection();
+    }
+
+    // ─── Connection Check ─────────────────────────────────────
+    async function checkConnection() {
+      try {
+        const res = await fetch('/api/info', { signal: AbortSignal.timeout(5000) });
+        const info = await res.json();
+        document.getElementById('connDot').classList.add('ok');
+        document.getElementById('connText').textContent = `Connected to ${info.ip}`;
+
+        // Set fallback URL
+        const fallbackUrl = document.getElementById('fallbackUrl');
+        if (fallbackUrl) fallbackUrl.textContent = `${info.url}/api/send`;
+
+        // Show fallback after 3 seconds (in case shortcut links don't work)
+        setTimeout(() => {
+          document.getElementById('fallback').style.display = '';
+        }, 3000);
+      } catch {
+        document.getElementById('connDot').classList.add('err');
+        document.getElementById('connText').textContent = 'Cannot reach PC — check WiFi';
+      }
+    }
+
+    // ─── Shortcut Install Links ───────────────────────────────
+    function setupShortcutLinks() {
+      // Try direct .shortcut file download
+      const shareLink = document.getElementById('installShare');
+      const clipLink = document.getElementById('installClip');
+
+      shareLink.href = '/api/shortcuts/Send-to-PC';
+      clipLink.href = '/api/shortcuts/Send-Clipboard';
+
+      // Fallback: if download doesn't trigger shortcut import,
+      // open shortcuts:// URL scheme (just opens the app)
+      shareLink.addEventListener('click', (e) => {
+        setTimeout(() => {
+          // After attempting download, try opening in Shortcuts app
+          const shortcutUrl = `${SERVER}/api/shortcuts/Send-to-PC`;
+          window.location.href = `shortcuts://import-shortcut?url=${encodeURIComponent(shortcutUrl)}&name=${encodeURIComponent('Send to PC')}`;
+        }, 500);
+      });
+
+      clipLink.addEventListener('click', (e) => {
+        setTimeout(() => {
+          const shortcutUrl = `${SERVER}/api/shortcuts/Send-Clipboard`;
+          window.location.href = `shortcuts://import-shortcut?url=${encodeURIComponent(shortcutUrl)}&name=${encodeURIComponent('Send Clipboard')}`;
+        }, 500);
+      });
+    }
+
+    // ─── Sender UI ────────────────────────────────────────────
+    function setupSenderUI() {
+      // Send text
+      document.getElementById('sendTextBtn').addEventListener('click', async () => {
+        const text = document.getElementById('textInput').value.trim();
+        if (!text) return;
+
+        const btn = document.getElementById('sendTextBtn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+          const formData = new FormData();
+          formData.append('content', text);
+          const res = await fetch('/api/send', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById('textInput').value = '';
+            btn.textContent = 'Sent!';
+            btn.classList.add('success');
+            showToast('Text sent to PC');
+            setTimeout(() => { btn.textContent = 'Send to PC'; btn.classList.remove('success'); }, 2000);
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (err) {
+          btn.textContent = 'Send to PC';
+          showToast('Failed: ' + err.message);
+        }
+        btn.disabled = false;
+      });
+
+      // Photo picker
+      const photoBtn = document.getElementById('photoBtn');
+      const photoInput = document.getElementById('photoInput');
+
+      photoBtn.addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', () => {
+        const file = photoInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          pendingPhotoBase64 = e.target.result;
+          pendingPhotoFile = file;
+          document.getElementById('previewImg').src = pendingPhotoBase64;
+          document.getElementById('photoPreview').style.display = 'flex';
+          photoBtn.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Send photo
+      document.getElementById('sendPhotoBtn').addEventListener('click', async () => {
+        if (!pendingPhotoFile) return;
+
+        const btn = document.getElementById('sendPhotoBtn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        try {
+          const formData = new FormData();
+          formData.append('content', pendingPhotoFile, pendingPhotoFile.name);
+          const res = await fetch('/api/send', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Photo sent to PC');
+            // Reset
+            pendingPhotoBase64 = null;
+            pendingPhotoFile = null;
+            document.getElementById('photoPreview').style.display = 'none';
+            photoBtn.style.display = '';
+            photoInput.value = '';
+            btn.textContent = 'Send Photo to PC';
+            btn.classList.add('success');
+            setTimeout(() => btn.classList.remove('success'), 2000);
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (err) {
+          btn.textContent = 'Send Photo to PC';
+          showToast('Failed: ' + err.message);
+        }
+        btn.disabled = false;
+      });
+
+      // Check pending (from PC)
+      document.getElementById('checkPendingBtn').addEventListener('click', fetchPending);
+      fetchPending(); // Check on load
+    }
+
+    // ─── Receive from PC ──────────────────────────────────────
+    async function fetchPending() {
+      try {
+        const res = await fetch('/api/pending');
+        const data = await res.json();
+        renderPending(data.items);
+      } catch { /* silent */ }
+    }
+
+    function renderPending(items) {
+      const list = document.getElementById('receiveList');
+      if (!items || items.length === 0) {
+        list.innerHTML = '<div class="empty-receive">Nothing received from PC yet</div>';
+        return;
+      }
+
+      list.innerHTML = items.map(item => {
+        if (item.type === 'text') {
+          return `
+            <div class="receive-item" onclick="handleReceiveText('${escapeAttr(item.content)}')">
+              <span class="receive-badge text">Text</span>
+              <span class="receive-content">${escapeHtml(item.content)}</span>
+              <span class="receive-time">${timeAgo(item.timestamp)}</span>
+            </div>`;
+        } else if (item.type === 'image' && item.url) {
+          return `
+            <div class="receive-item">
+              <span class="receive-badge image">IMG</span>
+              <span class="receive-content">Image from PC</span>
+              <a href="${item.url}" download="from-pc.jpg" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;">Save</a>
+            </div>`;
+        }
+        return '';
+      }).join('');
+    }
+
+    async function handleReceiveText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copied to clipboard');
+      } catch {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Copied to clipboard');
+      }
+      // Acknowledge
+      // (find the item id from the DOM - simplified: just refresh)
+      fetchPending();
+    }
+
+    // ─── PWA Install Banner ───────────────────────────────────
+    function setupPWA() {
+      let deferredPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show banner after a delay
+        setTimeout(() => {
+          document.getElementById('pwaBanner').classList.add('show');
+        }, 2000);
+      });
+
+      document.getElementById('pwaAdd').addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const result = await deferredPrompt.userChoice;
+          if (result.outcome === 'accepted') {
+            showToast('Added to Home Screen!');
+          }
+          deferredPrompt = null;
+        }
+        document.getElementById('pwaBanner').classList.remove('show');
+      });
+
+      document.getElementById('pwaClose').addEventListener('click', () => {
+        document.getElementById('pwaBanner').classList.remove('show');
+      });
+
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    }
+
+    // ─── Utilities ────────────────────────────────────────────
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function escapeAttr(s) {
+      if (!s) return '';
+      return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function timeAgo(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return 'now';
+      if (m < 60) return m + 'm';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h';
+      return Math.floor(h / 24) + 'd';
+    }
+
+    // ─── Start ────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

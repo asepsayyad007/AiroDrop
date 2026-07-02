@@ -1,0 +1,20 @@
+{
+  "name": "ios-win-integration",
+  "version": "1.0.0",
+  "description": "Send images and text from iPhone to PC over local network via iOS Shortcuts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "clipboardy": "^4.0.0",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.2",
+    "node-notifier": "^10.0.1",
+    "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

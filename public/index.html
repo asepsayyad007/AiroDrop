@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirDrop to PC — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <h1>AirDrop to PC</h1>
+          <div class="connection-status" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">Connecting...</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="server-url" id="serverUrl" title="Click to copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span id="serverUrlText">...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Tabs -->
+      <nav class="tabs">
+        <button class="tab active" data-tab="feed">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Received
+          <span class="tab-badge" id="feedCount">0</span>
+        </button>
+        <button class="tab" data-tab="iphone">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          iPhone Setup
+        </button>
+        <button class="tab" data-tab="send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send to Phone
+        </button>
+      </nav>
+
+      <!-- Tab: Received Feed -->
+      <section class="tab-content active" id="tab-feed">
+        <div class="feed-controls">
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="text">Text</button>
+            <button class="filter-btn" data-filter="image">Images</button>
+          </div>
+          <button class="clear-btn" id="clearFeed" title="Clear all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Clear
+          </button>
+        </div>
+        <div class="feed" id="feed">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3>Waiting for items</h3>
+            <p>Share images or text from your iPhone using the "Send to PC" shortcut</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: iPhone Setup -->
+      <section class="tab-content" id="tab-iphone">
+        <div class="setup-grid">
+          <div class="setup-card" style="text-align:center;">
+            <h3>Scan with iPhone</h3>
+            <p class="hint-text">Opens the one-tap setup page — install shortcuts or send directly from the web</p>
+            <div class="qr-container" id="mobileQrContainer">
+              <div class="qr-placeholder">Loading QR code...</div>
+            </div>
+            <a class="btn btn-secondary" id="mobileLink" href="/m" target="_blank" style="margin-top:14px;display:inline-flex;text-decoration:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Open on iPhone
+            </a>
+          </div>
+          <div class="setup-card">
+            <h3>What happens on your iPhone</h3>
+            <div class="steps-list" style="margin-top:12px;">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                  <h4>Scan the QR code</h4>
+                  <p>Opens <code>/m</code> — a mobile-optimized page</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                  <h4>Tap "Install Shortcuts"</h4>
+                  <p>Two shortcuts install automatically: <strong>Send to PC</strong> (Share Sheet) and <strong>Send Clipboard</strong> (widget)</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                  <h4>Add to Home Screen (optional)</h4>
+                  <p>Tap the Share button in Safari → <strong>Add to Home Screen</strong> for quick access to the web sender</p>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                  <h4>Done!</h4>
+                  <p>Share from any app → "Send to PC" appears in the Share Sheet</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="setup-card setup-card-wide">
+            <h3>Server Info</h3>
+            <div class="info-rows">
+              <div class="info-row">
+                <span class="info-label">IP Address</span>
+                <span class="info-value" id="infoIP2">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Mobile Page</span>
+                <span class="info-value"><a id="mobileUrl" href="/m" target="_blank" style="color:var(--accent-light);text-decoration:none;"></a></span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Unified Endpoint</span>
+                <span class="info-value" id="unifiedEndpoint">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Send to Phone -->
+      <section class="tab-content" id="tab-send">
+        <div class="send-panel">
+          <div class="send-card">
+            <h3>Send Text to iPhone</h3>
+            <textarea id="sendTextInput" placeholder="Type or paste text to send to your iPhone..." rows="4"></textarea>
+            <button class="btn btn-primary" id="sendTextBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send to iPhone
+            </button>
+          </div>
+          <div class="send-card">
+            <h3>Send Image to iPhone</h3>
+            <div class="file-drop" id="fileDrop">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <p>Drag & drop an image here, or click to select</p>
+              <input type="file" id="sendImageInput" accept="image/*" hidden>
+            </div>
+            <div class="send-image-preview" id="sendImagePreview" style="display:none;">
+              <img id="sendImagePreviewImg" src="" alt="Preview">
+              <button class="btn btn-primary" id="sendImageBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send Image
+              </button>
+            </div>
+          </div>
+          <div class="send-card">
+            <h3>Pending Items</h3>
+            <p class="hint-text">Items waiting to be picked up by your iPhone</p>
+            <div class="pending-list" id="pendingList">
+              <div class="empty-mini">No pending items</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- (old Setup tab removed — replaced by iPhone Setup tab above) -->
+    </main>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-overlay" id="lightboxOverlay"></div>
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="Full size">
+      <div class="lightbox-actions">
+        <a class="btn btn-secondary" id="lightboxDownload" download>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
+        <button class="btn btn-secondary" id="lightboxClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
