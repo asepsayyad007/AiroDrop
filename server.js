@@ -24,23 +24,45 @@ const { copyText, copyImage } = require('./clipboard');
 const { notifyText, notifyImage } = require('./notify');
 
 // ─── Configuration ──────────────────────────────────────────────
-const PORT = process.env.PORT || 3478;
-const MAX_HISTORY = 100;
-const RECEIVE_DIR = path.join(os.homedir(), 'Desktop', 'AirDrop-Received');
-const UPLOAD_DIR = path.join(__dirname, 'received');
+const CONFIG_FILE = path.join(__dirname, 'config.json');
+let PORT = 3478;
+let SAVE_DIR = path.join(__dirname, 'received');
 
-// Use ~/Desktop/AirDrop-Received/ if accessible, fallback to ./received/
-let IMAGE_SAVE_DIR = RECEIVE_DIR;
-try {
-  if (!fs.existsSync(IMAGE_SAVE_DIR)) {
-    fs.mkdirSync(IMAGE_SAVE_DIR, { recursive: true });
+// Load settings from config.json
+function loadConfig() {
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      if (data.port) PORT = parseInt(data.port, 10) || 3478;
+      if (data.saveDir) {
+        // If relative, resolve against project directory
+        SAVE_DIR = path.isAbsolute(data.saveDir) 
+          ? data.saveDir 
+          : path.resolve(__dirname, data.saveDir);
+      }
+    }
+  } catch (err) {
+    console.error('[CONFIG] Failed to load config.json:', err.message);
   }
-} catch {
-  IMAGE_SAVE_DIR = UPLOAD_DIR;
-  if (!fs.existsSync(IMAGE_SAVE_DIR)) {
-    fs.mkdirSync(IMAGE_SAVE_DIR, { recursive: true });
+
+  // Ensure directories exist
+  try {
+    if (!fs.existsSync(SAVE_DIR)) {
+      fs.mkdirSync(SAVE_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.error('[CONFIG] Failed to create save directory, falling back to local received folder:', err.message);
+    SAVE_DIR = path.join(__dirname, 'received');
+    if (!fs.existsSync(SAVE_DIR)) {
+      fs.mkdirSync(SAVE_DIR, { recursive: true });
+    }
   }
 }
+
+// Initial config load
+loadConfig();
+
+const MAX_HISTORY = 100;
 
 // ─── In-Memory Stores ──────────────────────────────────────────
 const history = [];          // Received items (from iPhone)
@@ -74,13 +96,13 @@ function rateLimit(req, res, next) {
 // ─── Multer (file upload) ──────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, IMAGE_SAVE_DIR);
+    cb(null, SAVE_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.png';
+    const ext = path.extname(file.originalname) || '.bin';
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
-    cb(null, `${timestamp}_${safeName || 'image'}${ext}`);
+    cb(null, `${timestamp}_${safeName || 'file'}${ext}`);
   }
 });
 
@@ -88,14 +110,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp|heic|heif|bmp|svg/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype.split('/')[1]?.toLowerCase() || '');
-    if (ext || mime) {
-      cb(null, true);
-    } else {
-      cb(new Error('Unsupported image type. Allowed: jpg, png, gif, webp, heic, bmp, svg'));
-    }
+    cb(null, true); // Allow all file types (images, PDF, MP3, etc.)
   }
 });
 
@@ -255,8 +270,8 @@ app.post('/api/text', async (req, res) => {
   }
 });
 
-// POST /api/image — Receive image from iPhone
-app.post('/api/image', upload.single('image'), async (req, res) => {
+// POST /api/image & POST /api/file — Receive image or generic file from iPhone
+app.post(['/api/image', '/api/file'], upload.fields([{ name: 'image', maxCount: 1 }, { name: 'file', maxCount: 1 }]), async (req, res) => {
   try {
     let savedPath;
     let filename;
@@ -264,62 +279,80 @@ app.post('/api/image', upload.single('image'), async (req, res) => {
     let fileSize;
     let mimeType;
 
-    if (req.file) {
-      savedPath = req.file.path;
-      filename = req.file.filename;
-      originalName = req.file.originalname;
-      fileSize = req.file.size;
-      mimeType = req.file.mimetype;
+    let fileObj = null;
+    if (req.files) {
+      fileObj = (req.files['image'] && req.files['image'][0]) || (req.files['file'] && req.files['file'][0]);
+    }
+
+    if (fileObj) {
+      savedPath = fileObj.path;
+      filename = fileObj.filename;
+      originalName = fileObj.originalname;
+      fileSize = fileObj.size;
+      mimeType = fileObj.mimetype;
     } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
-      const detectedMime = isBufferImage(req.body);
-      if (!detectedMime) {
-        return res.status(400).json({ error: 'Uploaded binary is not a recognized image format.' });
+      const contentType = req.headers['content-type'] || 'application/octet-stream';
+      const cleanType = contentType.split(';')[0];
+      const detectedMime = isBufferImage(req.body) || cleanType;
+      
+      let ext = '.bin';
+      if (detectedMime && detectedMime.includes('/')) {
+        ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg').replace('mpeg', 'mp3');
       }
-      const ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg');
+      
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       filename = `${timestamp}_uploaded${ext}`;
-      savedPath = path.join(IMAGE_SAVE_DIR, filename);
+      savedPath = path.join(SAVE_DIR, filename);
       originalName = filename;
       fileSize = req.body.length;
       mimeType = detectedMime;
 
       fs.writeFileSync(savedPath, req.body);
     } else {
-      return res.status(400).json({ error: 'No image file or binary buffer provided.' });
+      return res.status(400).json({ error: 'No file or binary buffer provided.' });
     }
 
     const relativePath = path.relative(__dirname, savedPath);
-
-    // Try to copy image to clipboard
-    const clipResult = await copyImage(savedPath);
+    
+    // Only copy to clipboard if it is an image
+    const isImg = isBufferImage(req.body) || (mimeType && mimeType.startsWith('image/'));
+    let clipResult = { success: false, error: 'Not an image' };
+    if (isImg) {
+      clipResult = await copyImage(savedPath);
+    }
 
     const item = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      type: 'image',
+      type: isImg ? 'image' : 'file',
       filename: filename,
       originalName: originalName,
       path: relativePath,
       size: fileSize,
       mimetype: mimeType,
       timestamp: new Date().toISOString(),
-      clipboardSuccess: clipResult.success
+      clipboardSuccess: isImg ? clipResult.success : false
     };
     addToHistory(item);
 
     // Show notification
-    notifyImage(filename);
+    if (isImg) {
+      notifyImage(filename);
+    } else {
+      notifyText(`Received File: ${originalName}`);
+    }
 
     const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
-    console.log(`[IMAGE] ${filename} (${sizeMB} MB)`);
+    console.log(`[FILE] ${filename} (${sizeMB} MB)`);
     res.json({
       success: true,
       id: item.id,
       filename: filename,
       path: relativePath,
-      message: 'Image saved successfully'
+      type: isImg ? 'image' : 'file',
+      message: isImg ? 'Image saved successfully' : 'File saved successfully'
     });
   } catch (err) {
-    console.error('[IMAGE] Error:', err.message);
+    console.error('[FILE] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -350,11 +383,94 @@ app.get('/api/info', async (req, res) => {
       port: PORT,
       url,
       qrDataUrl,
-      saveDir: IMAGE_SAVE_DIR,
+      saveDir: SAVE_DIR,
       uptime: process.uptime()
     });
   } catch {
-    res.json({ ip, port: PORT, url, qrDataUrl: null, saveDir: IMAGE_SAVE_DIR, uptime: process.uptime() });
+    res.json({ ip, port: PORT, url, qrDataUrl: null, saveDir: SAVE_DIR, uptime: process.uptime() });
+  }
+});
+
+// GET /api/settings — Retrieve current settings
+app.get('/api/settings', (req, res) => {
+  res.json({
+    saveDir: SAVE_DIR,
+    port: PORT
+  });
+});
+
+// POST /api/settings — Update settings (specifically saveDir)
+app.post('/api/settings', express.json(), async (req, res) => {
+  try {
+    const { saveDir } = req.body;
+    if (!saveDir) {
+      return res.status(400).json({ error: 'saveDir is required' });
+    }
+
+    // Try to resolve the path and verify we can write to it
+    const resolvedPath = path.isAbsolute(saveDir) 
+      ? saveDir 
+      : path.resolve(__dirname, saveDir);
+
+    // Create the directory if it does not exist
+    if (!fs.existsSync(resolvedPath)) {
+      fs.mkdirSync(resolvedPath, { recursive: true });
+    }
+
+    // Attempt a temporary file write to verify write permissions
+    const tempFile = path.join(resolvedPath, '.write-test-' + Math.random().toString(36).substring(7));
+    fs.writeFileSync(tempFile, 'test');
+    fs.unlinkSync(tempFile);
+
+    // Update global SAVE_DIR
+    SAVE_DIR = resolvedPath;
+
+    // Save to config.json
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ saveDir, port: PORT }, null, 2));
+
+    console.log(`[CONFIG] Save folder updated to: ${SAVE_DIR}`);
+    res.json({ success: true, saveDir: SAVE_DIR });
+  } catch (err) {
+    console.error('[CONFIG] Failed to update save folder:', err.message);
+    res.status(400).json({ error: `Cannot write to folder: ${err.message}` });
+  }
+});
+
+// POST /api/settings/browse — Open native folder browser dialog (Windows, Linux, macOS)
+app.post('/api/settings/browse', async (req, res) => {
+  try {
+    const platform = os.platform();
+    let cmd = '';
+
+    if (platform === 'win32') {
+      // Windows PowerShell Folder Browser Dialog (no escaped dollars)
+      cmd = 'powershell -NoProfile -STA -Command "Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = \'Select AiroDrop Save Folder\'; $f.ShowNewFolderButton = $true; if ($f.ShowDialog() -eq \'OK\') { Write-Host $f.SelectedPath }"';
+    } else if (platform === 'linux') {
+      // Linux: Try zenity first, fallback to kdialog
+      cmd = 'zenity --file-selection --directory --title="Select AiroDrop Save Folder" 2>/dev/null || kdialog --getexistingdirectory . 2>/dev/null';
+    } else if (platform === 'darwin') {
+      // macOS: AppleScript Folder Picker
+      cmd = `osascript -e 'tell application "System Events" to activate' -e 'POSIX path of (choose folder with prompt "Select AiroDrop Save Folder")'`;
+    } else {
+      return res.status(400).json({ error: `Folder selection is not supported on platform: ${platform}` });
+    }
+
+    const { exec } = require('child_process');
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        // Log error but don't crash, user might have clicked cancel (which returns exit code 1 in zenity)
+        console.log('[BROWSE] Picker closed or canceled:', error.message || stderr);
+        return res.json({ success: false, message: 'Canceled' });
+      }
+      const selectedPath = stdout.trim();
+      if (!selectedPath) {
+        return res.json({ success: false, message: 'Canceled' });
+      }
+      res.json({ success: true, path: selectedPath });
+    });
+  } catch (err) {
+    console.error('[BROWSE] Error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -440,7 +556,7 @@ app.get('/api/events', (req, res) => {
 // Accepts both text and images in one endpoint
 // ═══════════════════════════════════════════════════════════════
 
-// POST /api/send — Unified endpoint that accepts text OR image
+// POST /api/send — Unified endpoint that accepts text, image, or generic files
 app.post('/api/send', upload.single('content'), async (req, res) => {
   try {
     let savedPath;
@@ -449,28 +565,55 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
     let fileSize;
     let mimeType;
     let isImage = false;
+    let isFile = false;
 
-    // 1. Check if it's an image via multipart form file
+    const contentType = req.headers['content-type'] || '';
+    const isFileHeader = contentType.startsWith('application/') || 
+                         contentType.startsWith('audio/') || 
+                         contentType.startsWith('video/') ||
+                         contentType.includes('octet-stream');
+
+    // 1. Check if it's parsed by multer as a form-data file
     if (req.file) {
       savedPath = req.file.path;
       filename = req.file.filename;
       originalName = req.file.originalname;
       fileSize = req.file.size;
       mimeType = req.file.mimetype;
-      isImage = true;
+      
+      if (mimeType.startsWith('image/')) {
+        isImage = true;
+      } else {
+        isFile = true;
+      }
     } 
-    // 2. Check if it's an image via raw binary buffer
+    // 2. Check if we received a raw Buffer in the body
     else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
       const detectedMime = isBufferImage(req.body);
       if (detectedMime) {
         const ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         filename = `${timestamp}_uploaded${ext}`;
-        savedPath = path.join(IMAGE_SAVE_DIR, filename);
+        savedPath = path.join(SAVE_DIR, filename);
         originalName = filename;
         fileSize = req.body.length;
         mimeType = detectedMime;
         isImage = true;
+
+        fs.writeFileSync(savedPath, req.body);
+      } else if (isFileHeader) {
+        const cleanType = contentType.split(';')[0];
+        let ext = '.bin';
+        if (cleanType.includes('/')) {
+          ext = '.' + cleanType.split('/')[1].replace('jpeg', 'jpg').replace('mpeg', 'mp3');
+        }
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        filename = `${timestamp}_uploaded${ext}`;
+        savedPath = path.join(SAVE_DIR, filename);
+        originalName = filename;
+        fileSize = req.body.length;
+        mimeType = cleanType;
+        isFile = true;
 
         fs.writeFileSync(savedPath, req.body);
       }
@@ -495,6 +638,24 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       notifyImage(filename);
       console.log(`[SEND/IMAGE] ${filename} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
       return res.json({ success: true, id: item.id, type: 'image', message: 'Image saved' });
+    }
+
+    if (isFile) {
+      const relativePath = path.relative(__dirname, savedPath);
+      const item = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        type: 'file',
+        filename,
+        originalName,
+        path: relativePath,
+        size: fileSize,
+        mimetype: mimeType,
+        timestamp: new Date().toISOString()
+      };
+      addToHistory(item);
+      notifyText(`Received File: ${originalName}`);
+      console.log(`[SEND/FILE] ${filename} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
+      return res.json({ success: true, id: item.id, type: 'file', message: 'File saved' });
     }
 
     // 3. Otherwise, process as text
@@ -544,57 +705,17 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       return res.json({ success: true, id: item.id, type: 'text', message: 'Text received & copied' });
     }
 
-    return res.status(400).json({ error: 'No content provided. Send text or an image file.' });
+    return res.status(400).json({ error: 'No content provided. Send text or a file.' });
   } catch (err) {
     console.error('[SEND] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// SHORTCUT FILE SERVING
-// ═══════════════════════════════════════════════════════════════
-
-// Generate shortcuts on first request
-let shortcutsGenerated = false;
-
-function ensureShortcutsGenerated() {
-  if (shortcutsGenerated) return;
-  const ip = getLocalIP();
-  const url = `http://${ip}:${PORT}`;
-  try {
-    const { execSync } = require('child_process');
-    execSync(`node "${path.join(__dirname, 'generate-shortcuts.js')}" "${url}"`, {
-      cwd: __dirname,
-      timeout: 10000,
-      windowsHide: true,
-      stdio: 'pipe'
-    });
-    shortcutsGenerated = true;
-    console.log('[SHORTCUTS] Generated .shortcut files for current server URL');
-  } catch (err) {
-    console.error('[SHORTCUTS] Failed to generate:', err.message);
-  }
-}
-
-// Serve shortcut files for download
-app.get('/api/shortcuts/:name', (req, res) => {
-  ensureShortcutsGenerated();
-  const name = req.params.name.replace(/\.shortcut$/, '') + '.shortcut';
-  const filePath = path.join(__dirname, 'public', 'shortcuts', name);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Shortcut not found' });
-  }
-
-  const displayName = name.replace('.shortcut', '').replace(/-/g, ' ');
-  res.setHeader('Content-Type', 'application/x-shortcut');
-  res.setHeader('Content-Disposition', `attachment; filename="${displayName}.shortcut"`);
- res.sendFile(filePath);
+// Serve image and file downloads from the dynamic save directory
+app.use('/received', (req, res, next) => {
+  express.static(SAVE_DIR)(req, res, next);
 });
-
-// Serve image files from the received directory
-app.use('/received', express.static(IMAGE_SAVE_DIR));
 
 // Serve static dashboard files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -634,7 +755,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('  ╠══════════════════════════════════════════════╣');
   console.log(`  ║   Server URL : ${url.padEnd(29)}║`);
   console.log(`  ║   Dashboard  : ${url.padEnd(29)}║`);
-  console.log(`  ║   Save Folder: ${IMAGE_SAVE_DIR.padEnd(29)}║`);
+  console.log(`  ║   Save Folder: ${SAVE_DIR.padEnd(29)}║`);
   console.log('  ╠══════════════════════════════════════════════╣');
   console.log('  ║   Endpoints:                                  ║');
   console.log(`  ║   POST ${('/api/text').padEnd(35)}║`);

@@ -36,6 +36,7 @@
     setupTabs();
     setupFilters();
     setupEventListeners();
+    setupSettings();
     await fetchServerInfo();
     connectSSE();
     await fetchHistory();
@@ -123,7 +124,7 @@
       const item = JSON.parse(e.data);
       addItemToState(item);
       renderFeed();
-      showToast(`${item.type === 'text' ? 'Text' : 'Image'} received`, 'success');
+      showToast(`${item.type === 'text' ? 'Text' : item.type === 'image' ? 'Image' : 'File'} received`, 'success');
     });
 
     sseSource.addEventListener('phone-queued', (e) => {
@@ -240,6 +241,46 @@
           </div>
           <div class="item-actions">
             <a class="btn btn-secondary" href="${imgUrl}" download="${escapeAttr(item.filename)}" title="Download">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+            <button class="btn-icon copy-filename-btn" data-copy="${escapeAttr(item.filename)}" title="Copy filename">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        `;
+      } else if (item.type === 'file') {
+        const fileUrl = `/received/${encodeURIComponent(item.filename)}`;
+        const sizeStr = item.size ? formatSize(item.size) : '';
+        const isAudio = item.mimetype && item.mimetype.startsWith('audio/');
+        const isPdf = item.mimetype && item.mimetype.includes('pdf');
+        
+        el.innerHTML = `
+          <div class="item-header">
+            <span class="item-type-badge file" style="background: rgba(147, 51, 234, 0.15); color: rgb(168, 85, 247);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              File
+            </span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="item-meta">${sizeStr}</span>
+              <span class="item-time">${formatTime(item.timestamp)}</span>
+            </div>
+          </div>
+          <div class="item-body" style="display: flex; align-items: center; gap: 12px; padding: 15px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid var(--border-color); margin-top: 10px;">
+            <div class="file-icon" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: rgba(147, 51, 234, 0.12); color: rgb(168, 85, 247);">
+              ${isAudio 
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' 
+                : isPdf 
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'}
+            </div>
+            <div class="file-info" style="flex: 1; overflow: hidden;">
+              <div class="file-name" style="font-size: 0.9em; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: var(--text-color);">${escapeHtml(item.originalName || item.filename)}</div>
+              <div class="file-meta" style="font-size: 0.75em; opacity: 0.6; margin-top: 2px;">${item.mimetype || 'Unknown Type'}</div>
+            </div>
+          </div>
+          <div class="item-actions" style="margin-top: 12px;">
+            <a class="btn btn-secondary" href="${fileUrl}" download="${escapeAttr(item.originalName || item.filename)}" title="Download File">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Download
             </a>
@@ -532,6 +573,105 @@
   function escapeAttr(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ─── Settings Controller ────────────────────────────────────
+  async function setupSettings() {
+    const saveDirInput = $('#saveDirInput');
+    const saveDirBtn = $('#saveDirBtn');
+    const settingsStatus = $('#settingsStatus');
+
+    if (!saveDirInput || !saveDirBtn || !settingsStatus) return;
+
+    // Load current save directory on load
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.saveDir) {
+        saveDirInput.value = data.saveDir;
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    }
+
+    // Browse settings on PC when button clicked
+    const browseDirBtn = $('#browseDirBtn');
+    if (browseDirBtn) {
+      browseDirBtn.addEventListener('click', async () => {
+        browseDirBtn.disabled = true;
+        saveDirBtn.disabled = true;
+        
+        settingsStatus.style.display = 'block';
+        settingsStatus.style.background = 'rgba(147, 51, 234, 0.12)';
+        settingsStatus.style.color = '#a855f7';
+        settingsStatus.style.border = '1px solid rgba(147, 51, 234, 0.3)';
+        settingsStatus.textContent = 'Please choose a folder from the window on your PC...';
+        
+        try {
+          const res = await fetch('/api/settings/browse', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success && data.path) {
+            saveDirInput.value = data.path;
+            settingsStatus.style.display = 'none';
+            // Automatically save the selected path
+            saveDirBtn.click();
+          } else {
+            settingsStatus.style.display = 'none';
+          }
+        } catch (err) {
+          console.error(err);
+          settingsStatus.style.display = 'block';
+          settingsStatus.style.background = 'rgba(239, 68, 68, 0.15)';
+          settingsStatus.style.color = '#ef4444';
+          settingsStatus.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+          settingsStatus.textContent = '✗ ' + err.message;
+        } finally {
+          browseDirBtn.disabled = false;
+          saveDirBtn.disabled = false;
+        }
+      });
+    }
+
+    // Save settings when button clicked
+    saveDirBtn.addEventListener('click', async () => {
+      const saveDir = saveDirInput.value.trim();
+      if (!saveDir) return;
+
+      saveDirBtn.disabled = true;
+      saveDirBtn.textContent = 'Saving...';
+      settingsStatus.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ saveDir })
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          settingsStatus.style.display = 'block';
+          settingsStatus.style.background = 'rgba(16, 185, 129, 0.15)';
+          settingsStatus.style.color = '#10b981';
+          settingsStatus.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          settingsStatus.textContent = '✓ Save directory updated successfully!';
+          saveDirInput.value = data.saveDir;
+          showToast('Settings saved successfully', 'success');
+        } else {
+          throw new Error(data.error || 'Failed to update folder settings');
+        }
+      } catch (err) {
+        settingsStatus.style.display = 'block';
+        settingsStatus.style.background = 'rgba(239, 68, 68, 0.15)';
+        settingsStatus.style.color = '#ef4444';
+        settingsStatus.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        settingsStatus.textContent = '✗ ' + err.message;
+        showToast(err.message, 'error');
+      } finally {
+        saveDirBtn.disabled = false;
+        saveDirBtn.textContent = 'Save Directory';
+      }
+    });
   }
 
   // ─── Start ─────────────────────────────────────────────────

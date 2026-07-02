@@ -52,20 +52,20 @@ This is the critical step that makes the shortcut appear when you tap the Share 
 
 ### Step 5: Add the "If" Conditional Block
 
-Now we need to tell the shortcut what to do based on what type of content is being shared:
+Now we need to tell the shortcut to branch depending on whether the input is a file (Image, PDF, MP3, ZIP, etc.) or plain text:
 
 1. Tap anywhere below the "Shortcut Input" action to add a new action.
 2. Search for **"If"** in the action search bar and select it.
 3. Configure the condition:
    *   **Input:** Tap the first parameter and choose **"Shortcut Input"**
-   *   **Condition:** Change to **"is"**
-   *   **Type:** Select **"Image"**
+   *   **Modify Attribute:** Tap the **"Shortcut Input"** block *again* inside the action ➜ scroll down and select **"File Extension"**.
+   *   **Condition:** Change the condition parameter to **"has any value"** (or **"is not empty"** in older iOS versions).
 
-> **The If block should read:** `If Shortcut Input is Image`
+> **The If block should read:** `If File Extension has any value` (representing any file like PDF, MP3, PNG, ZIP, etc.)
 
-### Step 6: Add the Image Upload Action (Then Block)
+### Step 6: Add the File Upload Action (Then Block)
 
-Inside the **"Then"** section of the If block (runs when the input IS an image):
+Inside the **"Then"** section of the If block (runs when the input is a file):
 
 1. Tap inside the **"Then"** section to add an action.
 2. Search for **"Get Contents of URL"** and select it.
@@ -130,11 +130,11 @@ This shortcut sends whatever is currently on your iPhone's clipboard to your PC.
 1. Tap below the Get Clipboard action.
 2. Search for **"If"** in the action search bar and select it.
 3. Configure the condition:
-   *   **Input:** Choose **"Clipboard"**
-   *   **Condition:** Change to **"is"**
-   *   **Type:** Select **"Image"**
+   *   **Input:** Tap and choose **"Clipboard"**
+   *   **Modify Attribute:** Tap the **"Clipboard"** block *again* inside the action ➜ scroll down and select **"File Extension"**.
+   *   **Condition:** Change to **"has any value"** (or **"is not empty"**).
 
-### Step 4: Add the Image Upload Action (Then Block)
+### Step 4: Add the File Upload Action (Then Block)
 
 Inside the **"Then"** section of the If block:
 

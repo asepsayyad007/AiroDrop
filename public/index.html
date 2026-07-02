@@ -54,6 +54,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Send to Phone
         </button>
+        <button class="tab" data-tab="settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
       </nav>
 
       <!-- Tab: Received Feed -->
@@ -63,6 +67,7 @@
             <button class="filter-btn active" data-filter="all">All</button>
             <button class="filter-btn" data-filter="text">Text</button>
             <button class="filter-btn" data-filter="image">Images</button>
+            <button class="filter-btn" data-filter="file">Files</button>
           </div>
           <button class="clear-btn" id="clearFeed" title="Clear all">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -183,7 +188,25 @@
         </div>
       </section>
 
-      <!-- (old Setup tab removed — replaced by iPhone Setup tab above) -->
+      <!-- Tab: Settings -->
+      <section class="tab-content" id="tab-settings">
+        <div class="settings-card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px;">
+          <h2 style="font-size: 1.5em; margin-bottom: 8px; font-weight: 600; color: var(--text-color);">Server Configuration</h2>
+          <p class="settings-desc" style="font-size: 0.9em; opacity: 0.7; margin-bottom: 24px;">Manage folder paths and directories where files are received.</p>
+          
+          <div class="settings-form-group" style="margin-bottom: 20px;">
+            <label for="saveDirInput" style="display: block; font-weight: 500; font-size: 0.9em; margin-bottom: 8px; color: var(--text-color);">Received Files Save Directory</label>
+            <div class="settings-input-row" style="display: flex; gap: 12px; margin-bottom: 8px;">
+              <input type="text" id="saveDirInput" placeholder="e.g. C:\Users\name\Downloads" style="flex: 1; padding: 10px 14px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-color); font-size: 0.9em; font-family: monospace;">
+              <button class="btn btn-secondary" id="browseDirBtn">Browse...</button>
+              <button class="btn btn-primary" id="saveDirBtn">Save Directory</button>
+            </div>
+            <p class="settings-help" style="font-size: 0.8em; opacity: 0.6; line-height: 1.4;">Absolute path (e.g., <code>C:\Users\username\Downloads</code>) or relative path (e.g., <code>./received</code>, which saves files inside the project directory).</p>
+          </div>
+
+          <div class="settings-status" id="settingsStatus" style="font-size: 0.9em; margin-top: 15px; padding: 8px 12px; border-radius: 6px; display: none;"></div>
+        </div>
+      </section>
     </main>
   </div>
 
