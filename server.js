@@ -102,8 +102,24 @@ const upload = multer({
 // ─── Express App ───────────────────────────────────────────────
 const app = express();
 app.use(rateLimit);
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Dynamic Content-Type body parsers (prevents stream consumption conflicts with Multer)
+const jsonParser = express.json({ limit: '10mb' });
+const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
+const rawParser = express.raw({ type: '*/*', limit: '50mb' });
+
+app.use((req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    next();
+  } else if (contentType.includes('application/json')) {
+    jsonParser(req, res, next);
+  } else if (contentType.includes('application/x-www-form-urlencoded')) {
+    urlencodedParser(req, res, next);
+  } else {
+    rawParser(req, res, next);
+  }
+});
 
 // CORS — allow all local network access
 app.use((req, res, next) => {
@@ -147,6 +163,36 @@ function addToHistory(item) {
   broadcastSSE('new-item', item);
 }
 
+/**
+ * Detect image format from magic bytes/file signature
+ * Returns mimetype string (e.g. 'image/png') if matched, otherwise null
+ */
+function isBufferImage(buf) {
+  if (!buf || buf.length < 4) return null;
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return 'image/png';
+  }
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  // GIF: 47 49 46 ("GIF")
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+    return 'image/gif';
+  }
+  // WEBP: RIFF + WEBP
+  if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf.length >= 12) {
+    const riffType = buf.toString('ascii', 8, 12);
+    if (riffType === 'WEBP') return 'image/webp';
+  }
+  // BMP: 42 4D ("BM")
+  if (buf[0] === 0x42 && buf[1] === 0x4d) {
+    return 'image/bmp';
+  }
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // API ROUTES
 // ═══════════════════════════════════════════════════════════════
@@ -154,14 +200,33 @@ function addToHistory(item) {
 // POST /api/text — Receive text from iPhone
 app.post('/api/text', async (req, res) => {
   try {
-    let text = req.body.text || req.body.content || '';
-
-    // Also accept raw body as text
-    if (!text && typeof req.body === 'string') {
-      text = req.body;
+    let text = '';
+    if (typeof req.body === 'string') {
+      const trimmed = req.body.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          text = parsed.text || parsed.content || req.body;
+        } catch {
+          text = req.body;
+        }
+      } else {
+        text = req.body;
+      }
+    } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      text = req.body.toString('utf8');
+      const trimmed = text.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          text = parsed.text || parsed.content || text;
+        } catch {}
+      }
+    } else if (req.body && typeof req.body === 'object') {
+      text = req.body.text || req.body.content || '';
     }
 
-    if (!text || text.trim().length === 0) {
+    if (!text || (typeof text === 'string' && text.trim().length === 0)) {
       return res.status(400).json({ error: 'No text provided' });
     }
 
@@ -193,12 +258,36 @@ app.post('/api/text', async (req, res) => {
 // POST /api/image — Receive image from iPhone
 app.post('/api/image', upload.single('image'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image file provided. Use multipart form with "image" field.' });
+    let savedPath;
+    let filename;
+    let originalName;
+    let fileSize;
+    let mimeType;
+
+    if (req.file) {
+      savedPath = req.file.path;
+      filename = req.file.filename;
+      originalName = req.file.originalname;
+      fileSize = req.file.size;
+      mimeType = req.file.mimetype;
+    } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      const detectedMime = isBufferImage(req.body);
+      if (!detectedMime) {
+        return res.status(400).json({ error: 'Uploaded binary is not a recognized image format.' });
+      }
+      const ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      filename = `${timestamp}_uploaded${ext}`;
+      savedPath = path.join(IMAGE_SAVE_DIR, filename);
+      originalName = filename;
+      fileSize = req.body.length;
+      mimeType = detectedMime;
+
+      fs.writeFileSync(savedPath, req.body);
+    } else {
+      return res.status(400).json({ error: 'No image file or binary buffer provided.' });
     }
 
-    const savedPath = req.file.path;
-    const filename = req.file.filename;
     const relativePath = path.relative(__dirname, savedPath);
 
     // Try to copy image to clipboard
@@ -208,10 +297,10 @@ app.post('/api/image', upload.single('image'), async (req, res) => {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       type: 'image',
       filename: filename,
-      originalName: req.file.originalname,
+      originalName: originalName,
       path: relativePath,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
+      size: fileSize,
+      mimetype: mimeType,
       timestamp: new Date().toISOString(),
       clipboardSuccess: clipResult.success
     };
@@ -220,7 +309,7 @@ app.post('/api/image', upload.single('image'), async (req, res) => {
     // Show notification
     notifyImage(filename);
 
-    const sizeMB = (req.file.size / (1024 * 1024)).toFixed(2);
+    const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
     console.log(`[IMAGE] ${filename} (${sizeMB} MB)`);
     res.json({
       success: true,
@@ -354,10 +443,40 @@ app.get('/api/events', (req, res) => {
 // POST /api/send — Unified endpoint that accepts text OR image
 app.post('/api/send', upload.single('content'), async (req, res) => {
   try {
-    // If a file was uploaded, treat as image
+    let savedPath;
+    let filename;
+    let originalName;
+    let fileSize;
+    let mimeType;
+    let isImage = false;
+
+    // 1. Check if it's an image via multipart form file
     if (req.file) {
-      const savedPath = req.file.path;
-      const filename = req.file.filename;
+      savedPath = req.file.path;
+      filename = req.file.filename;
+      originalName = req.file.originalname;
+      fileSize = req.file.size;
+      mimeType = req.file.mimetype;
+      isImage = true;
+    } 
+    // 2. Check if it's an image via raw binary buffer
+    else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      const detectedMime = isBufferImage(req.body);
+      if (detectedMime) {
+        const ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        filename = `${timestamp}_uploaded${ext}`;
+        savedPath = path.join(IMAGE_SAVE_DIR, filename);
+        originalName = filename;
+        fileSize = req.body.length;
+        mimeType = detectedMime;
+        isImage = true;
+
+        fs.writeFileSync(savedPath, req.body);
+      }
+    }
+
+    if (isImage) {
       const relativePath = path.relative(__dirname, savedPath);
       const clipResult = await copyImage(savedPath);
 
@@ -365,24 +484,47 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         type: 'image',
         filename,
-        originalName: req.file.originalname,
+        originalName,
         path: relativePath,
-        size: req.file.size,
-        mimetype: req.file.mimetype,
+        size: fileSize,
+        mimetype: mimeType,
         timestamp: new Date().toISOString(),
         clipboardSuccess: clipResult.success
       };
       addToHistory(item);
       notifyImage(filename);
-      console.log(`[SEND/IMAGE] ${filename} (${(req.file.size / (1024 * 1024)).toFixed(2)} MB)`);
+      console.log(`[SEND/IMAGE] ${filename} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
       return res.json({ success: true, id: item.id, type: 'image', message: 'Image saved' });
     }
 
-    // Check for text in body (form or JSON)
-    let text = req.body.content || req.body.text || '';
-    // Also check for raw body
-    if (!text && req.body && typeof req.body === 'object' && Object.keys(req.body).length === 1) {
-      text = Object.values(req.body)[0];
+    // 3. Otherwise, process as text
+    let text = '';
+    if (typeof req.body === 'string') {
+      const trimmed = req.body.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          text = parsed.content || parsed.text || req.body;
+        } catch {
+          text = req.body;
+        }
+      } else {
+        text = req.body;
+      }
+    } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      text = req.body.toString('utf8');
+      const trimmed = text.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          text = parsed.content || parsed.text || text;
+        } catch {}
+      }
+    } else if (req.body && typeof req.body === 'object') {
+      text = req.body.content || req.body.text || '';
+      if (!text && Object.keys(req.body).length === 1) {
+        text = Object.values(req.body)[0];
+      }
     }
     if (typeof text !== 'string') text = String(text);
 

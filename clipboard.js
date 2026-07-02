@@ -41,10 +41,10 @@ async function copyImage(imagePath) {
       const absPath = path.resolve(imagePath).replace(/\//g, '\\');
       // Use PowerShell to load image into clipboard
       const psScript = `
-Add-Type -AssemblyName System.Windows.Forms
-$img = [System.Drawing.Image]::FromFile('${absPath}')
-[System.Windows.Forms.Clipboard]::SetImage($img)
-$img.Dispose()
+Add-Type -AssemblyName System.Windows.Forms;
+$img = [System.Drawing.Image]::FromFile('${absPath}');
+[System.Windows.Forms.Clipboard]::SetImage($img);
+$img.Dispose();
 `;
       execSync(`powershell -Command "${psScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
         timeout: 10000,

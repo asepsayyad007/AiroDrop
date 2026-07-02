@@ -54,80 +54,56 @@ This is the critical step that makes the shortcut appear when you tap the Share 
 
 Now we need to tell the shortcut what to do based on what type of content is being shared:
 
-1. Tap anywhere below the "Shortcut Input" action to add a new action
-2. Search for **"If"** in the action search bar
-3. Select the **"If"** action (it has a diamond-shaped icon)
-4. Configure the condition:
-   - In the first field (the variable), tap it and select **"Shortcut Input"**
-   - In the middle field (the condition type), scroll down and select **"is"**
-   - In the last field, tap it and select **"Image"**
+1. Tap anywhere below the "Shortcut Input" action to add a new action.
+2. Search for **"If"** in the action search bar and select it.
+3. Configure the condition:
+   *   **Input:** Tap the first parameter and choose **"Shortcut Input"**
+   *   **Condition:** Change to **"is"**
+   *   **Type:** Select **"Image"**
 
 > **The If block should read:** `If Shortcut Input is Image`
 
 ### Step 6: Add the Image Upload Action (Then Block)
 
-Inside the **"Then"** section of the If block (this runs when the input IS an image):
+Inside the **"Then"** section of the If block (runs when the input IS an image):
 
-1. Tap inside the **"Then"** section to add an action
-2. Search for **"Get Contents of URL"**
-3. Select it — this is the action that makes HTTP requests
-4. Configure it as follows:
-   - **URL:** `http://<PC-IP>:3478/api/image` (replace `<PC-IP>` with your PC's actual IP)
-   - **Method:** Tap on "GET" and change it to **"POST"**
-   - **Headers:** Leave empty (not needed)
-   - **Request Body:** Tap on "None" and change it to **"File"**
-   - **File:** Tap "File" and select **"Shortcut Input"** from the variables list
-   - You may also see a "File" field — make sure it says "Shortcut Input"
+1. Tap inside the **"Then"** section to add an action.
+2. Search for **"Get Contents of URL"** and select it.
+3. Configure it as follows:
+   - **URL:** `http://<PC-IP>:3478/api/send` (replace `<PC-IP>` with your PC's actual local IP)
+   - **Method:** Tap "GET" and change it to **"POST"**
+   - **Request Body:** Tap "None" and change it to **"File"**
+   - **File:** Tap "File" and select the **"Shortcut Input"** variable.
 
-> **What this does:** When you share an image, the shortcut takes that image and uploads it to your PC's server via HTTP POST, which saves it to `~/Desktop/AirDrop-Received/`.
+### Step 7: Add the Text Upload Action (Else Block)
 
-### Step 7: Add the Text Send Action (Else Block)
+Inside the **"Else"** section of the If block (runs when the input is NOT an image, i.e., text or link):
 
-Now we need to handle text/URL content. Tap inside the **"Else"** section (or tap "Else" if it doesn't appear yet, then "Add Else"):
+1. Tap inside the **"Else"** section to add an action.
+2. Search for **"Get Contents of URL"** and select it.
+3. Configure it as follows:
+   - **URL:** `http://<PC-IP>:3478/api/send`
+   - **Method:** Tap "GET" and change it to **"POST"**
+   - **Request Body:** Tap "None" and change it to **"Form"**
+   - **Form Values:** Tap **Add new field** ➜ choose **Text** field:
+     - **Key:** `content`
+     - **Value:** Select the **"Shortcut Input"** variable.
 
-1. Search for **"Get Contents of URL"** again
-2. Configure it:
-   - **URL:** `http://<PC-IP>:3478/api/text` (same PC IP)
-   - **Method:** **"POST"**
-   - **Request Body:** Tap "None" and select **"JSON"**
-   - A text field will appear for the JSON body. Enter:
-     ```
-     {"text": "Shortcut Input"}
-     ```
-   - **Important:** When you type `"Shortcut Input"` inside the quotes, a small **variable suggestion** will appear above the keyboard — **tap it to insert the actual variable** (it will turn into a colored pill/bubble). Do NOT type the words literally — it must be the variable.
+> **What this does:** When you share an image, link, or text from any app, the shortcut automatically branches: images are sent as a raw binary file, and text/links are sent as a form text field. The server processes both formats dynamically, writing text directly to your PC clipboard and saving images directly to your PC Desktop.
 
-> **What this does:** When you share text or a URL, the shortcut sends it as a JSON payload to your PC, which copies it directly to your clipboard.
+### Step 6: Add a Confirmation Notification
 
-### Step 8: Add a Confirmation Notification
-
-After the entire If block (not inside any branch), add a notification so you know it worked:
-
-1. Tap below the If block to add a new action
-2. Search for **"Show Notification"**
+1. Tap below the action to add a new action.
+2. Search for **"Show Notification"** and select it.
 3. Configure it:
-   - **Title:** "Send to PC" (or leave blank)
-   - **Message:** "Sent to PC ✓" (or whatever you like)
-   - **Play Sound:** Toggle ON if you want an audio confirmation
+   - **Title:** "Send to PC"
+   - **Message:** "Sent to PC ✓"
+   - **Play Sound:** Toggle ON (optional)
 
-> **What this does:** A small banner notification appears on your iPhone confirming the content was sent. This gives you peace of mind that the shortcut actually ran.
+### Step 7: Test the Shortcut
 
-### Step 9: Test the Shortcut
-
-1. **Test with text:**
-   - Open any app (Notes, Safari, etc.)
-   - Select some text
-   - Tap **Share**
-   - In the Share Sheet, scroll to find **"Send to PC"**
-   - Tap it
-   - You should see "Sent to PC ✓" notification
-   - Check your PC — the text should be in your clipboard
-
-2. **Test with an image:**
-   - Open the **Photos** app
-   - Select any photo
-   - Tap the **Share** button
-   - Tap **"Send to PC"** in the Share Sheet
-   - Check your PC — the image should appear in `~/Desktop/AirDrop-Received/` and on the web dashboard
+1. **Test with text:** Select text in any app (Notes, Safari, etc.) ➜ tap **Share** ➜ tap **"Send to PC"** ➜ verify the text is instantly copied to your PC clipboard.
+2. **Test with an image:** Open Photos ➜ select a photo ➜ tap **Share** ➜ tap **"Send to PC"** ➜ check your PC Desktop's `AirDrop-Received/` folder and clipboard.
 
 ---
 
@@ -149,21 +125,43 @@ This shortcut sends whatever is currently on your iPhone's clipboard to your PC.
 
 > **What this does:** This action reads whatever text is currently stored in your iPhone's clipboard (whatever you last copied).
 
-### Step 3: Send to PC
+### Step 3: Add the "If" Conditional Block
 
-1. Tap below to add another action
-2. Search for **"Get Contents of URL"**
-3. Configure it:
-   - **URL:** `http://<PC-IP>:3478/api/text`
+1. Tap below the Get Clipboard action.
+2. Search for **"If"** in the action search bar and select it.
+3. Configure the condition:
+   *   **Input:** Choose **"Clipboard"**
+   *   **Condition:** Change to **"is"**
+   *   **Type:** Select **"Image"**
+
+### Step 4: Add the Image Upload Action (Then Block)
+
+Inside the **"Then"** section of the If block:
+
+1. Tap inside **"Then"** ➜ add **"Get Contents of URL"**.
+2. Configure it:
+   - **URL:** `http://<PC-IP>:3478/api/send`
    - **Method:** **"POST"**
-   - **Request Body:** **"JSON"**
-   - **JSON Body:** `{"text": "Clipboard"}`
-   - **Important:** When you type `"Clipboard"`, tap the variable suggestion to insert it as a **variable** (colored pill), not literal text
+   - **Request Body:** **"File"**
+   - **File:** Select the **"Clipboard"** variable.
+
+### Step 5: Add the Text Upload Action (Else Block)
+
+Inside the **"Else"** section of the If block:
+
+1. Tap inside **"Else"** ➜ add **"Get Contents of URL"**.
+2. Configure it:
+   - **URL:** `http://<PC-IP>:3478/api/send`
+   - **Method:** **"POST"**
+   - **Request Body:** **"Form"**
+   - **Form Values:** Tap **Add new field** ➜ choose **Text** field:
+     - **Key:** `content`
+     - **Value:** Select the **"Clipboard"** variable.
 
 ### Step 4: Add Confirmation Notification
 
-1. Add **"Show Notification"** action
-2. Set message to **"Clipboard sent ✓"**
+1. Add a **"Show Notification"** action.
+2. Set the message to **"Clipboard sent ✓"**.
 
 ### Step 5: Add to Home Screen as Widget
 
@@ -222,8 +220,8 @@ Add this shortcut to your Home Screen the same way as "Send Clipboard". Whenever
 
 ## Troubleshooting
 
-### "Shortcut Input" not appearing as a variable
-When typing inside the JSON body field, you must tap the variable suggestion that appears above the keyboard. If you don't see it:
+### "Shortcut Input" or "Clipboard" not appearing as a variable
+When setting the File parameter in the URL actions, make sure to tap the variable suggestion that appears above the keyboard (e.g., "Shortcut Input" or "Clipboard"). If you don't see it:
 - Make sure you configured "Show in Share Sheet" correctly in Step 3
 - Try deleting the "Get Contents of URL" action and re-adding it
 

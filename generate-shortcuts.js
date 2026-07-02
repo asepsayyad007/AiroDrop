@@ -175,11 +175,48 @@ function getShortcutInput() {
 // ═══════════════════════════════════════════════════════════════
 
 function generateSendToPC() {
-  // This shortcut accepts ANY input (image, text, URL) from Share Sheet
-  // and sends it to the unified /api/send endpoint
-
+  const condId = 'COND_SHARE_SHEET_' + Math.random().toString(36).slice(2, 8);
   const actions = [
-    // Step 1: Send to the unified endpoint
+    // 1. If Shortcut Input is Image
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFConditionalActionParameter: {
+          Value: {
+            type: 'Image'
+          },
+          WFSerializationType: 'WFConditionalActionParameter'
+        },
+        WFControlFlowMode: 0
+      }
+    },
+    // 2. Then: Get Contents of URL (POST raw image file)
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.getcontents_of_url',
+      WFWorkflowActionParameters: {
+        WFURLActionURL: {
+          Value: `${SERVER_URL}/api/send`,
+          WFSerializationType: 'WFTextTokenAttachment'
+        },
+        WFHTTPMethod: 'POST',
+        WFHTTPBodyType: 'File',
+        WFRequestVariable: {
+          VariableName: 'Shortcut Input',
+          WFSerializationType: 'WFTextTokenAttachment',
+          WFVariableAggregationStyle: 'Latest'
+        }
+      }
+    },
+    // 3. Else
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFControlFlowMode: 2
+      }
+    },
+    // 4. Else: Get Contents of URL (POST text form)
     {
       WFWorkflowActionIdentifier: 'is.workflow.actions.getcontents_of_url',
       WFWorkflowActionParameters: {
@@ -190,12 +227,25 @@ function generateSendToPC() {
         WFHTTPMethod: 'POST',
         WFHTTPBodyType: 'Form',
         WFFormValues: {
-          Value: JSON.stringify({ content: { Value: 'Shortcut Input', WFSerializationType: 'WFTextTokenAttachment' } }),
+          Value: JSON.stringify({
+            content: {
+              Value: 'Shortcut Input',
+              WFSerializationType: 'WFTextTokenAttachment'
+            }
+          }),
           WFSerializationType: 'WFDictionaryFieldValue'
         }
       }
     },
-    // Step 2: Show confirmation
+    // 5. End If
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFControlFlowMode: 3
+      }
+    },
+    // 6. Show Notification
     showNotification('Send to PC', 'Sent successfully')
   ];
 
@@ -205,31 +255,80 @@ function generateSendToPC() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Generate Shortcut 2: "Send Clipboard to PC" (Home Screen)
-// ═══════════════════════════════════════════════════════════════
-
 function generateSendClipboard() {
+  const condId = 'COND_CLIPBOARD_' + Math.random().toString(36).slice(2, 8);
   const actions = [
-    // Step 1: Get clipboard content
+    // 1. Get Clipboard
     getClipboard(),
-    // Step 2: Send to server
+    // 2. If Clipboard is Image
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFConditionalActionParameter: {
+          Value: {
+            type: 'Image'
+          },
+          WFSerializationType: 'WFConditionalActionParameter'
+        },
+        WFControlFlowMode: 0
+      }
+    },
+    // 3. Then: Get Contents of URL (POST raw image file)
     {
       WFWorkflowActionIdentifier: 'is.workflow.actions.getcontents_of_url',
       WFWorkflowActionParameters: {
         WFURLActionURL: {
-          Value: `${SERVER_URL}/api/text`,
+          Value: `${SERVER_URL}/api/send`,
           WFSerializationType: 'WFTextTokenAttachment'
         },
         WFHTTPMethod: 'POST',
-        WFHTTPBodyType: 'JSON',
-        WFHTTPBody: {
-          Value: '{"text": "Clipboard"}',
-          WFSerializationType: 'WFTextTokenAttachment'
+        WFHTTPBodyType: 'File',
+        WFRequestVariable: {
+          VariableName: 'Clipboard',
+          WFSerializationType: 'WFTextTokenAttachment',
+          WFVariableAggregationStyle: 'Latest'
         }
       }
     },
-    // Step 3: Show confirmation
+    // 4. Else
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFControlFlowMode: 2
+      }
+    },
+    // 5. Else: Get Contents of URL (POST text form)
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.getcontents_of_url',
+      WFWorkflowActionParameters: {
+        WFURLActionURL: {
+          Value: `${SERVER_URL}/api/send`,
+          WFSerializationType: 'WFTextTokenAttachment'
+        },
+        WFHTTPMethod: 'POST',
+        WFHTTPBodyType: 'Form',
+        WFFormValues: {
+          Value: JSON.stringify({
+            content: {
+              Value: 'Clipboard',
+              WFSerializationType: 'WFTextTokenAttachment'
+            }
+          }),
+          WFSerializationType: 'WFDictionaryFieldValue'
+        }
+      }
+    },
+    // 6. End If
+    {
+      WFWorkflowActionIdentifier: 'is.workflow.actions.conditional',
+      WFWorkflowActionParameters: {
+        GroupingIdentifier: condId,
+        WFControlFlowMode: 3
+      }
+    },
+    // 7. Show Notification
     showNotification('Send to PC', 'Clipboard sent')
   ];
 

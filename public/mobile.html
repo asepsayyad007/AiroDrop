@@ -423,14 +423,24 @@
 
     <!-- FALLBACK: if shortcut install doesn't work -->
     <div class="manual-fallback" id="fallback" style="display:none;">
-      <strong>If the links above don't work</strong>, your iOS version may not support direct import. In that case, create the shortcut manually — it's now just <strong>1 action</strong> because of the unified endpoint:
+      <strong>If the links above don't work</strong>, create the shortcut manually using a conditional block (to handle both files and text without conversion errors):
       <ol>
         <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
-        <li>Tap <strong>ⓘ</strong> → turn on <strong>"Show in Share Sheet"</strong> → accept Images, Text, URLs</li>
-        <li>Add ONE action: <strong>"Get Contents of URL"</strong></li>
-        <li>URL: <code id="fallbackUrl"></code></li>
-        <li>Method: <strong>POST</strong> → Body: <strong>Form</strong> → Key: <code>content</code> → Value: <strong>Shortcut Input</strong></li>
-        <li>Name it "Send to PC" — done!</li>
+        <li>Add action: <strong>"If"</strong> ➜ set parameter: <code>If Shortcut Input is Image</code></li>
+        <li>Inside <strong>"Then"</strong> (Image branch):
+          <ul>
+            <li>Add: <strong>"Get Contents of URL"</strong></li>
+            <li>URL: <code class="fallbackUrlText"></code></li>
+            <li>Method: <strong>POST</strong> → Request Body: <strong>File</strong> → File: <strong>Shortcut Input</strong></li>
+          </ul>
+        </li>
+        <li>Inside <strong>"Else"</strong> (Text branch):
+          <ul>
+            <li>Add: <strong>"Get Contents of URL"</strong></li>
+            <li>URL: <code class="fallbackUrlText"></code></li>
+            <li>Method: <strong>POST</strong> → Request Body: <strong>Form</strong> → Add Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
+          </ul>
+        </li>
       </ol>
     </div>
 
@@ -517,8 +527,8 @@
         document.getElementById('connText').textContent = `Connected to ${info.ip}`;
 
         // Set fallback URL
-        const fallbackUrl = document.getElementById('fallbackUrl');
-        if (fallbackUrl) fallbackUrl.textContent = `${info.url}/api/send`;
+        const fallbackUrls = document.querySelectorAll('.fallbackUrlText');
+        fallbackUrls.forEach(el => el.textContent = `${info.url}/api/send`);
 
         // Show fallback after 3 seconds (in case shortcut links don't work)
         setTimeout(() => {
