@@ -21,12 +21,24 @@ const fs = require('fs');
 const os = require('os');
 const QRCode = require('qrcode');
 const { copyText, copyImage } = require('./clipboard');
-const { notifyText, notifyImage } = require('./notify');
+const notifier = require('./notify');
+function notifyText(text) {
+  if (NOTIFICATIONS_ENABLED) notifier.notifyText(text);
+}
+function notifyImage(filename) {
+  if (NOTIFICATIONS_ENABLED) notifier.notifyImage(filename);
+}
 
 // ─── Configuration ──────────────────────────────────────────────
 const CONFIG_FILE = path.join(__dirname, 'config.json');
+const HISTORY_FILE = path.join(__dirname, 'history.json');
 let PORT = 3478;
 let SAVE_DIR = path.join(__dirname, 'received');
+let TEMPORARY_MODE = false;
+let DEVICE_NAME = os.hostname();
+let RATE_LIMIT_ENABLED = true;
+let NOTIFICATIONS_ENABLED = true;
+let TEMPORARY_MODE_HOURS = 2;
 
 // Load settings from config.json
 function loadConfig() {
@@ -34,6 +46,11 @@ function loadConfig() {
     if (fs.existsSync(CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
       if (data.port) PORT = parseInt(data.port, 10) || 3478;
+      TEMPORARY_MODE = !!data.temporaryMode;
+      if (data.deviceName) DEVICE_NAME = data.deviceName;
+      if (data.rateLimitEnabled !== undefined) RATE_LIMIT_ENABLED = !!data.rateLimitEnabled;
+      if (data.notificationsEnabled !== undefined) NOTIFICATIONS_ENABLED = !!data.notificationsEnabled;
+      if (data.temporaryModeHours !== undefined) TEMPORARY_MODE_HOURS = parseFloat(data.temporaryModeHours) || 2;
       if (data.saveDir) {
         // If relative, resolve against project directory
         SAVE_DIR = path.isAbsolute(data.saveDir) 
@@ -66,6 +83,41 @@ const MAX_HISTORY = 100;
 
 // ─── In-Memory Stores ──────────────────────────────────────────
 const history = [];          // Received items (from iPhone)
+
+function loadHistory() {
+  if (TEMPORARY_MODE) {
+    history.length = 0;
+    return;
+  }
+  try {
+    if (fs.existsSync(HISTORY_FILE)) {
+      const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+      history.length = 0;
+      history.push(...(Array.isArray(data) ? data : []));
+    }
+  } catch (err) {
+    console.error('[HISTORY] Failed to load history:', err.message);
+  }
+}
+
+function saveHistory() {
+  if (TEMPORARY_MODE) {
+    try {
+      if (fs.existsSync(HISTORY_FILE)) {
+        fs.unlinkSync(HISTORY_FILE);
+      }
+    } catch {}
+    return;
+  }
+  try {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+  } catch (err) {
+    console.error('[HISTORY] Failed to save history:', err.message);
+  }
+}
+
+// Load initial history
+loadHistory();
 const pendingForPhone = [];  // Items queued for iPhone to pick up
 const sseClients = new Set(); // SSE connected clients
 
@@ -148,15 +200,58 @@ app.use((req, res, next) => {
 // ─── Helper: Get Local IP ──────────────────────────────────────
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
+  const candidates = [];
+  
   for (const name of Object.keys(interfaces)) {
+    const lowerName = name.toLowerCase();
+    
+    if (lowerName.includes('virtualbox') || 
+        lowerName.includes('docker') || 
+        lowerName.includes('wsl') || 
+        lowerName.includes('vmnet') || 
+        lowerName.includes('vpn') || 
+        lowerName.includes('host-only') ||
+        lowerName.includes('vethernet') ||
+        lowerName.includes('loopback')) {
+      continue;
+    }
+    
     for (const iface of interfaces[name]) {
-      // Skip internal (loopback) and non-IPv4
       if (!iface.internal && iface.family === 'IPv4') {
-        return iface.address;
+        let priority = 0;
+        if (lowerName.includes('wi-fi') || lowerName.includes('wifi') || lowerName.includes('wlan')) {
+          priority = 3;
+        } else if (lowerName.includes('ethernet') || lowerName.includes('eth')) {
+          priority = 2;
+        } else if (lowerName.startsWith('en') || lowerName.startsWith('wl')) {
+          priority = 1;
+        }
+        candidates.push({ address: iface.address, priority });
       }
     }
   }
+  
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.priority - a.priority);
+    return candidates[0].address;
+  }
+  
   return '127.0.0.1';
+}
+
+function getAllIPs() {
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+  for (const name of Object.keys(interfaces)) {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('loopback')) continue;
+    for (const iface of interfaces[name]) {
+      if (!iface.internal && iface.family === 'IPv4') {
+        ips.push({ name, address: iface.address });
+      }
+    }
+  }
+  return ips;
 }
 
 // ─── Helper: Broadcast to SSE Clients ──────────────────────────
@@ -174,9 +269,51 @@ function broadcastSSE(event, data) {
 // ─── Helper: Add to history ────────────────────────────────────
 function addToHistory(item) {
   history.unshift(item);
-  if (history.length > MAX_HISTORY) history.pop();
+  if (history.length > MAX_HISTORY) {
+    const popped = history.pop();
+    // If popped item had a saved file, let's delete it to save space (since we reached max history!)
+    if (popped && popped.filename) {
+      const fullPath = path.isAbsolute(popped.path) ? popped.path : path.resolve(__dirname, popped.path);
+      try {
+        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      } catch {}
+    }
+  }
+  saveHistory();
   broadcastSSE('new-item', item);
 }
+
+// ─── Auto-Delete Temporary Items (older than configured hours) ──────────
+setInterval(() => {
+  if (!TEMPORARY_MODE) return;
+  const now = Date.now();
+  const cleanupMs = TEMPORARY_MODE_HOURS * 60 * 60 * 1000;
+  
+  let changed = false;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    const itemTime = new Date(item.timestamp).getTime();
+    if (now - itemTime > cleanupMs) {
+      if (item.filename) {
+        const fullPath = path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path);
+        try {
+          if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+            console.log(`[TEMP] Auto-deleted expired file: ${item.filename}`);
+          }
+        } catch (e) {
+          console.error(`[TEMP] Failed to delete expired file: ${item.filename}`, e.message);
+        }
+      }
+      history.splice(i, 1);
+      changed = true;
+    }
+  }
+  if (changed) {
+    saveHistory();
+    broadcastSSE('history-update', history);
+  }
+}, 60000); // Run check every minute
 
 /**
  * Detect image format from magic bytes/file signature
@@ -490,13 +627,67 @@ app.get('/api/history', (req, res) => {
   res.json({ items, total: history.length });
 });
 
+// DELETE /api/history — Delete all history items and unlink associated files
+app.delete('/api/history', (req, res) => {
+  try {
+    for (const item of history) {
+      if (item.filename) {
+        const fullPath = path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path);
+        try {
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch (e) {
+          console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+        }
+      }
+    }
+    history.length = 0;
+    saveHistory();
+    broadcastSSE('clear', {});
+    res.json({ success: true, message: 'All history and files cleared' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/history/:id — Delete a single history item by ID and delete its file
+app.delete('/api/history/:id', (req, res) => {
+  try {
+    const id = req.params.id;
+    const index = history.findIndex(item => item.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    const item = history[index];
+    
+    if (item.filename) {
+      const fullPath = path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path);
+      try {
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+          console.log(`[DELETE] Deleted file: ${item.filename}`);
+        }
+      } catch (e) {
+        console.error(`[DELETE] Failed to delete file: ${item.filename}`, e.message);
+      }
+    }
+    
+    history.splice(index, 1);
+    saveHistory();
+    res.json({ success: true, message: 'Item deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/info — Server information
 app.get('/api/info', async (req, res) => {
   const ip = getLocalIP();
   const url = `http://${ip}:${PORT}`;
+  const mobileUrl = `${url}/m`;
+  const allIps = getAllIPs();
 
   try {
-    const qrDataUrl = await QRCode.toDataURL(url, {
+    const qrDataUrl = await QRCode.toDataURL(mobileUrl, {
       width: 300,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
@@ -507,10 +698,57 @@ app.get('/api/info', async (req, res) => {
       url,
       qrDataUrl,
       saveDir: SAVE_DIR,
-      uptime: process.uptime()
+      uptime: process.uptime(),
+      deviceName: DEVICE_NAME,
+      allIps
     });
   } catch {
-    res.json({ ip, port: PORT, url, qrDataUrl: null, saveDir: SAVE_DIR, uptime: process.uptime() });
+    res.json({
+      ip,
+      port: PORT,
+      url,
+      qrDataUrl: null,
+      saveDir: SAVE_DIR,
+      uptime: process.uptime(),
+      deviceName: DEVICE_NAME,
+      allIps
+    });
+  }
+});
+
+// GET /api/qr.png — Generate setup QR code PNG image directly
+app.get('/api/qr.png', async (req, res) => {
+  try {
+    const ip = getLocalIP();
+    const mobileUrl = `http://${ip}:${PORT}/m`;
+    res.setHeader('Content-Type', 'image/png');
+    await QRCode.toFileStream(res, mobileUrl, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+  } catch (err) {
+    console.error('[QR] Failed to generate QR image stream:', err.message);
+    res.status(500).send('Failed to generate QR code');
+  }
+});
+
+// GET /api/qr-gen.png — Generate a QR code from custom text query directly
+app.get('/api/qr-gen.png', async (req, res) => {
+  try {
+    const { text } = req.query;
+    if (!text) {
+      return res.status(400).send('No text provided');
+    }
+    res.setHeader('Content-Type', 'image/png');
+    await QRCode.toFileStream(res, text, {
+      width: 240,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+  } catch (err) {
+    console.error('[QR-GEN] Failed to generate custom QR stream:', err.message);
+    res.status(500).send('Failed to generate QR code');
   }
 });
 
@@ -518,44 +756,96 @@ app.get('/api/info', async (req, res) => {
 app.get('/api/settings', (req, res) => {
   res.json({
     saveDir: SAVE_DIR,
-    port: PORT
+    port: PORT,
+    temporaryMode: TEMPORARY_MODE,
+    deviceName: DEVICE_NAME,
+    rateLimitEnabled: RATE_LIMIT_ENABLED,
+    notificationsEnabled: NOTIFICATIONS_ENABLED,
+    temporaryModeHours: TEMPORARY_MODE_HOURS
   });
 });
 
-// POST /api/settings — Update settings (specifically saveDir)
+// POST /api/settings — Update settings (saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours)
 app.post('/api/settings', express.json(), async (req, res) => {
   try {
-    const { saveDir } = req.body;
-    if (!saveDir) {
-      return res.status(400).json({ error: 'saveDir is required' });
+    const { saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours } = req.body;
+    
+    let resolvedPath = SAVE_DIR;
+    if (saveDir) {
+      resolvedPath = path.isAbsolute(saveDir) 
+        ? saveDir 
+        : path.resolve(__dirname, saveDir);
+
+      if (!fs.existsSync(resolvedPath)) {
+        fs.mkdirSync(resolvedPath, { recursive: true });
+      }
+
+      const tempFile = path.join(resolvedPath, '.write-test-' + Math.random().toString(36).substring(7));
+      fs.writeFileSync(tempFile, 'test');
+      fs.unlinkSync(tempFile);
+      
+      SAVE_DIR = resolvedPath;
     }
 
-    // Try to resolve the path and verify we can write to it
-    const resolvedPath = path.isAbsolute(saveDir) 
-      ? saveDir 
-      : path.resolve(__dirname, saveDir);
-
-    // Create the directory if it does not exist
-    if (!fs.existsSync(resolvedPath)) {
-      fs.mkdirSync(resolvedPath, { recursive: true });
+    if (deviceName !== undefined) {
+      DEVICE_NAME = deviceName.trim() || os.hostname();
     }
 
-    // Attempt a temporary file write to verify write permissions
-    const tempFile = path.join(resolvedPath, '.write-test-' + Math.random().toString(36).substring(7));
-    fs.writeFileSync(tempFile, 'test');
-    fs.unlinkSync(tempFile);
+    if (port !== undefined) {
+      const parsedPort = parseInt(port, 10);
+      if (parsedPort > 0 && parsedPort < 65536) {
+        PORT = parsedPort;
+      }
+    }
 
-    // Update global SAVE_DIR
-    SAVE_DIR = resolvedPath;
+    if (rateLimitEnabled !== undefined) {
+      RATE_LIMIT_ENABLED = !!rateLimitEnabled;
+    }
 
-    // Save to config.json
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ saveDir, port: PORT }, null, 2));
+    if (notificationsEnabled !== undefined) {
+      NOTIFICATIONS_ENABLED = !!notificationsEnabled;
+    }
 
-    console.log(`[CONFIG] Save folder updated to: ${SAVE_DIR}`);
-    res.json({ success: true, saveDir: SAVE_DIR });
+    if (temporaryModeHours !== undefined) {
+      TEMPORARY_MODE_HOURS = parseFloat(temporaryModeHours) || 2;
+    }
+
+    const oldTempMode = TEMPORARY_MODE;
+    if (temporaryMode !== undefined) {
+      TEMPORARY_MODE = !!temporaryMode;
+      if (TEMPORARY_MODE !== oldTempMode) {
+        if (TEMPORARY_MODE) {
+          try { if (fs.existsSync(HISTORY_FILE)) fs.unlinkSync(HISTORY_FILE); } catch {}
+        } else {
+          saveHistory();
+        }
+      }
+    }
+
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({
+      saveDir: SAVE_DIR,
+      port: PORT,
+      temporaryMode: TEMPORARY_MODE,
+      deviceName: DEVICE_NAME,
+      rateLimitEnabled: RATE_LIMIT_ENABLED,
+      notificationsEnabled: NOTIFICATIONS_ENABLED,
+      temporaryModeHours: TEMPORARY_MODE_HOURS
+    }, null, 2));
+
+    console.log(`[CONFIG] Settings updated: SaveFolder=${SAVE_DIR}, TempMode=${TEMPORARY_MODE}, DeviceName=${DEVICE_NAME}, Port=${PORT}, RateLimit=${RATE_LIMIT_ENABLED}, Notifications=${NOTIFICATIONS_ENABLED}, TempHours=${TEMPORARY_MODE_HOURS}`);
+    res.json({
+      success: true,
+      saveDir: SAVE_DIR,
+      temporaryMode: TEMPORARY_MODE,
+      deviceName: DEVICE_NAME,
+      port: PORT,
+      rateLimitEnabled: RATE_LIMIT_ENABLED,
+      notificationsEnabled: NOTIFICATIONS_ENABLED,
+      temporaryModeHours: TEMPORARY_MODE_HOURS
+    });
   } catch (err) {
-    console.error('[CONFIG] Failed to update save folder:', err.message);
-    res.status(400).json({ error: `Cannot write to folder: ${err.message}` });
+    console.error('[CONFIG] Failed to update settings:', err.message);
+    res.status(400).json({ error: `Failed to save settings: ${err.message}` });
   }
 });
 
@@ -598,8 +888,24 @@ app.post('/api/settings/browse', async (req, res) => {
 });
 
 // POST /api/send-to-phone — Queue content for iPhone to pick up (two-way)
-app.post('/api/send-to-phone', (req, res) => {
+app.post('/api/send-to-phone', upload.single('file'), (req, res) => {
   try {
+    if (req.file) {
+      const item = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        type: 'file',
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype,
+        timestamp: new Date().toISOString()
+      };
+      pendingForPhone.unshift(item);
+      if (pendingForPhone.length > 50) pendingForPhone.pop();
+      broadcastSSE('phone-queued', item);
+      return res.json({ success: true, id: item.id, message: 'File queued for iPhone' });
+    }
+
     const { type, text, imageUrl } = req.body;
 
     if (type === 'text' && text) {
@@ -628,10 +934,87 @@ app.post('/api/send-to-phone', (req, res) => {
       return res.json({ success: true, id: item.id, message: 'Image queued for iPhone' });
     }
 
-    return res.status(400).json({ error: 'Provide type ("text" or "image") and content' });
+    return res.status(400).json({ error: 'Provide type ("text", "image" or upload a file) and content' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// DELETE /api/pending/:id — PC cancels a queued pending item
+app.delete('/api/pending/:id', (req, res) => {
+  const idx = pendingForPhone.findIndex(item => item.id === req.params.id);
+  if (idx !== -1) {
+    const [removed] = pendingForPhone.splice(idx, 1);
+    broadcastSSE('phone-ack', removed);
+    res.json({ success: true, message: 'Pending item canceled' });
+  } else {
+    res.status(404).json({ error: 'Pending item not found' });
+  }
+});
+
+
+
+// GET /api/stats — Get dashboard statistics
+app.get('/api/stats', (req, res) => {
+  try {
+    let totalTransfers = history.length;
+    let totalBytes = 0;
+    let filesCount = 0;
+    
+    for (const item of history) {
+      if (item.size) {
+        totalBytes += item.size;
+      }
+      if (item.type === 'file' || item.type === 'image') {
+        filesCount++;
+      }
+    }
+    
+    res.json({
+      transfers: totalTransfers,
+      bytes: totalBytes,
+      uptime: process.uptime(),
+      files: filesCount,
+      connections: sseClients.size
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/storage — Scan storage directory usage
+app.get('/api/storage', (req, res) => {
+  try {
+    if (!fs.existsSync(SAVE_DIR)) {
+      return res.json({ count: 0, size: 0, limit: 5 * 1024 * 1024 * 1024 });
+    }
+    const files = fs.readdirSync(SAVE_DIR);
+    let totalSize = 0;
+    let count = 0;
+    for (const file of files) {
+      if (file.startsWith('.')) continue;
+      const filePath = path.join(SAVE_DIR, file);
+      try {
+        if (fs.existsSync(filePath)) {
+          const stat = fs.statSync(filePath);
+          if (stat.isFile()) {
+            totalSize += stat.size;
+            count++;
+          }
+        }
+      } catch {}
+    }
+    res.json({ count, size: totalSize, limit: 5 * 1024 * 1024 * 1024 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/history/export — Export transfer history as JSON file
+app.get('/api/history/export', (req, res) => {
+  res.setHeader('Content-Disposition', 'attachment; filename=airodrop_history.json');
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(history, null, 2));
 });
 
 // GET /api/pending — iPhone polls for pending items
@@ -887,6 +1270,16 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
   } catch (err) {
     console.error('[SEND] Error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Serve local client-side qrcode library
+app.get('/vendor/qrcode.min.js', (req, res) => {
+  const qrLibPath = path.join(__dirname, 'node_modules', 'qrcode', 'build', 'qrcode.min.js');
+  if (fs.existsSync(qrLibPath)) {
+    res.sendFile(qrLibPath);
+  } else {
+    res.status(404).send('QRCode library not found');
   }
 });
 

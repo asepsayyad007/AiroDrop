@@ -650,12 +650,20 @@
               <span class="receive-content">${escapeHtml(item.content)}</span>
               <span class="receive-time">${timeAgo(item.timestamp)}</span>
             </div>`;
-        } else if (item.type === 'image' && item.url) {
+        } else if (item.type === 'image') {
+          const downloadUrl = item.filename ? `/received/${item.filename}` : item.url;
           return `
             <div class="receive-item">
               <span class="receive-badge image">IMG</span>
-              <span class="receive-content">Image from PC</span>
-              <a href="${item.url}" download="from-pc.jpg" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;">Save</a>
+              <span class="receive-content">${escapeHtml(item.originalName || 'Image from PC')}</span>
+              <a href="${downloadUrl}" download="${escapeAttr(item.originalName || 'image.jpg')}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;">Save</a>
+            </div>`;
+        } else if (item.type === 'file') {
+          return `
+            <div class="receive-item">
+              <span class="receive-badge file" style="background:rgba(147, 51, 234, 0.15);color:#a855f7;">FILE</span>
+              <span class="receive-content">${escapeHtml(item.originalName || item.filename)} (${formatSize(item.size || 0)})</span>
+              <a href="/received/${item.filename}" download="${escapeAttr(item.originalName || item.filename)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;">Download</a>
             </div>`;
         }
         return '';
@@ -734,6 +742,12 @@
     function escapeAttr(s) {
       if (!s) return '';
       return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
     function timeAgo(iso) {

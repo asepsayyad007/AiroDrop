@@ -21,11 +21,17 @@ A self-hosted local network alternative to Apple's AirDrop and Universal Clipboa
 ## Core Features
 
 *   **Near-Zero Latency Clipboard Sync:** Copy text on your phone and instantly paste it on your PC.
+*   **Bidirectional Sharing (PC ⇄ Mobile):** Send text, images, and arbitrary files (PDFs, MP3s, ZIPs, etc.) from PC to mobile directly using the Web Dashboard, and download them from the mobile setups page (`/m`).
+*   **Interactive Multi-Theme UI:** Gorgeous responsive design featuring 5 themes: **Liquid Glass** (default with frosted glass effects and animated mesh background), **Dark Mode**, **Light Mode**, **Midnight Blue**, and **Aurora Green**.
+*   **Premium Utilities:**
+    *   **Statistics Panel:** Real-time metrics for total transfers, data size, server uptime, and active connection tracking.
+    *   **Dashboard PIN Lock:** Secure access with an optional Access PIN lock screen.
+    *   **History Export:** Download your entire transfer logs and details as a JSON file.
+    *   **Storage Scan Indicator:** Tracks disk usage and file counts inside your save folder.
 *   **Multi-Format File Support:** Support for transferring PDFs, MP3s, ZIPs, docx, or any file up to 50MB.
 *   **Native System Clipboard Integration:** Transferred images are copied directly to your PC clipboard so they can be pasted immediately into Discord, Figma, Photoshop, or Word.
-*   **Cross-Platform Native folder Picker:** Click "Browse..." on the settings panel in the dashboard to choose any folder on your PC using the native Windows, Linux, or macOS directory dialog.
+*   **Cross-Platform Native Folder Picker:** Choose any folder on your PC using the native Windows, Linux, or macOS directory dialog.
 *   **System Notifications:** Desktop notifications inform you when files or clipboard text are received.
-*   **Responsive Web Dashboard:** Modern, clean interface to view transfer history, clear list, queue items for your phone, and update folder paths.
 
 ---
 
@@ -90,13 +96,21 @@ Configuration is managed via `config.json` in the project root:
 ```json
 {
   "saveDir": "./received",
-  "port": 3478
+  "port": 3478,
+  "temporaryMode": false,
+  "deviceName": "My PC",
+  "accessPin": ""
 }
 ```
 *   `saveDir`: Path to save received images and files (absolute or relative to project root).
 *   `port`: Port the local server listens on.
+*   `temporaryMode`: When set to `true`, transfer history and received files are stored temporarily. Items are deleted after 2 hours and do not persist across server reboots.
+*   `deviceName`: Friendly name for the server shown on the mobile setup guide and dashboard header.
+*   `accessPin`: Numeric PIN code to restrict dashboard access (optional, leave blank to disable lock screen).
 
-You can modify `saveDir` dynamically from the Settings tab in the Web Dashboard. Clicking the **"Browse..."** button triggers a native directory picker window on the host OS.
+You can modify these settings dynamically from the Settings tab in the Web Dashboard. Clicking the **"Browse..."** button triggers a native directory picker window on the host OS.
+
+History is stored persistently in `history.json` when `temporaryMode` is set to `false`. You can delete individual items or clear all history directly from the Web Dashboard. Deleting an item from the dashboard also unlinks its corresponding file on your PC.
 
 ---
 
