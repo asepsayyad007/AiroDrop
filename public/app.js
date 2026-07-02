@@ -59,11 +59,55 @@
           e.preventDefault();
           e.stopPropagation();
           const theme = option.getAttribute('data-theme');
-          setTheme(theme);
+          triggerThemeTransition(e, theme);
           themeDropdown.classList.remove('open');
         });
       });
     }
+  }
+
+  function triggerThemeTransition(event, themeName) {
+    const rect = $('#themeBtn').getBoundingClientRect();
+    const x = event ? event.clientX : (rect.left + rect.width / 2);
+    const y = event ? event.clientY : (rect.top + rect.height / 2);
+    
+    const ripple = document.createElement('div');
+    ripple.className = 'theme-transition-ripple';
+    
+    // Smooth expanding backdrop
+    Object.assign(ripple.style, {
+      position: 'fixed',
+      left: `${x}px`,
+      top: `${y}px`,
+      width: '12px',
+      height: '12px',
+      borderRadius: '50%',
+      background: 'var(--accent)',
+      transform: 'translate(-50%, -50%) scale(0)',
+      zIndex: '9999',
+      pointerEvents: 'none',
+      transition: 'transform 0.55s cubic-bezier(0.1, 0.8, 0.35, 1), opacity 0.55s ease',
+      opacity: '0.8'
+    });
+    
+    document.body.appendChild(ripple);
+    
+    // Force reflow
+    ripple.offsetWidth;
+    
+    const maxRadius = Math.max(window.innerWidth, window.innerHeight) * 2.5;
+    ripple.style.transform = `translate(-50%, -50%) scale(${maxRadius / 6})`;
+    
+    setTimeout(() => {
+      setTheme(themeName);
+    }, 220);
+    
+    setTimeout(() => {
+      ripple.style.opacity = '0';
+      ripple.addEventListener('transitionend', () => {
+        ripple.remove();
+      });
+    }, 450);
   }
 
   function setTheme(themeName) {
@@ -172,9 +216,7 @@
   function connectSSE() {
     if (sseSource) sseSource.close();
 
-    const protocol = window.location.protocol;
-    const sseUrl = `${protocol}//${window.location.host}/api/events`;
-    sseSource = new EventSource(sseUrl);
+    sseSource = new EventSource('/api/events');
 
     sseSource.onopen = () => {
       setConnectionStatus(true);

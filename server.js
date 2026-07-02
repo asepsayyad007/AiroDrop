@@ -127,6 +127,24 @@ const RATE_WINDOW = 60000;  // 1 minute
 const RATE_MAX = 60;        // 60 requests per minute per IP
 
 function rateLimit(req, res, next) {
+  if (!RATE_LIMIT_ENABLED) return next();
+
+  const cleanPath = req.path.toLowerCase();
+  if (
+    cleanPath === '/api/events' ||
+    cleanPath === '/' ||
+    cleanPath === '/m' ||
+    cleanPath === '/style.css' ||
+    cleanPath === '/app.js' ||
+    cleanPath === '/manifest.json' ||
+    cleanPath === '/sw.js' ||
+    cleanPath === '/favicon.ico' ||
+    cleanPath.startsWith('/vendor/') ||
+    cleanPath.startsWith('/received/')
+  ) {
+    return next();
+  }
+
   const ip = req.ip || req.connection.remoteAddress;
   const now = Date.now();
   const entry = rateLimitMap.get(ip) || { count: 0, start: now };

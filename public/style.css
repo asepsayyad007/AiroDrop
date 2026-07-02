@@ -253,6 +253,8 @@ body::before {
 
 /* ─── Header ───────────────────────────────────────────────── */
 .header {
+  position: relative;
+  z-index: 500;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -733,6 +735,7 @@ body::before {
 /* ─── Feed Item Card ───────────────────────────────────────── */
 .feed-item {
   display: flex;
+  flex-direction: column;
   gap: 14px;
   padding: 16px 18px;
   background: var(--glass-bg);
