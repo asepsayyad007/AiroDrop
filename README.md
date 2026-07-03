@@ -114,6 +114,14 @@ One-tap widget on your Home Screen to upload whatever is in your phone's clipboa
 ClipboardToPc ( Text & Image only) ( Home screen widget )
 iCloud link : `https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b`
 
+### 📲 Quick Install QR Codes
+Scan these QR codes directly with your iPhone to install the shortcuts:
+
+| 1. Share to PC | 2. Send Clipboard |
+| :-: | :-: |
+| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b) |
+| [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d) | [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b) |
+
 
 ---
 
@@ -122,18 +130,12 @@ iCloud link : `https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b
 Configuration is managed via `config.json` inside your system's user data directories, protecting write privileges:
 ```json
 {
-  "saveDir": "./received",
-  "port": 3478,
-  "temporaryMode": false,
-  "deviceName": "My PC",
-  "accessPin": ""
+  "saveDir": "C:\\path\\to\\save",
+  "port": 3478
 }
 ```
-*   `saveDir`: Path to save received images and files.
-*   `port`: Port the local server listens on.
-*   "temporaryMode": Temporarily store files (deleted after 2 hours).
-*   `deviceName`: Name shown on mobile guides and headers.
-*   `accessPin`: Numeric PIN lock screen restriction.
+*   `saveDir`: Path to save received images and files on your PC.
+*   `port`: Port the local network server listens on (default is `3478`).
 
 ---
 
