@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const QRCode = require('qrcode');
 
 const statusIndicator = document.getElementById('statusIndicator');
 const statusText = document.getElementById('statusText');
@@ -13,6 +14,9 @@ const btnChangeDir = document.getElementById('btnChangeDir');
 const dirPathText = document.getElementById('dirPath');
 const btnKillAll = document.getElementById('btnKillAll');
 const githubLink = document.getElementById('githubLink');
+const btnShowShortcuts = document.getElementById('btnShowShortcuts');
+const shortcutsModal = document.getElementById('shortcutsModal');
+const closeModal = document.getElementById('closeModal');
 
 // Initialization
 ipcRenderer.send('get-status');
@@ -94,5 +98,33 @@ githubLink.addEventListener('click', (e) => {
 btnKillAll.addEventListener('click', () => {
   if (confirm("Are you sure you want to completely force close AiroDrop and all its background processes?")) {
     ipcRenderer.send('force-kill-all');
+  }
+});
+
+let qrsGenerated = false;
+function generateShortcutsQRs() {
+  if (qrsGenerated) return;
+  const opts = { width: 130, margin: 1, errorCorrectionLevel: 'H' };
+  QRCode.toCanvas(document.getElementById('canvasShareToPC'), 'https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d', opts, (err) => {
+    if (err) console.error('[QR] ShareToPC failed:', err);
+  });
+  QRCode.toCanvas(document.getElementById('canvasClipboardToPC'), 'https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b', opts, (err) => {
+    if (err) console.error('[QR] ClipboardToPC failed:', err);
+  });
+  qrsGenerated = true;
+}
+
+btnShowShortcuts.addEventListener('click', () => {
+  shortcutsModal.style.display = 'flex';
+  generateShortcutsQRs();
+});
+
+closeModal.addEventListener('click', () => {
+  shortcutsModal.style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+  if (e.target === shortcutsModal) {
+    shortcutsModal.style.display = 'none';
   }
 });

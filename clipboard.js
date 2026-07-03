@@ -1,12 +1,29 @@
 /**
  * clipboard.js — Cross-platform clipboard integration
- * Uses clipboardy for Windows/Mac/Linux support
+ * Uses Electron's native clipboard when running inside Electron,
+ * and falls back to clipboardy/PowerShell when running in terminal mode.
  */
 
 const path = require('path');
 const fs = require('fs');
 
-// clipboardy v4 is ESM-only; use dynamic import()
+// Check if running inside Electron
+const isElectron = !!(process.versions && process.versions.electron);
+
+let electronClipboard = null;
+let electronNativeImage = null;
+
+if (isElectron) {
+  try {
+    const electron = require('electron');
+    electronClipboard = electron.clipboard;
+    electronNativeImage = electron.nativeImage;
+  } catch (e) {
+    console.error('[Clipboard] Failed to load Electron clipboard modules:', e.message);
+  }
+}
+
+// clipboardy v4 is ESM-only; use dynamic import() as a fallback
 let clipboardyWrite = null;
 async function getClipboardy() {
   if (!clipboardyWrite) {
@@ -21,6 +38,11 @@ async function getClipboardy() {
  */
 async function copyText(text) {
   try {
+    if (electronClipboard) {
+      electronClipboard.writeText(text);
+      return { success: true };
+    }
+    // Fallback for terminal-only node execution
     const write = await getClipboardy();
     await write(text);
     return { success: true };
@@ -31,15 +53,25 @@ async function copyText(text) {
 }
 
 /**
- * Write image file to the clipboard (Windows only — uses PowerShell)
- * Falls back to just saving the file if clipboard write fails
+ * Write image file to the clipboard
  */
 async function copyImage(imagePath) {
   try {
+    if (electronClipboard && electronNativeImage) {
+      const absPath = path.resolve(imagePath);
+      if (fs.existsSync(absPath)) {
+        const nativeImg = electronNativeImage.createFromPath(absPath);
+        electronClipboard.writeImage(nativeImg);
+        return { success: true };
+      } else {
+        throw new Error('Image file does not exist: ' + absPath);
+      }
+    }
+
+    // Fallback for terminal-only node execution (Windows only)
     if (process.platform === 'win32') {
       const { execSync } = require('child_process');
       const absPath = path.resolve(imagePath).replace(/\//g, '\\');
-      // Use PowerShell to load image into clipboard
       const psScript = `
 Add-Type -AssemblyName System.Windows.Forms;
 $img = [System.Drawing.Image]::FromFile('${absPath}');
@@ -52,7 +84,7 @@ $img.Dispose();
       });
       return { success: true };
     } else {
-      console.log('[Clipboard] Image clipboard copy is only supported on Windows');
+      console.log('[Clipboard] Image clipboard copy is only supported on Windows in terminal mode');
       return { success: false, error: 'Image clipboard copy only supported on Windows' };
     }
   } catch (err) {

@@ -32,6 +32,10 @@
       <button id="btnDashboard" class="btn btn-secondary">Open Dashboard</button>
     </div>
 
+    <div class="actions" style="margin-top: 10px;">
+      <button id="btnShowShortcuts" class="btn btn-primary" style="background-color: #007aff; border-color: #007aff;">Setup iPhone Shortcuts</button>
+    </div>
+
     <div class="settings">
       <label class="toggle">
         <input type="checkbox" id="toggleAutoStart">
@@ -54,6 +58,35 @@
 
     <div class="footer-credits">
       Created by Asep Sayyad | <a href="#" id="githubLink">github.com/asepsayyad007</a>
+    </div>
+  </div>
+
+  <!-- iOS Shortcuts Setup Modal -->
+  <div id="shortcutsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-modal" id="closeModal">&times;</span>
+      <h2>iOS Shortcuts Setup</h2>
+      <p class="modal-subtitle">Scan these QR codes directly with your iPhone camera to install the shortcuts:</p>
+      
+      <div class="shortcuts-grid">
+        <div class="shortcut-qr-card">
+          <h4>1. Share to PC</h4>
+          <p>Send files/photos/text from any Share Sheet</p>
+          <div class="qr-box">
+            <canvas id="canvasShareToPC"></canvas>
+          </div>
+          <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" class="qr-link">Get Shortcut</a>
+        </div>
+        
+        <div class="shortcut-qr-card">
+          <h4>2. Send Clipboard</h4>
+          <p>One-tap widget to send phone clipboard</p>
+          <div class="qr-box">
+            <canvas id="canvasClipboardToPC"></canvas>
+          </div>
+          <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" class="qr-link">Get Shortcut</a>
+        </div>
+      </div>
     </div>
   </div>
 

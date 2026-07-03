@@ -222,16 +222,25 @@
           <p class="settings-subtitle" style="margin-bottom: 16px;">Configure your iPhone to send files and clipboard content to this PC</p>
           <div class="setup-grid">
             <!-- QR Code Card -->
-            <div class="setup-card" style="text-align:center; padding: 16px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md);">
-              <h3>Scan with iPhone</h3>
-              <p style="font-size:0.8rem;color:var(--text-secondary); margin-bottom: 8px;">Open Camera and point at this QR code</p>
-              <div class="qr-container" id="mobileQrContainer">
-                <div class="qr-placeholder">Loading QR code...</div>
+            <div class="setup-card" style="text-align:center; padding: 16px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); grid-column: span 1;">
+              <h3>Scan to Install iOS Shortcuts</h3>
+              <p style="font-size:0.8rem;color:var(--text-secondary); margin-bottom: 12px;">Scan directly with your iPhone camera</p>
+              <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: var(--radius-sm); width: 140px; display: flex; flex-direction: column; align-items: center;">
+                  <h4 style="font-size: 0.8rem; margin-bottom: 6px; white-space: nowrap;">1. Share to PC</h4>
+                  <div style="background: white; padding: 6px; border-radius: var(--radius-sm); width: 120px; height: 120px;">
+                    <img src="/api/qr-gen.png?text=https%3A%2F%2Fwww.icloud.com%2Fshortcuts%2Fefd4af984d884e0eb8e8ba3ba319ce4d" alt="ShareToPC QR" style="width: 100%; height: 100%; display: block;">
+                  </div>
+                  <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" style="margin-top:6px; color:var(--accent-light); text-decoration:none; font-size:0.75rem;">Get Shortcut</a>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: var(--radius-sm); width: 140px; display: flex; flex-direction: column; align-items: center;">
+                  <h4 style="font-size: 0.8rem; margin-bottom: 6px; white-space: nowrap;">2. Send Clipboard</h4>
+                  <div style="background: white; padding: 6px; border-radius: var(--radius-sm); width: 120px; height: 120px;">
+                    <img src="/api/qr-gen.png?text=https%3A%2F%2Fwww.icloud.com%2Fshortcuts%2F1f341cd7a57041958a87ce92f8acaa8b" alt="ClipboardToPC QR" style="width: 100%; height: 100%; display: block;">
+                  </div>
+                  <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" style="margin-top:6px; color:var(--accent-light); text-decoration:none; font-size:0.75rem;">Get Shortcut</a>
+                </div>
               </div>
-              <a href="/m" target="_blank" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;color:var(--accent-light);text-decoration:none;font-size:0.8rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Open on iPhone
-              </a>
             </div>
 
             <!-- Steps Card -->

@@ -263,3 +263,119 @@ input:checked + .slider:before {
 .footer-credits a:hover {
   text-decoration: underline;
 }
+
+/* Modal styling */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #1a1a1a;
+  padding: 25px;
+  border-radius: 12px;
+  max-width: 90%;
+  width: 580px;
+  text-align: center;
+  border: 1px solid #333;
+  color: white;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 5px;
+  margin-bottom: 20px;
+}
+
+.close-modal {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 28px;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-modal:hover {
+  color: #fff;
+}
+
+.shortcuts-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.shortcut-qr-card {
+  background: #111;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #222;
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.shortcut-qr-card h4 {
+  margin: 0 0 5px 0;
+  font-size: 15px;
+  color: #fff;
+}
+
+.shortcut-qr-card p {
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  color: #888;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.qr-box {
+  background: white;
+  padding: 8px;
+  border-radius: 6px;
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.qr-link {
+  margin-top: 12px;
+  color: #007aff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.qr-link:hover {
+  text-decoration: underline;
+}
