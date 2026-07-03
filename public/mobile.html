@@ -378,6 +378,19 @@
       color: var(--accent-light);
       word-break: break-all;
     }
+    /* Skeleton Shimmer Loader */
+    .skeleton-row {
+      height: 44px;
+      margin: 8px 0;
+      border-radius: 12px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
   </style>
 </head>
 <body>
@@ -412,10 +425,13 @@
       </div>
     </div>
 
-    <button class="btn" id="checkPendingBtn" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top:4px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Check for new items
-    </button>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; gap: 12px;">
+      <button class="btn" id="checkPendingBtn" style="background: rgba(255,255,255,0.08); color: var(--text2); margin: 0; flex: 1;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Check for new items
+      </button>
+      <span id="lastCheckedText" style="font-size: 0.75rem; color: var(--text3); font-weight: 500; white-space: nowrap;">Checked just now</span>
+    </div>
 
     <div style="height: 30px;"></div>
   </div>
@@ -438,41 +454,124 @@
 
   <script>
     const SERVER = window.location.origin;
-    let pendingPhotoBase64 = null;
-    let pendingPhotoFile = null;
+    // (photo vars removed — not used in this page)
 
-    // ─── Init ─────────────────────────────────────────────────
+    // Auto-poll state
+    let _autoPollTimer = null;
+    let _lastCheckedTime = null;
+    let _isReconnecting = false;
+    let _reconnectTimer = null;
+    let _reconnectCountdown = 15;
+
+    // ─── Init ─────────────────────────────────────
     async function init() {
       setupPWA();
       checkConnection();
-      document.getElementById('checkPendingBtn').addEventListener('click', fetchPending);
-      fetchPending(); // Check on load
+      document.getElementById('checkPendingBtn').addEventListener('click', () => {
+        fetchPending();
+        updateLastChecked();
+      });
+      fetchPending();
+      startAutoPoll();
     }
 
-    // ─── Connection Check ─────────────────────────────────────
+    // ─── Auto-poll every 10 seconds ───────────────────────
+    function startAutoPoll() {
+      if (_autoPollTimer) clearInterval(_autoPollTimer);
+      _autoPollTimer = setInterval(async () => {
+        await fetchPending();
+        updateLastChecked();
+      }, 10000);
+    }
+
+    function updateLastChecked() {
+      _lastCheckedTime = Date.now();
+      const el = document.getElementById('lastCheckedText');
+      if (el) el.textContent = 'Just checked';
+    }
+
+    // Update "last checked Xs ago" every second
+    setInterval(() => {
+      if (!_lastCheckedTime) return;
+      const sec = Math.round((Date.now() - _lastCheckedTime) / 1000);
+      const el = document.getElementById('lastCheckedText');
+      if (el) {
+        el.textContent = sec < 5 ? 'Just checked' : `Checked ${sec}s ago`;
+      }
+    }, 1000);
+
+    // ─── Connection Check + Reconnect Loop ─────────────────
     async function checkConnection() {
+      const dot = document.getElementById('connDot');
+      const text = document.getElementById('connText');
       try {
         const res = await fetch('/api/info', { signal: AbortSignal.timeout(5000) });
         const info = await res.json();
-        document.getElementById('connDot').classList.add('ok');
-        document.getElementById('connText').textContent = `Connected to ${info.ip}`;
+        dot.className = 'dot ok';
+        text.textContent = `Connected to ${info.ip}`;
+        _isReconnecting = false;
+        if (_reconnectTimer) { clearInterval(_reconnectTimer); _reconnectTimer = null; }
 
         // Set fallback URL
-        const fallbackUrls = document.querySelectorAll('.fallbackUrlText');
-        fallbackUrls.forEach(el => el.textContent = `${info.url}/api/send`);
+        document.querySelectorAll('.fallbackUrlText').forEach(el => el.textContent = `${info.url}/api/send`);
       } catch {
-        document.getElementById('connDot').classList.add('err');
-        document.getElementById('connText').textContent = 'Cannot reach PC — check WiFi';
+        dot.className = 'dot err';
+        if (!_isReconnecting) {
+          _isReconnecting = true;
+          _reconnectCountdown = 15;
+          _reconnectTimer = setInterval(() => {
+            _reconnectCountdown--;
+            if (text) text.textContent = `No connection — retrying in ${_reconnectCountdown}s`;
+            if (_reconnectCountdown <= 0) {
+              _reconnectCountdown = 15;
+              checkConnection();
+            }
+          }, 1000);
+        }
       }
     }
 
     // ─── Receive from PC ──────────────────────────────────────
     async function fetchPending() {
+      showSkeleton('textInboxList');
+      showSkeleton('fileInboxList');
       try {
         const res = await fetch('/api/pending');
         const data = await res.json();
         renderPending(data.items);
-      } catch { /* silent */ }
+      } catch {
+        hideSkeleton('textInboxList', 'No texts received yet');
+        hideSkeleton('fileInboxList', 'No files received yet');
+      }
+    }
+
+    function showSkeleton(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = `
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>`;
+    }
+
+    function hideSkeleton(id, msg) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = `<div class="empty-receive">${msg}</div>`;
+    }
+
+    function getFileTypeIcon(mimeType) {
+      if (!mimeType) return '📄';
+      const type = mimeType.toLowerCase();
+      if (type.startsWith('image/')) return '🖼️';
+      if (type.startsWith('video/')) return '🎥';
+      if (type.startsWith('audio/')) return '🎵';
+      if (type.includes('pdf')) return '📄';
+      if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) return '🗃️';
+      if (type.includes('word') || type.includes('document') || type.includes('officedocument')) return '📝';
+      if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return '📊';
+      if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
+      if (type.includes('text/')) return '📋';
+      return '📄';
     }
 
     function renderPending(items) {
@@ -487,7 +586,7 @@
         textList.innerHTML = '<div class="empty-receive">No texts received yet</div>';
       } else {
         textList.innerHTML = textItems.map(item => `
-          <div class="receive-item" onclick="handleReceiveText('${escapeAttr(item.content)}')">
+          <div class="receive-item" onclick="handleReceiveText('${escapeAttr(item.content)}', '${escapeAttr(item.id)}')">
             <span class="receive-badge text">Copy</span>
             <span class="receive-content">${escapeHtml(item.content)}</span>
             <span class="receive-time">${timeAgo(item.timestamp)}</span>
@@ -504,18 +603,20 @@
             ? (item.filename ? `/received/${item.filename}` : item.url)
             : `/received/${item.filename}`;
           const displayName = isImg ? (item.filename || 'Image') : (item.originalName || item.filename || 'File');
+          const mime = item.mimeType || item.mimetype || (isImg ? 'image/jpeg' : '');
+          const icon = getFileTypeIcon(mime);
           return `
             <div class="receive-item" style="cursor: default;">
-              <span class="receive-badge image" style="${isImg ? '' : 'background:rgba(147, 51, 234, 0.15);color:#a855f7;'}">${isImg ? 'IMG' : 'FILE'}</span>
-              <span class="receive-content">${escapeHtml(item.originalName || displayName)}</span>
-              <a href="${downloadUrl}" download="${escapeAttr(item.originalName || displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;margin-left:auto;">Download</a>
+              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${icon}</span>
+              <span class="receive-content">${escapeHtml(displayName)}</span>
+              <a href="${downloadUrl}" download="${escapeAttr(displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">Download</a>
             </div>
           `;
         }).join('');
       }
     }
 
-    async function handleReceiveText(text) {
+    async function handleReceiveText(text, itemId) {
       try {
         await navigator.clipboard.writeText(text);
         showToast('Copied to clipboard');
@@ -529,8 +630,13 @@
         document.body.removeChild(ta);
         showToast('Copied to clipboard');
       }
-      // Acknowledge
-      // (find the item id from the DOM - simplified: just refresh)
+      // Acknowledge item on server so it's removed from pending
+      if (itemId) {
+        try {
+          await fetch(`/api/pending/${itemId}/ack`, { method: 'POST' });
+        } catch { /* silent */ }
+      }
+      // Refresh inbox after ack
       fetchPending();
     }
 

@@ -1818,3 +1818,32 @@ body.is-electron .web-footer {
   transform: translateY(-2px);
   box-shadow: var(--shadow-glow);
 }
+
+/* Entrance Animation for Feed Items */
+.feed-item.is-new {
+  animation: slideInFade 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInFade {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Selected file preview enhancement */
+.file-preview-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}

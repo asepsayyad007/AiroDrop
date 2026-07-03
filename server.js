@@ -124,25 +124,45 @@ function loadHistory() {
   }
 }
 
+// Debounce timer for async history writes
+let _saveHistoryTimer = null;
+
 function saveHistory() {
   if (TEMPORARY_MODE) {
     try {
-      if (fs.existsSync(HISTORY_FILE)) {
-        fs.unlinkSync(HISTORY_FILE);
-      }
+      if (fs.existsSync(HISTORY_FILE)) fs.unlinkSync(HISTORY_FILE);
     } catch {}
     return;
   }
-  try {
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
-  } catch (err) {
-    console.error('[HISTORY] Failed to save history:', err.message);
-  }
+  // Debounce: coalesce rapid writes into one write 500ms after last call
+  if (_saveHistoryTimer) clearTimeout(_saveHistoryTimer);
+  _saveHistoryTimer = setTimeout(() => {
+    const payload = JSON.stringify(history, null, 2);
+    fs.writeFile(HISTORY_FILE, payload, 'utf8', (err) => {
+      if (err) console.error('[HISTORY] Failed to save history:', err.message);
+    });
+  }, 500);
 }
 
 // Load initial history is now deferred to init()
 const pendingForPhone = [];  // Items queued for iPhone to pick up
 const sseClients = new Set(); // SSE connected clients
+
+// ─── Pending TTL Cleanup (30 min auto-expire) ──────────────────
+const PENDING_TTL_MS = 30 * 60 * 1000; // 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  let changed = false;
+  for (let i = pendingForPhone.length - 1; i >= 0; i--) {
+    const item = pendingForPhone[i];
+    if (now - new Date(item.timestamp).getTime() > PENDING_TTL_MS) {
+      const [removed] = pendingForPhone.splice(i, 1);
+      broadcastSSE('phone-ack', removed);
+      console.log(`[PENDING-TTL] Expired pending item: ${removed.id} (${removed.type})`);
+      changed = true;
+    }
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes
 
 // ─── Simple Rate Limiter ───────────────────────────────────────
 const rateLimitMap = new Map();
@@ -1143,6 +1163,19 @@ app.post('/api/pending/:id/ack', (req, res) => {
   }
 });
 
+// ─── SSE Heartbeat (keeps connections alive, prunes dead clients) ──
+setInterval(() => {
+  const deadClients = [];
+  for (const client of sseClients) {
+    try {
+      client.write(': heartbeat\n\n');
+    } catch {
+      deadClients.push(client);
+    }
+  }
+  deadClients.forEach(c => sseClients.delete(c));
+}, 30000); // Every 30 seconds
+
 // GET /api/events — SSE endpoint for real-time updates
 app.get('/api/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -1392,8 +1425,18 @@ app.use('/received', (req, res, next) => {
   express.static(SAVE_DIR)(req, res, next);
 });
 
-// Serve static dashboard files
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static dashboard files with 1-hour cache for JS/CSS/images
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    const cacheable = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
+    if (cacheable.includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    } else {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 // GET /m — Mobile setup page (separate from SPA fallback)
 app.get('/m', (req, res) => {

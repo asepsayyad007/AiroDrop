@@ -222,9 +222,10 @@
               <p>Click or drop files here</p>
             </div>
             <input type="file" id="sendFileInput" hidden>
-            <div id="sendFilePreview" class="send-image-preview" style="display:none;">
+            <div id="sendFilePreview" class="send-image-preview" style="display:none; flex-direction:column; align-items:center;">
               <img id="sendPreviewImg" alt="Preview">
-              <span id="sendFileName" style="font-size:0.82rem;color:var(--text-secondary);"></span>
+              <div id="sendFilePreviewIcon" class="file-preview-icon" style="display:none;">📄</div>
+              <span id="sendFileName" style="font-size:0.82rem;color:var(--text-secondary); margin-top:8px;"></span>
             </div>
             <button class="btn btn-primary" id="sendFileBtn" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>

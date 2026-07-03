@@ -364,6 +364,7 @@
   function addItemToState(item) {
     const exists = allItems.some(i => i.id === item.id);
     if (!exists) {
+      item.isNew = true;
       allItems.unshift(item);
       if (allItems.length > 100) allItems.pop();
     }
@@ -393,10 +394,18 @@
 
     feedEl.innerHTML = filtered.map(item => {
       const timeStr = formatTime(item.timestamp);
+      const isNewClass = item.isNew ? ' is-new' : '';
+      if (item.isNew) {
+        setTimeout(() => {
+          const el = document.getElementById(`item-${item.id}`);
+          if (el) el.classList.remove('is-new');
+          item.isNew = false;
+        }, 1000);
+      }
       
       if (item.type === 'text') {
         return `
-          <div class="feed-item type-text" id="item-${item.id}">
+          <div class="feed-item type-text${isNewClass}" id="item-${item.id}">
             <div class="item-header" style="width: 100%;">
               <span class="item-type-badge text">Text</span>
               <div style="display:flex;align-items:center;gap:10px;">
@@ -419,7 +428,7 @@
       
       if (item.type === 'image') {
         return `
-          <div class="feed-item type-image" id="item-${item.id}">
+          <div class="feed-item type-image${isNewClass}" id="item-${item.id}">
             <div class="item-header">
               <span class="item-type-badge image">Image</span>
               <div style="display:flex;align-items:center;gap:10px;">
@@ -429,12 +438,12 @@
                 </button>
               </div>
             </div>
-            <div class="item-image-preview lightbox-trigger" data-src="/received/${item.filename}">
-              <img src="/received/${item.filename}" alt="Image transfer">
+            <div class="item-image-preview lightbox-trigger" data-src="${isElectron ? apiBase : ''}/received/${item.filename}">
+              <img src="${isElectron ? apiBase : ''}/received/${item.filename}" alt="Image transfer">
             </div>
             <div class="item-actions">
               <span class="item-meta">${formatSize(item.size || 0)}</span>
-              <a href="/received/${item.filename}" download="${item.filename}" class="btn btn-secondary btn-icon" title="Save Image">
+              <a href="${isElectron ? apiBase : ''}/received/${item.filename}" download="${item.filename}" class="btn btn-secondary btn-icon" title="Save Image">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               </a>
               <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
@@ -471,7 +480,7 @@
         }
 
         return `
-          <div class="feed-item type-file" id="item-${item.id}">
+          <div class="feed-item type-file${isNewClass}" id="item-${item.id}">
             <div class="item-header" style="width: 100%;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <span class="item-type-badge file">File</span>
@@ -495,7 +504,7 @@
               </div>
             </div>
             <div class="item-actions">
-              <a href="/received/${item.filename}" download="${escapeAttr(item.originalName)}" class="btn btn-secondary btn-icon" title="Download File">
+              <a href="${isElectron ? apiBase : ''}/received/${item.filename}" download="${escapeAttr(item.originalName)}" class="btn btn-secondary btn-icon" title="Download File">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               </a>
               <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
@@ -563,6 +572,61 @@
     });
   }
 
+  // ─── Instant QR Code Generator ──────────────────────────────
+  function setupInstantQrGenerator() {
+    let qrTimeout = null;
+    const qrInput = $('#qrTextInput');
+    const qrContainer = $('#instantQrContainer');
+
+    if (!qrInput || !qrContainer) return;
+
+    function renderQR(text) {
+      if (!text) {
+        qrContainer.innerHTML = '<div class="qr-placeholder" style="color:#666;font-size:0.76rem;">Start typing to generate QR code...</div>';
+        return;
+      }
+      const encodedText = encodeURIComponent(text);
+      const imgSrc = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodedText}`;
+
+      qrContainer.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <img
+            src="${imgSrc}"
+            alt="QR Code"
+            width="180" height="180"
+            style="border:4px solid white;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:block;"
+            onerror="this.parentElement.innerHTML='<div style=&quot;color:#ef4444;font-size:0.76rem;padding:12px;text-align:center;&quot;>Failed to generate QR code. Server may be starting.</div>'"
+          >
+          <div style="display:flex;gap:8px;">
+            <a
+              href="${imgSrc}"
+              download="airodrop-qr.png"
+              style="font-size:0.75rem;padding:6px 12px;background:rgba(99,102,241,0.15);color:var(--accent-light);border:1px solid rgba(99,102,241,0.25);border-radius:8px;text-decoration:none;font-weight:600;"
+            >&#x2193; Download</a>
+            <button
+              onclick="navigator.clipboard.writeText('${text.replace(/'/g, "&quot;\\' &quot;")}') .then(()=>window._qrCopyToast&&window._qrCopyToast())"
+              style="font-size:0.75rem;padding:6px 12px;background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:8px;cursor:pointer;font-family:inherit;"
+            >Copy Text</button>
+          </div>
+        </div>`;
+
+      // Simple toast hook for copy button
+      window._qrCopyToast = () => showToast('Text copied!', 'success');
+    }
+
+    qrInput.addEventListener('input', () => {
+      clearTimeout(qrTimeout);
+      const text = qrInput.value.trim();
+      if (!text) {
+        renderQR('');
+        return;
+      }
+      // Show loading state immediately
+      qrContainer.innerHTML = '<div style="color:#666;font-size:0.76rem;padding:12px;">Generating...</div>';
+      qrTimeout = setTimeout(() => renderQR(text), 350);
+    });
+  }
+
   // ─── Filter group setup ────────────────────────────────────
   function setupFilters() {
     $$('.filter-btn').forEach(btn => {
@@ -575,26 +639,7 @@
     });
   }
 
-  // ─── Instant QR Code Generator ─────────────────────────────
-  function setupInstantQrGenerator() {
-    let qrTimeout = null;
-    const qrInput = $('#qrTextInput');
-    const qrContainer = $('#instantQrContainer');
 
-    if (qrInput && qrContainer) {
-      qrInput.addEventListener('input', () => {
-        clearTimeout(qrTimeout);
-        const text = qrInput.value.trim();
-        if (!text) {
-          qrContainer.innerHTML = '<div class="qr-placeholder">Start typing to generate QR code...</div>';
-          return;
-        }
-        qrTimeout = setTimeout(() => {
-          qrContainer.innerHTML = `<img src="/api/qr-gen.png?text=${encodeURIComponent(text)}" alt="Generated QR Code" width="200" height="200" style="border: 4px solid white; border-radius: var(--radius-md); box-shadow: var(--shadow-lg);">`;
-        }, 300);
-      });
-    }
-  }
 
   // ─── Event listeners binder ────────────────────────────────
   function setupEventListeners() {
@@ -802,16 +847,33 @@
 
   let selectedFileObj = null;
 
+  function getFileTypeEmoji(mimeType) {
+    if (!mimeType) return '📄';
+    const type = mimeType.toLowerCase();
+    if (type.startsWith('image/')) return '🖼️';
+    if (type.startsWith('video/')) return '🎥';
+    if (type.startsWith('audio/')) return '🎵';
+    if (type.includes('pdf')) return '📄';
+    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) return '🗃️';
+    if (type.includes('word') || type.includes('document') || type.includes('officedocument')) return '📝';
+    if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return '📊';
+    if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
+    if (type.includes('text/')) return '📋';
+    return '📄';
+  }
+
   function handleFileSelection(file) {
     selectedFileObj = file;
     const isImage = file.type.startsWith('image/');
     const preview = $('#sendFilePreview');
     const previewImg = $('#sendPreviewImg');
+    const previewIcon = $('#sendFilePreviewIcon');
     const nameSpan = $('#sendFileName');
     const fileDrop = $('#fileDrop');
     const sendBtn = $('#sendFileBtn');
 
     if (isImage) {
+      if (previewIcon) previewIcon.style.display = 'none';
       const reader = new FileReader();
       reader.onload = (e) => {
         if (previewImg) {
@@ -822,6 +884,10 @@
       reader.readAsDataURL(file);
     } else {
       if (previewImg) previewImg.style.display = 'none';
+      if (previewIcon) {
+        previewIcon.textContent = getFileTypeEmoji(file.type);
+        previewIcon.style.display = 'block';
+      }
     }
 
     if (nameSpan) nameSpan.textContent = `${file.name} (${formatSize(file.size)})`;
@@ -854,6 +920,7 @@
         showToast('File queued for iPhone', 'success');
         selectedFileObj = null;
         if ($('#sendFilePreview')) $('#sendFilePreview').style.display = 'none';
+        if ($('#sendFilePreviewIcon')) $('#sendFilePreviewIcon').style.display = 'none';
         if ($('#fileDrop')) $('#fileDrop').style.display = 'flex';
         if ($('#sendFileInput')) $('#sendFileInput').value = '';
         success = true;
