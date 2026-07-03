@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AiroDrop</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../public/logo.svg" alt="AiroDrop Logo" class="logo" id="logo">
+      <h1>AiroDrop</h1>
+      <p class="subtitle">iPhone &rarr; PC Integration</p>
+    </div>
+
+    <div class="card">
+      <div class="status-row">
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">Checking Status...</span>
+      </div>
+      <div class="port-row" id="portRow" style="visibility: hidden; min-height: 20px;">
+        Address: <a href="#" id="ipLink" class="ip-link"></a>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnStart" class="btn btn-primary" disabled>Start Server</button>
+      <button id="btnStop" class="btn btn-danger" disabled>Stop Server</button>
+    </div>
+
+    <div class="actions">
+      <button id="btnDashboard" class="btn btn-secondary">Open Dashboard</button>
+    </div>
+
+    <div class="settings">
+      <label class="toggle">
+        <input type="checkbox" id="toggleAutoStart">
+        <span class="slider"></span>
+      </label>
+      <span class="settings-label">Launch AiroDrop on Startup</span>
+    </div>
+
+    <div class="settings directory-settings">
+      <div class="dir-info">
+        <span class="settings-label">Save Directory:</span>
+        <div class="dir-path" id="dirPath" title="Loading...">Loading...</div>
+      </div>
+      <button id="btnChangeDir" class="btn btn-secondary btn-small">Change</button>
+    </div>
+
+    <div class="actions" style="margin-top: 15px;">
+      <button id="btnKillAll" class="btn btn-danger">Force Kill All Processes</button>
+    </div>
+
+    <div class="footer-credits">
+      Created by Asep Sayyad | <a href="#" id="githubLink">github.com/asepsayyad007</a>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

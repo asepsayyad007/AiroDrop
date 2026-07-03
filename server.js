@@ -29,16 +29,25 @@ function notifyImage(filename) {
   if (NOTIFICATIONS_ENABLED) notifier.notifyImage(filename);
 }
 
-// ─── Configuration ──────────────────────────────────────────────
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const HISTORY_FILE = path.join(__dirname, 'history.json');
+let CONFIG_FILE;
+let HISTORY_FILE;
 let PORT = 3478;
-let SAVE_DIR = path.join(__dirname, 'received');
+let SAVE_DIR;
 let TEMPORARY_MODE = false;
 let DEVICE_NAME = os.hostname();
 let RATE_LIMIT_ENABLED = true;
 let NOTIFICATIONS_ENABLED = true;
 let TEMPORARY_MODE_HOURS = 2;
+
+// ─── Initialize Paths ──────────────────────────────────────────
+function init(userDataPath) {
+  CONFIG_FILE = path.join(userDataPath, 'config.json');
+  HISTORY_FILE = path.join(userDataPath, 'history.json');
+  SAVE_DIR = path.join(userDataPath, 'received');
+  
+  loadConfig();
+  loadHistory();
+}
 
 // Load settings from config.json
 function loadConfig() {
@@ -76,8 +85,21 @@ function loadConfig() {
   }
 }
 
-// Initial config load
-loadConfig();
+// Initial config load is now deferred to init()
+
+function setSaveDir(newDir) {
+  SAVE_DIR = newDir;
+  try {
+    let data = {};
+    if (fs.existsSync(CONFIG_FILE)) {
+      data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    }
+    data.saveDir = SAVE_DIR;
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('[CONFIG] Failed to save config.json:', err.message);
+  }
+}
 
 const MAX_HISTORY = 100;
 
@@ -116,8 +138,7 @@ function saveHistory() {
   }
 }
 
-// Load initial history
-loadHistory();
+// Load initial history is now deferred to init()
 const pendingForPhone = [];  // Items queued for iPhone to pick up
 const sseClients = new Set(); // SSE connected clients
 
@@ -1333,40 +1354,61 @@ app.use((err, req, res, next) => {
   next();
 });
 
-// ─── Start Server ──────────────────────────────────────────────
-const server = app.listen(PORT, '0.0.0.0', () => {
-  const ip = getLocalIP();
-  const url = `http://${ip}:${PORT}`;
+// ─── Server Lifecycle ──────────────────────────────────────────
+let serverInstance = null;
 
-  console.log('');
-  console.log('  ╔══════════════════════════════════════════════╗');
-  console.log('  ║   iPhone → PC : AirDrop Alternative         ║');
-  console.log('  ╠══════════════════════════════════════════════╣');
-  console.log(`  ║   Server URL : ${url.padEnd(29)}║`);
-  console.log(`  ║   Dashboard  : ${url.padEnd(29)}║`);
-  console.log(`  ║   Save Folder: ${SAVE_DIR.padEnd(29)}║`);
-  console.log('  ╠══════════════════════════════════════════════╣');
-  console.log('  ║   Endpoints:                                  ║');
-  console.log(`  ║   POST ${('/api/text').padEnd(35)}║`);
-  console.log(`  ║   POST ${('/api/image').padEnd(35)}║`);
-  console.log(`  ║   GET  ${('/api/history').padEnd(36)}║`);
-  console.log(`  ║   GET  ${('/api/info').padEnd(36)}║`);
-  console.log(`  ║   POST ${('/api/send-to-phone').padEnd(35)}║`);
-  console.log('  ╚══════════════════════════════════════════════╝');
-  console.log('');
-  console.log('  Scan the QR code on the dashboard to set up your iPhone.');
-  console.log('  Press Ctrl+C to stop the server.');
-  console.log('');
-});
+function startServer(portCallback) {
+  if (serverInstance) return;
+  
+  serverInstance = app.listen(PORT, '0.0.0.0', () => {
+    const ip = getLocalIP();
+    const url = `http://${ip}:${PORT}`;
+
+    console.log('');
+    console.log('  ╔══════════════════════════════════════════════╗');
+    console.log('  ║   iPhone → PC : AirDrop Alternative         ║');
+    console.log('  ╠══════════════════════════════════════════════╣');
+    console.log(`  ║   Server URL : ${url.padEnd(29)}║`);
+    console.log(`  ║   Dashboard  : ${url.padEnd(29)}║`);
+    console.log(`  ║   Save Folder: ${SAVE_DIR.padEnd(29)}║`);
+    console.log('  ╚══════════════════════════════════════════════╝');
+    console.log('');
+    
+    if (portCallback) portCallback(PORT);
+  });
+  
+  serverInstance.on('error', (err) => {
+    console.error('Server error:', err);
+    if (portCallback) portCallback(null, err);
+  });
+}
+
+function stopServer() {
+  if (serverInstance) {
+    serverInstance.close();
+    serverInstance = null;
+    console.log('Server stopped.');
+  }
+}
 
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n  Shutting down...');
-  server.close(() => process.exit(0));
+  stopServer();
+  process.exit(0);
 });
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err.message);
 });
 
-module.exports = app;
+module.exports = {
+  app,
+  init,
+  startServer,
+  stopServer,
+  getPort: () => PORT,
+  getSaveDir: () => SAVE_DIR,
+  setSaveDir,
+  getLocalIP
+};

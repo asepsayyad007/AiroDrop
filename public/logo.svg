@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256">
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007aff" />
+      <stop offset="100%" stop-color="#005bb5" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Ring -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="url(#blueGradient)" stroke-width="4" stroke-opacity="0.3" />
+  
+  <!-- Middle Ring -->
+  <circle cx="50" cy="50" r="30" fill="none" stroke="url(#blueGradient)" stroke-width="6" stroke-opacity="0.6" />
+  
+  <!-- Inner Core -->
+  <circle cx="50" cy="50" r="16" fill="url(#blueGradient)" />
+  
+  <!-- A stylized 'Drop' inside the core -->
+  <path d="M 50 38 C 50 38 45 44 45 48 C 45 51 47 53 50 53 C 53 53 55 51 55 48 C 55 44 50 38 50 38 Z" fill="#ffffff" />
+</svg>

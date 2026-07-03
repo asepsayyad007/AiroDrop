@@ -1,0 +1,265 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  margin: 0;
+  padding: 30px 20px;
+  user-select: none;
+}
+
+.container {
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 15px;
+  filter: drop-shadow(0 0 10px rgba(0, 122, 255, 0.4));
+  animation: float-pulse 4s ease-in-out infinite;
+}
+
+@keyframes float-pulse {
+  0% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 10px rgba(0, 122, 255, 0.4));
+  }
+  50% {
+    transform: translateY(-8px) scale(1.05);
+    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.8));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 10px rgba(0, 122, 255, 0.4));
+  }
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 5px 0;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #a0a0a0;
+  font-size: 14px;
+  margin: 0;
+}
+
+.card {
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #888;
+  margin-right: 10px;
+  box-shadow: 0 0 8px rgba(136, 136, 136, 0.5);
+}
+
+.status-indicator.running {
+  background-color: #00d26a;
+  box-shadow: 0 0 12px rgba(0, 210, 106, 0.6);
+}
+
+.status-indicator.stopped {
+  background-color: #ff3b30;
+  box-shadow: 0 0 12px rgba(255, 59, 48, 0.6);
+}
+
+.port-row {
+  margin-top: 10px;
+  color: #888;
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #007aff;
+  color: white;
+}
+
+.btn-primary:not(:disabled):hover {
+  background-color: #0062cc;
+}
+
+.btn-danger {
+  background-color: #ff3b30;
+  color: white;
+}
+
+.btn-danger:not(:disabled):hover {
+  background-color: #cc2f26;
+}
+
+.btn-secondary {
+  background-color: #333;
+  color: #fff;
+  width: 100%;
+}
+
+.btn-secondary:hover {
+  background-color: #444;
+}
+
+/* Toggle & Settings */
+.settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 15px;
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.directory-settings {
+  flex-direction: row;
+  align-items: center;
+}
+
+.dir-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+  text-align: left;
+  flex: 1;
+}
+
+.settings-label {
+  font-size: 14px;
+  color: #ccc;
+  white-space: nowrap;
+}
+
+.dir-path {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ip-link {
+  color: #007aff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ip-link:hover {
+  text-decoration: underline;
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: 12px;
+  flex: none;
+  width: auto;
+  margin-left: 10px;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #555;
+  transition: 0.3s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #00d26a;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.footer-credits {
+  margin-top: 25px;
+  font-size: 11px;
+  color: #666;
+}
+
+.footer-credits a {
+  color: #007aff;
+  text-decoration: none;
+}
+
+.footer-credits a:hover {
+  text-decoration: underline;
+}
