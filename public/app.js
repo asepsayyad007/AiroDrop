@@ -6,6 +6,24 @@
 (function () {
   'use strict';
 
+  // ─── Electron Detection & API Base ─────────────────────────
+  const ipcRenderer = typeof window !== 'undefined' && window.require ? window.require('electron').ipcRenderer : null;
+  const isElectron = !!ipcRenderer;
+  let apiBase = '';
+  if (isElectron && ipcRenderer) {
+    try {
+      const port = ipcRenderer.sendSync('get-port-sync') || 3478;
+      apiBase = `http://localhost:${port}`;
+    } catch (e) {
+      console.error('IPC get-port-sync failed:', e);
+    }
+  }
+
+  function doFetch(url, options = {}) {
+    const targetUrl = isElectron ? `${apiBase}${url}` : url;
+    return fetch(targetUrl, options);
+  }
+
   // ─── State ─────────────────────────────────────────────────
   let serverInfo = null;
   let allItems = [];
@@ -26,7 +44,31 @@
     setupSettings();
     setupInstantQrGenerator();
     
-    await fetchServerInfo();
+    // Request permission for system notifications
+    if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+    
+    // Initializing new popup modals & multi-tools system
+    setupShortcutsModal();
+    setupSettingsModal();
+    setupControlCenter();
+    setupUniversalRefresh();
+    // Server may still be starting – retry fetchServerInfo up to 5 times with 800ms delay
+    let infoLoaded = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const res = await doFetch('/api/info');
+        if (res.ok) {
+          serverInfo = await res.json();
+          updateServerInfoUI(serverInfo);
+          infoLoaded = true;
+          break;
+        }
+      } catch (_) {}
+      await new Promise(r => setTimeout(r, 800));
+    }
+    
     connectSSE();
     await fetchHistory();
     await updateStats();
@@ -141,7 +183,7 @@
   // ─── Server Info ───────────────────────────────────────────
   async function fetchServerInfo() {
     try {
-      const res = await fetch('/api/info');
+      const res = await doFetch('/api/info');
       if (!res.ok) return;
       serverInfo = await res.json();
       updateServerInfoUI(serverInfo);
@@ -156,19 +198,17 @@
 
     // Setup cards info
     if ($('#infoIP2')) $('#infoIP2').textContent = info.ip;
-    if ($('#mobileUrl')) {
-      $('#mobileUrl').textContent = `${baseUrl}/m`;
-      $('#mobileUrl').href = `${baseUrl}/m`;
+    if ($('#mobilePortalUrl')) {
+      $('#mobilePortalUrl').textContent = `${baseUrl}/m`;
+      $('#mobilePortalUrl').href = `${baseUrl}/m`;
     }
     if ($('#unifiedEndpoint')) $('#unifiedEndpoint').textContent = `${baseUrl}/api/send`;
     if ($('#infoDeviceName')) $('#infoDeviceName').textContent = info.deviceName || 'PC Server';
 
-    updateUptimeUI(info.uptime);
-
-    // Setup QR code for mobile
+    // Setup QR code for mobile (resized to fit the 110x110 box perfectly)
     const qrContainer = $('#mobileQrContainer');
     if (qrContainer) {
-      qrContainer.innerHTML = `<img src="/api/qr.png?t=${Date.now()}" alt="Setup QR Code" width="200" height="200">`;
+      qrContainer.innerHTML = `<img src="${isElectron ? apiBase : ''}/api/qr.png?t=${Date.now()}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
     }
   }
 
@@ -189,7 +229,7 @@
   // ─── Stats & Storage updates ───────────────────────────────
   async function updateStats() {
     try {
-      const statsRes = await fetch('/api/stats');
+      const statsRes = await doFetch('/api/stats');
       if (statsRes.ok) {
         const stats = await statsRes.json();
         if ($('#statTransfers')) $('#statTransfers').textContent = stats.transfers;
@@ -198,7 +238,7 @@
         if ($('#statFiles')) $('#statFiles').textContent = stats.files;
       }
 
-      const storageRes = await fetch('/api/storage');
+      const storageRes = await doFetch('/api/storage');
       if (storageRes.ok) {
         const storage = await storageRes.json();
         const fillPercent = storage.limit > 0 ? Math.min(100, (storage.size / storage.limit) * 100) : 0;
@@ -216,7 +256,7 @@
   function connectSSE() {
     if (sseSource) sseSource.close();
 
-    sseSource = new EventSource('/api/events');
+    sseSource = new EventSource(isElectron ? `${apiBase}/api/events` : '/api/events');
 
     sseSource.onopen = () => {
       setConnectionStatus(true);
@@ -233,6 +273,26 @@
         renderFeed();
         showToast('New item received from iPhone!', 'info');
         updateStats();
+
+        // Browser HTML5 notification for system-wide alerts
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          const title = 'com.asep-ios-integration.airodrop';
+          const eventLabel = item.type === 'text' ? 'Clipboard' : 'File';
+          const bodyContent = `${eventLabel}: ` + (item.type === 'text' 
+            ? (item.content.length > 50 ? item.content.substring(0, 50) + '...' : item.content)
+            : item.filename);
+          const notification = new Notification(title, {
+            body: bodyContent,
+            icon: 'logo.png'
+          });
+          notification.onclick = () => {
+            if (isElectron && ipcRenderer) {
+              ipcRenderer.send('restore-window');
+            } else {
+              window.focus();
+            }
+          };
+        }
       } catch (err) {
         console.error(err);
       }
@@ -290,7 +350,7 @@
   // ─── Received History ──────────────────────────────────────
   async function fetchHistory() {
     try {
-      const res = await fetch('/api/history');
+      const res = await doFetch('/api/history');
       if (res.ok) {
         const data = await res.json();
         allItems = data.items || [];
@@ -380,6 +440,11 @@
               <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
+              ${isElectron ? `
+              <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Open Folder">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+              ` : ''}
             </div>
           </div>`;
       }
@@ -436,6 +501,11 @@
               <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012 2h9a2 2 0 012 2v1"/></svg>
               </button>
+              ${isElectron ? `
+              <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Open Folder">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+              ` : ''}
             </div>
           </div>`;
       }
@@ -460,6 +530,16 @@
     $$('.lightbox-trigger').forEach(trigger => {
       trigger.addEventListener('click', () => {
         openLightbox(trigger.getAttribute('data-src'));
+      });
+    });
+
+    $$('.open-folder-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fn = btn.getAttribute('data-fn');
+        if (isElectron && ipcRenderer && fn) {
+          ipcRenderer.send('open-file-folder', fn);
+        }
       });
     });
   }
@@ -523,7 +603,7 @@
       clearBtn.addEventListener('click', async () => {
         if (!confirm('Are you sure you want to delete all transfer history and local files?')) return;
         try {
-          const res = await fetch('/api/history', { method: 'DELETE' });
+          const res = await doFetch('/api/history', { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.success) {
             allItems = [];
@@ -544,7 +624,7 @@
     if (exportBtn) {
       exportBtn.addEventListener('click', async () => {
         try {
-          const res = await fetch('/api/history/export');
+          const res = await doFetch('/api/history/export');
           if (res.ok) {
             const blob = await res.blob();
             const link = document.createElement('a');
@@ -578,7 +658,7 @@
         }
         
         try {
-          const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
+          const res = await doFetch(`/api/history/${id}`, { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.success) {
             setTimeout(() => {
@@ -683,7 +763,7 @@
         if (!cancelBtn) return;
         const id = cancelBtn.getAttribute('data-id');
         try {
-          const res = await fetch(`/api/pending/${id}`, { method: 'DELETE' });
+          const res = await doFetch(`/api/pending/${id}`, { method: 'DELETE' });
           if (res.ok) {
             showToast('Pending item canceled', 'info');
             fetchPending();
@@ -702,7 +782,7 @@
     if (!text) return showToast('Enter some text first', 'error');
 
     try {
-      const res = await fetch('/api/send-to-phone', {
+      const res = await doFetch('/api/send-to-phone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'text', text })
@@ -747,7 +827,7 @@
     if (nameSpan) nameSpan.textContent = `${file.name} (${formatSize(file.size)})`;
     if (preview) preview.style.display = 'flex';
     if (fileDrop) fileDrop.style.display = 'none';
-    if (sendBtn) sendBtn.style.display = 'block';
+    if (sendBtn) sendBtn.disabled = false;
   }
 
   async function sendFileToPhone() {
@@ -762,8 +842,9 @@
     const formData = new FormData();
     formData.append('file', selectedFileObj);
 
+    let success = false;
     try {
-      const res = await fetch('/api/send-to-phone', {
+      const res = await doFetch('/api/send-to-phone', {
         method: 'POST',
         body: formData
       });
@@ -775,7 +856,7 @@
         if ($('#sendFilePreview')) $('#sendFilePreview').style.display = 'none';
         if ($('#fileDrop')) $('#fileDrop').style.display = 'flex';
         if ($('#sendFileInput')) $('#sendFileInput').value = '';
-        sendBtn.style.display = 'none';
+        success = true;
         fetchPending();
       } else {
         showToast(data.error || 'Failed to upload file', 'error');
@@ -783,14 +864,14 @@
     } catch {
       showToast('Failed to send file to phone', 'error');
     } finally {
-      sendBtn.disabled = false;
+      sendBtn.disabled = success;
       sendBtn.textContent = 'Send File';
     }
   }
 
   async function fetchPending() {
     try {
-      const res = await fetch('/api/pending');
+      const res = await doFetch('/api/pending');
       if (res.ok) {
         const data = await res.json();
         renderPending(data.items || []);
@@ -850,7 +931,7 @@
 
     async function loadSettingsData() {
       try {
-        const res = await fetch('/api/settings');
+        const res = await doFetch('/api/settings');
         if (res.ok) {
           const data = await res.json();
           if (saveDirInput && data.saveDir) saveDirInput.value = data.saveDir;
@@ -883,7 +964,7 @@
         showSettingsStatus(false);
 
         try {
-          const res = await fetch('/api/settings', {
+          const res = await doFetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -929,7 +1010,7 @@
         showSettingsStatus('Please select a folder on your computer...', 'info');
 
         try {
-          const res = await fetch('/api/settings/browse', { method: 'POST' });
+          const res = await doFetch('/api/settings/browse', { method: 'POST' });
           const data = await res.json();
           if (res.ok && data.success && data.path) {
             saveDirInput.value = data.path;
@@ -1078,6 +1159,231 @@
   function escapeAttr(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ─── iOS Shortcuts Modal Setup ─────────────────────────────
+  function setupShortcutsModal() {
+    const btnHeaderSetup = $('#btnHeaderSetup');
+    const shortcutsModal = $('#shortcutsModal');
+    const closeModal = $('#closeModal');
+    const imgShareToPC = $('#imgShareToPC');
+    const imgClipboardToPC = $('#imgClipboardToPC');
+
+    if (btnHeaderSetup && shortcutsModal) {
+      btnHeaderSetup.addEventListener('click', () => {
+        if (imgShareToPC) {
+          imgShareToPC.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d')}`;
+        }
+        if (imgClipboardToPC) {
+          imgClipboardToPC.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b')}`;
+        }
+        if (serverInfo) {
+          const infoIPSetup = $('#infoIPSetup');
+          if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
+          $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
+        }
+        shortcutsModal.style.display = 'flex';
+      });
+    }
+
+    if (closeModal && shortcutsModal) {
+      closeModal.addEventListener('click', () => {
+        shortcutsModal.style.display = 'none';
+      });
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target === shortcutsModal) {
+        shortcutsModal.style.display = 'none';
+      }
+    });
+  }
+
+  // ─── Settings Modal Setup ──────────────────────────────────
+  function setupSettingsModal() {
+    const btnHeaderSettings = $('#btnHeaderSettings');
+    const settingsModal = $('#settingsModal');
+    const btnCloseSettings = $('#btnCloseSettings');
+
+    if (btnHeaderSettings && settingsModal) {
+      btnHeaderSettings.addEventListener('click', () => {
+        btnHeaderSettings.classList.add('glow');
+        settingsModal.style.display = 'flex';
+      });
+    }
+
+    if (btnCloseSettings && settingsModal) {
+      btnCloseSettings.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+        if (btnHeaderSettings) btnHeaderSettings.classList.remove('glow');
+      });
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+        if (btnHeaderSettings) btnHeaderSettings.classList.remove('glow');
+      }
+    });
+  }
+
+  // ─── Universal Refresh Button ──────────────────────────────
+  function setupUniversalRefresh() {
+    const btnUniversalRefresh = $('#btnUniversalRefresh');
+    if (btnUniversalRefresh) {
+      btnUniversalRefresh.addEventListener('click', async () => {
+        btnUniversalRefresh.style.transform = 'rotate(360deg)';
+        btnUniversalRefresh.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          btnUniversalRefresh.style.transform = 'none';
+          btnUniversalRefresh.style.transition = 'none';
+        }, 600);
+
+        await fetchHistory();
+        await updateStats();
+        showToast('All data refreshed', 'success');
+      });
+    }
+  }
+
+
+
+
+
+  // ─── Control Center Controller ──────────────────────────────
+  function setupControlCenter() {
+    if (!isElectron || !ipcRenderer) return;
+
+    const ccActionsGroup = $('#ccActionsGroup');
+    const ccIndicator = $('#ccIndicator');
+    const ccText = $('#ccText');
+    const ccIPPort = $('#ccIPPort');
+    const ccDirPath = $('#ccDirPath');
+    const btnCcChangeDir = $('#btnCcChangeDir');
+    const btnCcStart = $('#btnCcStart');
+    const btnCcStop = $('#btnCcStop');
+    const btnCcKillAll = $('#btnCcKillAll');
+
+    // Show control center on home page inside Electron
+    if (ccActionsGroup) ccActionsGroup.style.display = 'flex';
+
+    // IPC Status Listeners
+    ipcRenderer.on('server-status', (event, status) => {
+      updateControlCenterStatus(status);
+      
+      // Also update desktop settings modal UI elements if open
+      const destStatusIndicator = $('#desktopStatusIndicator');
+      const destStatusText = $('#desktopStatusText');
+      const destBtnStart = $('#btnDesktopStart');
+      const destBtnStop = $('#btnDesktopStop');
+      
+      if (status.running) {
+        if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#00d26a';
+        if (destStatusText) destStatusText.textContent = 'Server Running';
+        if (destBtnStart) destBtnStart.disabled = true;
+        if (destBtnStop) destBtnStop.disabled = false;
+      } else {
+        if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#ff3b30';
+        if (destStatusText) destStatusText.textContent = status.error ? `Error: ${status.error}` : 'Server Stopped';
+        if (destBtnStart) destBtnStart.disabled = false;
+        if (destBtnStop) destBtnStop.disabled = true;
+      }
+    });
+
+    ipcRenderer.on('dir-updated', (event, dir) => {
+      if (ccDirPath) {
+        ccDirPath.textContent = dir;
+        ccDirPath.title = dir;
+      }
+      // Also update settings form saveDirInput
+      const saveDirInput = $('#saveDirInput');
+      if (saveDirInput) {
+        saveDirInput.value = dir;
+      }
+    });
+
+    // Request directory path (status is pushed by main process on did-finish-load)
+    ipcRenderer.send('get-dir');
+
+    // Change Directory button
+    if (btnCcChangeDir) {
+      btnCcChangeDir.addEventListener('click', () => {
+        ipcRenderer.send('change-dir');
+      });
+    }
+
+    // Start Server button
+    if (btnCcStart) {
+      btnCcStart.addEventListener('click', () => {
+        btnCcStart.disabled = true;
+        btnCcStart.style.opacity = '0.35';
+        if (ccText) ccText.textContent = 'Starting...';
+        ipcRenderer.send('start-server');
+      });
+    }
+
+    // Stop Server button
+    if (btnCcStop) {
+      btnCcStop.addEventListener('click', () => {
+        btnCcStop.disabled = true;
+        btnCcStop.style.opacity = '0.35';
+        if (ccText) ccText.textContent = 'Stopping...';
+        ipcRenderer.send('stop-server');
+      });
+    }
+
+    // Kill all processes button
+    if (btnCcKillAll) {
+      btnCcKillAll.addEventListener('click', () => {
+        if (confirm("Are you sure you want to force close AiroDrop and all background processes?")) {
+          ipcRenderer.send('force-kill-all');
+        }
+      });
+    }
+
+    function updateControlCenterStatus(status) {
+      if (status.running) {
+        if (ccIndicator) ccIndicator.style.backgroundColor = '#00d26a';
+        if (ccText) {
+          ccText.textContent = 'Service Running';
+          ccText.style.color = '#00d26a';
+        }
+        if (ccIPPort) {
+          ccIPPort.textContent = `${status.ip}:${status.port}`;
+        }
+        if (btnCcStart) {
+          btnCcStart.disabled = true;
+          btnCcStart.style.opacity = '0.35';
+          btnCcStart.style.pointerEvents = 'none';
+        }
+        if (btnCcStop) {
+          btnCcStop.disabled = false;
+          btnCcStop.style.opacity = '1';
+          btnCcStop.style.pointerEvents = 'auto';
+        }
+        setConnectionStatus(true);
+      } else {
+        if (ccIndicator) ccIndicator.style.backgroundColor = '#ff3b30';
+        if (ccText) {
+          ccText.textContent = status.error ? 'Service Error' : 'Service Stopped';
+          ccText.style.color = '#ff3b30';
+        }
+        if (ccIPPort) {
+          ccIPPort.textContent = status.error ? 'Error' : 'Stopped';
+        }
+        if (btnCcStart) {
+          btnCcStart.disabled = false;
+          btnCcStart.style.opacity = '1';
+          btnCcStart.style.pointerEvents = 'auto';
+        }
+        if (btnCcStop) {
+          btnCcStop.disabled = true;
+          btnCcStop.style.opacity = '0.35';
+          btnCcStop.style.pointerEvents = 'none';
+        }
+        setConnectionStatus(false);
+      }
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);

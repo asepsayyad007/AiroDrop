@@ -552,6 +552,10 @@ body::before {
   position: relative;
 }
 
+.tab[data-tab="settings"] {
+  margin-left: auto;
+}
+
 .tab:hover {
   color: var(--text-primary);
   background: var(--bg-card);
@@ -961,6 +965,23 @@ body::before {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.send-split-container {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.send-split-container > .send-card {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .send-split-container {
+    flex-direction: column;
+  }
 }
 
 .send-card {
@@ -1595,4 +1616,205 @@ body::before {
   .stat-value {
     font-size: 1.1rem;
   }
+}
+
+/* ─── Electron Compact Styles ──────────────────────────────── */
+body.is-electron {
+  overflow-x: hidden;
+}
+
+body.is-electron .app {
+  padding: 0 16px;
+  min-height: auto;
+}
+
+body.is-electron .header {
+  margin: 10px 0;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+}
+
+body.is-electron .stats-bar {
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+body.is-electron .stat-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+}
+
+body.is-electron .main {
+  gap: 16px;
+}
+
+body.is-electron .web-footer {
+  padding: 10px;
+  margin-top: 10px;
+}
+
+/* Modal animations and helper styles */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Pulsing glow highlight for Setup iPhone button */
+#btnShortcuts {
+  animation: pulse-shortcuts-glow 2s infinite;
+}
+
+@keyframes pulse-shortcuts-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.8);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* Glow effect for settings gear button when clicked */
+#btnHeaderSettings {
+  transition: all 0.3s ease;
+}
+
+#btnHeaderSettings.glow {
+  color: var(--accent-light) !important;
+  background: var(--accent-bg) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 15px var(--accent-glow) !important;
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+#btnHeaderSettings.glow svg {
+  animation: gear-spin 2.5s linear infinite;
+}
+
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Modals (iOS Setup & Settings) ────────────────────────── */
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1001; 
+  left: 0; 
+  top: 0; 
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgba(0,0,0,0.65); 
+  align-items: center; 
+  justify-content: center; 
+  backdrop-filter: blur(8px);
+}
+
+.modal.active {
+  display: flex !important;
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-content {
+  background: var(--bg-card); 
+  border: 1px solid var(--glass-border); 
+  border-radius: var(--radius-lg); 
+  padding: 24px; 
+  max-width: 680px; 
+  width: 90%; 
+  color: white; 
+  position: relative; 
+  box-shadow: var(--shadow-lg);
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.close-modal {
+  position: absolute; 
+  right: 20px; 
+  top: 16px; 
+  font-size: 24px; 
+  cursor: pointer; 
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.close-modal:hover {
+  color: var(--text-primary);
+}
+
+/* ─── Setup & Settings Elements ───────────────────────────── */
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.settings-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.settings-checkbox-row:hover {
+  color: var(--text-primary);
+}
+
+.settings-checkbox-row input {
+  accent-color: var(--accent);
+}
+
+/* Pulsing highlight for Setup iPhone button */
+#btnHeaderSetup.pulse-highlight {
+  animation: pulse-setup-glow 2s infinite;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: white;
+  border-color: transparent;
+}
+
+@keyframes pulse-setup-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.8);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* Tool styles inside grid */
+.tool-card {
+  transition: var(--transition);
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
 }

@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <div class="app">
@@ -31,7 +31,23 @@
           </div>
         </div>
       </div>
-      <div class="header-right">
+      <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn btn-secondary btn-icon" id="btnUniversalRefresh" title="Refresh all data" style="padding: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+
+        <button class="btn btn-primary" id="btnHeaderSetup" style="padding: 6px 12px; font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #007aff, #005ecb); border: none; box-shadow: 0 0 8px rgba(0, 122, 255, 0.4); cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+          Setup iPhone
+        </button>
+
         <div class="theme-picker">
           <button class="theme-btn" id="themeBtn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -70,8 +86,36 @@
           </svg>
           <span id="serverUrlText">...</span>
         </div>
+
+        <button class="btn btn-secondary btn-icon" id="btnHeaderSettings" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer;" title="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="settings-gear-icon" style="width:16px;height:16px; transition: transform 0.4s ease;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span class="settings-gear-text" style="font-weight: 600;">Settings</span>
+        </button>
       </div>
     </header>
+
+    <!-- ─── Control Center ──────────────────────────────── -->
+    <div class="control-center" id="ccActionsGroup" style="display: none; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: 16px; gap: 12px; font-size: 0.82rem;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="status-indicator" id="ccIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
+        <span id="ccText" style="font-weight: 600;">Service Stopped</span>
+        <span style="color: var(--text-muted);">|</span>
+        <span id="ccIPPort" style="font-family: monospace; font-weight: 500; color: var(--text-secondary);">IP:Port</span>
+      </div>
+      
+      <!-- Directory Path & Change button -->
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; max-width: 50%;">
+        <span style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">Save to:</span>
+        <span id="ccDirPath" style="font-family: monospace; font-size: 0.76rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;" title="...">Loading...</span>
+        <button class="btn btn-secondary" id="btnCcChangeDir" style="padding: 4px 8px; font-size: 0.72rem; font-weight: 600; border-radius: var(--radius-xs); border: 1px solid var(--glass-border); cursor: pointer; background: rgba(255,255,255,0.05); color: white;">Change</button>
+      </div>
+
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button class="btn btn-primary" id="btnCcStart" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #00d26a; color: white;">Start</button>
+        <button class="btn btn-danger" id="btnCcStop" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white;">Stop</button>
+        <button class="btn btn-danger" id="btnCcKillAll" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white; opacity: 0.85;" title="Force Kill App Process">Kill</button>
+      </div>
+    </div>
 
     <!-- ─── Stats Bar ───────────────────────────────────── -->
     <div class="stats-bar">
@@ -96,28 +140,26 @@
     <!-- ─── Main Content ────────────────────────────────── -->
     <main class="main">
       <!-- Tabs Navigation -->
-      <nav class="tabs">
-        <button class="tab active" data-tab="feed">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          Received
-          <span class="tab-badge" id="feedCount">0</span>
-        </button>
-        <button class="tab" data-tab="send">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Send to Phone
-        </button>
-        <button class="tab" data-tab="qr-gen">
+      <nav class="tabs" style="display: flex; align-items: center; justify-content: center; position: relative;">
+        <div style="display: flex; gap: 4px; margin: 0 auto;">
+          <button class="tab active" data-tab="feed">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Received
+            <span class="tab-badge" id="feedCount">0</span>
+          </button>
+          <button class="tab" data-tab="send">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send to Phone
+          </button>
+        </div>
+        <button class="tab" data-tab="tools" style="position: absolute; right: 4px;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
             <rect x="7" y="7" width="3" height="3"/>
             <rect x="14" y="7" width="3" height="3"/>
             <rect x="7" y="14" width="3" height="3"/>
           </svg>
-          QR Generator
-        </button>
-        <button class="tab" data-tab="settings">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          Settings
+          Tools
         </button>
       </nav>
 
@@ -155,21 +197,9 @@
         <div id="feed" class="feed"></div>
       </section>
 
-      <!-- Tab 2: QR Generator -->
-      <section class="tab-content" id="tab-qr-gen">
-        <div class="send-card" style="max-width: 600px; margin: 0 auto; text-align: center;">
-          <h3>Instant QR Code Generator</h3>
-          <p class="hint-text">Enter any text or link below to instantly generate a scanable QR code</p>
-          <textarea id="qrTextInput" rows="4" placeholder="Type text or paste link here..."></textarea>
-          <div class="qr-container" id="instantQrContainer" style="margin-top: 20px; min-height: 220px; display: flex; align-items: center; justify-content: center;">
-            <div class="qr-placeholder">Start typing to generate QR code...</div>
-          </div>
-        </div>
-      </section>
-
       <!-- Tab 3: Send to Phone -->
       <section class="tab-content" id="tab-send">
-        <div class="send-panel">
+        <div class="send-split-container">
           <!-- Send Text -->
           <div class="send-card">
             <h3>Send Text</h3>
@@ -196,188 +226,25 @@
               <img id="sendPreviewImg" alt="Preview">
               <span id="sendFileName" style="font-size:0.82rem;color:var(--text-secondary);"></span>
             </div>
-            <button class="btn btn-primary" id="sendFileBtn" style="display:none;">
+            <button class="btn btn-primary" id="sendFileBtn" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               Send File
             </button>
           </div>
-
-          <!-- Pending Items -->
-          <div class="send-card">
-            <h3>Pending Items</h3>
-            <p class="hint-text">Items queued for your iPhone to pick up</p>
-            <div id="pendingList" class="pending-list">
-              <div class="empty-mini">No pending items</div>
-            </div>
-          </div>
         </div>
       </section>
 
-      <!-- Tab 4: Settings -->
-      <section class="tab-content" id="tab-settings">
-        
-        <!-- iPhone Setup Card (moved inside settings) -->
-        <div class="settings-card" style="max-width: 100%;">
-          <h2>iPhone Integration & Setup</h2>
-          <p class="settings-subtitle" style="margin-bottom: 16px;">Configure your iPhone to send files and clipboard content to this PC</p>
-          <div class="setup-grid">
-            <!-- QR Code Card -->
-            <div class="setup-card" style="text-align:center; padding: 16px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); grid-column: span 1;">
-              <h3>Scan to Install iOS Shortcuts</h3>
-              <p style="font-size:0.8rem;color:var(--text-secondary); margin-bottom: 12px;">Scan directly with your iPhone camera</p>
-              <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: var(--radius-sm); width: 140px; display: flex; flex-direction: column; align-items: center;">
-                  <h4 style="font-size: 0.8rem; margin-bottom: 6px; white-space: nowrap;">1. Share to PC</h4>
-                  <div style="background: white; padding: 6px; border-radius: var(--radius-sm); width: 120px; height: 120px;">
-                    <img src="/api/qr-gen.png?text=https%3A%2F%2Fwww.icloud.com%2Fshortcuts%2Fefd4af984d884e0eb8e8ba3ba319ce4d" alt="ShareToPC QR" style="width: 100%; height: 100%; display: block;">
-                  </div>
-                  <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" style="margin-top:6px; color:var(--accent-light); text-decoration:none; font-size:0.75rem;">Get Shortcut</a>
-                </div>
-                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: var(--radius-sm); width: 140px; display: flex; flex-direction: column; align-items: center;">
-                  <h4 style="font-size: 0.8rem; margin-bottom: 6px; white-space: nowrap;">2. Send Clipboard</h4>
-                  <div style="background: white; padding: 6px; border-radius: var(--radius-sm); width: 120px; height: 120px;">
-                    <img src="/api/qr-gen.png?text=https%3A%2F%2Fwww.icloud.com%2Fshortcuts%2F1f341cd7a57041958a87ce92f8acaa8b" alt="ClipboardToPC QR" style="width: 100%; height: 100%; display: block;">
-                  </div>
-                  <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" style="margin-top:6px; color:var(--accent-light); text-decoration:none; font-size:0.75rem;">Get Shortcut</a>
-                </div>
-              </div>
-            </div>
-
-            <!-- Steps Card -->
-            <div class="setup-card" style="padding: 16px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md);">
-              <h3>Quick Setup</h3>
-              <div class="steps-list" style="margin-top:8px; gap: 8px;">
-                <div class="step" style="gap: 8px;">
-                  <span class="step-num" style="width: 24px; height: 24px; font-size: 0.75rem;">1</span>
-                  <div class="step-content">
-                    <h4 style="font-size: 0.85rem;">Scan QR Code</h4>
-                    <p style="font-size: 0.78rem;">Open camera, scan code to open setup guide.</p>
-                  </div>
-                </div>
-                <div class="step" style="gap: 8px;">
-                  <span class="step-num" style="width: 24px; height: 24px; font-size: 0.75rem;">2</span>
-                  <div class="step-content">
-                    <h4 style="font-size: 0.85rem;">Create Shortcuts</h4>
-                    <p style="font-size: 0.78rem;">Follow mobile guide to configure Shortcuts app.</p>
-                  </div>
-                </div>
-                <div class="step" style="gap: 8px;">
-                  <span class="step-num" style="width: 24px; height: 24px; font-size: 0.75rem;">3</span>
-                  <div class="step-content">
-                    <h4 style="font-size: 0.85rem;">Start Sharing</h4>
-                    <p style="font-size: 0.78rem;">Share sheets or widgets automatically transfer items.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Server Info Card -->
-            <div class="setup-card setup-card-wide" style="padding: 16px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); grid-column: 1 / -1;">
-              <h3>Server Info</h3>
-              <div class="info-rows" style="gap: 8px; margin-top: 4px;">
-                <div class="info-row">
-                  <span class="info-label">IP Address</span>
-                  <span class="info-value" id="infoIP2">...</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Mobile Page</span>
-                  <a class="info-value" id="mobileUrl" href="/m" target="_blank" style="color:var(--accent-light);text-decoration:none;">...</a>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Unified Endpoint</span>
-                  <span class="info-value" id="unifiedEndpoint">...</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Uptime</span>
-                  <span class="info-value" id="infoUptime">0s</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Device Name</span>
-                  <span class="info-value" id="infoDeviceName">...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Server Configuration Card -->
-        <div class="settings-card" style="max-width: 100%;">
-          <h2>Server Configuration</h2>
-          <p class="settings-subtitle">Manage your AiroDrop server settings and preferences</p>
-
-          <!-- Device Name -->
-          <div class="settings-form-group">
-            <label for="deviceNameInput">Device Name</label>
-            <div class="input-row">
-              <input type="text" id="deviceNameInput" placeholder="My PC">
-            </div>
-            <p class="settings-help">Friendly name shown in the dashboard header and mobile page.</p>
-          </div>
-
-          <!-- Save Directory -->
-          <div class="settings-form-group">
-            <label for="saveDirInput">Save Directory</label>
-            <div class="input-row">
-              <input type="text" id="saveDirInput" placeholder="./received">
-              <button class="btn btn-secondary" id="browseDirBtn">Browse...</button>
-            </div>
-            <p class="settings-help">Absolute path (e.g., <code>C:\Users\name\Downloads</code>) or relative path (e.g., <code>./received</code>).</p>
-          </div>
-
-          <!-- Server Port -->
-          <div class="settings-form-group">
-            <label for="portInput">Server Port</label>
-            <div class="input-row">
-              <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" style="padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.86rem; font-family: inherit; outline: none; width: 120px;">
-            </div>
-            <p class="settings-help">Port the server listens on. (Requires server restart to apply).</p>
-          </div>
-
-          <!-- Desktop Notifications & Rate Limiting -->
-          <div class="settings-form-group settings-divider" style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px;">
-            <label class="settings-checkbox-row">
-              <input type="checkbox" id="notificationsInput">
-              Enable Desktop Notifications
-            </label>
-            <label class="settings-checkbox-row">
-              <input type="checkbox" id="rateLimitInput">
-              Enable Rate Limiting (DoS Protection)
-            </label>
-          </div>
-
-          <!-- Temporary Mode and Duration -->
-          <div class="settings-form-group settings-divider" style="padding-top: 16px;">
-            <label class="settings-checkbox-row" style="margin-bottom: 8px;">
-              <input type="checkbox" id="tempModeInput">
-              Enable Temporary Mode
-            </label>
-            <p class="settings-help" style="margin-left:28px; margin-bottom: 12px;">Received files and history will auto-delete and do not survive server reboot.</p>
-            
-            <div class="input-row" style="margin-left: 28px; align-items: center; gap: 10px;">
-              <span style="font-size: 0.84rem; color: var(--text-secondary);">Delete files after:</span>
-              <select id="tempModeHoursInput" style="padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.82rem; outline: none; font-family: inherit; cursor: pointer;">
-                <option value="1">1 Hour</option>
-                <option value="2">2 Hours</option>
-                <option value="6">6 Hours</option>
-                <option value="12">12 Hours</option>
-                <option value="24">24 Hours</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="settings-status" id="settingsStatus"></div>
+      <!-- Tab 3: Tools -->
+      <section class="tab-content" id="tab-tools">
+        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
           
-          <button class="btn btn-primary" id="saveDirBtn" style="margin-top: 20px; width: 100%;">Save Configuration</button>
-
-          <!-- Storage Usage -->
-          <div class="storage-bar" id="storageBar">
-            <h4>Storage Usage</h4>
-            <div class="storage-progress">
-              <div class="storage-progress-fill" id="storageProgressFill" style="width:0%"></div>
-            </div>
-            <div class="storage-info">
-              <span id="storageUsed">0 files</span>
-              <span id="storageSize">0 B</span>
+          <!-- Tool 1: Instant QR Generator -->
+          <div class="send-card tool-card" style="margin: 0;">
+            <h3>Instant QR Code Generator</h3>
+            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Enter text or URL to generate a scannable QR code instantly</p>
+            <textarea id="qrTextInput" rows="3" placeholder="Type text or paste link here..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box;"></textarea>
+            <div class="qr-container" id="instantQrContainer" style="margin-top: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: white; border-radius: var(--radius-md); padding: 8px;">
+              <div class="qr-placeholder" style="color: #666; font-size: 0.76rem;">Start typing to generate...</div>
             </div>
           </div>
         </div>
@@ -400,14 +267,204 @@
     </div>
   </div>
 
+  <!-- ─── iOS Shortcuts Setup Modal ────────────────────── -->
+  <div id="shortcutsModal" class="modal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 680px; width: 90%; color: white; position: relative; box-shadow: var(--shadow-lg);">
+      <span class="close-modal" id="closeModal" style="position: absolute; right: 20px; top: 16px; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
+      <h2 style="margin-top: 0; font-size: 1.4rem;">Setup iPhone Integration</h2>
+      <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 20px;">Follow these steps to connect your iPhone with AiroDrop on your PC.</p>
+      
+      <!-- Step Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        <!-- QR Card 1: Share to PC -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">1. Share to PC Shortcut</h4>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">Send files/photos/text from any Share Sheet</p>
+          <div style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
+            <img id="imgShareToPC" alt="Share to PC QR" width="110" height="110" style="display: block;">
+          </div>
+          <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" style="font-size: 0.76rem; color: var(--accent); font-weight: 600; text-decoration: underline;">Get Shortcut</a>
+        </div>
+        
+        <!-- QR Card 2: Send Clipboard -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">2. Send Clipboard</h4>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">One-tap widget to send phone clipboard</p>
+          <div style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
+            <img id="imgClipboardToPC" alt="Clipboard to PC QR" width="110" height="110" style="display: block;">
+          </div>
+          <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" style="font-size: 0.76rem; color: var(--accent); font-weight: 600; text-decoration: underline;">Get Shortcut</a>
+        </div>
+
+        <!-- QR Card 3: Mobile Portal -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
+          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">3. Mobile Web Portal</h4>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">Browse, download, or upload files from Safari</p>
+          <div id="mobilePortalQrContainer" style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
+            <div id="mobileQrContainer"></div>
+          </div>
+          <a id="mobilePortalUrl" href="#" target="_blank" style="font-size: 0.74rem; color: var(--accent); font-weight: 600; text-decoration: underline; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">&nbsp;</a>
+        </div>
+      </div>
+
+      <!-- Shortcut Manual Setup Instruction (re-designed and integrated as clickable dropdown) -->
+      <details style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 10px 14px; text-align: left; font-size: 0.8rem; margin-top: 10px; outline: none; border-left: 3px solid var(--accent);">
+        <summary style="font-weight: 600; color: var(--accent-light); display: flex; align-items: center; gap: 6px; user-select: none; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Manual Shortcut Setup
+        </summary>
+        <div style="margin-top: 12px; max-height: 250px; overflow-y: auto; padding-right: 8px;">
+          <p style="margin-bottom: 12px; font-size: 0.82rem; opacity: 0.8; line-height: 1.4;">
+            iOS 15+ has removed support for direct third-party shortcut downloads. Please configure the shortcuts manually in the <strong>Shortcuts</strong> app:
+          </p>
+          
+          <div style="margin-bottom: 18px;">
+            <h4 style="margin: 0 0 6px 0; color: var(--accent); font-size: 0.86rem;">Shortcut 1: "Send to PC" (Share Sheet)</h4>
+            <ol style="margin-left: 16px; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
+              <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
+              <li>Tap <strong>ⓘ</strong> ➜ turn on <strong>"Show in Share Sheet"</strong> ➜ set input to accept <strong>Any</strong></li>
+              <li>Add action: <strong>"If"</strong> ➜ choose <strong>Shortcut Input</strong> ➜ tap the variable inside "If" and change it to <strong>"File Extension"</strong> ➜ set condition to <strong>"has any value"</strong></li>
+              <li>Inside <strong>"Then"</strong> (File/Media branch):
+                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                  <li>Add: <strong>"Get Contents of URL"</strong></li>
+                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                  <li>Method: <strong>POST</strong> → Request Body: <strong>File</strong> → File: <strong>Shortcut Input</strong></li>
+                </ul>
+              </li>
+              <li>Inside <strong>"Else"</strong> (Text branch):
+                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                  <li>Add: <strong>"Get Contents of URL"</strong></li>
+                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                  <li>Method: <strong>POST</strong> → Request Body: <strong>Form</strong> → Add Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
+                </ul>
+              </li>
+            </ol>
+          </div>
+
+          <div>
+            <h4 style="margin: 0 0 6px 0; color: var(--accent); font-size: 0.86rem;">Shortcut 2: "Send Clipboard" (Home Screen Widget)</h4>
+            <ol style="margin-left: 16px; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
+              <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
+              <li>Add action: <strong>"Get Clipboard"</strong></li>
+              <li>Add action: <strong>"If"</strong> ➜ choose <strong>Clipboard</strong> ➜ tap the variable inside "If" and change it to <strong>"File Extension"</strong> ➜ set condition to <strong>"has any value"</strong></li>
+              <li>Inside <strong>"Then"</strong> (File/Media branch):
+                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                  <li>Add: <strong>"Get Contents of URL"</strong></li>
+                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                  <li>Method: <strong>POST</strong> → Request Body: <strong>File</strong> → File: <strong>Clipboard</strong></li>
+                </ul>
+              </li>
+              <li>Inside <strong>"Else"</strong> (Text/Links branch):
+                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                  <li>Add: <strong>"Get Contents of URL"</strong></li>
+                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                  <li>Method: <strong>POST</strong> → Request Body: <strong>Form</strong> → Add Text Field: Key: <code>content</code>, Value: <strong>Clipboard</strong></li>
+                </ul>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ─── Settings Modal ────────────────────────────────── -->
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 90%; color: white; position: relative; box-shadow: var(--shadow-lg);">
+      <span class="close-modal" id="btnCloseSettings" style="position: absolute; right: 20px; top: 16px; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
+      <h2 style="margin-top: 0; font-size: 1.4rem;">Settings & Preferences</h2>
+      
+      <div class="settings-form" style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+        
+        <!-- PC Server Settings -->
+        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Server Preferences</h3>
+          
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Device Name</label>
+            <input type="text" id="deviceNameInput" placeholder="My PC" style="width: 100%; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Save Directory</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="saveDirInput" placeholder="./received" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
+              <button class="btn btn-secondary" id="browseDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Server Port</label>
+            <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" style="width: 100px; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 10px;">Requires restart to apply</span>
+          </div>
+        </div>
+
+        <!-- Web App Rules & Durations -->
+        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Security & Notifications</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="notificationsInput" style="cursor: pointer;"> Enable Desktop Notifications
+            </label>
+            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="rateLimitInput" style="cursor: pointer;"> Enable Rate Limiting (DoS Protection)
+            </label>
+            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="tempModeInput" style="cursor: pointer;"> Enable Temporary Mode (Auto-delete)
+            </label>
+          </div>
+          
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; padding-left: 20px;">
+            <span style="font-size: 0.76rem; color: var(--text-secondary);">Delete files after:</span>
+            <select id="tempModeHoursInput" style="padding: 4px 8px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; font-size: 0.76rem; cursor: pointer;">
+              <option value="1">1 Hour</option>
+              <option value="2">2 Hours</option>
+              <option value="6">6 Hours</option>
+              <option value="12">12 Hours</option>
+              <option value="24">24 Hours</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Desktop App Options (Visible inside Electron) -->
+        <div id="electronSettingsCard" style="display: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Desktop App Preferences</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="desktopAutoStart" style="cursor: pointer;"> Launch AiroDrop on System Startup
+            </label>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span id="desktopStatusIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
+              <span id="desktopStatusText" style="font-size: 0.78rem; font-weight: 600;">Checking Server...</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-primary" id="btnDesktopStart" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Start</button>
+              <button class="btn btn-danger" id="btnDesktopStop" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Stop</button>
+              <button class="btn btn-danger" id="btnDesktopKillAll" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer; opacity: 0.9;" title="Force Quit Process">Kill All</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-status" id="settingsStatus" style="font-size: 0.8rem; text-align: center;"></div>
+        <button class="btn btn-primary" id="saveDirBtn" style="padding: 10px; font-size: 0.84rem; font-weight: 600; width: 100%; cursor: pointer;">Save Configurations</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── Toast ─────────────────────────────────────────── -->
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- ─── Footer ────────────────────────────────────────── -->
   <div class="web-footer" style="text-align: center; padding: 20px; font-size: 12px; color: #888;">
-    Created by Asep Sayyad | <a href="https://github.com/asepsayyad007" target="_blank" style="color: #6366f1; text-decoration: none;">github.com/asepsayyad007</a>
+    Created by Asep Sayyad ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: #6366f1; text-decoration: none;">github.com/asepsayyad007</a>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

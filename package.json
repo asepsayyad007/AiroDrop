@@ -1,6 +1,6 @@
 {
   "name": "ios-win-integration",
-  "version": "3.0.1",
+  "version": "3.6.0",
   "description": "Send images and text from iPhone to PC over local network via iOS Shortcuts",
   "main": "main.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "com.airodrop.app",
+    "appId": "com.asep-ios-integration.airodrop",
     "productName": "AiroDrop",
     "directories": {
       "output": "dist"

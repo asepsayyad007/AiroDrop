@@ -6,6 +6,8 @@ const server = require('./server'); // Our refactored server.js
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
+let serverRunning = false;
+let serverPort = null;
 
 // ─── Single Instance Lock ─────────────────────────────────────
 const gotTheLock = app.requestSingleInstanceLock();
@@ -24,32 +26,37 @@ app.on('second-instance', () => {
 
 // ─── Main Initialization ──────────────────────────────────────
 app.whenReady().then(() => {
+  app.setAppUserModelId('com.asep-ios-integration.airodrop');
+  
   // Initialize server with userData path for persistent data
   const userDataPath = app.getPath('userData');
   server.init(userDataPath);
 
-  createWindow();
-  createTray();
-
-  // Start the server by default
+  // Start the server FIRST so it's ready when window loads
   server.startServer((port, err) => {
-    if (mainWindow) {
+    serverRunning = !err;
+    serverPort = port || server.getPort();
+    updateTrayMenu(serverRunning);
+    // If window is already loaded, send status immediately
+    if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('server-status', { 
-        running: !err, 
-        port: port || server.getPort(),
+        running: serverRunning, 
+        port: serverPort,
         ip: server.getLocalIP(),
         error: err ? err.message : null 
       });
     }
-    updateTrayMenu(!err);
   });
+
+  createWindow();
+  createTray();
 });
 
 // ─── Window Management ────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 650,
-    height: 750,
+    width: 780,
+    height: 720,
     resizable: true,
     title: 'AiroDrop',
     icon: path.join(__dirname, 'public', 'logo.png'),
@@ -60,7 +67,7 @@ function createWindow() {
   });
 
   mainWindow.setMenuBarVisibility(false);
-  mainWindow.loadFile(path.join(__dirname, 'gui', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'public', 'index.html'));
 
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
@@ -71,8 +78,16 @@ function createWindow() {
 
   // Send initial state when window finishes loading
   mainWindow.webContents.on('did-finish-load', () => {
-    const isRunning = server.getPort() !== undefined; // rough check, actual status managed via callbacks
+    // Always send current server status to newly loaded renderer
+    mainWindow.webContents.send('server-status', {
+      running: serverRunning,
+      port: serverPort,
+      ip: server.getLocalIP(),
+      error: null
+    });
     mainWindow.webContents.send('login-item-settings', app.getLoginItemSettings().openAtLogin);
+    // Also push current directory
+    mainWindow.webContents.send('dir-updated', server.getSaveDir());
   });
 }
 
@@ -105,19 +120,23 @@ function createTray() {
 function updateTrayMenu(isRunning) {
   if (!tray) return;
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Open AiroDrop', click: () => { if (mainWindow) mainWindow.show(); } },
+    { label: 'Open AiroDrop', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
     { type: 'separator' },
     { 
       label: isRunning ? 'Stop Server' : 'Start Server', 
       click: () => {
         if (isRunning) {
           server.stopServer();
+          serverRunning = false;
+          serverPort = null;
           updateTrayMenu(false);
           if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
         } else {
           server.startServer((port, err) => {
-            updateTrayMenu(!err);
-            if (mainWindow) mainWindow.webContents.send('server-status', { running: !err, port, error: err?.message });
+            serverRunning = !err;
+            serverPort = port || server.getPort();
+            updateTrayMenu(serverRunning);
+            if (mainWindow) mainWindow.webContents.send('server-status', { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message });
           });
         }
       } 
@@ -143,19 +162,24 @@ app.on('before-quit', () => {
 // ─── IPC Communication with GUI ───────────────────────────────
 ipcMain.on('start-server', (event) => {
   server.startServer((port, err) => {
-    updateTrayMenu(!err);
-    event.reply('server-status', { running: !err, port, ip: server.getLocalIP(), error: err?.message });
+    serverRunning = !err;
+    serverPort = port || server.getPort();
+    updateTrayMenu(serverRunning);
+    const status = { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message };
+    if (mainWindow) mainWindow.webContents.send('server-status', status);
   });
 });
 
 ipcMain.on('stop-server', (event) => {
   server.stopServer();
+  serverRunning = false;
+  serverPort = null;
   updateTrayMenu(false);
-  event.reply('server-status', { running: false });
+  if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
 });
 
 ipcMain.on('get-status', (event) => {
-  event.reply('server-status', { running: true, port: server.getPort(), ip: server.getLocalIP() });
+  event.reply('server-status', { running: serverRunning, port: serverPort || server.getPort(), ip: server.getLocalIP() });
 });
 
 ipcMain.on('open-dashboard', () => {
@@ -196,4 +220,21 @@ ipcMain.on('change-dir', async (event) => {
 ipcMain.on('force-kill-all', () => {
   server.stopServer();
   app.exit(0);
+});
+
+ipcMain.on('get-port-sync', (event) => {
+  event.returnValue = server.getPort() || 3478;
+});
+
+ipcMain.on('open-file-folder', (event, filename) => {
+  const filePath = path.join(server.getSaveDir(), filename);
+  shell.showItemInFolder(filePath);
+});
+
+ipcMain.on('restore-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
 });

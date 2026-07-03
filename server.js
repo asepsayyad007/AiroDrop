@@ -105,6 +105,8 @@ const MAX_HISTORY = 100;
 
 // ─── In-Memory Stores ──────────────────────────────────────────
 const history = [];          // Received items (from iPhone)
+let scratchpadText = '';     // Shared scratchpad text
+let bookmarks = [];          // Shared links/bookmarks
 
 function loadHistory() {
   if (TEMPORARY_MODE) {
@@ -658,6 +660,24 @@ app.post(['/api/image', '/api/file'], upload.fields([{ name: 'image', maxCount: 
 
 // GET /api/history — Return received items list
 app.get('/api/history', (req, res) => {
+  let changed = false;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    if (item.type === 'image' || item.type === 'file') {
+      const fullPath = item.filename 
+        ? path.join(SAVE_DIR, item.filename) 
+        : (path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path));
+      if (!fs.existsSync(fullPath)) {
+        console.log(`[HISTORY-CLEANUP] File no longer exists on disk, removing from list: ${item.filename || item.id}`);
+        history.splice(i, 1);
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    saveHistory();
+  }
+
   const since = req.query.since;
   let items = history;
   if (since) {
@@ -671,7 +691,9 @@ app.delete('/api/history', (req, res) => {
   try {
     for (const item of history) {
       if (item.filename) {
-        const fullPath = path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path);
+        const fullPath = item.filename 
+          ? path.join(SAVE_DIR, item.filename) 
+          : (path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path));
         try {
           if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
         } catch (e) {
@@ -688,6 +710,47 @@ app.delete('/api/history', (req, res) => {
   }
 });
 
+// GET /api/scratchpad — Fetch current scratchpad text
+app.get('/api/scratchpad', (req, res) => {
+  res.json({ text: scratchpadText });
+});
+
+// POST /api/scratchpad — Save current scratchpad text and broadcast
+app.post('/api/scratchpad', express.json(), (req, res) => {
+  scratchpadText = req.body.text || "";
+  broadcastSSE('scratchpad', { text: scratchpadText });
+  res.json({ success: true, text: scratchpadText });
+});
+
+// GET /api/bookmarks — Fetch bookmarks
+app.get('/api/bookmarks', (req, res) => {
+  res.json({ bookmarks });
+});
+
+// POST /api/bookmarks — Add bookmark and broadcast
+app.post('/api/bookmarks', express.json(), (req, res) => {
+  const { title, url } = req.body;
+  if (title && url) {
+    const newBookmark = {
+      id: Math.random().toString(36).substring(7),
+      title: title.trim(),
+      url: url.trim()
+    };
+    bookmarks.push(newBookmark);
+    broadcastSSE('bookmarks', { bookmarks });
+    res.json({ success: true, bookmarks, bookmark: newBookmark });
+  } else {
+    res.status(400).json({ error: 'Missing title or url' });
+  }
+});
+
+// DELETE /api/bookmarks/:id — Remove a bookmark and broadcast
+app.delete('/api/bookmarks/:id', (req, res) => {
+  bookmarks = bookmarks.filter(b => b.id !== req.params.id);
+  broadcastSSE('bookmarks', { bookmarks });
+  res.json({ success: true, bookmarks });
+});
+
 // DELETE /api/history/:id — Delete a single history item by ID and delete its file
 app.delete('/api/history/:id', (req, res) => {
   try {
@@ -699,7 +762,9 @@ app.delete('/api/history/:id', (req, res) => {
     const item = history[index];
     
     if (item.filename) {
-      const fullPath = path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path);
+      const fullPath = item.filename 
+        ? path.join(SAVE_DIR, item.filename) 
+        : (path.isAbsolute(item.path) ? item.path : path.resolve(__dirname, item.path));
       try {
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
