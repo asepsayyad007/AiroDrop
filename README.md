@@ -76,6 +76,11 @@ Allows sharing text, links, or documents directly from the share sheet of any ap
 6.  **Inside the "Else" block (when sharing text or web pages):**
     *   Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `Form` ➜ Add new Text Field ➜ Key: `content`, Value: `Shortcut Input`.
 7.  Add a **"Show Notification"** action at the very end ➜ `"Sent to PC ✓"`.
+   
+### OR 
+
+Click below link from your iPhone to install shortcut ( Share Sheet Shortcut )
+iCloud link : `https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d`
 
 ### Shortcut 2: "Send Clipboard" (Home Screen Widget)
 One-tap widget on your Home Screen to upload whatever is in your phone's clipboard:
@@ -87,6 +92,12 @@ One-tap widget on your Home Screen to upload whatever is in your phone's clipboa
 5.  **Inside the "Else" block (when copying text/links):**
     *   Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `Form` ➜ Add new Text Field ➜ Key: `content`, Value: `Clipboard`.
 6.  Add action: **"Show Notification"** ➜ `"Clipboard sent ✓"`.
+
+### OR 
+
+ClipboardToPc ( Text & Image only) ( Home screen widget )
+iCloud link : `https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b`
+
 
 ---
 
