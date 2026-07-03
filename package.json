@@ -1,6 +1,6 @@
 {
   "name": "ios-win-integration",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "description": "Send images and text from iPhone to PC over local network via iOS Shortcuts",
   "main": "main.js",
   "scripts": {

@@ -48,8 +48,8 @@ app.whenReady().then(() => {
 // ─── Window Management ────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: 600,
+    width: 650,
+    height: 750,
     resizable: true,
     title: 'AiroDrop',
     icon: path.join(__dirname, 'public', 'logo.png'),

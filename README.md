@@ -1,4 +1,4 @@
-# AiroDrop 🚀
+# AiroDrop v3.0.1 🚀
 
 A self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. It allows you to transfer text, links, images, and files (PDFs, MP3s, ZIPs, etc.) from an iOS device to a PC over your local network.
 
