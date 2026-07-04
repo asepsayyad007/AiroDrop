@@ -22,6 +22,8 @@ const os = require('os');
 const webdav = require('webdav-server').v2;
 const koffi = require('koffi');
 const WebSocket = require('ws');
+const EventEmitter = require('events');
+const serverEvents = new EventEmitter();
 
 // ─── Win32 FFI Initialization for Trackpad ──────────────────
 let user32 = null;
@@ -407,6 +409,11 @@ const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 const rawParser = express.raw({ type: '*/*', limit: '50mb' });
 
 app.use((req, res, next) => {
+  // Bypass body parsers completely for WebDAV paths to prevent stream consumption conflicts
+  if (req.path === '/webdav' || req.path.startsWith('/webdav/')) {
+    return next();
+  }
+
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
     next();
@@ -422,9 +429,15 @@ app.use((req, res, next) => {
 // CORS — allow all local network access
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  // Support standard WebDAV HTTP methods
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE, PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK');
+  // Support and expose WebDAV headers
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Depth, Destination, Overwrite, If, Lock-Token');
+  res.header('Access-Control-Expose-Headers', 'DAV, Allow, Lock-Token');
+  
+  if (req.method === 'OPTIONS' && !req.path.startsWith('/webdav')) {
+    return res.sendStatus(204);
+  }
   next();
 });
 
@@ -1886,6 +1899,12 @@ function startServer(portCallback) {
             // Key codes (like Backspace=8, Enter=13)
             sendKeystroke(data.code);
             break;
+          case 'screencast_start':
+            serverEvents.emit('screencast_start', ws);
+            break;
+          case 'screencast_stop':
+            serverEvents.emit('screencast_stop', ws);
+            break;
         }
       } catch (err) {
         console.error('[TRACKPAD] WS Message parsing failed:', err.message);
@@ -1894,6 +1913,7 @@ function startServer(portCallback) {
     
     ws.on('close', () => {
       console.log('[TRACKPAD] Phone disconnected');
+      serverEvents.emit('screencast_stop', ws);
       broadcastSSE('trackpad_status', { connected: false });
     });
   });
@@ -1935,5 +1955,6 @@ module.exports = {
   getPort: () => PORT,
   getSaveDir: () => SAVE_DIR,
   setSaveDir,
-  getLocalIP
+  getLocalIP,
+  serverEvents
 };

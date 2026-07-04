@@ -5,11 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Send to PC">
+  <meta name="apple-mobile-web-app-title" content="AiroDrop">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0a0f">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="logo.svg">
   <link rel="alternate icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="logo-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="logo.png">
   <title>Send to PC</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1118,8 +1123,23 @@
       if (!btnOpen || !overlay || !btnClose || !touchpadArea) return;
 
       // ── Connection State Machine ──
+      const btnScreencast = document.getElementById('btnTrackpadScreencast');
       let wantsConnected = false;
       let isConnecting = false;
+      let isScreencastActive = false;
+
+      function resetScreencastUI() {
+        isScreencastActive = false;
+        if (btnScreencast) {
+          btnScreencast.textContent = '📺 Screencast';
+          btnScreencast.style.background = 'rgba(255,255,255,0.08)';
+          btnScreencast.style.display = 'none';
+        }
+        const screencastFrame = document.getElementById('screencastFrame');
+        const touchpadHelpText = document.getElementById('touchpadHelpText');
+        if (screencastFrame) screencastFrame.style.display = 'none';
+        if (touchpadHelpText) touchpadHelpText.style.display = 'block';
+      }
 
       function updateConnectButton(state) {
         if (!btnConnect) return;
@@ -1127,6 +1147,7 @@
           case 'disconnected':
             btnConnect.textContent = '🔌 Connect';
             btnConnect.style.background = 'rgba(255,255,255,0.08)';
+            resetScreencastUI();
             break;
           case 'connecting':
             btnConnect.textContent = '⏳ Connecting...';
@@ -1135,10 +1156,12 @@
           case 'connected':
             btnConnect.textContent = '🟢 Connected';
             btnConnect.style.background = '#10b981';
+            if (btnScreencast) btnScreencast.style.display = 'block';
             break;
           case 'failed':
             btnConnect.textContent = '🔴 Retry';
             btnConnect.style.background = '#ef4444';
+            resetScreencastUI();
             break;
         }
       }
@@ -1161,6 +1184,20 @@
           if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mobileName = 'iPhone';
           else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
           sendWS({ type: 'identify', deviceName: mobileName });
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'screencast_frame' && isScreencastActive) {
+              const screencastFrame = document.getElementById('screencastFrame');
+              if (screencastFrame) {
+                screencastFrame.src = data.image;
+              }
+            }
+          } catch (err) {
+            // silent catch
+          }
         };
 
         ws.onerror = () => {
@@ -1227,6 +1264,30 @@
           } else {
             wantsConnected = true;
             connectWS();
+          }
+        });
+      }
+
+      if (btnScreencast) {
+        btnScreencast.addEventListener('click', () => {
+          if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
+            showToast('Trackpad not connected');
+            return;
+          }
+
+          isScreencastActive = !isScreencastActive;
+          if (isScreencastActive) {
+            btnScreencast.textContent = '📺 Stop Stream';
+            btnScreencast.style.background = 'linear-gradient(135deg, var(--accent), #ff8800)';
+            document.getElementById('screencastFrame').style.display = 'block';
+            document.getElementById('touchpadHelpText').style.display = 'none';
+            sendWS({ type: 'screencast_start' });
+          } else {
+            btnScreencast.textContent = '📺 Screencast';
+            btnScreencast.style.background = 'rgba(255,255,255,0.08)';
+            document.getElementById('screencastFrame').style.display = 'none';
+            document.getElementById('touchpadHelpText').style.display = 'block';
+            sendWS({ type: 'screencast_stop' });
           }
         });
       }
@@ -1358,6 +1419,7 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
       <h3 style="font-size: 1.05rem; color: var(--text); margin: 0;">Remote Trackpad</h3>
       <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="btnTrackpadScreencast" class="btn" style="margin: 0; background: rgba(255,255,255,0.08); font-size: 0.75rem; padding: 6px 14px; width: auto; border: 1px solid var(--card-border); border-radius: 8px; display: none;">📺 Screencast</button>
         <button id="btnTrackpadConnect" class="btn" style="margin: 0; background: rgba(255,255,255,0.08); font-size: 0.75rem; padding: 6px 14px; width: auto; border: 1px solid var(--card-border); border-radius: 8px;">🔌 Connect</button>
         <button id="btnCloseTrackpad" style="background: none; border: none; color: var(--text2); font-size: 1.5rem; cursor: pointer; padding: 5px;">&times;</button>
       </div>
@@ -1497,7 +1559,8 @@
 
     <!-- Touchpad Area -->
     <div id="touchpadArea" style="flex: 1; background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.08); border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 10px; touch-action: none; min-height: 120px;">
-      <span style="color: var(--text3); font-size: 0.78rem; pointer-events: none; text-align: center; padding: 20px; line-height: 1.6;">
+      <img id="screencastFrame" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: 1; display: none;">
+      <span id="touchpadHelpText" style="color: var(--text3); font-size: 0.78rem; pointer-events: none; text-align: center; padding: 20px; line-height: 1.6; z-index: 2;">
         Drag one finger to move cursor<br>
         Tap → Left Click &bull; Double-tap → Double Click<br>
         Two-finger drag → Scroll

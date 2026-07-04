@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog, desktopCapturer } = require('electron');
 const path = require('path');
 const os = require('os');
 const server = require('./server'); // Our refactored server.js
@@ -236,5 +236,48 @@ ipcMain.on('restore-window', () => {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
+  }
+});
+
+// ─── Screencast Stream Handling ──────────────────────────────
+const screencastTimers = new Map();
+
+server.serverEvents.on('screencast_start', (ws) => {
+  if (screencastTimers.has(ws)) return; // Already active
+
+  console.log('[SCREENCAST] Starting desktop stream to mobile');
+  
+  const timerId = setInterval(() => {
+    if (ws.readyState !== 1) { // not OPEN
+      clearInterval(timerId);
+      screencastTimers.delete(ws);
+      return;
+    }
+
+    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 960, height: 540 } })
+      .then(sources => {
+        if (sources && sources.length > 0) {
+          const imageBuffer = sources[0].thumbnail.toJPEG(60); // 60% quality JPEG is fast and light
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({
+              type: 'screencast_frame',
+              image: 'data:image/jpeg;base64,' + imageBuffer.toString('base64')
+            }));
+          }
+        }
+      })
+      .catch(err => {
+        console.error('[SCREENCAST] Capture failed:', err.message);
+      });
+  }, 250); // ~4 fps is smooth enough and saves network overhead on local wifi
+
+  screencastTimers.set(ws, timerId);
+});
+
+server.serverEvents.on('screencast_stop', (ws) => {
+  if (screencastTimers.has(ws)) {
+    console.log('[SCREENCAST] Stopping desktop stream');
+    clearInterval(screencastTimers.get(ws));
+    screencastTimers.delete(ws);
   }
 });

@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AiroDrop">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="apple-touch-icon" href="logo-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="logo-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="logo.png">
   <title>AiroDrop — Dashboard</title>
   <meta name="description" content="Transfer text, images, and files between your iPhone and PC over local WiFi.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -586,5 +595,14 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('[ServiceWorker] Registered successfully', reg.scope))
+          .catch((err) => console.error('[ServiceWorker] Registration failed', err));
+      });
+    }
+  </script>
 </body>
 </html>
