@@ -148,6 +148,6 @@ Configuration is managed via `config.json` inside your system's user data direct
 ---
 
 ## Creator & License
-Created by **Asep Sayyad** | GitHub: [github.com/asepsayyad007](https://github.com/asepsayyad007)
+Created by **Asep with Love ❤️** | GitHub: [github.com/asepsayyad007](https://github.com/asepsayyad007)
 
 Released under the **MIT License**.

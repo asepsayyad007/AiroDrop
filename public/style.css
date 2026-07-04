@@ -21,11 +21,11 @@
   --text-secondary: #8888a0;
   --text-muted: #55556a;
 
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-dark: #4f46e5;
-  --accent-glow: rgba(99, 102, 241, 0.25);
-  --accent-bg: rgba(99, 102, 241, 0.12);
+  --accent: #ff5500;
+  --accent-light: #ffaa00;
+  --accent-dark: #d02c00;
+  --accent-glow: rgba(255, 85, 0, 0.25);
+  --accent-bg: rgba(255, 85, 0, 0.12);
 
   --success: #22c55e;
   --success-bg: rgba(34, 197, 94, 0.12);
@@ -47,9 +47,9 @@
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
   --mesh-gradient:
-    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(99,102,241,0.08), transparent),
-    radial-gradient(ellipse 500px 500px at 80% 80%, rgba(139,92,246,0.06), transparent),
-    radial-gradient(ellipse 400px 300px at 60% 30%, rgba(59,130,246,0.05), transparent);
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(255,85,0,0.08), transparent),
+    radial-gradient(ellipse 500px 500px at 80% 80%, rgba(255,0,85,0.06), transparent),
+    radial-gradient(ellipse 400px 300px at 60% 30%, rgba(255,170,0,0.05), transparent);
 }
 
 /* ─── Theme: Liquid Glass ───────────────────────────────────── */
@@ -69,11 +69,11 @@
   --text-secondary: #4a4a6a;
   --text-muted: #8888a0;
 
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-dark: #4f46e5;
-  --accent-glow: rgba(99, 102, 241, 0.30);
-  --accent-bg: rgba(99, 102, 241, 0.12);
+  --accent: #ff5500;
+  --accent-light: #ffaa00;
+  --accent-dark: #d02c00;
+  --accent-glow: rgba(255, 85, 0, 0.30);
+  --accent-bg: rgba(255, 85, 0, 0.12);
 
   --success: #16a34a;
   --success-bg: rgba(22, 163, 74, 0.10);
@@ -86,9 +86,9 @@
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
 
   --mesh-gradient: 
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(99,102,241,0.12), transparent 60%),
-    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(139,92,246,0.08), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 50% 10%, rgba(59,130,246,0.06), transparent 50%);
+    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(255,85,0,0.12), transparent 60%),
+    radial-gradient(ellipse 60% 80% at 85% 75%, rgba(255,0,85,0.08), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 10%, rgba(255,170,0,0.06), transparent 50%);
 }
 
 /* ─── Theme: Light ──────────────────────────────────────────── */
@@ -108,11 +108,11 @@
   --text-secondary: #4b5563;
   --text-muted: #9ca3af;
 
-  --accent: #4f46e5;
-  --accent-light: #6366f1;
-  --accent-dark: #3730a3;
-  --accent-glow: rgba(79, 70, 229, 0.20);
-  --accent-bg: rgba(79, 70, 229, 0.08);
+  --accent: #d02c00;
+  --accent-light: #ff5500;
+  --accent-dark: #a01b00;
+  --accent-glow: rgba(208, 44, 0, 0.20);
+  --accent-bg: rgba(208, 44, 0, 0.08);
 
   --success: #16a34a;
   --success-bg: rgba(22, 163, 74, 0.08);
@@ -125,8 +125,8 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 
   --mesh-gradient:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(79,70,229,0.06), transparent 60%),
-    radial-gradient(ellipse 60% 70% at 90% 80%, rgba(139,92,246,0.04), transparent 60%);
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(208,44,0,0.06), transparent 60%),
+    radial-gradient(ellipse 60% 70% at 90% 80%, rgba(255,0,85,0.04), transparent 60%);
 }
 
 /* ─── Theme: Midnight ───────────────────────────────────────── */
@@ -1846,4 +1846,38 @@ body.is-electron .web-footer {
   50% { transform: scale(1.1); }
   70% { transform: scale(0.9); }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* Sidebar Onboarding Tabs */
+.setup-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  outline: none;
+  font-family: inherit;
+}
+.setup-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+.setup-tab-btn.active {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--accent-light);
+  border-left-color: var(--accent);
+}
+.setup-tab-btn .icon {
+  font-size: 1.05rem;
+  width: 20px;
+  text-align: center;
 }

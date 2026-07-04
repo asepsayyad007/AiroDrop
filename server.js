@@ -102,6 +102,7 @@ let HISTORY_FILE;
 let SCRATCHPAD_FILE;
 let PORT = 3478;
 let SAVE_DIR;
+let SHARE_DIR;
 let TEMPORARY_MODE = false;
 let webdavServer = null;
 let DEVICE_NAME = os.hostname();
@@ -116,6 +117,7 @@ function init(userDataPath) {
   HISTORY_FILE = path.join(userDataPath, 'history.json');
   SCRATCHPAD_FILE = path.join(userDataPath, 'scratchpad.txt');
   SAVE_DIR = path.join(userDataPath, 'received');
+  SHARE_DIR = path.join(userDataPath, 'shared');
   
   loadConfig();
   loadHistory();
@@ -141,6 +143,13 @@ function loadConfig() {
           ? data.saveDir 
           : path.resolve(__dirname, data.saveDir);
       }
+      if (data.shareDir) {
+        SHARE_DIR = path.isAbsolute(data.shareDir) 
+          ? data.shareDir 
+          : path.resolve(__dirname, data.shareDir);
+      } else {
+        SHARE_DIR = SAVE_DIR;
+      }
     }
   } catch (err) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
@@ -157,6 +166,15 @@ function loadConfig() {
     if (!fs.existsSync(SAVE_DIR)) {
       fs.mkdirSync(SAVE_DIR, { recursive: true });
     }
+  }
+
+  try {
+    if (!fs.existsSync(SHARE_DIR)) {
+      fs.mkdirSync(SHARE_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.error('[CONFIG] Failed to create share directory, falling back to SAVE_DIR:', err.message);
+    SHARE_DIR = SAVE_DIR;
   }
 }
 
@@ -220,14 +238,40 @@ function saveScratchpad() {
 
 function initWebDAV() {
   try {
-    webdavServer = new webdav.WebDAVServer();
-    webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SAVE_DIR), (success) => {
+    const userManager = new webdav.SimpleUserManager();
+    const noAuth = {
+      userManager,
+      realm: 'default realm',
+      askForAuthentication(ctx) {
+        return {};
+      },
+      getUser(ctx, callback) {
+        userManager.getDefaultUser((user) => {
+          callback(webdav.Errors.None, user);
+        });
+      }
+    };
+
+    webdavServer = new webdav.WebDAVServer({
+      httpAuthentication: noAuth
+    });
+
+    webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SHARE_DIR), (success) => {
       if (success) {
-        console.log('[WEBDAV] Server physical directory mounted at:', SAVE_DIR);
+        console.log('[WEBDAV] Server physical directory mounted at:', SHARE_DIR);
       } else {
-        console.error('[WEBDAV] Failed to mount directory:', SAVE_DIR);
+        console.error('[WEBDAV] Failed to mount directory:', SHARE_DIR);
       }
     });
+
+    // Trailing slash redirect for WebDAV clients (like iOS Files app and macOS Finder)
+    app.use((req, res, next) => {
+      if (req.path === '/webdav') {
+        return res.redirect(301, '/webdav/');
+      }
+      next();
+    });
+
     app.use(webdav.extensions.express('/webdav', webdavServer));
   } catch (err) {
     console.error('[WEBDAV] Failed to initialize WebDAV:', err.message);
@@ -237,11 +281,11 @@ function initWebDAV() {
 function updateWebDAVMount() {
   if (webdavServer) {
     try {
-      webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SAVE_DIR), (success) => {
+      webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SHARE_DIR), (success) => {
         if (success) {
-          console.log('[WEBDAV] Remounted save directory to:', SAVE_DIR);
+          console.log('[WEBDAV] Remounted share directory to:', SHARE_DIR);
         } else {
-          console.error('[WEBDAV] Failed to remount save directory to:', SAVE_DIR);
+          console.error('[WEBDAV] Failed to remount share directory to:', SHARE_DIR);
         }
       });
     } catch (err) {
@@ -897,6 +941,12 @@ app.post('/api/control', (req, res) => {
     case 'lock':
       cmd = 'rundll32.exe user32.dll,LockWorkStation';
       break;
+    case 'sleep':
+      cmd = 'powershell -Command "Add-Type -Assembly System.Windows.Forms; [System.Windows.Forms.Application]::SetSuspendState(\'Suspend\', $false, $false)"';
+      break;
+    case 'poweroff':
+      cmd = 'shutdown /s /f /t 0';
+      break;
     case 'volume_up':
       cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]175)"';
       break;
@@ -994,14 +1044,15 @@ app.get('/api/screenshot', (req, res) => {
   
   // Windows PowerShell to capture primary screen and save as PNG (DPI aware)
   const psScript = `
-    $Sig = '[DllImport(\"user32.dll\")] public static extern bool SetProcessDPIAware();';
+    $Sig = '[DllImport(\\"user32.dll\\")] public static extern bool SetProcessDPIAware(); [DllImport(\\"user32.dll\\")] public static extern int GetSystemMetrics(int nIndex);';
     $Type = Add-Type -MemberDefinition $Sig -Name 'DpiAware' -PassThru;
     [void]$Type::SetProcessDPIAware();
-    Add-Type -AssemblyName System.Drawing, System.Windows.Forms;
-    $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds;
-    $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height;
+    $w = $Type::GetSystemMetrics(0);
+    $h = $Type::GetSystemMetrics(1);
+    Add-Type -AssemblyName System.Drawing;
+    $bmp = New-Object System.Drawing.Bitmap $w, $h;
     $graphics = [System.Drawing.Graphics]::FromImage($bmp);
-    $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bmp.Size);
+    $graphics.CopyFromScreen(0, 0, 0, 0, $bmp.Size);
     $bmp.Save('${tempPath.replace(/'/g, "''")}', [System.Drawing.Imaging.ImageFormat]::Png);
     $graphics.Dispose();
     $bmp.Dispose();
@@ -1092,15 +1143,18 @@ app.get('/api/qr.png', async (req, res) => {
 // GET /api/qr-gen.png — Generate a QR code from custom text query directly
 app.get('/api/qr-gen.png', async (req, res) => {
   try {
-    const { text } = req.query;
+    const { text, dark, light } = req.query;
     if (!text) {
       return res.status(400).send('No text provided');
     }
+    const darkColor = dark ? (dark.startsWith('#') ? dark : '#' + dark) : '#000000';
+    const lightColor = light ? (light.startsWith('#') ? light : '#' + light) : '#ffffff';
+
     res.setHeader('Content-Type', 'image/png');
     await QRCode.toFileStream(res, text, {
       width: 240,
       margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
+      color: { dark: darkColor, light: lightColor }
     });
   } catch (err) {
     console.error('[QR-GEN] Failed to generate custom QR stream:', err.message);
@@ -1112,6 +1166,7 @@ app.get('/api/qr-gen.png', async (req, res) => {
 app.get('/api/settings', (req, res) => {
   res.json({
     saveDir: SAVE_DIR,
+    shareDir: SHARE_DIR,
     port: PORT,
     temporaryMode: TEMPORARY_MODE,
     deviceName: DEVICE_NAME,
@@ -1122,10 +1177,10 @@ app.get('/api/settings', (req, res) => {
   });
 });
 
-// POST /api/settings — Update settings (saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours)
+// POST /api/settings — Update settings (saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours)
 app.post('/api/settings', async (req, res) => {
   try {
-    const { saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks } = req.body;
+    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks } = req.body;
     
     let resolvedPath = SAVE_DIR;
     if (saveDir) {
@@ -1142,6 +1197,24 @@ app.post('/api/settings', async (req, res) => {
       fs.unlinkSync(tempFile);
       
       SAVE_DIR = resolvedPath;
+    }
+
+    let resolvedSharePath = SHARE_DIR;
+    if (shareDir) {
+      resolvedSharePath = path.isAbsolute(shareDir) 
+        ? shareDir 
+        : path.resolve(__dirname, shareDir);
+
+      if (!fs.existsSync(resolvedSharePath)) {
+        fs.mkdirSync(resolvedSharePath, { recursive: true });
+      }
+
+      const tempFile = path.join(resolvedSharePath, '.write-test-' + Math.random().toString(36).substring(7));
+      fs.writeFileSync(tempFile, 'test');
+      fs.unlinkSync(tempFile);
+      
+      SHARE_DIR = resolvedSharePath;
+      updateWebDAVMount();
     }
 
     if (deviceName !== undefined) {
@@ -1185,6 +1258,7 @@ app.post('/api/settings', async (req, res) => {
 
     fs.writeFileSync(CONFIG_FILE, JSON.stringify({
       saveDir: SAVE_DIR,
+      shareDir: SHARE_DIR,
       port: PORT,
       temporaryMode: TEMPORARY_MODE,
       deviceName: DEVICE_NAME,
@@ -1194,10 +1268,11 @@ app.post('/api/settings', async (req, res) => {
       autoOpenLinks: AUTO_OPEN_LINKS
     }, null, 2));
 
-    console.log(`[CONFIG] Settings updated: SaveFolder=${SAVE_DIR}, TempMode=${TEMPORARY_MODE}, DeviceName=${DEVICE_NAME}, Port=${PORT}, RateLimit=${RATE_LIMIT_ENABLED}, Notifications=${NOTIFICATIONS_ENABLED}, TempHours=${TEMPORARY_MODE_HOURS}`);
+    console.log(`[CONFIG] Settings updated: SaveFolder=${SAVE_DIR}, ShareFolder=${SHARE_DIR}, TempMode=${TEMPORARY_MODE}, DeviceName=${DEVICE_NAME}, Port=${PORT}, RateLimit=${RATE_LIMIT_ENABLED}, Notifications=${NOTIFICATIONS_ENABLED}, TempHours=${TEMPORARY_MODE_HOURS}`);
     res.json({
       success: true,
       saveDir: SAVE_DIR,
+      shareDir: SHARE_DIR,
       temporaryMode: TEMPORARY_MODE,
       deviceName: DEVICE_NAME,
       port: PORT,
@@ -1682,8 +1757,11 @@ app.get('/m', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
 });
 
-// SPA fallback — serve index.html for any unmatched route (except /m)
-app.get('*', (req, res) => {
+// SPA fallback — serve index.html for any unmatched route (except /m and /webdav)
+app.get('*', (req, res, next) => {
+  if (req.path === '/webdav' || req.path.startsWith('/webdav/')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

@@ -35,7 +35,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "public/logo.png"
+      "icon": "public/logo.ico"
     },
     "nsis": {
       "oneClick": false,

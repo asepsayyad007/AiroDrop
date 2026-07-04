@@ -154,6 +154,46 @@
     }, 450);
   }
 
+  function getThemedQrUrl(text) {
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim().replace('#', '');
+    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary').trim().replace('#', '');
+    const darkParam = textColor || '000000';
+    const lightParam = bgColor || 'ffffff';
+    return `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent(text)}&dark=${darkParam}&light=${lightParam}`;
+  }
+
+  function refreshAllQrs() {
+    // 1. Mobile setup portal QR
+    const qrContainer = $('#mobileQrContainer');
+    if (qrContainer && serverInfo) {
+      const baseUrl = serverInfo.url;
+      qrContainer.innerHTML = `<img src="${getThemedQrUrl(`${baseUrl}/m`)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
+    }
+
+    // 2. Instant QR generator
+    const qrInput = $('#qrTextInput');
+    if (qrInput && qrInput.value.trim()) {
+      const renderQR = window._renderQR;
+      if (renderQR) renderQR(qrInput.value.trim());
+    }
+
+    // 3. Shortcuts modal QRs
+    const imgShareToPC = $('#imgShareToPC');
+    const imgClipboardToPC = $('#imgClipboardToPC');
+    const imgWebdavQR = $('#imgWebdavQR');
+
+    if (imgShareToPC && imgShareToPC.src) {
+      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
+    }
+    if (imgClipboardToPC && imgClipboardToPC.src) {
+      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
+    }
+    if (imgWebdavQR && imgWebdavQR.src && serverInfo) {
+      const webdavUrl = `http://${serverInfo.ip}:${serverInfo.port}/webdav`;
+      imgWebdavQR.src = getThemedQrUrl(webdavUrl);
+    }
+  }
+
   function setTheme(themeName) {
     document.documentElement.setAttribute('data-theme', themeName);
     localStorage.setItem('airodrop_theme', themeName);
@@ -180,6 +220,9 @@
         opt.classList.remove('active');
       }
     });
+
+    // Refresh all generated QR codes to align with the new theme colors
+    refreshAllQrs();
   }
 
   // ─── Server Info ───────────────────────────────────────────
@@ -210,7 +253,7 @@
     // Setup QR code for mobile (resized to fit the 110x110 box perfectly)
     const qrContainer = $('#mobileQrContainer');
     if (qrContainer) {
-      qrContainer.innerHTML = `<img src="${isElectron ? apiBase : ''}/api/qr.png?t=${Date.now()}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
+      qrContainer.innerHTML = `<img src="${getThemedQrUrl(`${baseUrl}/m`)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
     }
   }
 
@@ -618,11 +661,10 @@
 
     function renderQR(text) {
       if (!text) {
-        qrContainer.innerHTML = '<div class="qr-placeholder" style="color:#666;font-size:0.76rem;">Start typing to generate QR code...</div>';
+        qrContainer.innerHTML = '<div class="qr-placeholder" style="color:var(--text-muted);font-size:0.76rem;">Start typing to generate QR code...</div>';
         return;
       }
-      const encodedText = encodeURIComponent(text);
-      const imgSrc = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodedText}`;
+      const imgSrc = getThemedQrUrl(text);
 
       qrContainer.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
@@ -630,7 +672,7 @@
             src="${imgSrc}"
             alt="QR Code"
             width="180" height="180"
-            style="border:4px solid white;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:block;"
+            style="border:1px solid var(--glass-border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.4);display:block;"
             onerror="this.parentElement.innerHTML='<div style=&quot;color:#ef4444;font-size:0.76rem;padding:12px;text-align:center;&quot;>Failed to generate QR code. Server may be starting.</div>'"
           >
           <div style="display:flex;gap:8px;">
@@ -649,6 +691,8 @@
       // Simple toast hook for copy button
       window._qrCopyToast = () => showToast('Text copied!', 'success');
     }
+
+    window._renderQR = renderQR;
 
     qrInput.addEventListener('input', () => {
       clearTimeout(qrTimeout);
@@ -1021,6 +1065,7 @@
   // ─── Settings Controller ────────────────────────────────────
   function setupSettings() {
     const saveDirInput = $('#saveDirInput');
+    const shareDirInput = $('#shareDirInput');
     const saveDirBtn = $('#saveDirBtn');
     const settingsStatus = $('#settingsStatus');
     const tempModeInput = $('#tempModeInput');
@@ -1039,6 +1084,7 @@
         if (res.ok) {
           const data = await res.json();
           if (saveDirInput && data.saveDir) saveDirInput.value = data.saveDir;
+          if (shareDirInput && data.shareDir) shareDirInput.value = data.shareDir;
           if (tempModeInput) tempModeInput.checked = !!data.temporaryMode;
           if (deviceNameInput && data.deviceName) deviceNameInput.value = data.deviceName;
           if (portInput && data.port) portInput.value = data.port;
@@ -1057,6 +1103,7 @@
     if (saveDirBtn) {
       saveDirBtn.addEventListener('click', async () => {
         const saveDir = saveDirInput.value.trim();
+        const shareDir = shareDirInput ? shareDirInput.value.trim() : '';
         const temporaryMode = tempModeInput ? tempModeInput.checked : false;
         const deviceName = deviceNameInput ? deviceNameInput.value.trim() : '';
         const port = portInput ? portInput.value : 3478;
@@ -1075,6 +1122,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               saveDir, 
+              shareDir,
               temporaryMode, 
               deviceName, 
               port, 
@@ -1089,6 +1137,7 @@
           if (res.ok && data.success) {
             showSettingsStatus('Configuration saved successfully!', 'success');
             if (saveDirInput) saveDirInput.value = data.saveDir;
+            if (shareDirInput) shareDirInput.value = data.shareDir;
             if (deviceNameInput) deviceNameInput.value = data.deviceName;
             if (tempModeInput) tempModeInput.checked = !!data.temporaryMode;
             if (portInput) portInput.value = data.port;
@@ -1131,6 +1180,30 @@
           showSettingsStatus(err.message, 'error');
         } finally {
           browseDirBtn.disabled = false;
+        }
+      });
+    }
+
+    const browseShareDirBtn = $('#browseShareDirBtn');
+    if (browseShareDirBtn && saveDirBtn) {
+      browseShareDirBtn.addEventListener('click', async () => {
+        browseShareDirBtn.disabled = true;
+        showSettingsStatus('Please select a folder on your computer...', 'info');
+
+        try {
+          const res = await doFetch('/api/settings/browse', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success && data.path) {
+            shareDirInput.value = data.path;
+            showSettingsStatus(false);
+            saveDirBtn.click();
+          } else {
+            showSettingsStatus(false);
+          }
+        } catch (err) {
+          showSettingsStatus(err.message, 'error');
+        } finally {
+          browseShareDirBtn.disabled = false;
         }
       });
     }
@@ -1276,14 +1349,16 @@
     const closeModal = $('#closeModal');
     const imgShareToPC = $('#imgShareToPC');
     const imgClipboardToPC = $('#imgClipboardToPC');
+    const tabBtns = $$('.setup-tab-btn');
+    const tabContents = $$('.setup-tab-content');
 
     if (btnHeaderSetup && shortcutsModal) {
       btnHeaderSetup.addEventListener('click', () => {
         if (imgShareToPC) {
-          imgShareToPC.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d')}`;
+          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
         }
         if (imgClipboardToPC) {
-          imgClipboardToPC.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b')}`;
+          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
         }
         if (serverInfo) {
           const infoIPSetup = $('#infoIPSetup');
@@ -1295,16 +1370,41 @@
           const imgWebdavQR = $('#imgWebdavQR');
           const webdavUrlText = $('#webdavUrlText');
           if (imgWebdavQR) {
-            imgWebdavQR.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent(webdavUrl)}`;
+            imgWebdavQR.src = getThemedQrUrl(webdavUrl);
           }
           if (webdavUrlText) {
             webdavUrlText.textContent = webdavUrl;
             webdavUrlText.title = webdavUrl;
           }
         }
+        
+        // Reset tabs to default (Mobile Portal) on modal open
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.style.display = 'none');
+        const defaultBtn = $('.setup-tab-btn[data-target="setup-portal"]');
+        if (defaultBtn) defaultBtn.classList.add('active');
+        const defaultContent = $('#setup-portal');
+        if (defaultContent) defaultContent.style.display = 'flex';
+
         shortcutsModal.style.display = 'flex';
       });
     }
+
+    // Modal tabs logic
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.style.display = 'none');
+        
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-target');
+        const targetContent = $(`#${targetId}`);
+        if (targetContent) {
+          targetContent.style.display = 'flex';
+        }
+      });
+    });
 
     if (closeModal && shortcutsModal) {
       closeModal.addEventListener('click', () => {

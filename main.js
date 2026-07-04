@@ -59,7 +59,7 @@ function createWindow() {
     height: 720,
     resizable: true,
     title: 'AiroDrop',
-    icon: path.join(__dirname, 'public', 'logo.png'),
+    icon: path.join(__dirname, 'public', process.platform === 'win32' ? 'logo.ico' : 'logo.png'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -93,7 +93,7 @@ function createWindow() {
 
 // ─── Tray Management ──────────────────────────────────────────
 function createTray() {
-  const iconPath = path.join(__dirname, 'public', 'logo.png');
+  const iconPath = path.join(__dirname, 'public', process.platform === 'win32' ? 'logo.ico' : 'logo.png');
   tray = new Tray(iconPath);
   tray.setToolTip('AiroDrop');
   updateTrayMenu(true);

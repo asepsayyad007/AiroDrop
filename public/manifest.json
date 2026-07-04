@@ -9,10 +9,16 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%236366f1'/><path d='M256 120 L156 220 L220 220 L220 340 L292 340 L292 220 L356 220 Z' fill='white'/><rect x='180' y='360' width='152' height='24' rx='12' fill='white' opacity='0.7'/></svg>",
+      "src": "logo.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

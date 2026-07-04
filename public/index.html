@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="alternate icon" type="image/png" href="logo.png">
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -16,12 +18,8 @@
     <!-- ─── Header ──────────────────────────────────────── -->
     <header class="header">
       <div class="header-left">
-        <div class="logo">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
+        <div class="logo" style="background: none; box-shadow: none; border-radius: 0;">
+          <img src="logo.svg" alt="AiroDrop Logo" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <div class="header-title">
           <h1>AiroDrop</h1>
@@ -96,8 +94,8 @@
     </header>
 
     <!-- ─── Control Center ──────────────────────────────── -->
-    <div class="control-center" id="ccActionsGroup" style="display: none; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: 16px; gap: 12px; font-size: 0.82rem;">
-      <div style="display: flex; align-items: center; gap: 8px;">
+    <div class="control-center" id="ccActionsGroup" style="display: none; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: 16px; gap: 12px; font-size: 0.82rem; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
         <span class="status-indicator" id="ccIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
         <span id="ccText" style="font-weight: 600;">Service Stopped</span>
         <span style="color: var(--text-muted);">|</span>
@@ -105,13 +103,13 @@
       </div>
       
       <!-- Directory Path & Change button -->
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; max-width: 50%;">
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; min-width: 200px;">
         <span style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">Save to:</span>
         <span id="ccDirPath" style="font-family: monospace; font-size: 0.76rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;" title="...">Loading...</span>
         <button class="btn btn-secondary" id="btnCcChangeDir" style="padding: 4px 8px; font-size: 0.72rem; font-weight: 600; border-radius: var(--radius-xs); border: 1px solid var(--glass-border); cursor: pointer; background: rgba(255,255,255,0.05); color: white;">Change</button>
       </div>
 
-      <div style="display: flex; gap: 6px; align-items: center;">
+      <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
         <button class="btn btn-primary" id="btnCcStart" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #00d26a; color: white;">Start</button>
         <button class="btn btn-danger" id="btnCcStop" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white;">Stop</button>
         <button class="btn btn-danger" id="btnCcKillAll" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white; opacity: 0.85;" title="Force Kill App Process">Kill</button>
@@ -238,20 +236,20 @@
 
       <!-- Tab 3: Tools -->
       <section class="tab-content" id="tab-tools">
-        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 100%;">
+        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
           
           <!-- Tool 1: Instant QR Generator -->
-          <div class="send-card tool-card" style="margin: 0;">
+          <div class="send-card tool-card" style="margin: 0; grid-column: auto !important;">
             <h3>Instant QR Code Generator</h3>
             <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Enter text or URL to generate a scannable QR code instantly</p>
             <textarea id="qrTextInput" rows="3" placeholder="Type text or paste link here..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box;"></textarea>
-            <div class="qr-container" id="instantQrContainer" style="margin-top: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: white; border-radius: var(--radius-md); padding: 8px;">
-              <div class="qr-placeholder" style="color: #666; font-size: 0.76rem;">Start typing to generate...</div>
+            <div class="qr-container" id="instantQrContainer" style="margin-top: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 8px;">
+              <div class="qr-placeholder" style="color: var(--text-muted); font-size: 0.76rem;">Start typing to generate...</div>
             </div>
           </div>
-
+ 
           <!-- Tool 2: Shared Scratchpad -->
-          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column;">
+          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column; grid-column: auto !important;">
             <h3>Shared Scratchpad</h3>
             <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Text typed here syncs instantly to your phone and vice-versa</p>
             <textarea id="dashboardScratchpad" rows="8" placeholder="Type notes here to sync with your phone..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box; resize: vertical; flex: 1; min-height: 120px;"></textarea>
@@ -278,125 +276,210 @@
   </div>
 
   <!-- ─── iOS Shortcuts Setup Modal ────────────────────── -->
-  <div id="shortcutsModal" class="modal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 680px; width: 90%; color: white; position: relative; box-shadow: var(--shadow-lg);">
-      <span class="close-modal" id="closeModal" style="position: absolute; right: 20px; top: 16px; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
-      <h2 style="margin-top: 0; font-size: 1.4rem;">Setup iPhone Integration</h2>
-      <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 20px;">Follow these steps to connect your iPhone with AiroDrop on your PC.</p>
+  <div id="shortcutsModal" class="modal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 0; max-width: 900px; width: 95%; height: 80vh; max-height: 650px; display: flex; flex-direction: column; overflow: hidden; color: var(--text-primary); position: relative; box-shadow: var(--shadow-lg);">
       
-      <!-- Step Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
-        <!-- QR Card 1: Share to PC -->
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
-          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">1. Share to PC Shortcut</h4>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">Send files/photos/text from any Share Sheet</p>
-          <div style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
-            <img id="imgShareToPC" alt="Share to PC QR" width="110" height="110" style="display: block;">
-          </div>
-          <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" style="font-size: 0.76rem; color: var(--accent); font-weight: 600; text-decoration: underline;">Get Shortcut</a>
+      <!-- Modal Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
+        <div>
+          <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            iPhone Integration Setup
+          </h2>
+          <p style="margin: 4px 0 0 0; font-size: 0.76rem; color: var(--text-secondary);">Sync your mobile device directly with AiroDrop on your computer</p>
         </div>
-        
-        <!-- QR Card 2: Send Clipboard -->
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
-          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">2. Send Clipboard</h4>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">One-tap widget to send phone clipboard</p>
-          <div style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
-            <img id="imgClipboardToPC" alt="Clipboard to PC QR" width="110" height="110" style="display: block;">
-          </div>
-          <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" style="font-size: 0.76rem; color: var(--accent); font-weight: 600; text-decoration: underline;">Get Shortcut</a>
-        </div>
-
-        <!-- QR Card 3: Mobile Portal -->
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: center;">
-          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light);">3. Mobile Web Portal</h4>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; min-height: 32px;">Browse, download, or upload files from Safari</p>
-          <div id="mobilePortalQrContainer" style="background: white; padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
-            <div id="mobileQrContainer"></div>
-          </div>
-          <a id="mobilePortalUrl" href="#" target="_blank" style="font-size: 0.74rem; color: var(--accent); font-weight: 600; text-decoration: underline; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">&nbsp;</a>
-        </div>
-
-        <!-- QR Card 4: WebDAV Files App -->
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: left;">
-          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light); text-align: center;">4. Native Files App</h4>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; text-align: center;">Mount AiroDrop folder directly in iPhone Files app</p>
-          <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 8px;">
-            <strong>Setup Guide:</strong>
-            <ol style="margin: 4px 0 0 14px; padding: 0;">
-              <li>Open <strong>Files</strong> app on iPhone.</li>
-              <li>Tap <strong>•••</strong> (top-right) &rarr; <strong>Connect to Server</strong>.</li>
-              <li>Enter the server URL shown below.</li>
-              <li>Select <strong>Guest</strong> and tap Connect!</li>
-            </ol>
-          </div>
-          <span style="font-size: 0.72rem; color: var(--accent); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; text-align: center;" id="webdavUrlText">Connecting...</span>
-        </div>
+        <span class="close-modal" id="closeModal" style="font-size: 24px; cursor: pointer; color: var(--text-secondary); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); transition: all 0.2s;">&times;</span>
       </div>
 
-      <!-- Shortcut Manual Setup Instruction (re-designed and integrated as clickable dropdown) -->
-      <details style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 10px 14px; text-align: left; font-size: 0.8rem; margin-top: 10px; outline: none; border-left: 3px solid var(--accent);">
-        <summary style="font-weight: 600; color: var(--accent-light); display: flex; align-items: center; gap: 6px; user-select: none; cursor: pointer;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          Manual Shortcut Setup
-        </summary>
-        <div style="margin-top: 12px; max-height: 250px; overflow-y: auto; padding-right: 8px;">
-          <p style="margin-bottom: 12px; font-size: 0.82rem; opacity: 0.8; line-height: 1.4;">
-            iOS 15+ has removed support for direct third-party shortcut downloads. Please configure the shortcuts manually in the <strong>Shortcuts</strong> app:
-          </p>
+      <!-- Main Layout Body (Split Pane) -->
+      <div style="display: flex; flex: 1; overflow: hidden;">
+        
+        <!-- Sidebar Navigation -->
+        <div style="width: 220px; border-right: 1px solid var(--glass-border); background: rgba(0,0,0,0.08); display: flex; flex-direction: column; padding: 16px 0; gap: 6px; flex-shrink: 0; overflow-y: auto;">
+          <button class="setup-tab-btn active" data-target="setup-portal">
+            <span class="icon">📱</span> Mobile Web Portal
+          </button>
+          <button class="setup-tab-btn" data-target="setup-shortcuts">
+            <span class="icon">⚡</span> iOS Shortcuts
+          </button>
+          <button class="setup-tab-btn" data-target="setup-files">
+            <span class="icon">📂</span> Native Files App
+          </button>
+          <button class="setup-tab-btn" data-target="setup-manual">
+            <span class="icon">🛠️</span> Manual Setup
+          </button>
+        </div>
+
+        <!-- Detail Tab Contents -->
+        <div style="flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
           
-          <div style="margin-bottom: 18px;">
-            <h4 style="margin: 0 0 6px 0; color: var(--accent); font-size: 0.86rem;">Shortcut 1: "Send to PC" (Share Sheet)</h4>
-            <ol style="margin-left: 16px; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
-              <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
-              <li>Tap <strong>ⓘ</strong> ➜ turn on <strong>"Show in Share Sheet"</strong> ➜ set input to accept <strong>Any</strong></li>
-              <li>Add action: <strong>"If"</strong> ➜ choose <strong>Shortcut Input</strong> ➜ tap the variable inside "If" and change it to <strong>"File Extension"</strong> ➜ set condition to <strong>"has any value"</strong></li>
-              <li>Inside <strong>"Then"</strong> (File/Media branch):
-                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                  <li>Add: <strong>"Get Contents of URL"</strong></li>
-                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
-                  <li>Method: <strong>POST</strong> → Request Body: <strong>File</strong> → File: <strong>Shortcut Input</strong></li>
-                </ul>
-              </li>
-              <li>Inside <strong>"Else"</strong> (Text branch):
-                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                  <li>Add: <strong>"Get Contents of URL"</strong></li>
-                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
-                  <li>Method: <strong>POST</strong> → Request Body: <strong>Form</strong> → Add Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
-                </ul>
-              </li>
-            </ol>
+          <!-- Tab 1: Mobile Portal -->
+          <div id="setup-portal" class="setup-tab-content" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 14px;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Mobile Web Portal</h3>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+                  The Mobile Portal is a lightweight, responsive browser application. It lets you send/receive texts and files, control mouse cursor movement, access keyboard inputs, and trigger system actions.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="background: var(--accent-bg); color: var(--accent-light); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</div>
+                    <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Scan the QR code or click the URL link on your iPhone.</div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="background: var(--accent-bg); color: var(--accent-light); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</div>
+                    <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Tap the <strong>Share</strong> button in Safari's bottom toolbar.</div>
+                  </div>
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="background: var(--accent-bg); color: var(--accent-light); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</div>
+                    <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Select <strong>Add to Home Screen</strong> to pin the WebApp to your device layout for instant access!</div>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; width: 180px; margin: 0 auto; flex-shrink: 0; justify-content: center;">
+                <div id="mobilePortalQrContainer" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 8px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
+                  <div id="mobileQrContainer"></div>
+                </div>
+                <a id="mobilePortalUrl" href="#" target="_blank" style="font-size: 0.74rem; color: var(--accent); font-weight: 600; text-decoration: underline; display: block; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">Opening Portal...</a>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h4 style="margin: 0 0 6px 0; color: var(--accent); font-size: 0.86rem;">Shortcut 2: "Send Clipboard" (Home Screen Widget)</h4>
-            <ol style="margin-left: 16px; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
-              <li>Open <strong>Shortcuts</strong> app → tap <strong>+</strong></li>
-              <li>Add action: <strong>"Get Clipboard"</strong></li>
-              <li>Add action: <strong>"If"</strong> ➜ choose <strong>Clipboard</strong> ➜ tap the variable inside "If" and change it to <strong>"File Extension"</strong> ➜ set condition to <strong>"has any value"</strong></li>
-              <li>Inside <strong>"Then"</strong> (File/Media branch):
-                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                  <li>Add: <strong>"Get Contents of URL"</strong></li>
-                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
-                  <li>Method: <strong>POST</strong> → Request Body: <strong>File</strong> → File: <strong>Clipboard</strong></li>
-                </ul>
-              </li>
-              <li>Inside <strong>"Else"</strong> (Text/Links branch):
-                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                  <li>Add: <strong>"Get Contents of URL"</strong></li>
-                  <li>URL: <code style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--accent); font-size: 0.74rem;">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
-                  <li>Method: <strong>POST</strong> → Request Body: <strong>Form</strong> → Add Text Field: Key: <code>content</code>, Value: <strong>Clipboard</strong></li>
-                </ul>
-              </li>
-            </ol>
+          <!-- Tab 2: iOS Shortcuts -->
+          <div id="setup-shortcuts" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Apple Shortcuts Integration</h3>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+              Download pre-configured iOS shortcuts to integrate AiroDrop directly into your native Share Sheet and widget screen.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+              
+              <!-- Shortcut Card 1 -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">1. Share to PC Shortcut</h4>
+                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">Sends selected files, photos, web links, or text from any iOS Share Sheet directly to AiroDrop.</p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
+                  <img id="imgShareToPC" alt="Share to PC QR" width="110" height="110" style="display: block;">
+                </div>
+                <a href="https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
+              </div>
+
+              <!-- Shortcut Card 2 -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">2. Send Clipboard Widget</h4>
+                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">One-click widget or home button to instantly sync your iPhone's active clipboard to your computer.</p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
+                  <img id="imgClipboardToPC" alt="Clipboard to PC QR" width="110" height="110" style="display: block;">
+                </div>
+                <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
+              </div>
+
+            </div>
           </div>
+
+          <!-- Tab 3: Native Files App (WebDAV) -->
+          <div id="setup-files" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">iOS Files App Mounting (WebDAV)</h3>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+              Mount your custom PC shared folder directly into your iOS Files App to browse, view, copy, or upload files natively, without opening any web browser!
+            </p>
+            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+              <h4 style="margin: 0; font-size: 0.86rem; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">Setup Guide:</h4>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 1:</span>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Open the native <strong>Files</strong> App on your iPhone.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 2:</span>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Tap the <strong>•••</strong> icon at the top-right corner and select <strong>Connect to Server</strong>.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 3:</span>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Enter the server URL below exactly as written:</p>
+                </div>
+              </div>
+              
+              <!-- Address Display -->
+              <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 4px 0;">
+                <code id="webdavUrlText" style="font-family: monospace; font-size: 0.82rem; color: var(--accent-light); word-break: break-all;">Connecting...</code>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('webdavUrlText').textContent); showToast('WebDAV URL copied!', 'success');" style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-left: 12px; flex-shrink: 0; transition: all 0.2s;">Copy</button>
+              </div>
+
+              <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 4:</span>
+                <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Select <strong>Guest</strong>, tap <strong>Connect</strong>, and your PC Shared folder is ready to explore!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Manual Instructions -->
+          <div id="setup-manual" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Manual Configuration & REST API</h3>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+              If Apple Shortcuts don't download, you can design them manually inside the Apple <strong>Shortcuts</strong> App:
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; padding-right: 6px;">
+              <!-- Shortcut 1 Manual Instructions -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut A: "Send to PC" (Share Sheet)</h4>
+                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
+                  <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
+                  <li>Open shortcut settings ➜ turn on <strong>"Show in Share Sheet"</strong> ➜ set input type to <strong>Any</strong></li>
+                  <li>Add action: <strong>"If"</strong> ➜ choose <strong>Shortcut Input</strong> ➜ click key &rarr; set <strong>"File Extension"</strong> to <strong>"has any value"</strong></li>
+                  <li>Under <strong>Then</strong> (Files/Images path):
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Get Contents of URL"</strong></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Shortcut Input</strong></li>
+                    </ul>
+                  </li>
+                  <li>Under <strong>Else</strong> (Text/URL path):
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Get Contents of URL"</strong></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+
+              <!-- Shortcut 2 Manual Instructions -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut B: "Send Clipboard" (Home Widget)</h4>
+                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
+                  <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
+                  <li>Add: <strong>"Get Clipboard"</strong></li>
+                  <li>Add: <strong>"If"</strong> ➜ choose <strong>Clipboard</strong> ➜ set <strong>"File Extension"</strong> to <strong>"has any value"</strong></li>
+                  <li>Under <strong>Then</strong> (Files/Images path):
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Get Contents of URL"</strong></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Clipboard</strong></li>
+                    </ul>
+                  </li>
+                  <li>Under <strong>Else</strong> (Text/URL path):
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Get Contents of URL"</strong></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Clipboard</strong></li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
         </div>
-      </details>
+
+      </div>
+
     </div>
   </div>
 
   <!-- ─── Settings Modal ────────────────────────────────── -->
-  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-    <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 90%; color: white; position: relative; box-shadow: var(--shadow-lg);">
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 90%; color: var(--text-primary); position: relative; box-shadow: var(--shadow-lg);">
       <span class="close-modal" id="btnCloseSettings" style="position: absolute; right: 20px; top: 16px; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
       <h2 style="margin-top: 0; font-size: 1.4rem;">Settings & Preferences</h2>
       
@@ -416,6 +499,14 @@
             <div style="display: flex; gap: 8px;">
               <input type="text" id="saveDirInput" placeholder="./received" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
               <button class="btn btn-secondary" id="browseDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">WebDAV Shared Directory (Folder Share)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="shareDirInput" placeholder="./shared" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
+              <button class="btn btn-secondary" id="browseShareDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>
             </div>
           </div>
           
@@ -467,12 +558,12 @@
             </label>
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-            <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 150px;">
               <span id="desktopStatusIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
               <span id="desktopStatusText" style="font-size: 0.78rem; font-weight: 600;">Checking Server...</span>
             </div>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
               <button class="btn btn-primary" id="btnDesktopStart" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Start</button>
               <button class="btn btn-danger" id="btnDesktopStop" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Stop</button>
               <button class="btn btn-danger" id="btnDesktopKillAll" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer; opacity: 0.9;" title="Force Quit Process">Kill All</button>
@@ -491,7 +582,7 @@
 
   <!-- ─── Footer ────────────────────────────────────────── -->
   <div class="web-footer" style="text-align: center; padding: 20px; font-size: 12px; color: #888;">
-    Created by Asep Sayyad ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: #6366f1; text-decoration: none;">github.com/asepsayyad007</a>
+    Created by Asep with Love ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: #6366f1; text-decoration: none;">github.com/asepsayyad007</a>
   </div>
 
   <script src="app.js"></script>
