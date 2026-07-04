@@ -43,6 +43,8 @@
     setupEventListeners();
     setupSettings();
     setupInstantQrGenerator();
+    setupScratchpad();
+    setupControlCommands();
     
     // Request permission for system notifications
     if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -310,6 +312,40 @@
         allItems = JSON.parse(e.data) || [];
         renderFeed();
         updateStats();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    sseSource.addEventListener('scratchpad', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        const scratchpadTextarea = $('#dashboardScratchpad');
+        const status = $('#scratchpadStatus');
+        if (scratchpadTextarea && document.activeElement !== scratchpadTextarea) {
+          scratchpadTextarea.value = data.text;
+        }
+        if (status) {
+          status.textContent = 'Synced';
+          status.style.color = 'var(--success)';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    sseSource.addEventListener('trackpad_status', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        const badge = $('#connectedDeviceBadge');
+        if (badge) {
+          if (data.connected && data.deviceName) {
+            badge.textContent = `${data.deviceName} connected`;
+            badge.style.display = 'inline-block';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
       } catch (err) {
         console.error(err);
       }
@@ -993,6 +1029,7 @@
     const notificationsInput = $('#notificationsInput');
     const rateLimitInput = $('#rateLimitInput');
     const tempModeHoursInput = $('#tempModeHoursInput');
+    const autoOpenLinksInput = $('#autoOpenLinksInput');
 
     loadSettingsData();
 
@@ -1010,6 +1047,7 @@
           if (tempModeHoursInput && data.temporaryModeHours) {
             tempModeHoursInput.value = data.temporaryModeHours;
           }
+          if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -1025,6 +1063,7 @@
         const notificationsEnabled = notificationsInput ? notificationsInput.checked : true;
         const rateLimitEnabled = rateLimitInput ? rateLimitInput.checked : true;
         const temporaryModeHours = tempModeHoursInput ? tempModeHoursInput.value : 2;
+        const autoOpenLinks = autoOpenLinksInput ? autoOpenLinksInput.checked : false;
 
         saveDirBtn.disabled = true;
         saveDirBtn.textContent = 'Saving...';
@@ -1041,7 +1080,8 @@
               port, 
               notificationsEnabled, 
               rateLimitEnabled, 
-              temporaryModeHours 
+              temporaryModeHours,
+              autoOpenLinks 
             })
           });
           const data = await res.json();
@@ -1055,6 +1095,7 @@
             if (notificationsInput) notificationsInput.checked = !!data.notificationsEnabled;
             if (rateLimitInput) rateLimitInput.checked = !!data.rateLimitEnabled;
             if (tempModeHoursInput) tempModeHoursInput.value = data.temporaryModeHours;
+            if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
             
             fetchServerInfo();
             showToast('Settings saved', 'success');
@@ -1248,6 +1289,18 @@
           const infoIPSetup = $('#infoIPSetup');
           if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
           $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
+
+          // WebDAV mount setup
+          const webdavUrl = `http://${serverInfo.ip}:${serverInfo.port}/webdav`;
+          const imgWebdavQR = $('#imgWebdavQR');
+          const webdavUrlText = $('#webdavUrlText');
+          if (imgWebdavQR) {
+            imgWebdavQR.src = `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent(webdavUrl)}`;
+          }
+          if (webdavUrlText) {
+            webdavUrlText.textContent = webdavUrl;
+            webdavUrlText.title = webdavUrl;
+          }
         }
         shortcutsModal.style.display = 'flex';
       });
@@ -1451,6 +1504,81 @@
         setConnectionStatus(false);
       }
     }
+  }
+
+  // ─── Shared Scratchpad ──────────────────────────────────────
+  function setupScratchpad() {
+    const scratchpad = $('#dashboardScratchpad');
+    const status = $('#scratchpadStatus');
+    if (!scratchpad) return;
+
+    // Load initial scratchpad text
+    doFetch('/api/scratchpad')
+      .then(res => res.json())
+      .then(data => {
+        scratchpad.value = data.text || '';
+      })
+      .catch(err => console.error('Failed to load scratchpad:', err));
+
+    let debounceTimer = null;
+    scratchpad.addEventListener('input', () => {
+      if (status) {
+        status.textContent = 'Saving...';
+        status.style.color = 'var(--text-secondary)';
+      }
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        try {
+          const res = await doFetch('/api/scratchpad', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: scratchpad.value })
+          });
+          if (res.ok) {
+            if (status) {
+              status.textContent = 'Synced';
+              status.style.color = 'var(--success)';
+            }
+          } else {
+            if (status) {
+              status.textContent = 'Error';
+              status.style.color = 'var(--danger)';
+            }
+          }
+        } catch {
+          if (status) {
+            status.textContent = 'Offline';
+            status.style.color = 'var(--danger)';
+          }
+        }
+      }, 500);
+    });
+  }
+
+  // ─── PC Control Commands ────────────────────────────────────
+  function setupControlCommands() {
+    $$('.btn-control-cmd').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const action = btn.getAttribute('data-cmd');
+        btn.disabled = true;
+        try {
+          const res = await doFetch('/api/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+          });
+          if (res.ok) {
+            showToast(`Triggered: ${action}`, 'success');
+          } else {
+            showToast('Failed to trigger command', 'error');
+          }
+        } catch {
+          showToast('Offline', 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);

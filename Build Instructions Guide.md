@@ -44,8 +44,8 @@ This triggers `electron-builder`, which automatically:
 
 ## Step 4: Retrieve Your Executables
 Once compilation finishes successfully, check the newly created `dist/` directory inside your project folder:
-1. **`AiroDrop Setup 3.6.0.exe`** - The full setup wizard that installs AiroDrop to your PC, creates a Desktop shortcut, and registers an uninstaller.
-2. **`AiroDrop-Portable-3.6.0.exe`** - A standalone single-file executable that runs immediately without installing anything.
+1. **`AiroDrop Setup 4.0.0.exe`** - The full setup wizard that installs AiroDrop to your PC, creates a Desktop shortcut, and registers an uninstaller.
+2. **`AiroDrop-Portable-4.0.0.exe`** - A standalone single-file executable that runs immediately without installing anything.
 
 ---
 

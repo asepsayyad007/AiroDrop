@@ -404,8 +404,6 @@
       </div>
     </div>
 
-
-
     <!-- RECEIVE FROM PC -->
     <div class="section-title">From PC → iPhone</div>
     
@@ -425,7 +423,7 @@
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; gap: 12px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; gap: 12px; margin-bottom: 20px;">
       <button class="btn" id="checkPendingBtn" style="background: rgba(255,255,255,0.08); color: var(--text2); margin: 0; flex: 1;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         Check for new items
@@ -433,7 +431,87 @@
       <span id="lastCheckedText" style="font-size: 0.75rem; color: var(--text3); font-weight: 500; white-space: nowrap;">Checked just now</span>
     </div>
 
+    <!-- SEND TO PC -->
+    <div class="section-title">Send to PC</div>
+    <div class="sender-cards">
+      <!-- Send Text -->
+      <div class="sender-card" style="margin-bottom: 12px;">
+        <h3>Send Text / Link</h3>
+        <textarea id="mobileTextInput" rows="3" placeholder="Type text or paste URL..."></textarea>
+        <button class="btn" id="sendTextBtn">Send to PC</button>
+      </div>
+
+      <!-- Send File -->
+      <div class="sender-card" style="margin-bottom: 16px;">
+        <h3>Send File / Image</h3>
+        <button class="photo-btn" id="sendFileTrigger">
+          <span class="icon">📁</span>
+          <span>Choose File or Photo</span>
+        </button>
+        <input type="file" id="mobileFileInput" style="display: none;">
+        <div class="photo-preview" id="mobileFilePreview">
+          <img id="mobilePreviewImg" src="" alt="Preview" style="display: none;">
+          <div id="mobilePreviewFileIcon" style="font-size: 2.2rem; margin: 10px 0; display: none;">📄</div>
+          <span id="mobilePreviewFileName" style="font-size: 0.76rem; color: var(--text2); margin-bottom: 8px;"></span>
+          <button class="btn" id="sendFileBtn" style="margin-top: 4px;">Send File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLS & SCRATCHPAD -->
+    <div class="section-title">Tools & Scratchpad</div>
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>Shared Scratchpad</h3>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Changes sync instantly to your PC</p>
+      <textarea id="mobileScratchpad" rows="4" placeholder="Type notes here..."></textarea>
+      <span id="scratchpadStatus" style="font-size: 0.68rem; color: var(--text3); float: right; margin-top: 4px;">Saved</span>
+    </div>
+
+    <!-- PC REMOTE CONTROL -->
+    <div class="section-title">PC System Control</div>
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>Windows Controller</h3>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="lock" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔒 Lock PC</button>
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="play_pause" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏯️ Play/Pause</button>
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="volume_up" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔊 Vol Up</button>
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="volume_down" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔉 Vol Down</button>
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="prev" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏮️ Prev</button>
+        <button class="btn btn-secondary btn-control-cmd" data-cmd="next" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏭️ Next</button>
+      </div>
+    </div>
+
+    <!-- PC REMOTE SCREENSHOT -->
+    <div class="section-title">PC Screenshot</div>
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>Fetch PC Desktop</h3>
+      <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px;">📸 View PC Screen</button>
+      <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 15px; width: 100%;">
+        <img id="mobileScreenshotImg" src="" alt="PC Screen Grab" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
+          <a id="btnDownloadScreenshot" href="" download="screenshot.png" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">💾 Download</a>
+          <button id="btnFullscreenScreenshot" class="btn" style="flex: 1; margin: 0; font-size: 0.8rem; background: rgba(255,255,255,0.08);">🔍 Fullscreen</button>
+        </div>
+        <button class="btn" id="btnCloseScreenshot" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top: 10px; width: 100%;">Close Preview</button>
+      </div>
+    </div>
+
+    <!-- PC REMOTE TRACKPAD -->
+    <div class="section-title">Trackpad & Keyboard</div>
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>Remote Trackpad</h3>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Control mouse and keyboard of your PC in real-time</p>
+      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);">🖱️ Open Fullscreen Trackpad</button>
+    </div>
+
     <div style="height: 30px;"></div>
+  </div>
+
+  <!-- Lightbox Overlay for Fullscreen Screenshot -->
+  <div id="screenshotLightbox" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; align-items: center; justify-content: center; flex-direction: column;">
+    <button id="btnCloseLightbox" style="position: absolute; top: env(safe-area-inset-top, 20px); right: 20px; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.5rem; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 310;">&times;</button>
+    <img id="lightboxImg" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: scale(1); transition: transform 0.2s;">
+    <div style="position: absolute; bottom: env(safe-area-inset-bottom, 20px); color: var(--text2); font-size: 0.76rem; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; pointer-events: none;">Pinch to zoom / double tap</div>
   </div>
 
   <!-- Toast -->
@@ -473,6 +551,12 @@
       });
       fetchPending();
       startAutoPoll();
+      setupSendControls();
+      setupScratchpad();
+      connectMobileSSE();
+      setupMobileControl();
+      setupMobileScreenshot();
+      setupMobileTrackpad();
     }
 
     // ─── Auto-poll every 10 seconds ───────────────────────
@@ -590,6 +674,7 @@
             <span class="receive-badge text">Copy</span>
             <span class="receive-content">${escapeHtml(item.content)}</span>
             <span class="receive-time">${timeAgo(item.timestamp)}</span>
+            <button class="delete-btn" onclick="event.stopPropagation(); deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center; margin-left:8px; z-index:10;">🗑️</button>
           </div>
         `).join('');
       }
@@ -609,10 +694,29 @@
             <div class="receive-item" style="cursor: default;">
               <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${icon}</span>
               <span class="receive-content">${escapeHtml(displayName)}</span>
-              <a href="${downloadUrl}" download="${escapeAttr(displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;margin-left:auto;white-space:nowrap;">Download</a>
+              <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
+                <a href="${downloadUrl}" download="${escapeAttr(displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
+              </div>
             </div>
           `;
         }).join('');
+      }
+    }
+
+    async function deletePendingItem(itemId) {
+      if (!itemId) return;
+      try {
+        const res = await fetch(`/api/pending/${itemId}/ack`, { method: 'POST' });
+        if (res.ok) {
+          showToast('Item deleted');
+          fetchPending();
+        } else {
+          showToast('Failed to delete item');
+        }
+      } catch (err) {
+        console.error('Delete item error:', err);
+        showToast('Failed to delete item');
       }
     }
 
@@ -711,9 +815,661 @@
       return Math.floor(h / 24) + 'd';
     }
 
+    function setupSendControls() {
+      const sendTextBtn = document.getElementById('sendTextBtn');
+      const mobileTextInput = document.getElementById('mobileTextInput');
+      if (sendTextBtn && mobileTextInput) {
+        sendTextBtn.addEventListener('click', async () => {
+          const text = mobileTextInput.value.trim();
+          if (!text) return showToast('Please enter some text');
+          sendTextBtn.disabled = true;
+          try {
+            const res = await fetch('/api/text', {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: text
+            });
+            if (res.ok) {
+              mobileTextInput.value = '';
+              showToast('Sent successfully!');
+            } else {
+              showToast('Failed to send text');
+            }
+          } catch {
+            showToast('Failed to connect to server');
+          } finally {
+            sendTextBtn.disabled = false;
+          }
+        });
+      }
+
+      const sendFileTrigger = document.getElementById('sendFileTrigger');
+      const mobileFileInput = document.getElementById('mobileFileInput');
+      const mobileFilePreview = document.getElementById('mobileFilePreview');
+      const mobilePreviewImg = document.getElementById('mobilePreviewImg');
+      const mobilePreviewFileIcon = document.getElementById('mobilePreviewFileIcon');
+      const mobilePreviewFileName = document.getElementById('mobilePreviewFileName');
+      const sendFileBtn = document.getElementById('sendFileBtn');
+
+      let selectedFile = null;
+
+      if (sendFileTrigger && mobileFileInput) {
+        sendFileTrigger.addEventListener('click', () => mobileFileInput.click());
+        mobileFileInput.addEventListener('change', () => {
+          if (mobileFileInput.files.length > 0) {
+            selectedFile = mobileFileInput.files[0];
+            sendFileTrigger.style.display = 'none';
+            mobileFilePreview.style.display = 'flex';
+            mobilePreviewFileName.textContent = `${selectedFile.name} (${formatSize(selectedFile.size)})`;
+
+            if (selectedFile.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                mobilePreviewImg.src = e.target.result;
+                mobilePreviewImg.style.display = 'block';
+                mobilePreviewFileIcon.style.display = 'none';
+              };
+              reader.readAsDataURL(selectedFile);
+            } else {
+              mobilePreviewImg.style.display = 'none';
+              mobilePreviewFileIcon.style.display = 'block';
+              mobilePreviewFileIcon.textContent = getFileTypeIcon(selectedFile.type);
+            }
+          }
+        });
+      }
+
+      if (sendFileBtn) {
+        sendFileBtn.addEventListener('click', async () => {
+          if (!selectedFile) return;
+          sendFileBtn.disabled = true;
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+
+          try {
+            const res = await fetch('/api/file', {
+              method: 'POST',
+              body: formData
+            });
+            if (res.ok) {
+              showToast('File sent to PC!');
+              selectedFile = null;
+              mobileFileInput.value = '';
+              mobileFilePreview.style.display = 'none';
+              sendFileTrigger.style.display = 'flex';
+            } else {
+              showToast('Failed to send file');
+            }
+          } catch {
+            showToast('Failed to send file');
+          } finally {
+            sendFileBtn.disabled = false;
+          }
+        });
+      }
+    }
+
+    function setupScratchpad() {
+      const scratchpad = document.getElementById('mobileScratchpad');
+      const scratchpadStatus = document.getElementById('scratchpadStatus');
+      if (scratchpad) {
+        fetch('/api/scratchpad')
+          .then(res => res.json())
+          .then(data => {
+            scratchpad.value = data.text || '';
+          });
+
+        let scratchpadTimer = null;
+        scratchpad.addEventListener('input', () => {
+          if (scratchpadStatus) {
+            scratchpadStatus.textContent = 'Saving...';
+            scratchpadStatus.style.color = 'var(--text2)';
+          }
+          clearTimeout(scratchpadTimer);
+          scratchpadTimer = setTimeout(async () => {
+            try {
+              const res = await fetch('/api/scratchpad', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: scratchpad.value })
+              });
+              if (res.ok && scratchpadStatus) {
+                scratchpadStatus.textContent = 'Synced';
+                scratchpadStatus.style.color = 'var(--success)';
+              } else if (scratchpadStatus) {
+                scratchpadStatus.textContent = 'Error';
+                scratchpadStatus.style.color = 'red';
+              }
+            } catch {
+              if (scratchpadStatus) {
+                scratchpadStatus.textContent = 'Offline';
+                scratchpadStatus.style.color = 'red';
+              }
+            }
+          }, 500);
+        });
+      }
+    }
+
+    function connectMobileSSE() {
+      const sse = new EventSource('/api/events');
+      sse.addEventListener('scratchpad', (e) => {
+        const data = JSON.parse(e.data);
+        const scratchpad = document.getElementById('mobileScratchpad');
+        const scratchpadStatus = document.getElementById('scratchpadStatus');
+        if (scratchpad && document.activeElement !== scratchpad) {
+          scratchpad.value = data.text;
+        }
+        if (scratchpadStatus) {
+          scratchpadStatus.textContent = 'Synced';
+          scratchpadStatus.style.color = 'var(--success)';
+        }
+      });
+      sse.onerror = () => {
+        sse.close();
+        setTimeout(connectMobileSSE, 5000);
+      };
+    }
+
+    function setupMobileControl() {
+      document.querySelectorAll('.btn-control-cmd').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.getAttribute('data-cmd');
+          btn.disabled = true;
+          try {
+            const res = await fetch('/api/control', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action })
+            });
+            if (res.ok) {
+              showToast(`Triggered: ${action}`);
+            } else {
+              showToast('Failed to trigger action');
+            }
+          } catch {
+            showToast('Failed to connect to server');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+    function setupMobileScreenshot() {
+      const btnFetch = document.getElementById('btnFetchScreenshot');
+      const container = document.getElementById('screenshotPreviewContainer');
+      const img = document.getElementById('mobileScreenshotImg');
+      const btnClose = document.getElementById('btnCloseScreenshot');
+
+      if (btnFetch && container && img && btnClose) {
+        btnFetch.addEventListener('click', async () => {
+          btnFetch.disabled = true;
+          btnFetch.textContent = 'Capturing...';
+          try {
+            const screenshotUrl = `/api/screenshot?t=${Date.now()}`;
+            img.src = screenshotUrl;
+            img.onload = () => {
+              container.style.display = 'flex';
+              btnFetch.style.display = 'none';
+              btnFetch.disabled = false;
+              btnFetch.textContent = '📸 View PC Screen';
+
+              const btnDownload = document.getElementById('btnDownloadScreenshot');
+              if (btnDownload) {
+                btnDownload.href = screenshotUrl;
+              }
+            };
+            img.onerror = () => {
+              showToast('Failed to load screenshot');
+              btnFetch.disabled = false;
+              btnFetch.textContent = '📸 View PC Screen';
+            };
+          } catch {
+            showToast('Failed to fetch screenshot');
+            btnFetch.disabled = false;
+            btnFetch.textContent = '📸 View PC Screen';
+          }
+        });
+
+        const btnFullscreen = document.getElementById('btnFullscreenScreenshot');
+        const lightbox = document.getElementById('screenshotLightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const btnCloseLightbox = document.getElementById('btnCloseLightbox');
+
+        if (btnFullscreen && lightbox && lightboxImg && btnCloseLightbox) {
+          btnFullscreen.addEventListener('click', () => {
+            if (img.src) {
+              lightboxImg.src = img.src;
+              lightbox.style.display = 'flex';
+            }
+          });
+
+          btnCloseLightbox.addEventListener('click', () => {
+            lightbox.style.display = 'none';
+            lightboxImg.src = '';
+          });
+        }
+
+        btnClose.addEventListener('click', () => {
+          container.style.display = 'none';
+          btnFetch.style.display = 'flex';
+            img.src = '';
+        });
+      }
+    }
+
+    let trackpadSocket = null;
+    let isTrackpadOpen = false;
+
+    function setupMobileTrackpad() {
+      const btnOpen = document.getElementById('btnOpenTrackpad');
+      const overlay = document.getElementById('trackpadOverlay');
+      const btnClose = document.getElementById('btnCloseTrackpad');
+      const touchpadArea = document.getElementById('touchpadArea');
+      const keyboardInput = document.getElementById('trackpadKeyboardInput');
+      const btnLeft = document.getElementById('btnTrackpadLeftClick');
+      const btnRight = document.getElementById('btnTrackpadRightClick');
+      const btnConnect = document.getElementById('btnTrackpadConnect');
+      const btnToggleKbd = document.getElementById('btnToggleKeyboard');
+      const kbdPanel = document.getElementById('keyboardPanel');
+
+      if (!btnOpen || !overlay || !btnClose || !touchpadArea) return;
+
+      // ── Connection State Machine ──
+      let wantsConnected = false;
+      let isConnecting = false;
+
+      function updateConnectButton(state) {
+        if (!btnConnect) return;
+        switch (state) {
+          case 'disconnected':
+            btnConnect.textContent = '🔌 Connect';
+            btnConnect.style.background = 'rgba(255,255,255,0.08)';
+            break;
+          case 'connecting':
+            btnConnect.textContent = '⏳ Connecting...';
+            btnConnect.style.background = 'rgba(255,255,255,0.08)';
+            break;
+          case 'connected':
+            btnConnect.textContent = '🟢 Connected';
+            btnConnect.style.background = '#10b981';
+            break;
+          case 'failed':
+            btnConnect.textContent = '🔴 Retry';
+            btnConnect.style.background = '#ef4444';
+            break;
+        }
+      }
+
+      function connectWS() {
+        if (isConnecting) return;
+        isConnecting = true;
+        updateConnectButton('connecting');
+
+        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${proto}//${window.location.host}/trackpad`);
+
+        ws.onopen = () => {
+          isConnecting = false;
+          trackpadSocket = ws;
+          updateConnectButton('connected');
+          showToast('Trackpad connected');
+          // Send device identification
+          let mobileName = 'Mobile Device';
+          if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mobileName = 'iPhone';
+          else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
+          sendWS({ type: 'identify', deviceName: mobileName });
+        };
+
+        ws.onerror = () => {
+          isConnecting = false;
+          updateConnectButton('failed');
+        };
+
+        ws.onclose = () => {
+          isConnecting = false;
+          if (trackpadSocket === ws) trackpadSocket = null;
+          updateConnectButton('disconnected');
+          // Auto-reconnect ONLY if user wants it AND overlay is open
+          if (wantsConnected && isTrackpadOpen) {
+            setTimeout(() => {
+              if (wantsConnected && isTrackpadOpen && !isConnecting) {
+                connectWS();
+              }
+            }, 3000);
+          }
+        };
+      }
+
+      function disconnectWS() {
+        wantsConnected = false;
+        isConnecting = false;
+        if (trackpadSocket) {
+          const ws = trackpadSocket;
+          trackpadSocket = null; // clear ref BEFORE close to prevent onclose from reconnecting
+          ws.close();
+        }
+        updateConnectButton('disconnected');
+      }
+
+      function sendWS(msg) {
+        if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+          trackpadSocket.send(JSON.stringify(msg));
+        }
+      }
+
+      // ── Overlay Open / Close ──
+      btnOpen.addEventListener('click', () => {
+        overlay.style.display = 'flex';
+        isTrackpadOpen = true;
+        // Do NOT auto-connect. User must click Connect.
+        setTimeout(() => {
+          if (keyboardInput) {
+            keyboardInput.value = '';
+            keyboardInput.focus();
+          }
+        }, 300);
+      });
+
+      btnClose.addEventListener('click', () => {
+        overlay.style.display = 'none';
+        isTrackpadOpen = false;
+        disconnectWS();
+      });
+
+      // ── Connect Button ──
+      if (btnConnect) {
+        btnConnect.addEventListener('click', () => {
+          if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+            disconnectWS();
+          } else {
+            wantsConnected = true;
+            connectWS();
+          }
+        });
+      }
+
+      // ── Keyboard Panel Toggle ──
+      if (btnToggleKbd && kbdPanel) {
+        btnToggleKbd.addEventListener('click', () => {
+          const isOpen = kbdPanel.style.display !== 'none';
+          kbdPanel.style.display = isOpen ? 'none' : 'block';
+          btnToggleKbd.textContent = isOpen ? '⌨️ Keyboard ▼' : '⌨️ Keyboard ▲';
+        });
+      }
+
+      // ── Touch Trackpad Logic ──
+      let lastX = 0, lastY = 0;
+      let isScrolling = false, initialScrollY = 0;
+      let startX = 0, startY = 0, startTime = 0, hasMoved = false;
+      let tapTimeout = null, lastTapTime = 0;
+
+      touchpadArea.addEventListener('touchstart', (e) => {
+        const touches = e.touches;
+        if (touches.length === 1) {
+          isScrolling = false;
+          hasMoved = false;
+          startX = lastX = touches[0].clientX;
+          startY = lastY = touches[0].clientY;
+          startTime = Date.now();
+        } else if (touches.length === 2) {
+          isScrolling = true;
+          initialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+        }
+      }, { passive: false });
+
+      touchpadArea.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touches = e.touches;
+        if (touches.length === 1 && !isScrolling) {
+          const cx = touches[0].clientX, cy = touches[0].clientY;
+          if (Math.abs(cx - startX) > 6 || Math.abs(cy - startY) > 6) hasMoved = true;
+          sendWS({ type: 'move', dx: (cx - lastX) * 1.8, dy: (cy - lastY) * 1.8 });
+          lastX = cx; lastY = cy;
+        } else if (touches.length === 2 && isScrolling) {
+          const cy = (touches[0].clientY + touches[1].clientY) / 2;
+          sendWS({ type: 'scroll', dy: (cy - initialScrollY) / 100 });
+          initialScrollY = cy;
+        }
+      }, { passive: false });
+
+      touchpadArea.addEventListener('touchend', (e) => {
+        if (e.touches.length > 0) return;
+        if (isScrolling) { isScrolling = false; return; }
+        const duration = Date.now() - startTime;
+        if (!hasMoved && duration < 250) {
+          const now = Date.now();
+          if (now - lastTapTime < 300) {
+            clearTimeout(tapTimeout); tapTimeout = null;
+            sendWS({ type: 'click', button: 'left' });
+            setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
+            lastTapTime = 0;
+          } else {
+            lastTapTime = now;
+            tapTimeout = setTimeout(() => { sendWS({ type: 'click', button: 'left' }); tapTimeout = null; }, 220);
+          }
+        }
+      }, { passive: false });
+
+      // ── Click Buttons ──
+      btnLeft.addEventListener('click', () => sendWS({ type: 'click', button: 'left' }));
+      btnRight.addEventListener('click', () => sendWS({ type: 'click', button: 'right' }));
+
+      // ── Keyboard Input (Diff Typing) ──
+      let lastInputValue = '';
+      if (keyboardInput) {
+        keyboardInput.value = '';
+        keyboardInput.addEventListener('input', () => {
+          const val = keyboardInput.value;
+          if (val.length < lastInputValue.length) {
+            const diff = lastInputValue.length - val.length;
+            for (let i = 0; i < diff; i++) sendWS({ type: 'key', code: 8 });
+          } else if (val.length > lastInputValue.length) {
+            const added = val.substring(lastInputValue.length);
+            for (const ch of added) {
+              if (ch === ' ') sendWS({ type: 'key', code: 32 });
+              else if (ch === '\n' || ch === '\r') sendWS({ type: 'key', code: 13 });
+              else sendWS({ type: 'type', text: ch });
+            }
+          }
+          lastInputValue = val;
+        });
+        keyboardInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') sendWS({ type: 'key', code: 13 });
+        });
+      }
+
+      // ── Clear Input ──
+      const btnClearInput = document.getElementById('btnTrackpadClearInput');
+      if (btnClearInput && keyboardInput) {
+        btnClearInput.addEventListener('click', () => {
+          keyboardInput.value = '';
+          lastInputValue = '';
+          keyboardInput.focus();
+        });
+      }
+
+      // ── Virtual Key Grid ──
+      document.querySelectorAll('.btn-kbd').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const code = parseInt(btn.getAttribute('data-code'), 10);
+          const char = btn.getAttribute('data-char');
+          if (code) {
+            sendWS({ type: 'key', code });
+          } else if (char) {
+            sendWS({ type: 'type', text: char });
+          }
+          btn.style.background = 'rgba(255,255,255,0.25)';
+          setTimeout(() => { btn.style.background = ''; }, 120);
+        });
+      });
+    }
+
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);
   </script>
+  </div>
+
+  <!-- Fullscreen Trackpad Overlay -->
+  <div id="trackpadOverlay" style="display: none; position: fixed; inset: 0; background: #0a0a0f; z-index: 200; flex-direction: column; padding: env(safe-area-inset-top, 20px) 12px env(safe-area-inset-bottom, 20px); box-sizing: border-box; touch-action: none;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+      <h3 style="font-size: 1.05rem; color: var(--text); margin: 0;">Remote Trackpad</h3>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="btnTrackpadConnect" class="btn" style="margin: 0; background: rgba(255,255,255,0.08); font-size: 0.75rem; padding: 6px 14px; width: auto; border: 1px solid var(--card-border); border-radius: 8px;">🔌 Connect</button>
+        <button id="btnCloseTrackpad" style="background: none; border: none; color: var(--text2); font-size: 1.5rem; cursor: pointer; padding: 5px;">&times;</button>
+      </div>
+    </div>
+
+    <!-- Text Input Row -->
+    <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+      <input type="text" id="trackpadKeyboardInput" placeholder="Type here — synced in real-time..." style="flex: 1; padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 10px; color: white; outline: none; font-size: 0.85rem;">
+      <button id="btnTrackpadClearInput" class="btn" style="width: auto; padding: 8px 14px; margin: 0; background: rgba(255,255,255,0.06); font-size: 0.78rem; border: 1px solid var(--card-border); border-radius: 10px;">✕</button>
+    </div>
+
+    <!-- Keyboard Toggle Button -->
+    <button id="btnToggleKeyboard" style="width: 100%; padding: 8px 0; margin-bottom: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: var(--text2); font-size: 0.8rem; cursor: pointer; transition: background 0.2s;">⌨️ Keyboard ▼</button>
+
+    <!-- Collapsible Keyboard Panel -->
+    <div id="keyboardPanel" style="display: none; margin-bottom: 8px;">
+      <style>
+        .kbd-row { display: flex; gap: 3px; margin-bottom: 3px; justify-content: center; }
+        .kbd-key {
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.04));
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 6px; color: #e0e0e0; font-size: 0.68rem; font-weight: 500;
+          cursor: pointer; user-select: none; -webkit-user-select: none;
+          min-height: 34px; flex: 1; max-width: 48px;
+          transition: background 0.1s, transform 0.05s;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .kbd-key:active { background: rgba(255,255,255,0.22); transform: scale(0.94); }
+        .kbd-key.wide { max-width: none; }
+        .kbd-key.mod { background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); font-size: 0.62rem; }
+      </style>
+      <!-- Row 1: Fn/Number Row -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key mod" data-code="27" style="flex:0.7;">Esc</button>
+        <button class="btn-kbd kbd-key" data-code="112" style="flex:0.6; font-size:0.58rem;">F1</button>
+        <button class="btn-kbd kbd-key" data-code="113" style="flex:0.6; font-size:0.58rem;">F2</button>
+        <button class="btn-kbd kbd-key" data-code="114" style="flex:0.6; font-size:0.58rem;">F3</button>
+        <button class="btn-kbd kbd-key" data-code="115" style="flex:0.6; font-size:0.58rem;">F4</button>
+        <button class="btn-kbd kbd-key" data-code="116" style="flex:0.6; font-size:0.58rem;">F5</button>
+        <button class="btn-kbd kbd-key" data-code="117" style="flex:0.6; font-size:0.58rem;">F6</button>
+        <button class="btn-kbd kbd-key" data-code="118" style="flex:0.6; font-size:0.58rem;">F7</button>
+        <button class="btn-kbd kbd-key" data-code="119" style="flex:0.6; font-size:0.58rem;">F8</button>
+        <button class="btn-kbd kbd-key" data-code="120" style="flex:0.6; font-size:0.58rem;">F9</button>
+        <button class="btn-kbd kbd-key" data-code="121" style="flex:0.6; font-size:0.58rem;">F10</button>
+        <button class="btn-kbd kbd-key" data-code="122" style="flex:0.6; font-size:0.58rem;">F11</button>
+        <button class="btn-kbd kbd-key" data-code="123" style="flex:0.6; font-size:0.58rem;">F12</button>
+      </div>
+      <!-- Row 2: Numbers -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key" data-char="`">`</button>
+        <button class="btn-kbd kbd-key" data-char="1">1</button>
+        <button class="btn-kbd kbd-key" data-char="2">2</button>
+        <button class="btn-kbd kbd-key" data-char="3">3</button>
+        <button class="btn-kbd kbd-key" data-char="4">4</button>
+        <button class="btn-kbd kbd-key" data-char="5">5</button>
+        <button class="btn-kbd kbd-key" data-char="6">6</button>
+        <button class="btn-kbd kbd-key" data-char="7">7</button>
+        <button class="btn-kbd kbd-key" data-char="8">8</button>
+        <button class="btn-kbd kbd-key" data-char="9">9</button>
+        <button class="btn-kbd kbd-key" data-char="0">0</button>
+        <button class="btn-kbd kbd-key" data-char="-">-</button>
+        <button class="btn-kbd kbd-key" data-char="=">=</button>
+        <button class="btn-kbd kbd-key mod" data-code="8" style="flex:1.4;">⌫</button>
+      </div>
+      <!-- Row 3: QWERTY -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key mod" data-code="9" style="flex:1.3;">Tab</button>
+        <button class="btn-kbd kbd-key" data-char="q">Q</button>
+        <button class="btn-kbd kbd-key" data-char="w">W</button>
+        <button class="btn-kbd kbd-key" data-char="e">E</button>
+        <button class="btn-kbd kbd-key" data-char="r">R</button>
+        <button class="btn-kbd kbd-key" data-char="t">T</button>
+        <button class="btn-kbd kbd-key" data-char="y">Y</button>
+        <button class="btn-kbd kbd-key" data-char="u">U</button>
+        <button class="btn-kbd kbd-key" data-char="i">I</button>
+        <button class="btn-kbd kbd-key" data-char="o">O</button>
+        <button class="btn-kbd kbd-key" data-char="p">P</button>
+        <button class="btn-kbd kbd-key" data-char="[">[</button>
+        <button class="btn-kbd kbd-key" data-char="]">]</button>
+        <button class="btn-kbd kbd-key" data-char="\">\</button>
+      </div>
+      <!-- Row 4: ASDF -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key mod" data-code="20" style="flex:1.6;">Caps</button>
+        <button class="btn-kbd kbd-key" data-char="a">A</button>
+        <button class="btn-kbd kbd-key" data-char="s">S</button>
+        <button class="btn-kbd kbd-key" data-char="d">D</button>
+        <button class="btn-kbd kbd-key" data-char="f">F</button>
+        <button class="btn-kbd kbd-key" data-char="g">G</button>
+        <button class="btn-kbd kbd-key" data-char="h">H</button>
+        <button class="btn-kbd kbd-key" data-char="j">J</button>
+        <button class="btn-kbd kbd-key" data-char="k">K</button>
+        <button class="btn-kbd kbd-key" data-char="l">L</button>
+        <button class="btn-kbd kbd-key" data-char=";">;</button>
+        <button class="btn-kbd kbd-key" data-char="'">'</button>
+        <button class="btn-kbd kbd-key mod" data-code="13" style="flex:1.6;">Enter</button>
+      </div>
+      <!-- Row 5: ZXCV -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
+        <button class="btn-kbd kbd-key" data-char="z">Z</button>
+        <button class="btn-kbd kbd-key" data-char="x">X</button>
+        <button class="btn-kbd kbd-key" data-char="c">C</button>
+        <button class="btn-kbd kbd-key" data-char="v">V</button>
+        <button class="btn-kbd kbd-key" data-char="b">B</button>
+        <button class="btn-kbd kbd-key" data-char="n">N</button>
+        <button class="btn-kbd kbd-key" data-char="m">M</button>
+        <button class="btn-kbd kbd-key" data-char=",">,</button>
+        <button class="btn-kbd kbd-key" data-char=".">.</button>
+        <button class="btn-kbd kbd-key" data-char="/">/</button>
+        <button class="btn-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
+      </div>
+      <!-- Row 6: Bottom -->
+      <div class="kbd-row">
+        <button class="btn-kbd kbd-key mod" data-code="17" style="flex:1.2;">Ctrl</button>
+        <button class="btn-kbd kbd-key mod" data-code="91" style="flex:1;">Win</button>
+        <button class="btn-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+        <button class="btn-kbd kbd-key wide" data-code="32" style="flex:5;">Space</button>
+        <button class="btn-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+        <button class="btn-kbd kbd-key mod" data-code="46" style="flex:1;">Del</button>
+        <button class="btn-kbd kbd-key" data-code="37" style="flex:0.8;">◀</button>
+        <button class="btn-kbd kbd-key" data-code="38" style="flex:0.8;">▲</button>
+        <button class="btn-kbd kbd-key" data-code="40" style="flex:0.8;">▼</button>
+        <button class="btn-kbd kbd-key" data-code="39" style="flex:0.8;">▶</button>
+      </div>
+      <!-- Extra: PgUp/PgDn/Home/End -->
+      <div class="kbd-row" style="margin-top: 2px;">
+        <button class="btn-kbd kbd-key mod" data-code="36">Home</button>
+        <button class="btn-kbd kbd-key mod" data-code="35">End</button>
+        <button class="btn-kbd kbd-key mod" data-code="33">PgUp</button>
+        <button class="btn-kbd kbd-key mod" data-code="34">PgDn</button>
+        <button class="btn-kbd kbd-key mod" data-code="44">PrtSc</button>
+        <button class="btn-kbd kbd-key mod" data-code="45">Ins</button>
+      </div>
+    </div>
+
+    <!-- Touchpad Area -->
+    <div id="touchpadArea" style="flex: 1; background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.08); border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 10px; touch-action: none; min-height: 120px;">
+      <span style="color: var(--text3); font-size: 0.78rem; pointer-events: none; text-align: center; padding: 20px; line-height: 1.6;">
+        Drag one finger to move cursor<br>
+        Tap → Left Click &bull; Double-tap → Double Click<br>
+        Two-finger drag → Scroll
+      </span>
+    </div>
+
+    <!-- Click Buttons -->
+    <div style="display: flex; gap: 8px; height: 52px;">
+      <button id="btnTrackpadLeftClick" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); flex: 1; font-weight: 600; border-radius: 12px; font-size: 0.85rem;">Left Click</button>
+      <button id="btnTrackpadRightClick" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); flex: 1; font-weight: 600; border-radius: 12px; font-size: 0.85rem;">Right Click</button>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div style="text-align: center; padding: 20px; font-size: 11px; color: var(--text3); margin-top: 20px;">
     Created by Asep Sayyad | <a href="https://github.com/asepsayyad007" target="_blank" style="color: var(--primary); text-decoration: none;">github.com/asepsayyad007</a>

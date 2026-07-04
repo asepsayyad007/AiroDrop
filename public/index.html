@@ -25,9 +25,10 @@
         </div>
         <div class="header-title">
           <h1>AiroDrop</h1>
-          <div class="connection-status" id="connectionStatus">
+          <div class="connection-status" id="connectionStatus" style="display: flex; align-items: center;">
             <span class="status-dot"></span>
             <span class="status-text">Connecting...</span>
+            <span id="connectedDeviceBadge" style="display: none; margin-left: 8px; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.25); line-height: 1;">iPhone connected</span>
           </div>
         </div>
       </div>
@@ -237,7 +238,7 @@
 
       <!-- Tab 3: Tools -->
       <section class="tab-content" id="tab-tools">
-        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
+        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 100%;">
           
           <!-- Tool 1: Instant QR Generator -->
           <div class="send-card tool-card" style="margin: 0;">
@@ -247,6 +248,14 @@
             <div class="qr-container" id="instantQrContainer" style="margin-top: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: white; border-radius: var(--radius-md); padding: 8px;">
               <div class="qr-placeholder" style="color: #666; font-size: 0.76rem;">Start typing to generate...</div>
             </div>
+          </div>
+
+          <!-- Tool 2: Shared Scratchpad -->
+          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column;">
+            <h3>Shared Scratchpad</h3>
+            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Text typed here syncs instantly to your phone and vice-versa</p>
+            <textarea id="dashboardScratchpad" rows="8" placeholder="Type notes here to sync with your phone..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box; resize: vertical; flex: 1; min-height: 120px;"></textarea>
+            <span id="scratchpadStatus" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right; margin-top: 4px;">Saved</span>
           </div>
         </div>
       </section>
@@ -305,6 +314,22 @@
             <div id="mobileQrContainer"></div>
           </div>
           <a id="mobilePortalUrl" href="#" target="_blank" style="font-size: 0.74rem; color: var(--accent); font-weight: 600; text-decoration: underline; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">&nbsp;</a>
+        </div>
+
+        <!-- QR Card 4: WebDAV Files App -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 12px; text-align: left;">
+          <h4 style="margin: 0 0 6px 0; font-size: 0.86rem; color: var(--accent-light); text-align: center;">4. Native Files App</h4>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 10px; text-align: center;">Mount AiroDrop folder directly in iPhone Files app</p>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 8px;">
+            <strong>Setup Guide:</strong>
+            <ol style="margin: 4px 0 0 14px; padding: 0;">
+              <li>Open <strong>Files</strong> app on iPhone.</li>
+              <li>Tap <strong>•••</strong> (top-right) &rarr; <strong>Connect to Server</strong>.</li>
+              <li>Enter the server URL shown below.</li>
+              <li>Select <strong>Guest</strong> and tap Connect!</li>
+            </ol>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--accent); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; text-align: center;" id="webdavUrlText">Connecting...</span>
         </div>
       </div>
 
@@ -414,6 +439,9 @@
             </label>
             <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
               <input type="checkbox" id="tempModeInput" style="cursor: pointer;"> Enable Temporary Mode (Auto-delete)
+            </label>
+            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="autoOpenLinksInput" style="cursor: pointer;"> Auto-open received links on PC
             </label>
           </div>
           

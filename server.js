@@ -19,6 +19,74 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const webdav = require('webdav-server').v2;
+const koffi = require('koffi');
+const WebSocket = require('ws');
+
+// ─── Win32 FFI Initialization for Trackpad ──────────────────
+let user32 = null;
+let POINT = null;
+let GetCursorPos = null;
+let SetCursorPos = null;
+let mouse_event = null;
+let keybd_event = null;
+
+if (os.platform() === 'win32') {
+  try {
+    user32 = koffi.load('user32.dll');
+    POINT = koffi.struct('POINT', {
+      x: 'long',
+      y: 'long'
+    });
+    GetCursorPos = user32.func('int GetCursorPos(POINT* lpPoint)');
+    SetCursorPos = user32.func('int SetCursorPos(int X, int Y)');
+    mouse_event = user32.func('void mouse_event(uint dwFlags, int dx, int dy, uint dwData, uintptr_t dwExtraInfo)');
+    keybd_event = user32.func('void keybd_event(uint8 bVk, uint8 bScan, uint dwFlags, uintptr_t dwExtraInfo)');
+  } catch (err) {
+    console.error('[FFI] Failed to load user32.dll:', err.message);
+  }
+}
+
+function getVKCode(char) {
+  const c = char.toUpperCase();
+  if (c >= 'A' && c <= 'Z') return c.charCodeAt(0);
+  if (c >= '0' && c <= '9') return c.charCodeAt(0);
+  if (c === ' ') return 0x20;
+  
+  const map = {
+    '\n': 0x0D, '\r': 0x0D, '\t': 0x09,
+    ';': 0xBA, '=': 0xBB, ',': 0xBC, '-': 0xBD, '.': 0xBE, '/': 0xBF, '`': 0xC0,
+    '[': 0xDB, '\\': 0xDC, ']': 0xDD, "'": 0xDE
+  };
+  return map[char] || null;
+}
+
+function sendKeystroke(charOrCode) {
+  if (!keybd_event) return;
+  if (typeof charOrCode === 'number') {
+    keybd_event(charOrCode, 0, 0, 0);
+    keybd_event(charOrCode, 0, 0x0002, 0);
+  } else if (typeof charOrCode === 'string') {
+    if (charOrCode.length === 1) {
+      const code = getVKCode(charOrCode);
+      if (code) {
+        const needsShift = charOrCode.match(/[A-Z!@#$%^&*()_+{}|:"<>?]/);
+        if (needsShift) {
+          keybd_event(0x10, 0, 0, 0);
+        }
+        keybd_event(code, 0, 0, 0);
+        keybd_event(code, 0, 0x0002, 0);
+        if (needsShift) {
+          keybd_event(0x10, 0, 0x0002, 0);
+        }
+      }
+    } else {
+      const { exec } = require('child_process');
+      const escaped = charOrCode.replace(/'/g, "''").replace(/([{}()+^%~[\]])/g, '{$1}');
+      exec(`powershell -NoProfile -Command "[System.Windows.Forms.SendKeys]::SendWait('${escaped}')"`);
+    }
+  }
+}
 const QRCode = require('qrcode');
 const { copyText, copyImage } = require('./clipboard');
 const notifier = require('./notify');
@@ -31,22 +99,28 @@ function notifyImage(filename) {
 
 let CONFIG_FILE;
 let HISTORY_FILE;
+let SCRATCHPAD_FILE;
 let PORT = 3478;
 let SAVE_DIR;
 let TEMPORARY_MODE = false;
+let webdavServer = null;
 let DEVICE_NAME = os.hostname();
 let RATE_LIMIT_ENABLED = true;
 let NOTIFICATIONS_ENABLED = true;
 let TEMPORARY_MODE_HOURS = 2;
+let AUTO_OPEN_LINKS = false;
 
 // ─── Initialize Paths ──────────────────────────────────────────
 function init(userDataPath) {
   CONFIG_FILE = path.join(userDataPath, 'config.json');
   HISTORY_FILE = path.join(userDataPath, 'history.json');
+  SCRATCHPAD_FILE = path.join(userDataPath, 'scratchpad.txt');
   SAVE_DIR = path.join(userDataPath, 'received');
   
   loadConfig();
   loadHistory();
+  loadScratchpad();
+  initWebDAV();
 }
 
 // Load settings from config.json
@@ -60,6 +134,7 @@ function loadConfig() {
       if (data.rateLimitEnabled !== undefined) RATE_LIMIT_ENABLED = !!data.rateLimitEnabled;
       if (data.notificationsEnabled !== undefined) NOTIFICATIONS_ENABLED = !!data.notificationsEnabled;
       if (data.temporaryModeHours !== undefined) TEMPORARY_MODE_HOURS = parseFloat(data.temporaryModeHours) || 2;
+      if (data.autoOpenLinks !== undefined) AUTO_OPEN_LINKS = !!data.autoOpenLinks;
       if (data.saveDir) {
         // If relative, resolve against project directory
         SAVE_DIR = path.isAbsolute(data.saveDir) 
@@ -96,6 +171,7 @@ function setSaveDir(newDir) {
     }
     data.saveDir = SAVE_DIR;
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
+    updateWebDAVMount();
   } catch (err) {
     console.error('[CONFIG] Failed to save config.json:', err.message);
   }
@@ -121,6 +197,56 @@ function loadHistory() {
     }
   } catch (err) {
     console.error('[HISTORY] Failed to load history:', err.message);
+  }
+}
+
+function loadScratchpad() {
+  try {
+    if (fs.existsSync(SCRATCHPAD_FILE)) {
+      scratchpadText = fs.readFileSync(SCRATCHPAD_FILE, 'utf8');
+    }
+  } catch (err) {
+    console.error('[SCRATCHPAD] Failed to load scratchpad:', err.message);
+  }
+}
+
+function saveScratchpad() {
+  try {
+    fs.writeFileSync(SCRATCHPAD_FILE, scratchpadText || "", 'utf8');
+  } catch (err) {
+    console.error('[SCRATCHPAD] Failed to save scratchpad:', err.message);
+  }
+}
+
+function initWebDAV() {
+  try {
+    webdavServer = new webdav.WebDAVServer();
+    webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SAVE_DIR), (success) => {
+      if (success) {
+        console.log('[WEBDAV] Server physical directory mounted at:', SAVE_DIR);
+      } else {
+        console.error('[WEBDAV] Failed to mount directory:', SAVE_DIR);
+      }
+    });
+    app.use(webdav.extensions.express('/webdav', webdavServer));
+  } catch (err) {
+    console.error('[WEBDAV] Failed to initialize WebDAV:', err.message);
+  }
+}
+
+function updateWebDAVMount() {
+  if (webdavServer) {
+    try {
+      webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SAVE_DIR), (success) => {
+        if (success) {
+          console.log('[WEBDAV] Remounted save directory to:', SAVE_DIR);
+        } else {
+          console.error('[WEBDAV] Failed to remount save directory to:', SAVE_DIR);
+        }
+      });
+    } catch (err) {
+      console.error('[WEBDAV] Remount error:', err.message);
+    }
   }
 }
 
@@ -469,6 +595,24 @@ async function tryExtractUrlFromHtmlFile(savedPath, mimeType) {
   return null;
 }
 
+async function handleIncomingText(text) {
+  const clipResult = await copyText(text);
+  const trimmed = text.trim();
+  
+  if (AUTO_OPEN_LINKS && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+    try {
+      const { shell } = require('electron');
+      shell.openExternal(trimmed);
+      console.log(`[CAST] Auto-opened URL in Electron: ${trimmed}`);
+    } catch {
+      const { exec } = require('child_process');
+      exec(`start "" "${trimmed}"`);
+      console.log(`[CAST] Auto-opened URL via Win32 shell: ${trimmed}`);
+    }
+  }
+  return clipResult;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // API ROUTES
 // ═══════════════════════════════════════════════════════════════
@@ -544,7 +688,7 @@ app.post('/api/text', async (req, res) => {
     }
 
     // Copy to clipboard
-    const clipResult = await copyText(text);
+    const clipResult = await handleIncomingText(text);
 
     // Add to history
     const item = {
@@ -736,10 +880,50 @@ app.get('/api/scratchpad', (req, res) => {
 });
 
 // POST /api/scratchpad — Save current scratchpad text and broadcast
-app.post('/api/scratchpad', express.json(), (req, res) => {
+app.post('/api/scratchpad', (req, res) => {
   scratchpadText = req.body.text || "";
+  saveScratchpad();
   broadcastSSE('scratchpad', { text: scratchpadText });
   res.json({ success: true, text: scratchpadText });
+});
+
+// POST /api/control — Simulates media keys or locks workstation
+app.post('/api/control', (req, res) => {
+  const { action } = req.body;
+  const { exec } = require('child_process');
+  
+  let cmd = '';
+  switch (action) {
+    case 'lock':
+      cmd = 'rundll32.exe user32.dll,LockWorkStation';
+      break;
+    case 'volume_up':
+      cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]175)"';
+      break;
+    case 'volume_down':
+      cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]174)"';
+      break;
+    case 'play_pause':
+      cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]179)"';
+      break;
+    case 'next':
+      cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]176)"';
+      break;
+    case 'prev':
+      cmd = 'powershell -Command "$wsh = New-Object -ComObject Wscript.Shell; $wsh.SendKeys([char]177)"';
+      break;
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+
+  exec(cmd, (err) => {
+    if (err) {
+      console.error(`[CONTROL] Action "${action}" failed:`, err.message);
+      return res.status(500).json({ error: `Action failed: ${err.message}` });
+    }
+    console.log(`[CONTROL] Triggered action: ${action}`);
+    res.json({ success: true, action });
+  });
 });
 
 // GET /api/bookmarks — Fetch bookmarks
@@ -748,7 +932,7 @@ app.get('/api/bookmarks', (req, res) => {
 });
 
 // POST /api/bookmarks — Add bookmark and broadcast
-app.post('/api/bookmarks', express.json(), (req, res) => {
+app.post('/api/bookmarks', (req, res) => {
   const { title, url } = req.body;
   if (title && url) {
     const newBookmark = {
@@ -801,6 +985,54 @@ app.delete('/api/history/:id', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// GET /api/screenshot — Takes a screenshot and returns the image
+app.get('/api/screenshot', (req, res) => {
+  const { exec } = require('child_process');
+  const tempPath = path.join(os.tmpdir(), `airodrop_screenshot_${Date.now()}.png`);
+  
+  // Windows PowerShell to capture primary screen and save as PNG (DPI aware)
+  const psScript = `
+    $Sig = '[DllImport(\"user32.dll\")] public static extern bool SetProcessDPIAware();';
+    $Type = Add-Type -MemberDefinition $Sig -Name 'DpiAware' -PassThru;
+    [void]$Type::SetProcessDPIAware();
+    Add-Type -AssemblyName System.Drawing, System.Windows.Forms;
+    $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds;
+    $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height;
+    $graphics = [System.Drawing.Graphics]::FromImage($bmp);
+    $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bmp.Size);
+    $bmp.Save('${tempPath.replace(/'/g, "''")}', [System.Drawing.Imaging.ImageFormat]::Png);
+    $graphics.Dispose();
+    $bmp.Dispose();
+  `.replace(/\n/g, ' ').trim();
+
+  const cmd = `powershell -NoProfile -Command "${psScript}"`;
+
+  exec(cmd, (err) => {
+    if (err) {
+      console.error('[SCREENSHOT] Capture failed:', err.message);
+      return res.status(500).json({ error: 'Screenshot capture failed: ' + err.message });
+    }
+    
+    // Check if the screenshot file actually exists
+    if (!fs.existsSync(tempPath)) {
+      console.error('[SCREENSHOT] File not found after capture');
+      return res.status(500).json({ error: 'Screenshot file not found after capture' });
+    }
+
+    res.sendFile(tempPath, (sendErr) => {
+      // Delete the temp file after sending (or if it fails)
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (unlinkErr) {
+        console.error('[SCREENSHOT] Failed to cleanup temp file:', unlinkErr.message);
+      }
+      if (sendErr) {
+        console.error('[SCREENSHOT] Error sending file:', sendErr.message);
+      }
+    });
+  });
 });
 
 // GET /api/info — Server information
@@ -885,14 +1117,15 @@ app.get('/api/settings', (req, res) => {
     deviceName: DEVICE_NAME,
     rateLimitEnabled: RATE_LIMIT_ENABLED,
     notificationsEnabled: NOTIFICATIONS_ENABLED,
-    temporaryModeHours: TEMPORARY_MODE_HOURS
+    temporaryModeHours: TEMPORARY_MODE_HOURS,
+    autoOpenLinks: AUTO_OPEN_LINKS
   });
 });
 
 // POST /api/settings — Update settings (saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours)
-app.post('/api/settings', express.json(), async (req, res) => {
+app.post('/api/settings', async (req, res) => {
   try {
-    const { saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours } = req.body;
+    const { saveDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks } = req.body;
     
     let resolvedPath = SAVE_DIR;
     if (saveDir) {
@@ -926,6 +1159,10 @@ app.post('/api/settings', express.json(), async (req, res) => {
       RATE_LIMIT_ENABLED = !!rateLimitEnabled;
     }
 
+    if (autoOpenLinks !== undefined) {
+      AUTO_OPEN_LINKS = !!autoOpenLinks;
+    }
+
     if (notificationsEnabled !== undefined) {
       NOTIFICATIONS_ENABLED = !!notificationsEnabled;
     }
@@ -953,7 +1190,8 @@ app.post('/api/settings', express.json(), async (req, res) => {
       deviceName: DEVICE_NAME,
       rateLimitEnabled: RATE_LIMIT_ENABLED,
       notificationsEnabled: NOTIFICATIONS_ENABLED,
-      temporaryModeHours: TEMPORARY_MODE_HOURS
+      temporaryModeHours: TEMPORARY_MODE_HOURS,
+      autoOpenLinks: AUTO_OPEN_LINKS
     }, null, 2));
 
     console.log(`[CONFIG] Settings updated: SaveFolder=${SAVE_DIR}, TempMode=${TEMPORARY_MODE}, DeviceName=${DEVICE_NAME}, Port=${PORT}, RateLimit=${RATE_LIMIT_ENABLED}, Notifications=${NOTIFICATIONS_ENABLED}, TempHours=${TEMPORARY_MODE_HOURS}`);
@@ -965,7 +1203,8 @@ app.post('/api/settings', express.json(), async (req, res) => {
       port: PORT,
       rateLimitEnabled: RATE_LIMIT_ENABLED,
       notificationsEnabled: NOTIFICATIONS_ENABLED,
-      temporaryModeHours: TEMPORARY_MODE_HOURS
+      temporaryModeHours: TEMPORARY_MODE_HOURS,
+      autoOpenLinks: AUTO_OPEN_LINKS
     });
   } catch (err) {
     console.error('[CONFIG] Failed to update settings:', err.message);
@@ -1287,7 +1526,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       // Check if it's actually a webpage/HTML file to extract its URL
       const extractedUrl = await tryExtractUrlFromHtmlFile(savedPath, mimeType);
       if (extractedUrl) {
-        const clipRes = await copyText(extractedUrl);
+        const clipRes = await handleIncomingText(extractedUrl);
         const item = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
           type: 'text',
@@ -1388,7 +1627,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
     }
 
     if (text.trim()) {
-      const clipResult = await copyText(text);
+      const clipResult = await handleIncomingText(text);
       const item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         type: 'text',
@@ -1464,6 +1703,7 @@ app.use((err, req, res, next) => {
 
 // ─── Server Lifecycle ──────────────────────────────────────────
 let serverInstance = null;
+let wss = null;
 
 function startServer(portCallback) {
   if (serverInstance) return;
@@ -1484,6 +1724,101 @@ function startServer(portCallback) {
     
     if (portCallback) portCallback(PORT);
   });
+
+  // Create WebSocket server mapping to /trackpad route only
+  wss = new WebSocket.Server({ noServer: true });
+  
+  serverInstance.on('upgrade', (request, socket, head) => {
+    try {
+      const pathname = request.url.split('?')[0];
+      if (pathname === '/trackpad') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+          wss.emit('connection', ws, request);
+        });
+      }
+    } catch (err) {
+      console.error('[WS-UPGRADE] Upgrade failed:', err.message);
+    }
+  });
+
+  wss.on('connection', (ws) => {
+    console.log('[TRACKPAD] Phone connected via WebSocket');
+    let accumX = 0;
+    let accumY = 0;
+    
+    ws.on('message', (message) => {
+      try {
+        let messageStr;
+        if (typeof message === 'string') {
+          messageStr = message;
+        } else {
+          messageStr = Buffer.from(message).toString('utf8');
+        }
+        const data = JSON.parse(messageStr);
+        
+        switch (data.type) {
+          case 'move':
+            try {
+              accumX += data.dx;
+              accumY += data.dy;
+              const moveX = Math.trunc(accumX);
+              const moveY = Math.trunc(accumY);
+              if (moveX !== 0 || moveY !== 0) {
+                accumX -= moveX;
+                accumY -= moveY;
+                if (mouse_event) {
+                  mouse_event(0x0001, moveX, moveY, 0, 0);
+                }
+              }
+            } catch (moveErr) {
+              const moveX = Math.round(data.dx);
+              const moveY = Math.round(data.dy);
+              if (mouse_event) {
+                mouse_event(0x0001, moveX, moveY, 0, 0);
+              }
+            }
+            break;
+          case 'click':
+            if (mouse_event) {
+              const button = data.button || 'left';
+              const downFlag = button === 'left' ? 0x0002 : 0x0008; // LEFTDOWN : RIGHTDOWN
+              const upFlag = button === 'left' ? 0x0004 : 0x0010;   // LEFTUP : RIGHTUP
+              mouse_event(downFlag, 0, 0, 0, 0);
+              mouse_event(upFlag, 0, 0, 0, 0);
+            }
+            break;
+          case 'scroll':
+            if (mouse_event) {
+              // dwFlags: 0x0800 (MOUSEEVENTF_WHEEL), dwData: scroll delta (positive/negative)
+              // 120 is one click of wheel
+              const delta = Math.round(data.dy * 120);
+              mouse_event(0x0800, 0, 0, delta, 0);
+            }
+            break;
+          case 'identify':
+            if (data.deviceName) {
+              console.log(`[TRACKPAD] Device identified: ${data.deviceName}`);
+              broadcastSSE('trackpad_status', { connected: true, deviceName: data.deviceName });
+            }
+            break;
+          case 'type':
+            sendKeystroke(data.text);
+            break;
+          case 'key':
+            // Key codes (like Backspace=8, Enter=13)
+            sendKeystroke(data.code);
+            break;
+        }
+      } catch (err) {
+        console.error('[TRACKPAD] WS Message parsing failed:', err.message);
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('[TRACKPAD] Phone disconnected');
+      broadcastSSE('trackpad_status', { connected: false });
+    });
+  });
   
   serverInstance.on('error', (err) => {
     console.error('Server error:', err);
@@ -1493,6 +1828,10 @@ function startServer(portCallback) {
 
 function stopServer() {
   if (serverInstance) {
+    if (wss) {
+      wss.close();
+      wss = null;
+    }
     serverInstance.close();
     serverInstance = null;
     console.log('Server stopped.');
