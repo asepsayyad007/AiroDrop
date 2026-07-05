@@ -33,6 +33,7 @@ let GetCursorPos = null;
 let SetCursorPos = null;
 let mouse_event = null;
 let keybd_event = null;
+let GetSystemMetrics = null;
 
 if (os.platform() === 'win32') {
   try {
@@ -45,6 +46,7 @@ if (os.platform() === 'win32') {
     SetCursorPos = user32.func('int SetCursorPos(int X, int Y)');
     mouse_event = user32.func('void mouse_event(uint dwFlags, int dx, int dy, uint dwData, uintptr_t dwExtraInfo)');
     keybd_event = user32.func('void keybd_event(uint8 bVk, uint8 bScan, uint dwFlags, uintptr_t dwExtraInfo)');
+    GetSystemMetrics = user32.func('int GetSystemMetrics(int nIndex)');
   } catch (err) {
     console.error('[FFI] Failed to load user32.dll:', err.message);
   }
@@ -500,6 +502,21 @@ function saveHistory() {
 // Load initial history is now deferred to init()
 const pendingForPhone = [];  // Items queued for iPhone to pick up
 const sseClients = new Set(); // SSE connected clients
+
+// ─── Logging System ───────────────────────────────────────────
+const logHistory = [];
+const MAX_LOGS = 500;
+
+function writeLog(message) {
+  const timestamp = new Date().toLocaleTimeString();
+  const fullLog = `[${timestamp}] ${message}`;
+  console.log(fullLog);
+  logHistory.push(fullLog);
+  if (logHistory.length > MAX_LOGS) {
+    logHistory.shift();
+  }
+  broadcastSSE('log', { timestamp, message });
+}
 
 // ─── Pending TTL Cleanup (30 min auto-expire) ──────────────────
 const PENDING_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -1494,7 +1511,7 @@ app.post('/api/settings', async (req, res) => {
       autoOpenLinks: AUTO_OPEN_LINKS
     }, null, 2));
 
-    console.log(`[CONFIG] Settings updated: SaveFolder=${SAVE_DIR}, ShareFolder=${SHARE_DIR}, TempMode=${TEMPORARY_MODE}, DeviceName=${DEVICE_NAME}, Port=${PORT}, RateLimit=${RATE_LIMIT_ENABLED}, Notifications=${NOTIFICATIONS_ENABLED}, TempHours=${TEMPORARY_MODE_HOURS}`);
+    writeLog(`Configurations updated: SaveFolder="${SAVE_DIR}", Port=${PORT}, DeviceName="${DEVICE_NAME}"`);
     res.json({
       success: true,
       saveDir: SAVE_DIR,
@@ -1726,8 +1743,10 @@ app.get('/api/events', (req, res) => {
 
   // Send current history count as initial event
   res.write(`event: connected\ndata: ${JSON.stringify({ count: history.length })}\n\n`);
+  res.write(`event: logs-init\ndata: ${JSON.stringify(logHistory)}\n\n`);
 
   sseClients.add(res);
+  writeLog("Dashboard client connected.");
 
   req.on('close', () => {
     sseClients.delete(res);
@@ -1819,7 +1838,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       };
       addToHistory(item);
       notifyImage(filename);
-      console.log(`[SEND/IMAGE] ${filename} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
+      writeLog(`Received Image: ${originalName} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
       return res.json({ success: true, id: item.id, type: 'image', message: 'Image saved' });
     }
 
@@ -1838,7 +1857,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
         };
         addToHistory(item);
         notifyText(extractedUrl);
-        console.log(`[SEND/URL-EXTRACT] Extracted URL from uploaded file: ${extractedUrl}`);
+        writeLog(`Extracted URL from uploaded file: ${extractedUrl}`);
         return res.json({ success: true, id: item.id, type: 'text', message: 'URL link extracted and copied' });
       }
 
@@ -1855,7 +1874,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       };
       addToHistory(item);
       notifyText(`Received File: ${originalName}`);
-      console.log(`[SEND/FILE] ${filename} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
+      writeLog(`Received File: ${originalName} (${(fileSize / (1024 * 1024)).toFixed(2)} MB)`);
       return res.json({ success: true, id: item.id, type: 'file', message: 'File saved' });
     }
 
@@ -1939,7 +1958,7 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
       };
       addToHistory(item);
       notifyText(text);
-      console.log(`[SEND/TEXT] ${text.substring(0, 60)}${text.length > 60 ? '...' : ''}`);
+      writeLog(`Received Text: "${text.substring(0, 60)}${text.length > 60 ? '...' : ''}"`);
       return res.json({ success: true, id: item.id, type: 'text', message: 'Text received & copied' });
     }
 
@@ -2015,6 +2034,7 @@ function startServer(portCallback) {
   serverInstance = app.listen(PORT, '0.0.0.0', () => {
     const ip = getLocalIP();
     const url = `http://${ip}:${PORT}`;
+    writeLog(`AiroDrop Server active at ${url}`);
 
     console.log('');
     console.log('  ╔══════════════════════════════════════════════╗');
@@ -2112,6 +2132,18 @@ function startServer(portCallback) {
             // Key codes (like Backspace=8, Enter=13)
             sendKeystroke(data.code);
             break;
+          case 'click_abs':
+            // Move cursor to absolute position based on ratio of screen size
+            if (SetCursorPos && mouse_event && GetSystemMetrics) {
+              const screenW = GetSystemMetrics(0); // SM_CXSCREEN
+              const screenH = GetSystemMetrics(1); // SM_CYSCREEN
+              const absX = Math.round((data.xRatio || 0) * screenW);
+              const absY = Math.round((data.yRatio || 0) * screenH);
+              SetCursorPos(absX, absY);
+              mouse_event(0x0002, 0, 0, 0, 0); // MOUSEEVENTF_LEFTDOWN
+              mouse_event(0x0004, 0, 0, 0, 0); // MOUSEEVENTF_LEFTUP
+            }
+            break;
           case 'screencast_start':
             serverEvents.emit('screencast_start', ws);
             break;
@@ -2140,6 +2172,7 @@ function startServer(portCallback) {
 
 function stopServer() {
   if (serverInstance) {
+    writeLog("AiroDrop Server stopped.");
     if (wss) {
       wss.close();
       wss = null;
@@ -2171,5 +2204,6 @@ module.exports = {
   getShareDir: () => SHARE_DIR,
   setSaveDir,
   getLocalIP,
-  serverEvents
+  serverEvents,
+  writeLog
 };

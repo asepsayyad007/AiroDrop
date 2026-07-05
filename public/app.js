@@ -37,25 +37,37 @@
 
   // ─── Init ──────────────────────────────────────────────────
   async function init() {
-    setupThemeSystem();
-    setupTabs();
-    setupFilters();
-    setupEventListeners();
-    setupSettings();
-    setupInstantQrGenerator();
-    setupScratchpad();
-    setupControlCommands();
+    const runSetup = (name, fn) => {
+      try {
+        fn();
+      } catch (err) {
+        console.error(`Error in setup function [${name}]:`, err);
+      }
+    };
+
+    runSetup('ThemeSystem', setupThemeSystem);
+    runSetup('Tabs', setupTabs);
+    runSetup('Filters', setupFilters);
+    runSetup('EventListeners', setupEventListeners);
+    runSetup('Settings', setupSettings);
+    runSetup('InstantQrGenerator', setupInstantQrGenerator);
+    runSetup('Scratchpad', setupScratchpad);
+    runSetup('ControlCommands', setupControlCommands);
     
     // Request permission for system notifications
     if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-      Notification.requestPermission();
+      try {
+        Notification.requestPermission();
+      } catch (_) {}
     }
     
-    // Initializing new popup modals & multi-tools system
-    setupShortcutsModal();
-    setupSettingsModal();
-    setupControlCenter();
-    setupUniversalRefresh();
+    runSetup('ShortcutsModal', setupShortcutsModal);
+    runSetup('SettingsModal', setupSettingsModal);
+    runSetup('LogsModal', setupLogsModal);
+    runSetup('ServiceDropdown', setupServiceDropdown);
+    runSetup('ControlCenter', setupControlCenter);
+    runSetup('UniversalRefresh', setupUniversalRefresh);
+
     // Server may still be starting – retry fetchServerInfo up to 5 times with 800ms delay
     let infoLoaded = false;
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -81,39 +93,29 @@
 
   // ─── Theme System ──────────────────────────────────────────
   function setupThemeSystem() {
-    const themeBtn = $('#themeBtn');
-    const themeDropdown = $('#themeDropdown');
     const savedTheme = localStorage.getItem('airodrop_theme') || 'dark';
-
     setTheme(savedTheme);
 
-    if (themeBtn && themeDropdown) {
-      themeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        themeDropdown.classList.toggle('open');
-      });
-
-      document.addEventListener('click', () => {
-        themeDropdown.classList.remove('open');
-      });
-
-      $$('.theme-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const theme = option.getAttribute('data-theme');
-          triggerThemeTransition(e, theme);
-          themeDropdown.classList.remove('open');
-        });
+    const themeSelectInput = $('#themeSelectInput');
+    if (themeSelectInput) {
+      themeSelectInput.value = savedTheme;
+      themeSelectInput.addEventListener('change', (e) => {
+        const theme = e.target.value;
+        triggerThemeTransition(e, theme);
       });
     }
   }
 
   function triggerThemeTransition(event, themeName) {
-    const rect = $('#themeBtn').getBoundingClientRect();
-    const x = event ? event.clientX : (rect.left + rect.width / 2);
-    const y = event ? event.clientY : (rect.top + rect.height / 2);
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+
+    const targetEl = event && event.target ? event.target : $('#themeSelectInput');
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      x = event && event.clientX ? event.clientX : (rect.left + rect.width / 2);
+      y = event && event.clientY ? event.clientY : (rect.top + rect.height / 2);
+    }
     
     const ripple = document.createElement('div');
     ripple.className = 'theme-transition-ripple';
@@ -208,7 +210,8 @@
       'dark': 'Dark Mode',
       'light': 'Light Mode',
       'midnight': 'Midnight Blue',
-      'aurora': 'Aurora Green'
+      'aurora': 'Aurora Green',
+      'cyberpunk': 'Cyberpunk'
     };
     
     const label = themeLabels[themeName] || 'Dark Mode';
@@ -224,6 +227,11 @@
         opt.classList.remove('active');
       }
     });
+
+    const themeSelectInput = $('#themeSelectInput');
+    if (themeSelectInput) {
+      themeSelectInput.value = themeName;
+    }
 
     // Refresh all generated QR codes to align with the new theme colors
     refreshAllQrs();
@@ -243,7 +251,7 @@
 
   function updateServerInfoUI(info) {
     const baseUrl = info.url;
-    $('#serverUrlText').textContent = baseUrl.replace(/^https?:\/\//, '');
+    if ($('#serverUrlText')) $('#serverUrlText').textContent = baseUrl.replace(/^https?:\/\//, '');
 
     // Setup cards info
     if ($('#infoIP2')) $('#infoIP2').textContent = info.ip;
@@ -253,6 +261,12 @@
     }
     if ($('#unifiedEndpoint')) $('#unifiedEndpoint').textContent = `${baseUrl}/api/send`;
     if ($('#infoDeviceName')) $('#infoDeviceName').textContent = info.deviceName || 'PC Server';
+    if ($('#ccIPPort')) $('#ccIPPort').textContent = info.ip;
+    const ccPortalLink = $('#ccPortalLink');
+    if (ccPortalLink) {
+      ccPortalLink.href = `${baseUrl}/m`;
+      ccPortalLink.textContent = `${baseUrl}/m`;
+    }
 
     // Setup QR code for mobile (resized to fit the 110x110 box perfectly)
     const qrContainer = $('#mobileQrContainer');
@@ -273,6 +287,7 @@
     const uptimeStr = parts.join(' ');
     if ($('#infoUptime')) $('#infoUptime').textContent = uptimeStr;
     if ($('#statUptime')) $('#statUptime').textContent = uptimeStr;
+    if ($('#serviceUptimeText')) $('#serviceUptimeText').textContent = uptimeStr;
   }
 
   // ─── Stats & Storage updates ───────────────────────────────
@@ -392,6 +407,35 @@
           } else {
             badge.style.display = 'none';
           }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    sseSource.addEventListener('log', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        const logsTerminal = $('#logsTerminal');
+        if (logsTerminal) {
+          const isAtBottom = logsTerminal.scrollHeight - logsTerminal.clientHeight <= logsTerminal.scrollTop + 25;
+          logsTerminal.textContent += `[${data.timestamp}] ${data.message}\n`;
+          if (isAtBottom) {
+            logsTerminal.scrollTop = logsTerminal.scrollHeight;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    sseSource.addEventListener('logs-init', (e) => {
+      try {
+        const logs = JSON.parse(e.data);
+        const logsTerminal = $('#logsTerminal');
+        if (logsTerminal) {
+          logsTerminal.textContent = logs.join('\n') + (logs.length ? '\n' : '');
+          logsTerminal.scrollTop = logsTerminal.scrollHeight;
         }
       } catch (err) {
         console.error(err);
@@ -1106,12 +1150,15 @@
       // Toggle card views based on isElectron
       const electronSettingsCard = $('#electronSettingsCard');
       const webSettingsCard = $('#webSettingsCard');
+      const desktopAppPreferencesCard = $('#desktopAppPreferencesCard');
       if (isElectron) {
-        if (electronSettingsCard) electronSettingsCard.style.display = 'block';
+        if (electronSettingsCard) electronSettingsCard.style.display = 'flex';
+        if (desktopAppPreferencesCard) desktopAppPreferencesCard.style.display = 'block';
         if (webSettingsCard) webSettingsCard.style.display = 'none';
       } else {
         if (electronSettingsCard) electronSettingsCard.style.display = 'none';
-        if (webSettingsCard) webSettingsCard.style.display = 'block';
+        if (desktopAppPreferencesCard) desktopAppPreferencesCard.style.display = 'none';
+        if (webSettingsCard) webSettingsCard.style.display = 'flex';
         setupWebUpdater();
       }
     }
@@ -1521,6 +1568,65 @@
     });
   }
 
+  // ─── System Activity Logs ─────────────────────────────────────
+  function setupLogsModal() {
+    const btnHeaderLogs = $('#btnHeaderLogs');
+    const logsModal = $('#logsModal');
+    const btnCloseLogs = $('#btnCloseLogs');
+    const btnClearLogs = $('#btnClearLogs');
+    const logsTerminal = $('#logsTerminal');
+
+    if (btnHeaderLogs && logsModal) {
+      btnHeaderLogs.addEventListener('click', () => {
+        logsModal.style.display = 'flex';
+        if (logsTerminal) logsTerminal.scrollTop = logsTerminal.scrollHeight;
+      });
+    }
+
+    if (btnCloseLogs && logsModal) {
+      btnCloseLogs.addEventListener('click', () => {
+        logsModal.style.display = 'none';
+      });
+    }
+
+    if (btnClearLogs && logsTerminal) {
+      btnClearLogs.addEventListener('click', () => {
+        logsTerminal.textContent = '[system] Terminal logs cleared.\n';
+      });
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target === logsModal) {
+        logsModal.style.display = 'none';
+      }
+    });
+  }
+
+  // ─── Service Status Dropdown ──────────────────────────────────
+  function setupServiceDropdown() {
+    const btn = $('#serviceStatusDropdownBtn');
+    const dropdown = $('#serviceStatusDropdown');
+    const container = dropdown ? dropdown.parentElement : null;
+
+    if (btn && dropdown) {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+
+      // Use mousedown instead of click to close the dropdown immediately
+      // This prevents click-through issues where clicks on dropdown coordinates hit underlying items
+      document.addEventListener('mousedown', (e) => {
+        if (container && !container.contains(e.target)) {
+          dropdown.classList.remove('open');
+        }
+      });
+    }
+  }
+
+
+
   // ─── Universal Refresh Button ──────────────────────────────
   function setupUniversalRefresh() {
     const btnUniversalRefresh = $('#btnUniversalRefresh');
@@ -1698,14 +1804,19 @@
 
 
     function updateControlCenterStatus(status) {
+      const servicePulseRing = $('#servicePulseRing');
+      const serviceStatusIcon = $('#serviceStatusIcon');
+      const serviceStatusTitle = $('#serviceStatusTitle');
+      const serviceStatusSubtitle = $('#serviceStatusSubtitle');
+
       if (status.running) {
         if (ccIndicator) ccIndicator.style.backgroundColor = '#00d26a';
         if (ccText) {
-          ccText.textContent = 'Service Running';
+          ccText.textContent = 'Service: Active';
           ccText.style.color = '#00d26a';
         }
         if (ccIPPort) {
-          ccIPPort.textContent = `${status.ip}:${status.port}`;
+          ccIPPort.textContent = `(${status.ip}:${status.port})`;
         }
         if (btnCcStart) {
           btnCcStart.disabled = true;
@@ -1717,15 +1828,25 @@
           btnCcStop.style.opacity = '1';
           btnCcStop.style.pointerEvents = 'auto';
         }
+
+        if (servicePulseRing) servicePulseRing.style.display = 'block';
+        if (serviceStatusIcon) {
+          serviceStatusIcon.style.background = 'linear-gradient(135deg, #00d26a, #008a47)';
+          serviceStatusIcon.style.boxShadow = '0 0 10px rgba(0,210,106,0.35)';
+          serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><polyline points="20 6 9 17 4 12"/></svg>`;
+        }
+        if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Active';
+        if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = 'Synchronization engine running smoothly.';
+
         setConnectionStatus(true);
       } else {
         if (ccIndicator) ccIndicator.style.backgroundColor = '#ff3b30';
         if (ccText) {
-          ccText.textContent = status.error ? 'Service Error' : 'Service Stopped';
+          ccText.textContent = 'Service: Inactive';
           ccText.style.color = '#ff3b30';
         }
         if (ccIPPort) {
-          ccIPPort.textContent = status.error ? 'Error' : 'Stopped';
+          ccIPPort.textContent = '';
         }
         if (btnCcStart) {
           btnCcStart.disabled = false;
@@ -1737,6 +1858,16 @@
           btnCcStop.style.opacity = '0.35';
           btnCcStop.style.pointerEvents = 'none';
         }
+
+        if (servicePulseRing) servicePulseRing.style.display = 'none';
+        if (serviceStatusIcon) {
+          serviceStatusIcon.style.background = 'linear-gradient(135deg, #ff3b30, #c0241b)';
+          serviceStatusIcon.style.boxShadow = '0 0 10px rgba(255,59,48,0.35)';
+          serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        }
+        if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Inactive';
+        if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = 'Synchronization engine is stopped.';
+
         setConnectionStatus(false);
       }
     }

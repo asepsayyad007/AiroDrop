@@ -56,44 +56,34 @@
           Setup iPhone
         </button>
 
-        <div class="theme-picker">
-          <button class="theme-btn" id="themeBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-            </svg>
-            <span id="themeBtnLabel">Dark Mode</span>
+
+        <!-- ─── Service Status Dropdown ─── -->
+        <div class="theme-dropdown-container" style="position: relative; display: flex; align-items: center; margin-right: 8px;">
+          <button class="btn btn-secondary" id="serviceStatusDropdownBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
+            <span class="status-indicator" id="ccIndicator" style="width: 7px; height: 7px; border-radius: 50%; display: inline-block; background-color: #ff3b30;"></span>
+            <span id="ccText">Service: Inactive</span>
+            <span id="ccIPPort" style="font-family: monospace; font-size: 0.74rem; opacity: 0.85; margin-left: 2px;"></span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px; opacity: 0.8; margin-left: 2px;"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div class="theme-dropdown" id="themeDropdown">
-            <button class="theme-option" data-theme="liquid-glass">
-              <span class="theme-swatch" style="background: linear-gradient(135deg, #e8ecf4, #dfe4ee);"></span>
-              Liquid Glass
+          <div class="theme-dropdown" id="serviceStatusDropdown" style="right: 0; min-width: 150px;">
+            <button class="theme-option" id="btnCcStart" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: var(--text-primary);">
+              <span style="color: #00d26a; font-weight: bold;">●</span> Start Service
             </button>
-            <button class="theme-option active" data-theme="dark">
-              <span class="theme-swatch" style="background: linear-gradient(135deg, #0a0a0f, #12121a);"></span>
-              Dark
+            <button class="theme-option" id="btnCcStop" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: var(--text-primary);">
+              <span style="color: #ff3b30; font-weight: bold;">●</span> Stop Service
             </button>
-            <button class="theme-option" data-theme="light">
-              <span class="theme-swatch" style="background: linear-gradient(135deg, #f8f9fc, #ffffff);"></span>
-              Light
-            </button>
-            <button class="theme-option" data-theme="midnight">
-              <span class="theme-swatch" style="background: linear-gradient(135deg, #0f172a, #1e293b);"></span>
-              Midnight
-            </button>
-            <button class="theme-option" data-theme="aurora">
-              <span class="theme-swatch" style="background: linear-gradient(135deg, #071a0e, #0d2818);"></span>
-              Aurora
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0;"></div>
+            <button class="theme-option" id="btnCcKillAll" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: #ff3b30;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:2px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Kill All
             </button>
           </div>
         </div>
-        <div class="server-url" id="serverUrl" title="Click to copy server URL">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-          </svg>
-          <span id="serverUrlText">...</span>
-        </div>
+
+        <button class="btn btn-secondary btn-icon" id="btnHeaderLogs" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; margin-right: 8px;" title="Logs">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--accent-light);"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span style="font-weight: 600;">Logs</span>
+        </button>
 
         <button class="btn btn-secondary btn-icon" id="btnHeaderSettings" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer;" title="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="settings-gear-icon" style="width:16px;height:16px; transition: transform 0.4s ease;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -102,48 +92,7 @@
       </div>
     </header>
 
-    <!-- ─── Control Center ──────────────────────────────── -->
-    <div class="control-center" id="ccActionsGroup" style="display: none; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: 16px; gap: 12px; font-size: 0.82rem; flex-wrap: wrap;">
-      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <span class="status-indicator" id="ccIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
-        <span id="ccText" style="font-weight: 600;">Service Stopped</span>
-        <span style="color: var(--text-muted);">|</span>
-        <span id="ccIPPort" style="font-family: monospace; font-weight: 500; color: var(--text-secondary);">IP:Port</span>
-      </div>
-      
-      <!-- Directory Path & Change button -->
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; min-width: 200px;">
-        <span style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">Save to:</span>
-        <span id="ccDirPath" style="font-family: monospace; font-size: 0.76rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;" title="...">Loading...</span>
-        <button class="btn btn-secondary" id="btnCcChangeDir" style="padding: 4px 8px; font-size: 0.72rem; font-weight: 600; border-radius: var(--radius-xs); border: 1px solid var(--glass-border); cursor: pointer; background: rgba(255,255,255,0.05); color: white;">Change</button>
-      </div>
 
-      <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-        <button class="btn btn-primary" id="btnCcStart" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #00d26a; color: white;">Start</button>
-        <button class="btn btn-danger" id="btnCcStop" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white;">Stop</button>
-        <button class="btn btn-danger" id="btnCcKillAll" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; background: #ff3b30; color: white; opacity: 0.85;" title="Force Kill App Process">Kill</button>
-      </div>
-    </div>
-
-    <!-- ─── Stats Bar ───────────────────────────────────── -->
-    <div class="stats-bar">
-      <div class="stat-card">
-        <span class="stat-value" id="statTransfers">0</span>
-        <span class="stat-label">Transfers</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="statData">0 B</span>
-        <span class="stat-label">Data</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="statUptime">0s</span>
-        <span class="stat-label">Uptime</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="statFiles">0</span>
-        <span class="stat-label">Files</span>
-      </div>
-    </div>
 
     <!-- ─── Main Content ────────────────────────────────── -->
     <main class="main">
@@ -504,127 +453,192 @@
   </div>
 
   <!-- ─── Settings Modal ────────────────────────────────── -->
-  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px);">
-    <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 90%; color: var(--text-primary); position: relative; box-shadow: var(--shadow-lg);">
-      <span class="close-modal" id="btnCloseSettings" style="position: absolute; right: 20px; top: 16px; font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
-      <h2 style="margin-top: 0; font-size: 1.4rem;">Settings & Preferences</h2>
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.82); align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+    <div class="modal-content settings-modal-content">
+      <div class="settings-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2>Settings & Preferences</h2>
+          <span style="background: var(--accent-bg); color: var(--accent-light); font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; border: 1px solid var(--accent-dark); font-family: sans-serif;">v4.8.2</span>
+        </div>
+        <span class="settings-modal-close" id="btnCloseSettings">&times;</span>
+      </div>
       
-      <div class="settings-form" style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+      <div class="settings-form" style="display: flex; flex-direction: column; gap: 16px; margin-top: 10px;">
         
-        <!-- PC Server Settings -->
-        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Server Preferences</h3>
+        <!-- 2-Column Grid Layout -->
+        <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           
-          <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Device Name</label>
-            <input type="text" id="deviceNameInput" placeholder="My PC" style="width: 100%; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
-          </div>
-          
-          <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Save Directory</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="saveDirInput" placeholder="./received" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
-              <button class="btn btn-secondary" id="browseDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>
+          <!-- Left Column: Server Preferences & Startup Configurations -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- Server Preferences Card -->
+            <div class="settings-card" style="margin-bottom: 0;">
+              <h3>⚙️ Server Preferences</h3>
+              
+              <div class="settings-input-group">
+                <label class="settings-input-label">Device Name</label>
+                <input type="text" id="deviceNameInput" placeholder="My PC" class="settings-text-input">
+              </div>
+              
+              <div class="settings-input-group">
+                <label class="settings-input-label">Save Directory</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="saveDirInput" placeholder="./received" class="settings-text-input" style="flex: 1; min-width: 0;">
+                  <button class="settings-browse-btn" id="browseDirBtn">Browse...</button>
+                </div>
+              </div>
+
+              <div class="settings-input-group">
+                <label class="settings-input-label">Shared Directory (File Browser)</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="shareDirInput" placeholder="./shared" class="settings-text-input" style="flex: 1; min-width: 0;">
+                  <button class="settings-browse-btn" id="browseShareDirBtn">Browse...</button>
+                </div>
+              </div>
+              
+              <div class="settings-input-group" style="margin-bottom: 0;">
+                <label class="settings-input-label">Server Port</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" class="settings-text-input" style="width: 90px;">
+                  <span style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.8;">Needs restart</span>
+                </div>
+              </div>
             </div>
+
+            <!-- Desktop App Startup Preferences (Visible inside Electron) -->
+            <div id="desktopAppPreferencesCard" class="settings-card" style="display: none; margin-bottom: 0;">
+              <h3>🖥️ Desktop Preferences</h3>
+              <div class="settings-switch-row" style="border-bottom: none; padding: 4px 0;">
+                <span>Launch on System Startup</span>
+                <label class="switch">
+                  <input type="checkbox" id="desktopAutoStart">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
           </div>
 
-          <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Shared Directory (File Browser)</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="shareDirInput" placeholder="./shared" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
-              <button class="btn btn-secondary" id="browseShareDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>
+          <!-- Right Column: Security, Toggles & Auto-Updater -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- Security & Notifications Card -->
+            <div class="settings-card" style="margin-bottom: 0;">
+              <h3>🔒 Security & Alerts</h3>
+              
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div class="settings-switch-row">
+                  <span>Desktop Notifications</span>
+                  <label class="switch">
+                    <input type="checkbox" id="notificationsInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="settings-switch-row">
+                  <span>Rate Limiting (DoS)</span>
+                  <label class="switch">
+                    <input type="checkbox" id="rateLimitInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="settings-switch-row">
+                  <span>Auto-open links on PC</span>
+                  <label class="switch">
+                    <input type="checkbox" id="autoOpenLinksInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="settings-switch-row">
+                  <span>Temporary Mode (Auto-delete)</span>
+                  <label class="switch">
+                    <input type="checkbox" id="tempModeInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                <span>Delete files after:</span>
+                <select id="tempModeHoursInput" style="padding: 6px 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: white; font-size: 0.78rem; cursor: pointer; outline: none;">
+                  <option value="1">1 Hour</option>
+                  <option value="2">2 Hours</option>
+                  <option value="6">6 Hours</option>
+                  <option value="12">12 Hours</option>
+                  <option value="24">24 Hours</option>
+                </select>
+              </div>
             </div>
+
+            <!-- Unified Application Updates Card -->
+            <div class="settings-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; flex: 1;">
+              <h3>🔄 Application Updates</h3>
+              
+              <!-- Visible inside Electron -->
+              <div id="electronSettingsCard" style="display: none; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Local Version: <strong id="appVersionText">v4.8.2</strong></span>
+                  <button class="btn btn-secondary" id="btnCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer; border-radius: 8px;">🔄 Check Update</button>
+                </div>
+                <div id="updateProgressContainer" style="display: none; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.72rem;">
+                    <span id="updateProgressLabel" style="font-weight: 500;">Downloading update...</span>
+                    <span id="updateProgressPercent" style="font-weight: 600; color: var(--accent-light);">0%</span>
+                  </div>
+                  <div style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
+                    <div id="updateProgressBarFill" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); width: 0%; transition: width 0.1s ease;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visible in Web browser -->
+              <div id="webSettingsCard" style="display: none; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Web Version: <strong id="webAppVersion">v4.8.2</strong></span>
+                  <button class="btn btn-secondary" id="btnWebCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer; border-radius: 8px;">🔄 Check Update</button>
+                </div>
+                <div id="webUpdateStatusMessage" style="display: none; margin-top: 10px; font-size: 0.78rem; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center; font-weight: 500;"></div>
+              </div>
+            </div>
+
           </div>
-          
-          <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Server Port</label>
-            <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" style="width: 100px; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
-            <span style="font-size: 0.72rem; color: var(--text-muted); margin-left: 10px;">Requires restart to apply</span>
-          </div>
+
         </div>
 
-        <!-- Web App Rules & Durations -->
-        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Security & Notifications</h3>
-          
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="notificationsInput" style="cursor: pointer;"> Enable Desktop Notifications
-            </label>
-            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="rateLimitInput" style="cursor: pointer;"> Enable Rate Limiting (DoS Protection)
-            </label>
-            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="tempModeInput" style="cursor: pointer;"> Enable Temporary Mode (Auto-delete)
-            </label>
-            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="autoOpenLinksInput" style="cursor: pointer;"> Auto-open received links on PC
-            </label>
-          </div>
-          
-          <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; padding-left: 20px;">
-            <span style="font-size: 0.76rem; color: var(--text-secondary);">Delete files after:</span>
-            <select id="tempModeHoursInput" style="padding: 4px 8px; background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; font-size: 0.76rem; cursor: pointer;">
-              <option value="1">1 Hour</option>
-              <option value="2">2 Hours</option>
-              <option value="6">6 Hours</option>
-              <option value="12">12 Hours</option>
-              <option value="24">24 Hours</option>
+        <!-- Theme Selector Card (Full width) -->
+        <div class="settings-card" style="margin-bottom: 0;">
+          <h3>🎨 Appearance &amp; Theme</h3>
+          <div class="settings-input-group" style="margin-bottom: 0;">
+            <label class="settings-input-label">Select Color Theme</label>
+            <select id="themeSelectInput" class="settings-text-input" style="width: 100%; cursor: pointer; outline: none; background: rgba(0,0,0,0.3); color: #fff;">
+              <option value="dark">Dark Mode</option>
+              <option value="liquid-glass">Liquid Glass</option>
+              <option value="aurora">Aurora Green</option>
             </select>
           </div>
         </div>
 
-        <!-- Desktop App Options (Visible inside Electron) -->
-        <div id="electronSettingsCard" style="display: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Desktop App Preferences</h3>
-          
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-            <label class="settings-checkbox-row" style="font-size: 0.8rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="desktopAutoStart" style="cursor: pointer;"> Launch AiroDrop on System Startup
-            </label>
-          </div>
+        <!-- Save Configurations Button (Full width at bottom) -->
+        <div class="settings-status" id="settingsStatus" style="font-size: 0.8rem; text-align: center; margin-bottom: 2px;"></div>
+        <button class="btn btn-primary" id="saveDirBtn" style="padding: 12px; font-size: 0.86rem; font-weight: 700; width: 100%; cursor: pointer; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); box-shadow: 0 4px 15px rgba(255,85,0,0.25); border: none; color: white; transition: all 0.25s ease;">Save Configurations</button>
+      </div>
+    </div>
+  </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-            <div style="display: flex; align-items: center; gap: 6px; min-width: 150px;">
-              <span id="desktopStatusIndicator" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; background-color: #888;"></span>
-              <span id="desktopStatusText" style="font-size: 0.78rem; font-weight: 600;">Checking Server...</span>
-            </div>
-            <div style="display: flex; gap: 6px; flex-shrink: 0;">
-              <button class="btn btn-primary" id="btnDesktopStart" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Start</button>
-              <button class="btn btn-danger" id="btnDesktopStop" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer;">Stop</button>
-              <button class="btn btn-danger" id="btnDesktopKillAll" style="padding: 4px 8px; font-size: 0.74rem; cursor: pointer; opacity: 0.9;" title="Force Quit Process">Kill All</button>
-            </div>
-          </div>
-          <!-- Update Section -->
-          <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.8rem; color: var(--text-secondary);">Application Version: <strong id="appVersionText">v4.8.2</strong></span>
-              <button class="btn btn-secondary" id="btnCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">🔄 Check for Updates</button>
-            </div>
-            <div id="updateProgressContainer" style="display: none; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-              <div style="display: flex; justify-content: space-between; font-size: 0.72rem;">
-                <span id="updateProgressLabel" style="font-weight: 500;">Downloading update...</span>
-                <span id="updateProgressPercent" style="font-weight: 600; color: var(--accent-light);">0%</span>
-              </div>
-              <div style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
-                <div id="updateProgressBarFill" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); width: 0%; transition: width 0.1s ease;"></div>
-              </div>
-            </div>
-          </div>
+  <!-- ─── Logs Modal ────────────────────────────────────── -->
+  <div id="logsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.82); align-items: center; justify-content: center; backdrop-filter: blur(12px);">
+    <div class="modal-content settings-modal-content" style="max-width: 680px !important;">
+      <div class="settings-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #fff;">📜 System Activity Logs</h2>
         </div>
-
-        <!-- Web App Update Section (Visible when loaded in standard web browser) -->
-        <div id="webSettingsCard" style="display: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; margin-bottom: 10px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: var(--accent-light);">Application Updates</h3>
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">Version: <strong id="webAppVersion">v4.8.2</strong></span>
-            <button class="btn btn-secondary" id="btnWebCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer;">🔄 Check for Updates</button>
-          </div>
-          <div id="webUpdateStatusMessage" style="display: none; margin-top: 10px; font-size: 0.78rem; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center; font-weight: 500;"></div>
+        <span class="settings-modal-close" id="btnCloseLogs" style="font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div id="logsTerminal" style="background: #050508; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; height: 380px; overflow-y: auto; font-family: monospace; font-size: 0.76rem; color: #39ff14; line-height: 1.6; white-space: pre-wrap; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);">[system] Loading dashboard logs...</div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="settings-browse-btn" id="btnClearLogs" style="padding: 6px 12px; font-size: 0.76rem; cursor: pointer; border-radius: 8px;">Clear Screen</button>
         </div>
-
-        <div class="settings-status" id="settingsStatus" style="font-size: 0.8rem; text-align: center;"></div>
-        <button class="btn btn-primary" id="saveDirBtn" style="padding: 10px; font-size: 0.84rem; font-weight: 600; width: 100%; cursor: pointer;">Save Configurations</button>
       </div>
     </div>
   </div>

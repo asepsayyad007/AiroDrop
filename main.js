@@ -95,10 +95,12 @@ function setupAutoUpdater() {
   autoUpdater.logger = console;
 
   autoUpdater.on('checking-for-updates', () => {
+    server.writeLog("Checking for updates...");
     if (mainWindow) mainWindow.webContents.send('update-status', 'checking');
   });
 
   autoUpdater.on('update-available', (info) => {
+    server.writeLog(`New update available: v${info.version}`);
     if (mainWindow) mainWindow.webContents.send('update-status', 'available', info);
     if (isManualCheck) {
       isManualCheck = false;
@@ -111,6 +113,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('update-not-available', (info) => {
+    server.writeLog("You are up to date.");
     if (mainWindow) mainWindow.webContents.send('update-status', 'not-available', info);
     if (isManualCheck) {
       isManualCheck = false;
@@ -123,6 +126,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('error', (err) => {
+    server.writeLog(`Update check failed: ${err.message}`);
     if (mainWindow) mainWindow.webContents.send('update-status', 'error', err.message);
     if (isManualCheck) {
       isManualCheck = false;
@@ -139,6 +143,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('update-downloaded', (info) => {
+    server.writeLog("Update downloaded successfully.");
     if (mainWindow) mainWindow.webContents.send('update-status', 'downloaded', info);
     dialog.showMessageBox(mainWindow || null, {
       type: 'info',
@@ -364,7 +369,7 @@ server.serverEvents.on('screencast_start', (ws) => {
     desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1280, height: 720 } })
       .then(sources => {
         if (sources && sources.length > 0) {
-          const imageBuffer = sources[0].thumbnail.toJPEG(75); // 75% quality JPEG
+          const imageBuffer = sources[0].thumbnail.toJPEG(80); // 80% quality JPEG
           if (ws.readyState === 1) {
             ws.send(JSON.stringify({
               type: 'screencast_frame',
@@ -376,7 +381,7 @@ server.serverEvents.on('screencast_start', (ws) => {
       .catch(err => {
         console.error('[SCREENCAST] Capture failed:', err.message);
       });
-  }, 65); // ~15 fps for smooth real-time streaming
+  }, 33); // ~30 fps for smooth real-time streaming
 
   screencastTimers.set(ws, timerId);
 });
