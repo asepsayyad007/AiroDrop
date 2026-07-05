@@ -148,6 +148,8 @@ Settings are stored in `<App Data Directory>/AiroDrop/config.json`. Key configur
 * `saveDir`: Target download path for transferred items.
 * `shareDir`: Root shared path exposed to the HTTP File Browser.
 
+---
+
 ## 🛠️ Credits & Authors
 
 AiroDrop is created and maintained by **[Asep Sayyad](https://github.com/asepsayyad007)**.
