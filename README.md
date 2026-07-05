@@ -10,6 +10,13 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
+## ⚡ Highlighted Feature: Instant Clipboard Sync
+
+> [!IMPORTANT]
+> **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
 ## 🚀 What's New in v4.7.0
 
 This release brings version 4.7.0, introducing major connection improvements and interface cleanups:
@@ -37,9 +44,7 @@ Get the latest pre-compiled binaries for Windows:
 
 ## How It Works
 
-* **Text & Links:** Copying text on your phone pushes it to your PC's clipboard (Ctrl+V) instantly. Shared links from Safari/Chrome have clean URLs extracted automatically.
-* **Images:** Saved to your configured folder and copied directly into your PC's clipboard memory (ready to paste in Discord, Photoshop, Word, or Slack).
-* **Files:** Documents, archives, audio, or video files are organized and saved automatically to your PC's local storage.
+* **Instant Clipboard Sync:** Copying text or sharing images on your phone pushes them to your PC's clipboard (Ctrl+V) instantly. Shared links from Safari/Chrome have clean URLs extracted automatically.
 * **Bi-directional Queue:** Push links or text snippets from your PC dashboard to the mobile portal inbox, or download files directly onto your phone.
 * **File Browser:** Open `http://<PC-IP>:<PORT>/files` in Safari to browse, upload, download, and manage files on your PC's shared folder.
 * **Live Screencast:** Tap "Open Live Screen" on the mobile portal to stream your PC desktop at ~15fps with optional interactive mouse control.
@@ -48,16 +53,18 @@ Get the latest pre-compiled binaries for Windows:
 
 ## Core Features
 
-* **Near-Zero Latency Clipboard Sync:** Instantly sync clipboard buffers bidirectionally.
-* **HTTP File Browser:** Premium mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
-* **Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
-* **Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
-* **PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
-* **Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
-* **Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
-* **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
-* **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
-* **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
+* **⚡ Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
+* **📁 HTTP File Browser:** Premium mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
+* **📁 Files App SMB Integration:** Expose your shared folders using native Windows SMB. Connect directly via the iOS Files app &rarr; Connect to Server &rarr; `smb://[YOUR-PC-IP]` for full file browser access natively.
+* **🖱️ Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
+* **🖥️ Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
+* **🔌 Universal Connection:** Unified connection state management. Connect on portal load, with auto-reconnect fallback and status indicators.
+* **🛠️ PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
+* **📊 Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
+* **🔒 Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
+* **🔔 Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
+* **📱 Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
+* **🎨 5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
 
 ---
 
