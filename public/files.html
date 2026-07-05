@@ -205,13 +205,20 @@
     <input type="file" id="fileInputHidden" multiple>
   </div>
 
-  <div class="upload-progress" id="uploadProgressArea">
-    <div class="progress-card">
-      <div class="progress-header">
-        <span class="progress-label" id="progressLabel">Uploading...</span>
-        <span class="progress-pct" id="progressPct">0%</span>
+  <div class="upload-progress" id="universalProgressArea" style="display: none; margin: 12px auto; max-width: 900px; padding: 0 16px;">
+    <div class="progress-card" style="background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px;">
+      <div class="progress-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span class="progress-label" id="progressLabel" style="font-size: 0.82rem; font-weight: 600;">Uploading...</span>
+        <span class="progress-pct" id="progressPct" style="font-size: 0.78rem; color: var(--accent2); font-weight: 700;">0%</span>
       </div>
-      <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-bar-track" style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 12px;">
+        <div class="progress-bar-fill" id="progressFill" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; width: 0%; transition: width 0.1s ease;"></div>
+      </div>
+      <div class="progress-controls" style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="view-btn" id="btnProgressPause" style="padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; border: 1px solid var(--card-border); background: transparent; color: var(--text2); cursor: pointer;">⏸ Pause</button>
+        <button class="view-btn" id="btnProgressStop" style="padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; border: 1px solid var(--card-border); background: transparent; color: var(--text2); cursor: pointer;">⏹ Stop</button>
+        <button class="view-btn" id="btnProgressCancel" style="padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; border: 1px solid var(--danger); background: transparent; color: var(--danger); cursor: pointer;">✕ Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -237,10 +244,50 @@
   <div class="ctx-sheet" id="ctxSheet">
     <div class="ctx-handle"></div>
     <div class="ctx-title" id="ctxTitle">File Options</div>
+    <button class="ctx-action" id="ctxStream" style="display: none;"><span class="ctx-icon">🎥</span> Stream Video</button>
     <button class="ctx-action" id="ctxDownload"><span class="ctx-icon">⬇️</span> Download</button>
     <button class="ctx-action" id="ctxRename"><span class="ctx-icon">✏️</span> Rename</button>
     <button class="ctx-action danger" id="ctxDelete"><span class="ctx-icon">🗑️</span> Delete</button>
     <button class="ctx-action" id="ctxCancel"><span class="ctx-icon">✖</span> Cancel</button>
+  </div>
+
+  <!-- Fullscreen Video Player Modal -->
+  <div id="videoPlayerOverlay" style="display: none; position: fixed; inset: 0; background: #000; z-index: 400; flex-direction: column; align-items: center; justify-content: center;">
+    <button id="btnCloseVideoPlayer" style="position: absolute; top: env(safe-area-inset-top, 20px); right: 20px; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 1.5rem; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 410;">&times;</button>
+    <video id="videoPlayerEl" controls autoplay playsinline style="width: 100%; height: auto; max-height: 80%; background: #000; outline: none;"></video>
+    <div id="videoTitle" style="color: white; margin-top: 15px; font-size: 0.9rem; font-weight: 500; text-align: center; padding: 0 20px; word-break: break-all;">Video Name</div>
+  </div>
+
+  <!-- File Action Dialog (Stream vs Download) -->
+  <div id="actionDialogOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 250; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 320px; padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <h3 id="dialogTitle" style="font-size: 1rem; font-weight: 600; margin-bottom: 8px; word-break: break-all;">File Name</h3>
+      <p style="font-size: 0.76rem; color: var(--text2); margin-bottom: 20px;">Choose what you would like to do with this file</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn" id="btnDialogStream" style="margin: 0; padding: 12px; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem; border: none; color: white; border-radius: var(--radius); cursor: pointer; font-weight: 600;">🎥 Stream Video</button>
+        <button class="btn" id="btnDialogDownload" style="margin: 0; padding: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 0.85rem; border: none; color: white; border-radius: var(--radius); cursor: pointer; font-weight: 600;">⬇️ Download File</button>
+        <button class="btn" id="btnDialogCancel" style="margin: 0; padding: 12px; background: rgba(255,255,255,0.06); font-size: 0.85rem; border: 1px solid var(--card-border); color: white; border-radius: var(--radius); cursor: pointer;">✕ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download Info Popup Modal -->
+  <div id="downloadInfoOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 350; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 340px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="font-size: 2.2rem; text-align: center; margin-bottom: 12px;">📥</div>
+      <h3 style="font-size: 1.05rem; font-weight: 600; text-align: center; margin-bottom: 12px;">Download Initialized</h3>
+      <div style="font-size: 0.76rem; color: var(--text2); line-height: 1.5; margin-bottom: 18px;">
+        <p style="margin-bottom: 8px; color: var(--text); font-weight: 600;">Where does the file go?</p>
+        <ul style="margin-left: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px;">
+          <li><strong>iOS Safari:</strong> Saved to your default download location. Open the native <strong>Files app</strong> and look in the <strong>Downloads</strong> folder (iCloud Drive or On My iPhone).</li>
+          <li><strong>Android Chrome:</strong> Saved directly to your device's <strong>Downloads</strong> folder.</li>
+        </ul>
+        <p style="font-size: 0.7rem; color: var(--text3); border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 8px;"><em>Tip: You can customize the download location in Safari Settings (Settings &rarr; Safari &rarr; Downloads) or Chrome Settings.</em></p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn" id="btnDownloadInfoClose" style="margin: 0; padding: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 0.85rem; border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 600;">Got It</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -306,7 +353,7 @@
         btn.addEventListener('click', ev => {
           ev.stopPropagation();
           const row = btn.closest('.file-row');
-          const entry = {name:row.dataset.name, type:row.dataset.type};
+          const entry = {name:row.dataset.name, type:row.dataset.type, size:row.dataset.size};
           const act = btn.dataset.action;
           if(act==='download') downloadFile(entry);
           else if(act==='rename') doRename(entry);
@@ -316,32 +363,246 @@
     }
     container.querySelectorAll('.file-card,.file-row').forEach(el => {
       el.addEventListener('click', () => handleTap({name:el.dataset.name,type:el.dataset.type,size:el.dataset.size}));
-      el.addEventListener('contextmenu', e => { e.preventDefault(); openCtx({name:el.dataset.name,type:el.dataset.type}); });
+      el.addEventListener('contextmenu', e => { e.preventDefault(); openCtx({name:el.dataset.name,type:el.dataset.type,size:el.dataset.size}); });
       let lpt;
-      el.addEventListener('touchstart', () => { lpt=setTimeout(()=>openCtx({name:el.dataset.name,type:el.dataset.type}),550); },{passive:true});
+      el.addEventListener('touchstart', () => { lpt=setTimeout(()=>openCtx({name:el.dataset.name,type:el.dataset.type,size:el.dataset.size}),550); },{passive:true});
       el.addEventListener('touchend', () => clearTimeout(lpt));
       el.addEventListener('touchmove', () => clearTimeout(lpt),{passive:true});
     });
   }
 
+  let currentTransfer = {
+    type: null, // 'upload' or 'download'
+    status: 'idle', // 'transferring', 'paused', 'stopped', 'cancelled'
+    file: null,
+    xhr: null,
+    currentChunk: 0,
+    totalChunks: 0,
+    chunkSize: 1024 * 1024 * 2, // 2MB
+    totalBytes: 0,
+    downloadedChunks: [],
+    relPath: '',
+    uploadId: '',
+    resolvePromise: null
+  };
+
+  function showProgressArea(label) {
+    document.getElementById('universalProgressArea').style.display = 'block';
+    document.getElementById('progressLabel').textContent = label;
+    document.getElementById('progressPct').textContent = '0%';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('btnProgressPause').textContent = '⏸ Pause';
+    document.getElementById('btnProgressPause').style.display = 'inline-block';
+    document.getElementById('btnProgressStop').style.display = 'inline-block';
+    document.getElementById('btnProgressCancel').style.display = 'inline-block';
+  }
+
+  function hideProgressArea() {
+    document.getElementById('universalProgressArea').style.display = 'none';
+    currentTransfer.status = 'idle';
+    if (currentTransfer.xhr) {
+      try { currentTransfer.xhr.abort(); } catch(e) {}
+    }
+  }
+
+  function updateProgressUI(pct) {
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+
   function handleTap(entry) {
     if (entry.type==='dir') navigate(currentPath ? currentPath+'/'+entry.name : entry.name);
-    else downloadFile(entry);
+    else {
+      const isVideo = ['mp4', 'mov', 'm4v', 'webm', 'ogv', 'avi', 'mkv'].includes((entry.name.split('.').pop() || '').toLowerCase());
+      if (isVideo) {
+        openActionDialog(entry);
+      } else {
+        downloadFile(entry);
+      }
+    }
   }
+
   function downloadFile(entry) {
+    if (currentTransfer.status === 'transferring') {
+      toast('Another transfer is already in progress!', true);
+      return;
+    }
     const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
-    const a = document.createElement('a');
-    a.href = `/files/download?path=${encodeURIComponent(rel)}`;
-    a.download = entry.name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const size = parseInt(entry.size, 10) || 0;
+    
+    if (!size) {
+      const a = document.createElement('a');
+      a.href = `/files/download?path=${encodeURIComponent(rel)}`;
+      a.download = entry.name;
+      a.target = '_blank'; // Opens in new window to prevent iframe navigation flash
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      
+      // Instantly show location notice since download runs natively
+      document.getElementById('downloadInfoOverlay').style.display = 'flex';
+      return;
+    }
+
+    const chunkSize = 1024 * 1024 * 2; // 2MB
+    const totalChunks = Math.ceil(size / chunkSize);
+
+    currentTransfer = {
+      type: 'download',
+      status: 'transferring',
+      file: entry,
+      currentChunk: 0,
+      totalChunks: totalChunks,
+      chunkSize: chunkSize,
+      totalBytes: size,
+      downloadedChunks: [],
+      relPath: rel
+    };
+
+    showProgressArea(`Downloading: ${entry.name}`);
+    downloadNextChunk();
   }
+
+  function downloadNextChunk() {
+    if (currentTransfer.status !== 'transferring') return;
+
+    const start = currentTransfer.currentChunk * currentTransfer.chunkSize;
+    const end = Math.min(currentTransfer.totalBytes - 1, start + currentTransfer.chunkSize - 1);
+    
+    const xhr = new XMLHttpRequest();
+    currentTransfer.xhr = xhr;
+    
+    xhr.open('GET', `/files/download?path=${encodeURIComponent(currentTransfer.relPath)}`);
+    xhr.setRequestHeader('Range', `bytes=${start}-${end}`);
+    xhr.responseType = 'arraybuffer';
+
+    xhr.onprogress = (e) => {
+      if (e.lengthComputable && currentTransfer.status === 'transferring') {
+        const loadedBytes = start + e.loaded;
+        const pct = Math.min(99, Math.round((loadedBytes / currentTransfer.totalBytes) * 100));
+        updateProgressUI(pct);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 206) {
+        currentTransfer.downloadedChunks.push(xhr.response);
+        currentTransfer.currentChunk++;
+
+        const pct = Math.min(99, Math.round(((currentTransfer.currentChunk * currentTransfer.chunkSize) / currentTransfer.totalBytes) * 100));
+        updateProgressUI(pct);
+
+        if (currentTransfer.currentChunk >= currentTransfer.totalChunks) {
+          updateProgressUI(100);
+          setTimeout(() => {
+            const blob = new Blob(currentTransfer.downloadedChunks, { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentTransfer.file.name;
+            a.target = '_blank'; // Opens in new tab context window to prevent parent page reload
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            toast(`✅ Download completed!`);
+            hideProgressArea();
+
+            // Display location notice to guide the user
+            document.getElementById('downloadInfoOverlay').style.display = 'flex';
+          }, 300);
+        } else {
+          if (currentTransfer.status === 'transferring') {
+            downloadNextChunk();
+          }
+        }
+      } else {
+        toast('Download failed: ' + xhr.statusText, true);
+        hideProgressArea();
+      }
+    };
+
+    xhr.onerror = () => {
+      toast('Download network error', true);
+      hideProgressArea();
+    };
+
+    xhr.send();
+  }
+
+  function streamVideo(entry) {
+    const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
+    const url = `/files/download?path=${encodeURIComponent(rel)}&stream=true`;
+    
+    // Delegate to parent page if running inside an iframe (like AiroDrop mobile portal)
+    if (window.self !== window.top) {
+      window.parent.postMessage({
+        type: 'stream-video',
+        name: entry.name,
+        url: url
+      }, '*');
+      return;
+    }
+
+    const overlay = document.getElementById('videoPlayerOverlay');
+    const video = document.getElementById('videoPlayerEl');
+    const title = document.getElementById('videoTitle');
+
+    title.textContent = entry.name;
+    video.src = url;
+    overlay.style.display = 'flex';
+    video.play().catch(e => {
+      toast('Autoplay blocked. Tap play button.', false);
+    });
+  }
+
+  // Close player handler
+  document.getElementById('btnCloseVideoPlayer').addEventListener('click', () => {
+    const overlay = document.getElementById('videoPlayerOverlay');
+    const video = document.getElementById('videoPlayerEl');
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    overlay.style.display = 'none';
+  });
+
+  // Action Dialog Handler
+  let dialogEntry = null;
+  function openActionDialog(entry) {
+    dialogEntry = entry;
+    document.getElementById('dialogTitle').textContent = entry.name;
+    document.getElementById('actionDialogOverlay').style.display = 'flex';
+  }
+  function closeActionDialog() {
+    document.getElementById('actionDialogOverlay').style.display = 'none';
+    dialogEntry = null;
+  }
+  document.getElementById('btnDialogCancel').addEventListener('click', closeActionDialog);
+  document.getElementById('btnDialogStream').addEventListener('click', () => {
+    if (dialogEntry) streamVideo(dialogEntry);
+    closeActionDialog();
+  });
+  document.getElementById('btnDialogDownload').addEventListener('click', () => {
+    if (dialogEntry) downloadFile(dialogEntry);
+    closeActionDialog();
+  });
+
+  // Download Info Handler
+  document.getElementById('btnDownloadInfoClose').addEventListener('click', () => {
+    document.getElementById('downloadInfoOverlay').style.display = 'none';
+  });
+
   function openCtx(entry) {
     currentEntry = entry;
     document.getElementById('ctxTitle').textContent = entry.name;
+    
+    const isVideo = ['mp4', 'mov', 'm4v', 'webm', 'ogv', 'avi', 'mkv'].includes((entry.name.split('.').pop() || '').toLowerCase());
+    document.getElementById('ctxStream').style.display = (entry.type==='file' && isVideo) ? 'flex' : 'none';
+    
     document.getElementById('ctxDownload').style.display = entry.type==='file'?'flex':'none';
     document.getElementById('ctxOverlay').style.display = 'block';
     document.getElementById('ctxSheet').classList.add('open');
   }
+
   function closeCtx() {
     document.getElementById('ctxOverlay').style.display = 'none';
     document.getElementById('ctxSheet').classList.remove('open');
@@ -349,6 +610,7 @@
   }
   document.getElementById('ctxOverlay').addEventListener('click', closeCtx);
   document.getElementById('ctxCancel').addEventListener('click', closeCtx);
+  document.getElementById('ctxStream').addEventListener('click', () => { if(currentEntry) streamVideo(currentEntry); closeCtx(); });
   document.getElementById('ctxDownload').addEventListener('click', () => { if(currentEntry) downloadFile(currentEntry); closeCtx(); });
   document.getElementById('ctxRename').addEventListener('click', () => { if(currentEntry){const e=currentEntry;closeCtx();doRename(e);} });
   document.getElementById('ctxDelete').addEventListener('click', () => { if(currentEntry){const e=currentEntry;closeCtx();doDelete(e);} });
@@ -361,6 +623,7 @@
     const d = await res.json();
     if(d.success){toast('Renamed!');loadDir();}else toast(d.error||'Rename failed',true);
   }
+
   async function doDelete(entry) {
     if(!confirm(`Delete "${entry.name}"? Cannot be undone.`)) return;
     const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
@@ -368,6 +631,7 @@
     const d = await res.json();
     if(d.success){toast('Deleted!');loadDir();}else toast(d.error||'Delete failed',true);
   }
+
   document.getElementById('fabNewFolder').addEventListener('click', async () => {
     const name = prompt('New folder name:');
     if(!name) return;
@@ -387,29 +651,153 @@
   fileInput.addEventListener('change', () => { if(fileInput.files.length>0) uploadFiles(fileInput.files); });
 
   async function uploadFiles(files) {
-    const pa = document.getElementById('uploadProgressArea');
-    const fill = document.getElementById('progressFill');
-    const pct = document.getElementById('progressPct');
-    const lbl = document.getElementById('progressLabel');
-    pa.style.display = 'block';
-    lbl.textContent = `Uploading ${files.length} file${files.length>1?'s':''}...`;
-    fill.style.width = '0%'; pct.textContent = '0%';
-    const fd = new FormData();
-    for(const f of files) fd.append('files', f);
-    return new Promise(resolve => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `/files/upload?path=${encodeURIComponent(currentPath)}`);
-      xhr.upload.onprogress = e => { if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100); fill.style.width=p+'%'; pct.textContent=p+'%';} };
-      xhr.onload = () => {
-        pa.style.display = 'none'; fileInput.value = '';
-        try { const r=JSON.parse(xhr.responseText); if(r.success){toast(`✅ ${r.uploaded.length} file${r.uploaded.length>1?'s':''} uploaded!`);loadDir();}else toast(r.error||'Upload failed',true); }
-        catch { toast('Upload failed',true); }
-        resolve();
+    if (currentTransfer.status === 'transferring') {
+      toast('Another transfer is already in progress!', true);
+      return;
+    }
+    for (let i = 0; i < files.length; i++) {
+      await startUpload(files[i]);
+    }
+    fileInput.value = '';
+  }
+
+  function startUpload(file) {
+    return new Promise((resolve) => {
+      const chunkSize = 1024 * 1024 * 2; // 2MB
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      
+      currentTransfer = {
+        type: 'upload',
+        status: 'transferring',
+        file: file,
+        currentChunk: 0,
+        totalChunks: totalChunks,
+        chunkSize: chunkSize,
+        totalBytes: file.size,
+        uploadId: Date.now() + Math.random().toString(36).substr(2, 5),
+        resolvePromise: resolve
       };
-      xhr.onerror = () => { pa.style.display='none'; toast('Network error',true); resolve(); };
-      xhr.send(fd);
+
+      showProgressArea(`Uploading: ${file.name}`);
+      uploadNextChunk();
     });
   }
+
+  function uploadNextChunk() {
+    if (currentTransfer.status !== 'transferring') return;
+    
+    const file = currentTransfer.file;
+    const start = currentTransfer.currentChunk * currentTransfer.chunkSize;
+    const end = Math.min(file.size, start + currentTransfer.chunkSize);
+    const chunk = file.slice(start, end);
+
+    const xhr = new XMLHttpRequest();
+    currentTransfer.xhr = xhr;
+    
+    const url = `/files/upload-chunk?path=${encodeURIComponent(currentPath)}&name=${encodeURIComponent(file.name)}&index=${currentTransfer.currentChunk}&total=${currentTransfer.totalChunks}`;
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && currentTransfer.status === 'transferring') {
+        const loadedBytes = start + e.loaded;
+        const pct = Math.min(99, Math.round((loadedBytes / currentTransfer.totalBytes) * 100));
+        updateProgressUI(pct);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const res = JSON.parse(xhr.responseText);
+        currentTransfer.currentChunk++;
+        
+        const pct = Math.min(99, Math.round(((currentTransfer.currentChunk * currentTransfer.chunkSize) / currentTransfer.totalBytes) * 100));
+        updateProgressUI(pct);
+
+        if (res.completed) {
+          updateProgressUI(100);
+          setTimeout(() => {
+            toast(`✅ File uploaded successfully!`);
+            hideProgressArea();
+            loadDir();
+            currentTransfer.resolvePromise();
+          }, 300);
+        } else {
+          if (currentTransfer.status === 'transferring') {
+            uploadNextChunk();
+          }
+        }
+      } else {
+        toast('Upload failed: ' + xhr.statusText, true);
+        hideProgressArea();
+        currentTransfer.resolvePromise();
+      }
+    };
+
+    xhr.onerror = () => {
+      toast('Upload network error', true);
+      hideProgressArea();
+      currentTransfer.resolvePromise();
+    };
+
+    xhr.send(chunk);
+  }
+
+  // Set up Progress Controls Event Listeners
+  document.getElementById('btnProgressPause').addEventListener('click', () => {
+    if (currentTransfer.status === 'transferring') {
+      currentTransfer.status = 'paused';
+      if (currentTransfer.xhr) {
+        try { currentTransfer.xhr.abort(); } catch(e) {}
+      }
+      document.getElementById('btnProgressPause').textContent = '▶ Resume';
+      document.getElementById('progressLabel').textContent = `${currentTransfer.type === 'upload' ? 'Uploading' : 'Downloading'} (Paused)...`;
+    } else if (currentTransfer.status === 'paused') {
+      currentTransfer.status = 'transferring';
+      document.getElementById('btnProgressPause').textContent = '⏸ Pause';
+      document.getElementById('progressLabel').textContent = `${currentTransfer.type === 'upload' ? 'Uploading' : 'Downloading'}: ${currentTransfer.file.name}`;
+      if (currentTransfer.type === 'upload') {
+        uploadNextChunk();
+      } else {
+        downloadNextChunk();
+      }
+    }
+  });
+
+  document.getElementById('btnProgressStop').addEventListener('click', () => {
+    if (currentTransfer.status !== 'idle') {
+      const wasType = currentTransfer.type;
+      currentTransfer.status = 'stopped';
+      if (currentTransfer.xhr) {
+        try { currentTransfer.xhr.abort(); } catch(e) {}
+      }
+      toast(`${wasType === 'upload' ? 'Upload' : 'Download'} stopped.`);
+      hideProgressArea();
+      if (currentTransfer.resolvePromise) currentTransfer.resolvePromise();
+    }
+  });
+
+  document.getElementById('btnProgressCancel').addEventListener('click', () => {
+    if (currentTransfer.status !== 'idle') {
+      const wasType = currentTransfer.type;
+      currentTransfer.status = 'cancelled';
+      if (currentTransfer.xhr) {
+        try { currentTransfer.xhr.abort(); } catch(e) {}
+      }
+      
+      if (wasType === 'upload') {
+        fetch('/files/upload-cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: currentPath, name: currentTransfer.file.name })
+        });
+      }
+      
+      toast(`${wasType === 'upload' ? 'Upload' : 'Download'} cancelled.`);
+      hideProgressArea();
+      if (currentTransfer.resolvePromise) currentTransfer.resolvePromise();
+    }
+  });
 
   document.getElementById('viewGrid').addEventListener('click', () => { viewMode='grid'; document.getElementById('viewGrid').classList.add('active'); document.getElementById('viewList').classList.remove('active'); loadDir(); });
   document.getElementById('viewList').addEventListener('click', () => { viewMode='list'; document.getElementById('viewList').classList.add('active'); document.getElementById('viewGrid').classList.remove('active'); loadDir(); });

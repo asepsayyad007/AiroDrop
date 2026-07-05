@@ -1504,8 +1504,39 @@
         overlay.style.display = 'none';
         iframe.src = 'about:blank';
       });
+
+      const btnCloseVideo = document.getElementById('btnCloseVideoPlayer');
+      if (btnCloseVideo) {
+        btnCloseVideo.addEventListener('click', () => {
+          const videoOverlay = document.getElementById('videoPlayerOverlay');
+          const video = document.getElementById('videoPlayerEl');
+          if (videoOverlay && video) {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            videoOverlay.style.display = 'none';
+          }
+        });
+      }
     }
 
+    // ─── Stream Video Listener (from File Browser iframe) ───────
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'stream-video') {
+        const overlay = document.getElementById('videoPlayerOverlay');
+        const video = document.getElementById('videoPlayerEl');
+        const title = document.getElementById('videoTitle');
+        
+        if (overlay && video && title) {
+          title.textContent = event.data.name;
+          video.src = event.data.url;
+          overlay.style.display = 'flex';
+          video.play().catch(e => {
+            console.log('Autoplay blocked: ', e);
+          });
+        }
+      }
+    });
 
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);
@@ -1705,6 +1736,17 @@
     </div>
     <!-- Iframe Container -->
     <iframe id="fileBrowserIframe" src="about:blank" style="flex: 1; border: none; width: 100%; height: 100%; background: #09090f; z-index: 601;"></iframe>
+  </div>
+
+  <!-- Video Player Overlay (For Instant Stream playback outside iframe) -->
+  <div id="videoPlayerOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(10px);">
+    <div style="width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 12px; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h3 id="videoTitle" style="font-size: 1rem; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 40px); font-family: sans-serif;">Video Stream</h3>
+        <button id="btnCloseVideoPlayer" style="background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; padding: 0 5px; line-height: 1;">&times;</button>
+      </div>
+      <video id="videoPlayerEl" controls autoplay playsinline style="width: 100%; height: auto; max-height: 80vh; background: #000; border-radius: 8px; outline: none; border: 1px solid rgba(255,255,255,0.1);"></video>
+    </div>
   </div>
 
   <style>

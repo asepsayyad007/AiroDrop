@@ -1102,6 +1102,72 @@
       } catch (err) {
         console.error('Failed to load settings:', err);
       }
+
+      // Toggle card views based on isElectron
+      const electronSettingsCard = $('#electronSettingsCard');
+      const webSettingsCard = $('#webSettingsCard');
+      if (isElectron) {
+        if (electronSettingsCard) electronSettingsCard.style.display = 'block';
+        if (webSettingsCard) webSettingsCard.style.display = 'none';
+      } else {
+        if (electronSettingsCard) electronSettingsCard.style.display = 'none';
+        if (webSettingsCard) webSettingsCard.style.display = 'block';
+        setupWebUpdater();
+      }
+    }
+
+    function setupWebUpdater() {
+      const btnWebCheckUpdates = $('#btnWebCheckUpdates');
+      const webUpdateStatusMessage = $('#webUpdateStatusMessage');
+
+      if (btnWebCheckUpdates) {
+        btnWebCheckUpdates.addEventListener('click', async () => {
+          btnWebCheckUpdates.disabled = true;
+          btnWebCheckUpdates.textContent = '🔄 Checking...';
+          
+          if (webUpdateStatusMessage) {
+            webUpdateStatusMessage.style.display = 'none';
+          }
+
+          try {
+            const res = await doFetch('/api/check-update');
+            if (res.ok) {
+              const data = await res.json();
+              if (webUpdateStatusMessage) {
+                webUpdateStatusMessage.style.display = 'block';
+                if (data.updateAvailable) {
+                  webUpdateStatusMessage.style.backgroundColor = 'rgba(255,149,0,0.15)';
+                  webUpdateStatusMessage.style.borderColor = 'rgba(255,149,0,0.3)';
+                  webUpdateStatusMessage.style.color = '#ff9500';
+                  webUpdateStatusMessage.innerHTML = `Update available: <strong>v${data.latest}</strong><br><a href="${data.url}" target="_blank" style="color: #6366f1; text-decoration: underline; display: inline-block; margin-top: 4px;">Click here to view on GitHub</a>`;
+                  showToast(`Update v${data.latest} is available!`, 'info');
+                } else {
+                  webUpdateStatusMessage.style.backgroundColor = 'rgba(0,210,106,0.15)';
+                  webUpdateStatusMessage.style.borderColor = 'rgba(0,210,106,0.3)';
+                  webUpdateStatusMessage.style.color = '#00d26a';
+                  webUpdateStatusMessage.textContent = 'You are already running the latest version of AiroDrop.';
+                  showToast('You are up to date!', 'success');
+                }
+              }
+            } else {
+              throw new Error('Server returned ' + res.status);
+            }
+          } catch (err) {
+            console.error('Web updater failed:', err);
+            if (webUpdateStatusMessage) {
+              webUpdateStatusMessage.style.display = 'block';
+              webUpdateStatusMessage.style.backgroundColor = 'rgba(255,59,48,0.15)';
+              webUpdateStatusMessage.style.borderColor = 'rgba(255,59,48,0.3)';
+              webUpdateStatusMessage.style.color = '#ff3b30';
+              webUpdateStatusMessage.textContent = `Check failed: ${err.message}`;
+            }
+            showToast('Update check failed', 'error');
+          } finally {
+            btnWebCheckUpdates.disabled = false;
+            btnWebCheckUpdates.textContent = '🔄 Check for Updates';
+          }
+        });
+      }
     }
 
     if (saveDirBtn) {
@@ -1568,6 +1634,68 @@
         }
       });
     }
+
+    // ─── Auto-Updater Controls ───
+    const btnCheckUpdates = $('#btnCheckUpdates');
+    const updateProgressContainer = $('#updateProgressContainer');
+    const updateProgressLabel = $('#updateProgressLabel');
+    const updateProgressPercent = $('#updateProgressPercent');
+    const updateProgressBarFill = $('#updateProgressBarFill');
+    const appVersionText = $('#appVersionText');
+
+    if (btnCheckUpdates) {
+      // Get the version from the packages/main process if possible
+      btnCheckUpdates.addEventListener('click', () => {
+        btnCheckUpdates.disabled = true;
+        btnCheckUpdates.textContent = '🔄 Checking...';
+        ipcRenderer.send('manual-check-update');
+      });
+    }
+
+    ipcRenderer.on('update-status', (event, status, info) => {
+      if (!btnCheckUpdates) return;
+
+      switch (status) {
+        case 'checking':
+          btnCheckUpdates.disabled = true;
+          btnCheckUpdates.textContent = '🔄 Checking...';
+          break;
+        case 'available':
+          btnCheckUpdates.disabled = true;
+          btnCheckUpdates.textContent = '📥 Update Available';
+          showToast(`Update v${info.version} available! Downloading...`, 'info');
+          if (updateProgressContainer) updateProgressContainer.style.display = 'flex';
+          break;
+        case 'not-available':
+          btnCheckUpdates.disabled = false;
+          btnCheckUpdates.textContent = '🔄 Check for Updates';
+          showToast('You are already running the latest version!', 'success');
+          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+          break;
+        case 'error':
+          btnCheckUpdates.disabled = false;
+          btnCheckUpdates.textContent = '🔄 Check for Updates';
+          showToast('Update check failed. Try again later.', 'error');
+          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+          break;
+        case 'downloaded':
+          btnCheckUpdates.disabled = false;
+          btnCheckUpdates.textContent = '🔄 Check for Updates';
+          showToast('Update downloaded successfully! Restart to apply.', 'success');
+          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+          break;
+      }
+    });
+
+    ipcRenderer.on('update-download-progress', (event, progressObj) => {
+      if (updateProgressPercent) updateProgressPercent.textContent = `${Math.round(progressObj.percent)}%`;
+      if (updateProgressBarFill) updateProgressBarFill.style.width = `${progressObj.percent}%`;
+      if (updateProgressLabel) {
+        const speed = (progressObj.bytesPerSecond / 1024 / 1024).toFixed(1);
+        updateProgressLabel.textContent = `Downloading (${speed} MB/s)`;
+      }
+    });
+
 
     function updateControlCenterStatus(status) {
       if (status.running) {

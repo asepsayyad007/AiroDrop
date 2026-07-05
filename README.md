@@ -1,8 +1,8 @@
-# AiroDrop v4.7.0 🚀
+# AiroDrop v4.8.0 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.7.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.8.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,28 +17,23 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.7.0
+## 🚀 What's New in v4.8.0
 
-This release brings version 4.7.0, introducing major connection improvements and interface cleanups:
+This release brings version 4.8.0, introducing major video streaming range fixes, auto-updates, and upload optimizations:
 
 ### ✅ New Features & Updates
-1. **📁 Files App & Browser Integration** — Support for **native iOS Files app** integration via Windows' built-in high-performance **SMB (Server Message Block) file sharing**. You can browse, upload, and edit your PC files directly from your iOS Files app.
-2. **🔌 Universal Connect Button** — Added a prominent connection status button at the top of the mobile web app screen. WebSocket-reliant features (Screencast and Trackpad) now auto-connect on click.
-3. **🖥️ Live PC Screencast (Separate Overlay)** — Stream your PC screen at **~15fps** (65ms interval, 1280×720, 75% JPEG quality) directly within the mobile portal. Features a **View Only / Interactive toggle** for full mouse cursor click and drag control.
-4. **📁 Fullscreen Mobile File Manager** — A dedicated fullscreen File Browser overlay (with a Close button) integrated inside the mobile portal, letting you manage your files in the same window.
-
-### 🔧 Fixes & Improvements
-- **Camera Stream Removed** — The mobile camera streaming features and WebSocket channels have been completely removed from the project backend and frontends for a cleaner, focused experience.
-- **Duplicate Desktop Notifications Fixed** — Prevented duplicate native notifications when sending items from mobile to PC.
-- **Trackpad Warnings Removed** — Unified and replaced all trackpad-specific connection requirements with system-wide **PC Services** alerts.
+1. **🚀 Instant Range-Based Video Streaming** — Added high-performance range-seeking media handlers. Buffering is now instant even for large video files.
+2. **🔄 Integrated Auto-Updates** — Checks for updates on startup natively via GitHub Releases. Added check buttons in both the Settings Modal and the Windows system tray.
+3. **📁 Direct File Stream Uploads** — Upgraded the chunked upload pipeline to pipe request streams directly to disk, avoiding memory constraints.
+4. **🔒 iOS Iframe Download Sandbox Fix** — Triggered Blob downloads in a new tab context (`_blank`) to prevent parent iframe refreshes.
 
 ---
 
-## 📥 Downloads (v4.7.0)
+## 📥 Downloads (v4.8.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.7.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.7.0/AiroDrop.Setup.4.7.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.7.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.7.0/AiroDrop-Portable-4.7.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.8.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.0/AiroDrop.Setup.4.8.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.8.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.0/AiroDrop-Portable-4.8.0.exe)** — Standalone execution without installation.
 
 ---
 

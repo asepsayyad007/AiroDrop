@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog, desktopCapturer } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const os = require('os');
 const server = require('./server'); // Our refactored server.js
@@ -50,7 +51,107 @@ app.whenReady().then(() => {
 
   createWindow();
   createTray();
+  setupAutoUpdater();
 });
+
+let isManualCheck = false;
+
+function checkUpdatesManually() {
+  isManualCheck = true;
+  if (mainWindow) {
+    mainWindow.webContents.send('update-status', 'checking');
+  }
+
+  // Handle unpackaged dev environment checks to show direct feedback
+  if (!app.isPackaged) {
+    isManualCheck = false;
+    dialog.showMessageBox(mainWindow || null, {
+      type: 'info',
+      title: 'AiroDrop Update Check',
+      message: 'Update checks are only active in compiled production builds.\n(Running in Developer Mode)'
+    });
+    if (mainWindow) {
+      mainWindow.webContents.send('update-status', 'not-available');
+    }
+    return;
+  }
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    if (isManualCheck) {
+      isManualCheck = false;
+      dialog.showErrorBox('Update Check Failed', `Failed to check for updates: ${err.message}`);
+      if (mainWindow) {
+        mainWindow.webContents.send('update-status', 'error', err.message);
+      }
+    }
+  });
+}
+
+ipcMain.on('manual-check-update', () => {
+  checkUpdatesManually();
+});
+
+function setupAutoUpdater() {
+  autoUpdater.logger = console;
+
+  autoUpdater.on('checking-for-updates', () => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'available', info);
+    if (isManualCheck) {
+      isManualCheck = false;
+      dialog.showMessageBox(mainWindow || null, {
+        type: 'info',
+        title: 'Update Available',
+        message: `Version ${info.version} is available and is downloading in the background.`
+      });
+    }
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'not-available', info);
+    if (isManualCheck) {
+      isManualCheck = false;
+      dialog.showMessageBox(mainWindow || null, {
+        type: 'info',
+        title: 'No Updates',
+        message: `You are up to date! Version ${app.getVersion()} is the latest version.`
+      });
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'error', err.message);
+    if (isManualCheck) {
+      isManualCheck = false;
+      dialog.showErrorBox('Update Error', `Error checking for updates: ${err.message}`);
+    }
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow) mainWindow.webContents.send('update-download-progress', progressObj);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow) mainWindow.webContents.send('update-status', 'downloaded', info);
+    dialog.showMessageBox(mainWindow || null, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Version ${info.version} is ready to install. Restart the app to apply the update?`,
+      buttons: ['Restart Now', 'Later']
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+    console.error('[AutoUpdater] Check for updates failed:', err.message);
+  });
+}
 
 // ─── Window Management ────────────────────────────────────────
 function createWindow() {
@@ -141,6 +242,8 @@ function updateTrayMenu(isRunning) {
         }
       } 
     },
+    { type: 'separator' },
+    { label: 'Check for Updates...', click: () => { checkUpdatesManually(); } },
     { type: 'separator' },
     { label: 'Quit', click: () => { isQuitting = true; app.quit(); } }
   ]);

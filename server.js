@@ -298,8 +298,113 @@ app.get('/files/download', (req, res) => {
   if (!fs.existsSync(target)) return res.status(404).json({ error: 'Not found' });
   const stat = fs.statSync(target);
   if (stat.isDirectory()) return res.status(400).json({ error: 'Cannot download a folder' });
-  res.download(target, path.basename(target));
+  
+  const isStream = req.query.stream === 'true';
+  const range = req.headers.range;
+
+  if (isStream) {
+    // Dynamically set Content-Type based on video file extensions for hardware accelerated streams
+    const ext = path.extname(target).toLowerCase();
+    const mimeTypes = {
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.ogg': 'video/ogg',
+      '.mov': 'video/quicktime',
+      '.m4v': 'video/x-m4v',
+      '.mkv': 'video/x-matroska',
+      '.avi': 'video/x-msvideo'
+    };
+    const contentType = mimeTypes[ext] || 'video/mp4';
+
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+      const chunksize = (end - start) + 1;
+      
+      const fileStream = fs.createReadStream(target, { start, end });
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': contentType,
+        'Content-Disposition': 'inline'
+      });
+      fileStream.pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': stat.size,
+        'Content-Type': contentType,
+        'Content-Disposition': 'inline'
+      });
+      fs.createReadStream(target).pipe(res);
+    }
+  } else {
+    // Normal file download
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(path.basename(target))}"`);
+    res.sendFile(target, { acceptRanges: true });
+  }
 });
+
+// Upload chunk for pause/resume/cancel support
+app.post('/files/upload-chunk', (req, res) => {
+  const relPath = req.query.path || '';
+  const fileName = req.query.name;
+  const chunkIndex = parseInt(req.query.index, 10);
+  const totalChunks = parseInt(req.query.total, 10);
+  
+  const targetDir = safePath(relPath);
+  if (!targetDir) return res.status(403).json({ error: 'Access denied' });
+  
+  const finalPath = path.join(targetDir, fileName);
+  const tempPath = finalPath + '.part';
+  
+  try {
+    fs.mkdirSync(targetDir, { recursive: true });
+    
+    // Pipe the request body stream directly to a file write stream (avoiding memory consumption and parser conflicts)
+    const writeStream = chunkIndex === 0
+      ? fs.createWriteStream(tempPath)
+      : fs.createWriteStream(tempPath, { flags: 'a' });
+    
+    req.pipe(writeStream);
+    
+    writeStream.on('finish', () => {
+      if (chunkIndex === totalChunks - 1) {
+        if (fs.existsSync(finalPath)) {
+          fs.unlinkSync(finalPath);
+        }
+        fs.renameSync(tempPath, finalPath);
+        return res.json({ success: true, completed: true, filename: fileName });
+      }
+      res.json({ success: true, completed: false });
+    });
+    
+    writeStream.on('error', (err) => {
+      console.error('[UPLOAD] Chunk write stream error:', err.message);
+      res.status(500).json({ error: err.message });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cancel chunk upload and clean up temporary file
+app.post('/files/upload-cancel', express.json(), (req, res) => {
+  const relPath = req.body.path || '';
+  const fileName = req.body.name;
+  const targetDir = safePath(relPath);
+  if (targetDir) {
+    const tempPath = path.join(targetDir, fileName + '.part');
+    if (fs.existsSync(tempPath)) {
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (e) {}
+    }
+  }
+  res.json({ success: true });
+});
+
 
 // Upload files to a folder
 const uploadToShare = multer({
@@ -485,6 +590,10 @@ const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 const rawParser = express.raw({ type: '*/*', limit: '50mb' });
 
 app.use((req, res, next) => {
+  // Skip global body parsing for chunked uploads so route can pipe stream directly
+  if (req.path === '/files/upload-chunk') {
+    return next();
+  }
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
     next();
@@ -1164,6 +1273,42 @@ app.get('/api/screenshot', (req, res) => {
         console.error('[SCREENSHOT] Error sending file:', sendErr.message);
       }
     });
+  });
+});
+
+// GET /api/check-update — Query GitHub Releases API for updates
+app.get('/api/check-update', (req, res) => {
+  const https = require('https');
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/asepsayyad007/AiroDrop/releases/latest',
+    headers: { 'User-Agent': 'AiroDrop-Server' }
+  };
+
+  https.get(options, (apiRes) => {
+    let data = '';
+    apiRes.on('data', (chunk) => { data += chunk; });
+    apiRes.on('end', () => {
+      try {
+        if (apiRes.statusCode !== 200) {
+          return res.status(apiRes.statusCode).json({ error: 'GitHub API returned status ' + apiRes.statusCode });
+        }
+        const release = JSON.parse(data);
+        const latestVersion = release.tag_name.replace(/^v/, '');
+        const currentVersion = require('./package.json').version;
+
+        res.json({
+          current: currentVersion,
+          latest: latestVersion,
+          updateAvailable: latestVersion !== currentVersion,
+          url: release.html_url
+        });
+      } catch (e) {
+        res.status(500).json({ error: 'Failed to parse GitHub response' });
+      }
+    });
+  }).on('error', (err) => {
+    res.status(500).json({ error: err.message });
   });
 });
 
