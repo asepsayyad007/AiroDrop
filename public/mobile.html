@@ -1185,17 +1185,54 @@
         }
       };
 
-      ws.onmessage = (event) => {
+      // Global peer connection variable
+      let phonePC = null;
+
+      function createPhonePeerConnection() {
+        if (phonePC) {
+          try { phonePC.close(); } catch(e) {}
+        }
+        phonePC = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+        phonePC.onicecandidate = (event) => {
+          if (event.candidate) {
+            sendWS({
+              type: 'webrtc_ice_candidate',
+              candidate: event.candidate
+            });
+          }
+        };
+        phonePC.ontrack = (event) => {
+          console.log('[WebRTC] Track received:', event.streams);
+          const liveFrame = document.getElementById('liveScreenFrame');
+          if (liveFrame && event.streams && event.streams[0]) {
+            liveFrame.srcObject = event.streams[0];
+          }
+        };
+      }
+
+      ws.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'screencast_frame') {
-            const liveFrame = document.getElementById('liveScreenFrame');
-            if (liveFrame && liveFrame.closest('#screencastOverlay').style.display !== 'none') {
-              liveFrame.src = data.image;
-              window._scFrameCount = (window._scFrameCount || 0) + 1;
+          if (data.type === 'webrtc_offer') {
+            console.log('[WebRTC] SDP Offer received from PC.');
+            createPhonePeerConnection();
+            await phonePC.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await phonePC.createAnswer();
+            await phonePC.setLocalDescription(answer);
+            sendWS({
+              type: 'webrtc_answer',
+              answer: answer
+            });
+          } else if (data.type === 'webrtc_ice_candidate') {
+            if (phonePC && data.candidate) {
+              await phonePC.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
           }
-        } catch (err) {}
+        } catch (err) {
+          console.error('[WebRTC] Signaling message handling failed:', err);
+        }
       };
 
       ws.onerror = () => {
@@ -1295,54 +1332,83 @@
       }
 
       // ── Touch Trackpad Logic ──
-      let lastX = 0, lastY = 0;
-      let isScrolling = false, initialScrollY = 0;
-      let startX = 0, startY = 0, startTime = 0, hasMoved = false;
-      let tapTimeout = null, lastTapTime = 0;
+      let touchpadMaxTouches = 0;
+      let touchpadStartTime = 0;
+      let touchpadHasMoved = false;
+      let touchpadLastX = 0;
+      let touchpadLastY = 0;
+      let touchpadStartX = 0;
+      let touchpadStartY = 0;
+      let touchpadIsScrolling = false;
+      let touchpadInitialScrollY = 0;
+      let touchpadTapTimeout = null;
+      let touchpadLastTapTime = 0;
 
       touchpadArea.addEventListener('touchstart', (e) => {
         const touches = e.touches;
         if (touches.length === 1) {
-          isScrolling = false;
-          hasMoved = false;
-          startX = lastX = touches[0].clientX;
-          startY = lastY = touches[0].clientY;
-          startTime = Date.now();
+          touchpadMaxTouches = 1;
+          touchpadHasMoved = false;
+          touchpadIsScrolling = false;
+          touchpadStartX = touchpadLastX = touches[0].clientX;
+          touchpadStartY = touchpadLastY = touches[0].clientY;
+          touchpadStartTime = Date.now();
         } else if (touches.length === 2) {
-          isScrolling = true;
-          initialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+          touchpadMaxTouches = 2;
+          touchpadIsScrolling = true;
+          touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
         }
-      }, { passive: false });
+      }, { passive: true });
 
       touchpadArea.addEventListener('touchmove', (e) => {
-        e.preventDefault();
         const touches = e.touches;
-        if (touches.length === 1 && !isScrolling) {
+        if (touches.length === 1 && !touchpadIsScrolling) {
           const cx = touches[0].clientX, cy = touches[0].clientY;
-          if (Math.abs(cx - startX) > 6 || Math.abs(cy - startY) > 6) hasMoved = true;
-          sendWS({ type: 'move', dx: (cx - lastX) * 1.8, dy: (cy - lastY) * 1.8 });
-          lastX = cx; lastY = cy;
-        } else if (touches.length === 2 && isScrolling) {
+          if (Math.abs(cx - touchpadStartX) > 6 || Math.abs(cy - touchpadStartY) > 6) {
+            touchpadHasMoved = true;
+          }
+          sendWS({ type: 'move', dx: (cx - touchpadLastX) * 1.8, dy: (cy - touchpadLastY) * 1.8 });
+          touchpadLastX = cx; touchpadLastY = cy;
+        } else if (touches.length === 2 && touchpadIsScrolling) {
+          e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
-          sendWS({ type: 'scroll', dy: (cy - initialScrollY) / 100 });
-          initialScrollY = cy;
+          if (Math.abs(cy - touchpadInitialScrollY) > 2) {
+            touchpadHasMoved = true;
+          }
+          sendWS({ type: 'scroll', dy: (cy - touchpadInitialScrollY) / 100 });
+          touchpadInitialScrollY = cy;
         }
       }, { passive: false });
 
       touchpadArea.addEventListener('touchend', (e) => {
-        if (e.touches.length > 0) return;
-        if (isScrolling) { isScrolling = false; return; }
-        const duration = Date.now() - startTime;
-        if (!hasMoved && duration < 250) {
+        if (e.touches.length > 0) return; // Wait until all fingers leave
+
+        const duration = Date.now() - touchpadStartTime;
+
+        if (touchpadMaxTouches === 2) {
+          if (!touchpadHasMoved && duration < 250) {
+            sendWS({ type: 'click', button: 'right' });
+            showToast('🖱️ Right Click', 600);
+          }
+          touchpadIsScrolling = false;
+          return;
+        }
+
+        if (!touchpadHasMoved && duration < 250) {
           const now = Date.now();
-          if (now - lastTapTime < 300) {
-            clearTimeout(tapTimeout); tapTimeout = null;
+          if (now - touchpadLastTapTime < 300) {
+            if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
             sendWS({ type: 'click', button: 'left' });
             setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
-            lastTapTime = 0;
+            showToast('🖱️ Double Click', 600);
+            touchpadLastTapTime = 0;
           } else {
-            lastTapTime = now;
-            tapTimeout = setTimeout(() => { sendWS({ type: 'click', button: 'left' }); tapTimeout = null; }, 220);
+            touchpadLastTapTime = now;
+            touchpadTapTimeout = setTimeout(() => {
+              sendWS({ type: 'click', button: 'left' });
+              showToast('🖱️ Left Click', 600);
+              touchpadTapTimeout = null;
+            }, 220);
           }
         }
       }, { passive: false });
@@ -1408,12 +1474,11 @@
       const btnClose = document.getElementById('btnCloseScreencast');
       const btnMode = document.getElementById('btnScreencastMode');
       const btnKeyboard = document.getElementById('btnScreencastKeyboard');
-      const fpsEl = document.getElementById('screencastFPS');
       const btnOpen = document.getElementById('btnOpenScreencast');
       const cursorDot = document.getElementById('scCursorDot');
       const keyboardPanel = document.getElementById('scKeyboardPanel');
       const scKeyboardInput = document.getElementById('scKeyboardInput');
-      const btnScKeyboardSend = document.getElementById('btnScKeyboardSend');
+      const btnScKeyboardClear = document.getElementById('btnScKeyboardClear');
       const btnScKeyboardClose = document.getElementById('btnScKeyboardClose');
       const viewHint = document.getElementById('scViewHint');
 
@@ -1422,13 +1487,7 @@
       let interactiveMode = false;
       let streamActive = false;
 
-      // FPS counter
-      setInterval(() => {
-        if (fpsEl && streamActive) {
-          fpsEl.textContent = (window._scFrameCount || 0) + ' fps';
-          window._scFrameCount = 0;
-        }
-      }, 1000);
+
 
       // ── Open button ──
       btnOpen.addEventListener('click', () => {
@@ -1452,6 +1511,13 @@
         if (cursorDot) cursorDot.style.display = 'none';
         if (keyboardPanel) keyboardPanel.style.display = 'none';
         if (btnKeyboard) btnKeyboard.style.display = 'none';
+        if (phonePC) {
+          try { phonePC.close(); } catch(e) {}
+          phonePC = null;
+        }
+        if (frame) {
+          frame.srcObject = null;
+        }
         if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
           sendWS({ type: 'screencast_stop' });
         }
@@ -1490,23 +1556,28 @@
         });
       }
 
-      // ── Send typed text to PC ──
-      function sendText(text) {
-        if (!text || !trackpadSocket) return;
-        sendWS({ type: 'type', text });
+      // ── Synced Keyboard Input (Diff Typing) ──
+      let scLastInputValue = '';
+      if (scKeyboardInput) {
+        scKeyboardInput.value = '';
+        scKeyboardInput.addEventListener('input', () => {
+          const val = scKeyboardInput.value;
+          if (val.length < scLastInputValue.length) {
+            const diff = scLastInputValue.length - val.length;
+            for (let i = 0; i < diff; i++) sendWS({ type: 'key', code: 8 });
+          } else if (val.length > scLastInputValue.length) {
+            const added = val.substring(scLastInputValue.length);
+            sendWS({ type: 'type', text: added });
+          }
+          scLastInputValue = val;
+        });
       }
 
-      if (btnScKeyboardSend && scKeyboardInput) {
-        btnScKeyboardSend.addEventListener('click', () => {
-          sendText(scKeyboardInput.value);
+      if (btnScKeyboardClear && scKeyboardInput) {
+        btnScKeyboardClear.addEventListener('click', () => {
           scKeyboardInput.value = '';
+          scLastInputValue = '';
           scKeyboardInput.focus();
-        });
-        scKeyboardInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            sendText(scKeyboardInput.value);
-            scKeyboardInput.value = '';
-          }
         });
       }
 
@@ -1528,37 +1599,156 @@
         cursorDot.style.top = (clientY - rect.top) + 'px';
       }
 
-      // ── Touch → PC absolute click ──
-      frame.addEventListener('touchend', (e) => {
-        if (!interactiveMode || !trackpadSocket) return;
-        e.preventDefault();
-        const touch = e.changedTouches[0];
-        const rect = frame.getBoundingClientRect();
-        const xRatio = (touch.clientX - rect.left) / rect.width;
-        const yRatio = (touch.clientY - rect.top) / rect.height;
-        sendWS({ type: 'click_abs', xRatio, yRatio });
-      }, { passive: false });
+      // Helper to map click coordinate relative to the actual video inside contain mode
+      function getClickRatios(clientX, clientY, frameEl) {
+        const rect = frameEl.getBoundingClientRect();
+        const videoWidth = frameEl.videoWidth;
+        const videoHeight = frameEl.videoHeight;
+        
+        if (!videoWidth || !videoHeight) {
+          return {
+            xRatio: (clientX - rect.left) / rect.width,
+            yRatio: (clientY - rect.top) / rect.height
+          };
+        }
+        
+        const containerWidth = rect.width;
+        const containerHeight = rect.height;
+        
+        const videoRatio = videoWidth / videoHeight;
+        const containerRatio = containerWidth / containerHeight;
+        
+        let actualWidth = containerWidth;
+        let actualHeight = containerHeight;
+        let xOffset = 0;
+        let yOffset = 0;
+        
+        if (containerRatio > videoRatio) {
+          actualWidth = containerHeight * videoRatio;
+          xOffset = (containerWidth - actualWidth) / 2;
+        } else {
+          actualHeight = containerWidth / videoRatio;
+          yOffset = (containerHeight - actualHeight) / 2;
+        }
+        
+        const touchX = clientX - rect.left - xOffset;
+        const touchY = clientY - rect.top - yOffset;
+        
+        return {
+          xRatio: Math.max(0, Math.min(1, touchX / actualWidth)),
+          yRatio: Math.max(0, Math.min(1, touchY / actualHeight))
+        };
+      }
 
-      // ── Touch drag → mouse move + cursor dot tracking ──
-      let lastTX = 0, lastTY = 0;
+      // ── Touch Gesture Processing variables ──
+      let scMaxTouches = 0;
+      let scStartTime = 0;
+      let scHasMoved = false;
+      let scLastTouchX = 0;
+      let scLastTouchY = 0;
+      let scIsTwoFinger = false;
+      let scLastScrollY = 0;
+      let scTapTimeout = null;
+      let scLastTapTime = 0;
+
+      function getTouchMidpoint(e) {
+        if (e.touches.length < 2) return { x: 0, y: 0 };
+        return {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+        };
+      }
+
       frame.addEventListener('touchstart', (e) => {
         if (!interactiveMode) return;
-        lastTX = e.touches[0].clientX;
-        lastTY = e.touches[0].clientY;
-        updateCursorDot(lastTX, lastTY);
+        
+        const touches = e.touches;
+        if (touches.length === 1) {
+          scMaxTouches = 1;
+          scIsTwoFinger = false;
+          scHasMoved = false;
+          scStartTime = Date.now();
+          scLastTouchX = touches[0].clientX;
+          scLastTouchY = touches[0].clientY;
+          updateCursorDot(scLastTouchX, scLastTouchY);
+
+          // Position mouse under finger immediately on tap down
+          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
+          sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
+        } else if (touches.length === 2) {
+          scMaxTouches = 2;
+          scIsTwoFinger = true;
+          const mid = getTouchMidpoint(e);
+          scLastScrollY = mid.y;
+          scStartTime = Date.now();
+          scHasMoved = false;
+        }
       }, { passive: true });
 
       frame.addEventListener('touchmove', (e) => {
         if (!interactiveMode) return;
+
+        const touches = e.touches;
+        if (touches.length === 2 && scIsTwoFinger) {
+          e.preventDefault();
+          const mid = getTouchMidpoint(e);
+          const dy = (mid.y - scLastScrollY) / 10;
+          if (Math.abs(dy) > 0.05) scHasMoved = true;
+          sendWS({ type: 'scroll', dy });
+          scLastScrollY = mid.y;
+        } else if (touches.length === 1 && !scIsTwoFinger) {
+          e.preventDefault();
+          const tx = touches[0].clientX;
+          const ty = touches[0].clientY;
+          if (Math.abs(tx - scLastTouchX) > 4 || Math.abs(ty - scLastTouchY) > 4) {
+            scHasMoved = true;
+          }
+          const coords = getClickRatios(tx, ty, frame);
+          sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
+          updateCursorDot(tx, ty);
+          scLastTouchX = tx;
+          scLastTouchY = ty;
+        }
+      }, { passive: false });
+
+      frame.addEventListener('touchend', (e) => {
+        if (!interactiveMode || !trackpadSocket) return;
         e.preventDefault();
-        const tx = e.touches[0].clientX;
-        const ty = e.touches[0].clientY;
-        const dx = (tx - lastTX) * 2.5;
-        const dy = (ty - lastTY) * 2.5;
-        sendWS({ type: 'move', dx, dy });
-        updateCursorDot(tx, ty);
-        lastTX = tx;
-        lastTY = ty;
+
+        if (e.touches.length > 0) return; // Wait until all fingers are lifted
+
+        const duration = Date.now() - scStartTime;
+
+        if (scMaxTouches === 2) {
+          if (!scHasMoved && duration < 250) {
+            const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
+            sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'right' });
+            showToast('🖱️ Right Click', 600);
+          }
+          scIsTwoFinger = false;
+          return;
+        }
+
+        if (duration < 250) {
+          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
+          const now = Date.now();
+          if (now - scLastTapTime < 300) {
+            if (scTapTimeout) clearTimeout(scTapTimeout);
+            sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+            setTimeout(() => {
+              sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+            }, 50);
+            showToast('🖱️ Double Click', 600);
+            scLastTapTime = 0;
+          } else {
+            scLastTapTime = now;
+            scTapTimeout = setTimeout(() => {
+              sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+              showToast('🖱️ Left Click', 600);
+              scTapTimeout = null;
+            }, 200);
+          }
+        }
       }, { passive: false });
     }
 
@@ -1790,7 +1980,6 @@
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.8); animation: blink 1s infinite;"></div>
         <span style="font-size: 0.8rem; font-weight: 600; color: white;">🖥️ PC Screen</span>
-        <span id="screencastFPS" style="font-size: 0.65rem; color: rgba(255,255,255,0.5); margin-left: 2px;">0 fps</span>
       </div>
       <div style="display: flex; gap: 6px; align-items: center;">
         <!-- Interactive / View toggle -->
@@ -1803,7 +1992,7 @@
     </div>
 
     <!-- Live Frame -->
-    <img id="liveScreenFrame" src="" alt="PC Screen" style="width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 501; touch-action: none;">
+    <video id="liveScreenFrame" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 501; touch-action: none;"></video>
 
     <!-- Cursor Dot (shown in interactive mode at touch position) -->
     <div id="scCursorDot" style="display: none; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,85,0,0.85); border: 2px solid white; box-shadow: 0 0 8px rgba(255,85,0,0.6); z-index: 504; pointer-events: none; transform: translate(-50%, -50%); transition: left 0.04s linear, top 0.04s linear;"></div>
@@ -1816,9 +2005,9 @@
         <button id="btnScKeyboardClose" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding: 0 4px;">&times;</button>
       </div>
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <input type="text" id="scKeyboardInput" placeholder="Type here to send to PC..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        <input type="text" id="scKeyboardInput" placeholder="Type here — synced in real-time..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
           style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 0.88rem; outline: none; caret-color: #ff5500;">
-        <button id="btnScKeyboardSend" style="padding: 10px 16px; background: linear-gradient(135deg, #ff5500, #cc4400); border: none; border-radius: 10px; color: white; font-size: 0.82rem; font-weight: 700; cursor: pointer;">Send</button>
+        <button id="btnScKeyboardClear" style="padding: 10px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 0.82rem; cursor: pointer;">✕</button>
       </div>
       <!-- Quick key shortcuts row -->
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">
@@ -1839,6 +2028,13 @@
     </div>
 
     <style>
+      #screencastOverlay {
+        overflow: hidden;
+      }
+      #liveScreenFrame {
+        transform: scale(1.025);
+        transform-origin: center;
+      }
       .sc-quick-key {
         padding: 6px 12px;
         background: rgba(255,255,255,0.07);

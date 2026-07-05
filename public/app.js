@@ -67,6 +67,7 @@
     runSetup('ServiceDropdown', setupServiceDropdown);
     runSetup('ControlCenter', setupControlCenter);
     runSetup('UniversalRefresh', setupUniversalRefresh);
+    runSetup('PCWebRTCScreencast', setupPCWebRTCScreencast);
 
     // Server may still be starting – retry fetchServerInfo up to 5 times with 800ms delay
     let infoLoaded = false;
@@ -1947,5 +1948,100 @@
       });
     });
   }
+
+  // ─── PC WebRTC Screencast Setup ─────────────────────────────
+  function setupPCWebRTCScreencast() {
+    if (!isElectron || !ipcRenderer) return;
+
+    let pc = null;
+    let localStream = null;
+
+    ipcRenderer.on('screencast-start', async () => {
+      console.log('[WebRTC] Screencast start request received. Capturing desktop...');
+      try {
+        // 1. Get desktop source ID from main process
+        const sourceId = await ipcRenderer.invoke('get-screen-source');
+        if (!sourceId) {
+          console.error('[WebRTC] No desktop source ID found.');
+          return;
+        }
+
+        // 2. Capture desktop media stream
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: sourceId,
+              minWidth: 1280,
+              maxWidth: 1920,
+              minHeight: 720,
+              maxHeight: 1080,
+              minFrameRate: 30,
+              maxFrameRate: 60
+            }
+          }
+        });
+
+        // 3. Create peer connection
+        pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        // Add tracks
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+        // ICE candidate exchange
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            ipcRenderer.send('send-webrtc-candidate', event.candidate);
+          }
+        };
+
+        // Create and send SDP Offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        ipcRenderer.send('send-webrtc-offer', offer);
+        console.log('[WebRTC] SDP Offer sent successfully.');
+
+      } catch (err) {
+        console.error('[WebRTC] Failed to initialize local screen capture:', err);
+      }
+    });
+
+    ipcRenderer.on('webrtc-answer', async (event, answer) => {
+      if (pc) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          console.log('[WebRTC] Remote description (Answer) set successfully.');
+        } catch (err) {
+          console.error('[WebRTC] Failed to set remote description (Answer):', err);
+        }
+      }
+    });
+
+    ipcRenderer.on('webrtc-ice-candidate', async (event, candidate) => {
+      if (pc) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error('[WebRTC] Failed to add ICE candidate:', err);
+        }
+      }
+    });
+
+    ipcRenderer.on('screencast-stop', () => {
+      console.log('[WebRTC] Stopping local screen capture and peer connection...');
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      if (pc) {
+        pc.close();
+        pc = null;
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => { init(); });
 })();

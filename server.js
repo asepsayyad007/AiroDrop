@@ -2132,6 +2132,15 @@ function startServer(portCallback) {
             // Key codes (like Backspace=8, Enter=13)
             sendKeystroke(data.code);
             break;
+          case 'move_abs':
+            if (SetCursorPos && GetSystemMetrics) {
+              const screenW = GetSystemMetrics(0); // SM_CXSCREEN
+              const screenH = GetSystemMetrics(1); // SM_CYSCREEN
+              const absX = Math.round((data.xRatio || 0) * screenW);
+              const absY = Math.round((data.yRatio || 0) * screenH);
+              SetCursorPos(absX, absY);
+            }
+            break;
           case 'click_abs':
             // Move cursor to absolute position based on ratio of screen size
             if (SetCursorPos && mouse_event && GetSystemMetrics) {
@@ -2140,8 +2149,13 @@ function startServer(portCallback) {
               const absX = Math.round((data.xRatio || 0) * screenW);
               const absY = Math.round((data.yRatio || 0) * screenH);
               SetCursorPos(absX, absY);
-              mouse_event(0x0002, 0, 0, 0, 0); // MOUSEEVENTF_LEFTDOWN
-              mouse_event(0x0004, 0, 0, 0, 0); // MOUSEEVENTF_LEFTUP
+              if (data.button === 'right') {
+                mouse_event(0x0008, 0, 0, 0, 0); // MOUSEEVENTF_RIGHTDOWN
+                mouse_event(0x0010, 0, 0, 0, 0); // MOUSEEVENTF_RIGHTUP
+              } else {
+                mouse_event(0x0002, 0, 0, 0, 0); // MOUSEEVENTF_LEFTDOWN
+                mouse_event(0x0004, 0, 0, 0, 0); // MOUSEEVENTF_LEFTUP
+              }
             }
             break;
           case 'screencast_start':
@@ -2149,6 +2163,12 @@ function startServer(portCallback) {
             break;
           case 'screencast_stop':
             serverEvents.emit('screencast_stop', ws);
+            break;
+          case 'webrtc_answer':
+            serverEvents.emit('webrtc_answer', ws, data.answer);
+            break;
+          case 'webrtc_ice_candidate':
+            serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
             break;
         }
       } catch (err) {

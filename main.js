@@ -351,45 +351,62 @@ ipcMain.on('restore-window', () => {
   }
 });
 
-// ─── Screencast Stream Handling ──────────────────────────────
-const screencastTimers = new Map();
+// ─── Screencast source ID IPC handler ──────────────────────────────
+ipcMain.handle('get-screen-source', async () => {
+  try {
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+    if (sources && sources.length > 0) {
+      return sources[0].id;
+    }
+  } catch (err) {
+    console.error('[SCREENCAST] Failed to get screen source ID:', err);
+  }
+  return null;
+});
+
+// ─── WebRTC Screencast Signaling Loop ──────────────────────────────
+let activePhoneWs = null;
 
 server.serverEvents.on('screencast_start', (ws) => {
-  if (screencastTimers.has(ws)) return; // Already active
-
-  console.log('[SCREENCAST] Starting desktop stream to mobile');
-  
-  const timerId = setInterval(() => {
-    if (ws.readyState !== 1) { // not OPEN
-      clearInterval(timerId);
-      screencastTimers.delete(ws);
-      return;
-    }
-
-    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1280, height: 720 } })
-      .then(sources => {
-        if (sources && sources.length > 0) {
-          const imageBuffer = sources[0].thumbnail.toJPEG(80); // 80% quality JPEG
-          if (ws.readyState === 1) {
-            ws.send(JSON.stringify({
-              type: 'screencast_frame',
-              image: 'data:image/jpeg;base64,' + imageBuffer.toString('base64')
-            }));
-          }
-        }
-      })
-      .catch(err => {
-        console.error('[SCREENCAST] Capture failed:', err.message);
-      });
-  }, 33); // ~30 fps for smooth real-time streaming
-
-  screencastTimers.set(ws, timerId);
+  activePhoneWs = ws;
+  if (mainWindow) {
+    mainWindow.webContents.send('screencast-start');
+  }
 });
 
 server.serverEvents.on('screencast_stop', (ws) => {
-  if (screencastTimers.has(ws)) {
-    console.log('[SCREENCAST] Stopping desktop stream');
-    clearInterval(screencastTimers.get(ws));
-    screencastTimers.delete(ws);
+  activePhoneWs = null;
+  if (mainWindow) {
+    mainWindow.webContents.send('screencast-stop');
+  }
+});
+
+server.serverEvents.on('webrtc_answer', (ws, answer) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('webrtc-answer', answer);
+  }
+});
+
+server.serverEvents.on('webrtc_ice_candidate', (ws, candidate) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('webrtc-ice-candidate', candidate);
+  }
+});
+
+ipcMain.on('send-webrtc-offer', (event, offer) => {
+  if (activePhoneWs && activePhoneWs.readyState === 1) {
+    activePhoneWs.send(JSON.stringify({
+      type: 'webrtc_offer',
+      offer: offer
+    }));
+  }
+});
+
+ipcMain.on('send-webrtc-candidate', (event, candidate) => {
+  if (activePhoneWs && activePhoneWs.readyState === 1) {
+    activePhoneWs.send(JSON.stringify({
+      type: 'webrtc_ice_candidate',
+      candidate: candidate
+    }));
   }
 });
