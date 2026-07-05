@@ -1,7 +1,8 @@
-# AiroDrop v4.5.0 🚀
+# AiroDrop v4.7.0 🚀
 
-A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files (PDFs, MP3s, ZIPs, etc.) between iOS/Android devices and your Windows PC over Wi-Fi, control your computer remotely, and mount it as a local network drive.
+A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
+![Version](https://img.shields.io/badge/version-4.7.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -9,23 +10,28 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.5.0
+## 🚀 What's New in v4.7.0
 
-AiroDrop has received a massive feature and visual upgrade:
+This release brings version 4.7.0, introducing major connection improvements and interface cleanups:
 
-1. **📺 Live Remote Screencast:** Stream your PC's desktop directly onto your phone's trackpad gesture area! You can move the mouse cursor and interact with your PC right on top of the live video feed.
-2. **📱 Native-grade PWA (Progressive Web App):** Fully compatible with iOS "Add to Home Screen" and Android app installs. Features offline fallback support (`offline.html`) and intelligent asset caching via a custom service worker (`sw.js`).
-3. **📁 Seamless WebDAV File Sharing:** Mount your PC's shared folder directly in the native **iOS Files App** (via "Connect to Server") or Android file managers (CX File Explorer, Solid Explorer, Samsung My Files, etc.). Download, upload, rename, and manage files up to **5+ GB** instantly over the local network.
-4. **🎨 Sunset Glassmorphism UI:** Brand-new glowing warm orange/red theme alignment matching the custom sunset-droplet SVG logo. Includes dynamic animations, frosted glass styling, and 5 distinct themes.
-5. **💻 Premium Desktop Wrapper:** Tray icon integrations, native startup boot support, and automated taskbar icon resolution on Windows.
+### ✅ New Features & Updates
+1. **📁 Files App & Browser Integration** — Support for **native iOS Files app** integration via Windows' built-in high-performance **SMB (Server Message Block) file sharing**. You can browse, upload, and edit your PC files directly from your iOS Files app.
+2. **🔌 Universal Connect Button** — Added a prominent connection status button at the top of the mobile web app screen. WebSocket-reliant features (Screencast and Trackpad) now auto-connect on click.
+3. **🖥️ Live PC Screencast (Separate Overlay)** — Stream your PC screen at **~15fps** (65ms interval, 1280×720, 75% JPEG quality) directly within the mobile portal. Features a **View Only / Interactive toggle** for full mouse cursor click and drag control.
+4. **📁 Fullscreen Mobile File Manager** — A dedicated fullscreen File Browser overlay (with a Close button) integrated inside the mobile portal, letting you manage your files in the same window.
+
+### 🔧 Fixes & Improvements
+- **Camera Stream Removed** — The mobile camera streaming features and WebSocket channels have been completely removed from the project backend and frontends for a cleaner, focused experience.
+- **Duplicate Desktop Notifications Fixed** — Prevented duplicate native notifications when sending items from mobile to PC.
+- **Trackpad Warnings Removed** — Unified and replaced all trackpad-specific connection requirements with system-wide **PC Services** alerts.
 
 ---
 
-## 📥 Downloads (v4.5.0)
+## 📥 Downloads (v4.7.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.5.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.5.0/AiroDrop.Setup.4.5.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.5.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.5.0/AiroDrop-Portable-4.5.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.7.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.7.0/AiroDrop.Setup.4.7.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.7.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.7.0/AiroDrop-Portable-4.7.0.exe)** — Standalone execution without installation.
 
 ---
 
@@ -35,16 +41,23 @@ Get the latest pre-compiled binaries for Windows:
 * **Images:** Saved to your configured folder and copied directly into your PC's clipboard memory (ready to paste in Discord, Photoshop, Word, or Slack).
 * **Files:** Documents, archives, audio, or video files are organized and saved automatically to your PC's local storage.
 * **Bi-directional Queue:** Push links or text snippets from your PC dashboard to the mobile portal inbox, or download files directly onto your phone.
+* **File Browser:** Open `http://<PC-IP>:<PORT>/files` in Safari to browse, upload, download, and manage files on your PC's shared folder.
+* **Live Screencast:** Tap "Open Live Screen" on the mobile portal to stream your PC desktop at ~15fps with optional interactive mouse control.
 
 ---
 
 ## Core Features
 
 * **Near-Zero Latency Clipboard Sync:** Instantly sync clipboard buffers bidirectionally.
+* **HTTP File Browser:** Premium mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
+* **Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
+* **Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
 * **PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
 * **Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
 * **Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
 * **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
+* **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
+* **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
 
 ---
 
@@ -77,42 +90,43 @@ To run or modify the app locally:
 
 ---
 
+## 📁 Using the File Browser & Files App (SMB)
+
+### Option 1: Native iOS Files App (SMB)
+1. Right-click your shared folder on Windows &rarr; **Properties** &rarr; **Sharing** &rarr; Click **Share** and add your user account with Read/Write permission.
+2. Open the native **Files app** on your iPhone.
+3. Tap the **•••** icon at the top right &rarr; select **Connect to Server**.
+4. Enter the SMB path: `smb://<YOUR-PC-IP>` (obtained from the dashboard).
+5. Choose **Registered User**, enter your Windows username and password, and tap **Connect**.
+
+### Option 2: Web File Browser
+1. Open the AiroDrop PC dashboard &rarr; click **"Setup / Connect"** &rarr; go to the **"Files App / Browser"** tab to see your URL.
+2. On your iPhone/Android, open **Safari or Chrome** and navigate to: `http://<YOUR-PC-IP>:<PORT>/files`
+3. Browse your PC's shared folder, tap any file to **download** it to your phone, or tap **＋** to **upload** files.
+4. Long-press any file/folder for rename and delete options.
+
+---
+
+## 🖥️ Using Live Screencast
+
+1. On your phone, open the mobile portal &rarr; scroll to **PC Live Screen** &rarr; tap **"📺 Open Live Screen"**.
+2. If PC services are not connected, the page will auto-connect for you in the background.
+3. The fullscreen overlay opens with a live ~15fps stream of your PC desktop.
+4. Toggle **"👁️ View Only"** &rarr; **"🖱️ Interactive"** to enable tap-to-click and drag-to-move-mouse control.
+
+---
+
 ## iOS Shortcuts Configuration
 
 Easily share content directly from any iOS App Share Sheet or Home Screen widget.
 
 ### Shortcut 1: "Send to PC" (Share Sheet)
-Allows sharing text, links, or documents from the iOS Share Sheet:
-1. Open the **Shortcuts** app on your iPhone/iPad and tap **+**.
-2. Tap the **ⓘ (info)** icon, turn on **"Show in Share Sheet"**, and verify it accepts **Any** input.
-3. Add an **"If"** action.
-4. Tap the **"Shortcut Input"** variable inside the If action ➜ select **"File Extension"** ➜ set the condition to **"has any value"**.
-5. **Inside the "Then" block (when sharing a file):**
-   * Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `File` ➜ File: `Shortcut Input`.
-6. **Inside the "Else" block (when sharing text or web pages):**
-   * Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `Form` ➜ Add new Text Field ➜ Key: `content`, Value: `Shortcut Input`.
-7. Add a **"Show Notification"** action at the very end ➜ `"Sent to PC ✓"`.
-   
-**Quick Install Link:**
-[Get Share to PC Shortcut](https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d)
+**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d)
 
 ### Shortcut 2: "Send Clipboard" (Home Screen Widget)
-One-tap widget to upload whatever is in your phone's clipboard:
-1. Open the **Shortcuts** app and tap **+**.
-2. Add action: **"Get Clipboard"**.
-3. Add action: **"If"** ➜ choose **"Clipboard"** variable ➜ tap it and select **"File Extension"** ➜ set condition to **"has any value"**.
-4. **Inside the "Then" block (when copying a file/image):**
-   * Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `File` ➜ File: `Clipboard`.
-5. **Inside the "Else" block (when copying text/links):**
-   * Add **"Get Contents of URL"** ➜ URL: `http://<YOUR-PC-IP>:3478/api/send` ➜ Method: `POST` ➜ Request Body: `Form` ➜ Add new Text Field ➜ Key: `content`, Value: `Clipboard`.
-6. Add action: **"Show Notification"** ➜ `"Clipboard sent ✓"`.
-
-**Quick Install Link:**
-[Get Clipboard Shortcut](https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b)
+**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b)
 
 ### 📲 Quick Install QR Codes
-Scan these QR codes with your iPhone's camera to install the shortcuts directly:
-
 | 1. Share to PC | 2. Send Clipboard |
 | :-: | :-: |
 | ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b) |
@@ -121,19 +135,18 @@ Scan these QR codes with your iPhone's camera to install the shortcuts directly:
 
 ## Configuration (`config.json`)
 
-Configuration is managed via `config.json` inside your system's user data directory:
-```json
-{
-  "saveDir": "C:\\path\\to\\save",
-  "port": 3478
-}
-```
-* `saveDir`: Path to save received images and files on your PC.
-* `port`: Port the local network server listens on (default is `3478`).
+Settings are stored in `<App Data Directory>/AiroDrop/config.json`. Key configuration parameters:
+
+* `port`: Server listening port (default: `3478`).
+* `deviceName`: The hostname shown to mobile clients.
+* `rateLimitEnabled`: Enable connection rate limiting (default: `true`).
+* `notificationsEnabled`: Trigger Windows desktop alerts for incoming transfers (default: `true`).
+* `temporaryMode`: Discard session files automatically after client disconnects (default: `false`).
+* `saveDir`: Target download path for transferred items.
+* `shareDir`: Root shared path exposed to the HTTP File Browser.
 
 ---
 
-## Creator & License
-Created by **Asep with Love ❤️** | GitHub: [github.com/asepsayyad007](https://github.com/asepsayyad007)
+## License
 
-Released under the **MIT License**.
+This project is licensed under the MIT License.

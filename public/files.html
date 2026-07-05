@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AiroDrop — File Manager</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090f;
+      --bg2: #111118;
+      --card: rgba(255,255,255,0.042);
+      --card-border: rgba(255,255,255,0.08);
+      --accent: #ff5500;
+      --accent2: #ff8800;
+      --accent-glow: rgba(255, 85, 0, 0.25);
+      --success: #22c55e;
+      --danger: #ef4444;
+      --text: #f0f0f5;
+      --text2: #8888a0;
+      --text3: #44445a;
+      --radius: 14px;
+    }
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 10% 0%, rgba(255,85,0,0.1), transparent),
+        radial-gradient(ellipse 400px 500px at 90% 100%, rgba(120,50,255,0.07), transparent);
+      pointer-events: none;
+    }
+    .header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(9,9,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+      padding: env(safe-area-inset-top, 0) 0 0 0;
+    }
+    .header-inner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; max-width: 900px; margin: 0 auto;
+    }
+    .logo-badge {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .header-title { flex: 1; }
+    .header-title h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header-title p { font-size: 0.72rem; color: var(--text2); margin-top: 1px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--card-border);
+      color: var(--text2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn.accent { background: var(--accent); color: white; border-color: transparent; }
+    .breadcrumb-bar {
+      padding: 8px 16px; background: rgba(0,0,0,0.15);
+      border-bottom: 1px solid var(--card-border);
+      max-width: 900px; margin: 0 auto;
+      display: flex; align-items: center; gap: 4px;
+      overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+    }
+    .breadcrumb-bar::-webkit-scrollbar { display: none; }
+    .crumb {
+      font-size: 0.78rem; color: var(--text2);
+      cursor: pointer; padding: 3px 7px; border-radius: 6px; transition: all 0.15s; flex-shrink: 0;
+    }
+    .crumb:hover { background: var(--card); color: var(--text); }
+    .crumb.active { color: var(--accent2); font-weight: 600; cursor: default; }
+    .crumb-sep { color: var(--text3); font-size: 0.72rem; flex-shrink: 0; }
+    .upload-zone { margin: 16px auto; max-width: 900px; padding: 0 16px; }
+    .drop-area {
+      border: 2px dashed var(--card-border); border-radius: var(--radius);
+      padding: 20px 16px; text-align: center; transition: all 0.2s; cursor: pointer;
+      background: rgba(0,0,0,0.15);
+    }
+    .drop-area.dragging { border-color: var(--accent); background: rgba(255,85,0,0.06); }
+    .drop-area .drop-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .drop-area p { font-size: 0.82rem; color: var(--text2); }
+    .drop-area strong { color: var(--accent2); }
+    #fileInputHidden { display: none; }
+    .upload-progress { margin: 12px auto; max-width: 900px; padding: 0 16px; display: none; }
+    .progress-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .progress-label { font-size: 0.82rem; font-weight: 600; }
+    .progress-pct { font-size: 0.78rem; color: var(--accent2); font-weight: 700; }
+    .progress-bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; width: 0%; transition: width 0.3s ease; }
+    .files-container { max-width: 900px; margin: 0 auto; padding: 0 16px 80px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+    .file-count { font-size: 0.75rem; color: var(--text2); }
+    .view-toggle { display: flex; gap: 6px; }
+    .view-btn {
+      padding: 5px 10px; font-size: 0.72rem; border-radius: 8px;
+      border: 1px solid var(--card-border); background: transparent;
+      color: var(--text2); cursor: pointer; transition: all 0.15s;
+    }
+    .view-btn.active { background: rgba(255,85,0,0.12); border-color: var(--accent); color: var(--accent2); font-weight: 600; }
+    .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .file-list { display: flex; flex-direction: column; gap: 6px; }
+    .file-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 14px 12px; cursor: pointer;
+      transition: all 0.2s; position: relative; display: flex;
+      flex-direction: column; align-items: center; text-align: center;
+      gap: 8px; overflow: hidden; min-height: 100px;
+    }
+    .file-card:active { transform: scale(0.97); background: rgba(255,255,255,0.07); }
+    .file-card.dir { border-color: rgba(255,170,0,0.15); }
+    .file-icon { font-size: 2rem; line-height: 1; }
+    .file-name { font-size: 0.76rem; font-weight: 500; word-break: break-all; max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+    .file-meta { font-size: 0.66rem; color: var(--text3); margin-top: auto; }
+    .file-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: var(--radius);
+      background: var(--card); border: 1px solid var(--card-border);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .file-row:active { background: rgba(255,255,255,0.07); }
+    .file-row .file-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .file-row-info { flex: 1; min-width: 0; }
+    .file-row-name { font-size: 0.86rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-row-meta { font-size: 0.7rem; color: var(--text2); margin-top: 2px; }
+    .file-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .row-action {
+      width: 30px; height: 30px; border-radius: 8px;
+      border: 1px solid var(--card-border); background: transparent;
+      color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; transition: all 0.15s;
+    }
+    .row-action:hover { background: var(--card); color: var(--text); }
+    .row-action.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 60px 20px; text-align: center; gap: 12px; }
+    .empty-state .icon { font-size: 3rem; opacity: 0.4; }
+    .empty-state p { font-size: 0.86rem; color: var(--text2); }
+    .fab {
+      position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); right: 20px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #c84400);
+      border: none; color: white; font-size: 1.5rem; cursor: pointer;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      display: flex; align-items: center; justify-content: center; z-index: 40; transition: all 0.2s;
+    }
+    .fab:active { transform: scale(0.92); }
+    .ctx-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; backdrop-filter: blur(4px); }
+    .ctx-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg2); border-top: 1px solid var(--card-border);
+      border-radius: 20px 20px 0 0; padding: 0 0 env(safe-area-inset-bottom, 16px) 0;
+      z-index: 201; transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .ctx-sheet.open { transform: translateY(0); }
+    .ctx-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--card-border); margin: 12px auto 4px; }
+    .ctx-title { padding: 12px 20px 14px; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--card-border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ctx-action { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; transition: background 0.15s; font-size: 0.9rem; border: none; background: none; color: var(--text); width: 100%; text-align: left; }
+    .ctx-action:active { background: var(--card); }
+    .ctx-action.danger { color: var(--danger); }
+    .ctx-action .ctx-icon { font-size: 1.2rem; width: 28px; text-align: center; }
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 22px; background: rgba(255,255,255,0.95); color: #0a0a0f; border-radius: 100px; font-size: 0.84rem; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 300; white-space: nowrap; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.err { background: var(--danger); color: white; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo-badge">📁</div>
+      <div class="header-title">
+        <h1>File Manager</h1>
+        <p id="headerPath">Shared Folder</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btnRefresh" title="Refresh">↻</button>
+        <button class="icon-btn accent" id="btnUpload" title="Upload Files">＋</button>
+      </div>
+    </div>
+    <div class="breadcrumb-bar" id="breadcrumb"></div>
+  </div>
+
+  <div class="upload-zone">
+    <div class="drop-area" id="dropArea">
+      <div class="drop-icon">📤</div>
+      <p><strong>Tap to upload</strong> or drag &amp; drop files here</p>
+      <p style="margin-top:4px;font-size:0.72rem;color:var(--text3)">Supports large files up to 4 GB</p>
+    </div>
+    <input type="file" id="fileInputHidden" multiple>
+  </div>
+
+  <div class="upload-progress" id="uploadProgressArea">
+    <div class="progress-card">
+      <div class="progress-header">
+        <span class="progress-label" id="progressLabel">Uploading...</span>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+
+  <div class="files-container">
+    <div class="toolbar">
+      <span class="file-count" id="fileCount">Loading...</span>
+      <div class="view-toggle">
+        <button class="view-btn active" id="viewGrid">⊞ Grid</button>
+        <button class="view-btn" id="viewList">☰ List</button>
+      </div>
+    </div>
+    <div id="fileContainer" class="file-grid"></div>
+  </div>
+
+  <button class="fab" id="fabNewFolder" title="New Folder">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+      <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
+    </svg>
+  </button>
+
+  <div class="ctx-overlay" id="ctxOverlay"></div>
+  <div class="ctx-sheet" id="ctxSheet">
+    <div class="ctx-handle"></div>
+    <div class="ctx-title" id="ctxTitle">File Options</div>
+    <button class="ctx-action" id="ctxDownload"><span class="ctx-icon">⬇️</span> Download</button>
+    <button class="ctx-action" id="ctxRename"><span class="ctx-icon">✏️</span> Rename</button>
+    <button class="ctx-action danger" id="ctxDelete"><span class="ctx-icon">🗑️</span> Delete</button>
+    <button class="ctx-action" id="ctxCancel"><span class="ctx-icon">✖</span> Cancel</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.origin;
+  let currentPath = '';
+  let currentEntry = null;
+  let viewMode = 'grid';
+
+  function fileIcon(name, type) {
+    if (type === 'dir') return '📁';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const icons = { pdf:'📄',doc:'📝',docx:'📝',txt:'📋',md:'📋',xls:'📊',xlsx:'📊',csv:'📊',ppt:'📊',pptx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',webp:'🖼️',svg:'🖼️',heic:'🖼️',mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',webm:'🎬',mp3:'🎵',wav:'🎵',m4a:'🎵',aac:'🎵',flac:'🎵',zip:'📦',rar:'📦','7z':'📦',tar:'📦',gz:'📦',js:'⚙️',ts:'⚙️',py:'⚙️',java:'⚙️',cpp:'⚙️',c:'⚙️',html:'🌐',css:'🎨',json:'{}',exe:'🖥️',msi:'🖥️',dmg:'🖥️',apk:'📱' };
+    return icons[ext] || '📄';
+  }
+  function formatSize(b) { if(!b)return'—'; if(b<1024)return b+' B'; if(b<1048576)return(b/1024).toFixed(1)+' KB'; if(b<1073741824)return(b/1048576).toFixed(1)+' MB'; return(b/1073741824).toFixed(2)+' GB'; }
+  function formatDate(iso) { if(!iso)return''; const d=new Date(iso); return d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderBreadcrumb() {
+    const bc = document.getElementById('breadcrumb');
+    const parts = currentPath ? currentPath.split('/').filter(Boolean) : [];
+    let html = `<span class="crumb ${parts.length===0?'active':''}" data-path="">🏠 Home</span>`;
+    let built = '';
+    parts.forEach((p, i) => {
+      built += (built?'/':'')+p;
+      const isLast = i===parts.length-1;
+      html += `<span class="crumb-sep">›</span><span class="crumb ${isLast?'active':''}" data-path="${built}">${escHtml(p)}</span>`;
+    });
+    bc.innerHTML = html;
+    bc.querySelectorAll('.crumb').forEach(el => el.addEventListener('click', () => navigate(el.dataset.path)));
+    document.getElementById('headerPath').textContent = currentPath || 'Shared Folder';
+  }
+
+  function navigate(rel) { currentPath = rel||''; loadDir(); }
+
+  async function loadDir() {
+    document.getElementById('fileContainer').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:0.86rem">Loading...</div>';
+    renderBreadcrumb();
+    try {
+      const res = await fetch(`/files/browse?path=${encodeURIComponent(currentPath)}`);
+      const data = await res.json();
+      if (!res.ok) { toast(data.error||'Error loading directory', true); return; }
+      renderEntries(data.entries);
+    } catch(e) { toast('Network error: '+e.message, true); }
+  }
+
+  function renderEntries(entries) {
+    const container = document.getElementById('fileContainer');
+    document.getElementById('fileCount').textContent = `${entries.length} item${entries.length!==1?'s':''}`;
+    if (entries.length===0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>This folder is empty</p><p style="font-size:0.76rem;color:var(--text3)">Upload files using the + button above</p></div>`;
+      return;
+    }
+    if (viewMode==='grid') {
+      container.className = 'file-grid';
+      container.innerHTML = entries.map(e => `<div class="file-card ${e.type==='dir'?'dir':''}" data-name="${escHtml(e.name)}" data-type="${e.type}" data-size="${e.size}"><div class="file-icon">${fileIcon(e.name,e.type)}</div><div class="file-name">${escHtml(e.name)}</div><div class="file-meta">${e.type==='dir'?'Folder':formatSize(e.size)}</div></div>`).join('');
+    } else {
+      container.className = 'file-list';
+      container.innerHTML = entries.map(e => `<div class="file-row" data-name="${escHtml(e.name)}" data-type="${e.type}" data-size="${e.size}"><div class="file-icon">${fileIcon(e.name,e.type)}</div><div class="file-row-info"><div class="file-row-name">${escHtml(e.name)}</div><div class="file-row-meta">${e.type==='dir'?'Folder':formatSize(e.size)}${e.mtime?' · '+formatDate(e.mtime):''}</div></div><div class="file-row-actions">${e.type==='file'?`<button class="row-action" data-action="download" title="Download">⬇️</button>`:''}<button class="row-action" data-action="rename" title="Rename">✏️</button><button class="row-action danger" data-action="delete" title="Delete">🗑️</button></div></div>`).join('');
+      container.querySelectorAll('.row-action').forEach(btn => {
+        btn.addEventListener('click', ev => {
+          ev.stopPropagation();
+          const row = btn.closest('.file-row');
+          const entry = {name:row.dataset.name, type:row.dataset.type};
+          const act = btn.dataset.action;
+          if(act==='download') downloadFile(entry);
+          else if(act==='rename') doRename(entry);
+          else if(act==='delete') doDelete(entry);
+        });
+      });
+    }
+    container.querySelectorAll('.file-card,.file-row').forEach(el => {
+      el.addEventListener('click', () => handleTap({name:el.dataset.name,type:el.dataset.type,size:el.dataset.size}));
+      el.addEventListener('contextmenu', e => { e.preventDefault(); openCtx({name:el.dataset.name,type:el.dataset.type}); });
+      let lpt;
+      el.addEventListener('touchstart', () => { lpt=setTimeout(()=>openCtx({name:el.dataset.name,type:el.dataset.type}),550); },{passive:true});
+      el.addEventListener('touchend', () => clearTimeout(lpt));
+      el.addEventListener('touchmove', () => clearTimeout(lpt),{passive:true});
+    });
+  }
+
+  function handleTap(entry) {
+    if (entry.type==='dir') navigate(currentPath ? currentPath+'/'+entry.name : entry.name);
+    else downloadFile(entry);
+  }
+  function downloadFile(entry) {
+    const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
+    const a = document.createElement('a');
+    a.href = `/files/download?path=${encodeURIComponent(rel)}`;
+    a.download = entry.name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function openCtx(entry) {
+    currentEntry = entry;
+    document.getElementById('ctxTitle').textContent = entry.name;
+    document.getElementById('ctxDownload').style.display = entry.type==='file'?'flex':'none';
+    document.getElementById('ctxOverlay').style.display = 'block';
+    document.getElementById('ctxSheet').classList.add('open');
+  }
+  function closeCtx() {
+    document.getElementById('ctxOverlay').style.display = 'none';
+    document.getElementById('ctxSheet').classList.remove('open');
+    currentEntry = null;
+  }
+  document.getElementById('ctxOverlay').addEventListener('click', closeCtx);
+  document.getElementById('ctxCancel').addEventListener('click', closeCtx);
+  document.getElementById('ctxDownload').addEventListener('click', () => { if(currentEntry) downloadFile(currentEntry); closeCtx(); });
+  document.getElementById('ctxRename').addEventListener('click', () => { if(currentEntry){const e=currentEntry;closeCtx();doRename(e);} });
+  document.getElementById('ctxDelete').addEventListener('click', () => { if(currentEntry){const e=currentEntry;closeCtx();doDelete(e);} });
+
+  async function doRename(entry) {
+    const n = prompt(`Rename "${entry.name}" to:`, entry.name);
+    if(!n||n===entry.name) return;
+    const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
+    const res = await fetch('/files/rename',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:rel,newName:n})});
+    const d = await res.json();
+    if(d.success){toast('Renamed!');loadDir();}else toast(d.error||'Rename failed',true);
+  }
+  async function doDelete(entry) {
+    if(!confirm(`Delete "${entry.name}"? Cannot be undone.`)) return;
+    const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
+    const res = await fetch('/files/delete',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:rel})});
+    const d = await res.json();
+    if(d.success){toast('Deleted!');loadDir();}else toast(d.error||'Delete failed',true);
+  }
+  document.getElementById('fabNewFolder').addEventListener('click', async () => {
+    const name = prompt('New folder name:');
+    if(!name) return;
+    const rel = currentPath ? currentPath+'/'+name : name;
+    const res = await fetch('/files/mkdir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:rel})});
+    const d = await res.json();
+    if(d.success){toast('Folder created!');loadDir();}else toast(d.error||'Failed',true);
+  });
+
+  const dropArea = document.getElementById('dropArea');
+  const fileInput = document.getElementById('fileInputHidden');
+  document.getElementById('btnUpload').addEventListener('click', () => fileInput.click());
+  dropArea.addEventListener('click', () => fileInput.click());
+  dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('dragging'); });
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragging'));
+  dropArea.addEventListener('drop', e => { e.preventDefault(); dropArea.classList.remove('dragging'); uploadFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', () => { if(fileInput.files.length>0) uploadFiles(fileInput.files); });
+
+  async function uploadFiles(files) {
+    const pa = document.getElementById('uploadProgressArea');
+    const fill = document.getElementById('progressFill');
+    const pct = document.getElementById('progressPct');
+    const lbl = document.getElementById('progressLabel');
+    pa.style.display = 'block';
+    lbl.textContent = `Uploading ${files.length} file${files.length>1?'s':''}...`;
+    fill.style.width = '0%'; pct.textContent = '0%';
+    const fd = new FormData();
+    for(const f of files) fd.append('files', f);
+    return new Promise(resolve => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/files/upload?path=${encodeURIComponent(currentPath)}`);
+      xhr.upload.onprogress = e => { if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100); fill.style.width=p+'%'; pct.textContent=p+'%';} };
+      xhr.onload = () => {
+        pa.style.display = 'none'; fileInput.value = '';
+        try { const r=JSON.parse(xhr.responseText); if(r.success){toast(`✅ ${r.uploaded.length} file${r.uploaded.length>1?'s':''} uploaded!`);loadDir();}else toast(r.error||'Upload failed',true); }
+        catch { toast('Upload failed',true); }
+        resolve();
+      };
+      xhr.onerror = () => { pa.style.display='none'; toast('Network error',true); resolve(); };
+      xhr.send(fd);
+    });
+  }
+
+  document.getElementById('viewGrid').addEventListener('click', () => { viewMode='grid'; document.getElementById('viewGrid').classList.add('active'); document.getElementById('viewList').classList.remove('active'); loadDir(); });
+  document.getElementById('viewList').addEventListener('click', () => { viewMode='list'; document.getElementById('viewList').classList.add('active'); document.getElementById('viewGrid').classList.remove('active'); loadDir(); });
+  document.getElementById('btnRefresh').addEventListener('click', loadDir);
+
+  let _toastTimer;
+  function toast(msg, isError=false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = 'toast show'+(isError?' err':'');
+    clearTimeout(_toastTimer); _toastTimer = setTimeout(()=>el.className='toast',2800);
+  }
+
+  loadDir();
+</script>
+</body>
+</html>

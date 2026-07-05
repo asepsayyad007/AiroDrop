@@ -254,10 +254,10 @@ server.serverEvents.on('screencast_start', (ws) => {
       return;
     }
 
-    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 960, height: 540 } })
+    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1280, height: 720 } })
       .then(sources => {
         if (sources && sources.length > 0) {
-          const imageBuffer = sources[0].thumbnail.toJPEG(60); // 60% quality JPEG is fast and light
+          const imageBuffer = sources[0].thumbnail.toJPEG(75); // 75% quality JPEG
           if (ws.readyState === 1) {
             ws.send(JSON.stringify({
               type: 'screencast_frame',
@@ -269,7 +269,7 @@ server.serverEvents.on('screencast_start', (ws) => {
       .catch(err => {
         console.error('[SCREENCAST] Capture failed:', err.message);
       });
-  }, 250); // ~4 fps is smooth enough and saves network overhead on local wifi
+  }, 65); // ~15 fps for smooth real-time streaming
 
   screencastTimers.set(ws, timerId);
 });

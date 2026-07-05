@@ -312,7 +312,7 @@
             <span class="icon">⚡</span> iOS Shortcuts
           </button>
           <button class="setup-tab-btn" data-target="setup-files">
-            <span class="icon">📂</span> Native Files App
+            <span class="icon">📁</span> Files App / Browser
           </button>
           <button class="setup-tab-btn" data-target="setup-manual">
             <span class="icon">🛠️</span> Manual Setup
@@ -385,38 +385,55 @@
             </div>
           </div>
 
-          <!-- Tab 3: Native Files App (WebDAV) -->
+          <!-- Tab 3: File Manager & Native Files App (SMB) -->
           <div id="setup-files" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
-            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">iOS Files App Mounting (WebDAV)</h3>
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">📁 Files App &amp; Browser Integration</h3>
             <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-              Mount your custom PC shared folder directly into your iOS Files App to browse, view, copy, or upload files natively, without opening any web browser!
+              To browse your PC files directly inside the native <strong>iOS Files app</strong>, we recommend using Windows' built-in high-performance <strong>SMB (Server Message Block)</strong> sharing.
             </p>
+            
             <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
-              <h4 style="margin: 0; font-size: 0.86rem; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">Setup Guide:</h4>
+              <h4 style="margin: 0; font-size: 0.86rem; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">Option 1: Connect Native iOS Files App (SMB)</h4>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                   <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 1:</span>
-                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Open the native <strong>Files</strong> App on your iPhone.</p>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Right-click your shared folder on Windows &rarr; <strong>Properties</strong> &rarr; <strong>Sharing</strong> &rarr; Click <strong>Share</strong> and add your user account with Read/Write permission.</p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                   <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 2:</span>
-                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Tap the <strong>•••</strong> icon at the top-right corner and select <strong>Connect to Server</strong>.</p>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Open the native <strong>Files app</strong> on your iPhone.</p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                   <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 3:</span>
-                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Enter the server URL below exactly as written:</p>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Tap the <strong>•••</strong> icon at the top right &rarr; select <strong>Connect to Server</strong>.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 4:</span>
+                  <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Enter the SMB path using your PC's IP address:</p>
                 </div>
               </div>
-              
-              <!-- Address Display -->
+
+              <!-- SMB URL Display -->
               <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 4px 0;">
-                <code id="webdavUrlText" style="font-family: monospace; font-size: 0.82rem; color: var(--accent-light); word-break: break-all;">Connecting...</code>
-                <button onclick="navigator.clipboard.writeText(document.getElementById('webdavUrlText').textContent); showToast('WebDAV URL copied!', 'success');" style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-left: 12px; flex-shrink: 0; transition: all 0.2s;">Copy</button>
+                <code id="smbUrlText" style="font-family: monospace; font-size: 0.82rem; color: var(--accent-light); word-break: break-all;">Connecting...</code>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('smbUrlText').textContent); showToast('SMB URL copied!', 'success');" style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-left: 12px; flex-shrink: 0; transition: all 0.2s;">Copy</button>
               </div>
 
               <div style="display: flex; gap: 10px; align-items: flex-start;">
-                <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 4:</span>
-                <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Select <strong>Guest</strong>, tap <strong>Connect</strong>, and your PC Shared folder is ready to explore!</p>
+                <span style="font-weight: 700; color: var(--accent-light); font-size: 0.82rem; margin-top: 1px; width: 50px;">Step 5:</span>
+                <p style="margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary);">Choose <strong>Registered User</strong>, enter your Windows PC username and password, and tap <strong>Connect</strong>!</p>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+              <h4 style="margin: 0; font-size: 0.86rem; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">Option 2: Use Built-in HTTP File Browser (Safari/Chrome)</h4>
+              <p style="margin: 0; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">
+                No configuration needed. Simply navigate to the following URL in Safari on your iPhone to browse, upload, download, and manage files:
+              </p>
+              <!-- URL Display -->
+              <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 4px 0;">
+                <code id="fileBrowserUrlText" style="font-family: monospace; font-size: 0.82rem; color: var(--accent-light); word-break: break-all;">Connecting...</code>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('fileBrowserUrlText').textContent); showToast('URL copied!', 'success');" style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-left: 12px; flex-shrink: 0; transition: all 0.2s;">Copy</button>
               </div>
             </div>
           </div>
@@ -512,7 +529,7 @@
           </div>
 
           <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">WebDAV Shared Directory (Folder Share)</label>
+            <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Shared Directory (File Browser)</label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="shareDirInput" placeholder="./shared" style="flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: white; box-sizing: border-box;">
               <button class="btn btn-secondary" id="browseShareDirBtn" style="padding: 8px 12px; font-size: 0.78rem; cursor: pointer;">Browse...</button>

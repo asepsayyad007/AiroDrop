@@ -180,7 +180,6 @@
     // 3. Shortcuts modal QRs
     const imgShareToPC = $('#imgShareToPC');
     const imgClipboardToPC = $('#imgClipboardToPC');
-    const imgWebdavQR = $('#imgWebdavQR');
 
     if (imgShareToPC && imgShareToPC.src) {
       imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
@@ -188,9 +187,14 @@
     if (imgClipboardToPC && imgClipboardToPC.src) {
       imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
     }
-    if (imgWebdavQR && imgWebdavQR.src && serverInfo) {
-      const webdavUrl = `http://${serverInfo.ip}:${serverInfo.port}/webdav`;
-      imgWebdavQR.src = getThemedQrUrl(webdavUrl);
+    // Update File Browser and SMB URL displays
+    const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
+    if (fileBrowserUrlEl && serverInfo) {
+      fileBrowserUrlEl.textContent = `http://${serverInfo.ip}:${serverInfo.port}/files`;
+    }
+    const smbUrlEl = document.getElementById('smbUrlText');
+    if (smbUrlEl && serverInfo) {
+      smbUrlEl.textContent = `smb://${serverInfo.ip}`;
     }
   }
 
@@ -320,7 +324,7 @@
         updateStats();
 
         // Browser HTML5 notification for system-wide alerts
-        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        if (!isElectron && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           const title = 'com.asep-ios-integration.airodrop';
           const eventLabel = item.type === 'text' ? 'Clipboard' : 'File';
           const bodyContent = `${eventLabel}: ` + (item.type === 'text' 
@@ -1365,16 +1369,20 @@
           if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
           $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
 
-          // WebDAV mount setup
-          const webdavUrl = `http://${serverInfo.ip}:${serverInfo.port}/webdav`;
-          const imgWebdavQR = $('#imgWebdavQR');
-          const webdavUrlText = $('#webdavUrlText');
-          if (imgWebdavQR) {
-            imgWebdavQR.src = getThemedQrUrl(webdavUrl);
+          // File Browser URL setup
+          const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
+          if (fileBrowserUrlEl) {
+            const fileBrowserUrl = `http://${serverInfo.ip}:${serverInfo.port}/files`;
+            fileBrowserUrlEl.textContent = fileBrowserUrl;
+            fileBrowserUrlEl.title = fileBrowserUrl;
           }
-          if (webdavUrlText) {
-            webdavUrlText.textContent = webdavUrl;
-            webdavUrlText.title = webdavUrl;
+
+          // SMB URL setup
+          const smbUrlEl = document.getElementById('smbUrlText');
+          if (smbUrlEl) {
+            const smbUrl = `smb://${serverInfo.ip}`;
+            smbUrlEl.textContent = smbUrl;
+            smbUrlEl.title = smbUrl;
           }
         }
         
@@ -1680,6 +1688,5 @@
       });
     });
   }
-
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', () => { init(); });
 })();

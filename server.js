@@ -19,11 +19,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const webdav = require('webdav-server').v2;
 const koffi = require('koffi');
 const WebSocket = require('ws');
 const EventEmitter = require('events');
 const serverEvents = new EventEmitter();
+const app = express();
+
 
 // ─── Win32 FFI Initialization for Trackpad ──────────────────
 let user32 = null;
@@ -106,7 +107,6 @@ let PORT = 3478;
 let SAVE_DIR;
 let SHARE_DIR;
 let TEMPORARY_MODE = false;
-let webdavServer = null;
 let DEVICE_NAME = os.hostname();
 let RATE_LIMIT_ENABLED = true;
 let NOTIFICATIONS_ENABLED = true;
@@ -124,7 +124,7 @@ function init(userDataPath) {
   loadConfig();
   loadHistory();
   loadScratchpad();
-  initWebDAV();
+  initFileBrowser();
 }
 
 // Load settings from config.json
@@ -191,7 +191,6 @@ function setSaveDir(newDir) {
     }
     data.saveDir = SAVE_DIR;
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
-    updateWebDAVMount();
   } catch (err) {
     console.error('[CONFIG] Failed to save config.json:', err.message);
   }
@@ -238,63 +237,140 @@ function saveScratchpad() {
   }
 }
 
-function initWebDAV() {
+// ─── HTTP File Browser Init ────────────────────────────────────
+function initFileBrowser() {
+  console.log('[FILES] HTTP File Browser initialized. Shared dir:', SHARE_DIR);
+}
+
+// ─── Helper: safe path inside SHARE_DIR ───────────────────────
+function safePath(relPath) {
+  const resolved = path.resolve(SHARE_DIR, relPath || '');
+  // Security: must stay inside SHARE_DIR
+  if (!resolved.startsWith(path.resolve(SHARE_DIR))) {
+    return null;
+  }
+  return resolved;
+}
+
+// ─── Express App ───────────────────────────────────────────────
+
+app.get('/files', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'files.html'));
+});
+
+// JSON directory listing
+app.get('/files/browse', (req, res) => {
+  const rel = req.query.path || '';
+  const target = safePath(rel);
+  if (!target) return res.status(403).json({ error: 'Access denied' });
+  if (!fs.existsSync(target)) return res.status(404).json({ error: 'Not found' });
   try {
-    const userManager = new webdav.SimpleUserManager();
-    const noAuth = {
-      userManager,
-      realm: 'default realm',
-      askForAuthentication(ctx) {
-        return {};
-      },
-      getUser(ctx, callback) {
-        userManager.getDefaultUser((user) => {
-          callback(webdav.Errors.None, user);
-        });
-      }
-    };
-
-    webdavServer = new webdav.WebDAVServer({
-      httpAuthentication: noAuth
+    const entries = fs.readdirSync(target, { withFileTypes: true }).map(e => {
+      const fullPath = path.join(target, e.name);
+      let size = 0;
+      let mtime = null;
+      try {
+        const stat = fs.statSync(fullPath);
+        size = stat.size;
+        mtime = stat.mtime.toISOString();
+      } catch (_) {}
+      return {
+        name: e.name,
+        type: e.isDirectory() ? 'dir' : 'file',
+        size,
+        mtime
+      };
+    }).sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+      return a.name.localeCompare(b.name);
     });
-
-    webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SHARE_DIR), (success) => {
-      if (success) {
-        console.log('[WEBDAV] Server physical directory mounted at:', SHARE_DIR);
-      } else {
-        console.error('[WEBDAV] Failed to mount directory:', SHARE_DIR);
-      }
-    });
-
-    // Trailing slash redirect for WebDAV clients (like iOS Files app and macOS Finder)
-    app.use((req, res, next) => {
-      if (req.method === 'GET' && req.path === '/webdav') {
-        return res.redirect(301, '/webdav/');
-      }
-      next();
-    });
-
-    app.use(webdav.extensions.express('/webdav', webdavServer));
+    res.json({ path: rel, entries });
   } catch (err) {
-    console.error('[WEBDAV] Failed to initialize WebDAV:', err.message);
+    res.status(500).json({ error: err.message });
   }
-}
+});
 
-function updateWebDAVMount() {
-  if (webdavServer) {
-    try {
-      webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(SHARE_DIR), (success) => {
-        if (success) {
-          console.log('[WEBDAV] Remounted share directory to:', SHARE_DIR);
-        } else {
-          console.error('[WEBDAV] Failed to remount share directory to:', SHARE_DIR);
-        }
-      });
-    } catch (err) {
-      console.error('[WEBDAV] Remount error:', err.message);
+// Download a file
+app.get('/files/download', (req, res) => {
+  const rel = req.query.path || '';
+  const target = safePath(rel);
+  if (!target) return res.status(403).json({ error: 'Access denied' });
+  if (!fs.existsSync(target)) return res.status(404).json({ error: 'Not found' });
+  const stat = fs.statSync(target);
+  if (stat.isDirectory()) return res.status(400).json({ error: 'Cannot download a folder' });
+  res.download(target, path.basename(target));
+});
+
+// Upload files to a folder
+const uploadToShare = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const rel = req.query.path || '';
+      const target = safePath(rel);
+      if (!target) return cb(new Error('Access denied'));
+      fs.mkdirSync(target, { recursive: true });
+      cb(null, target);
+    },
+    filename: (req, file, cb) => {
+      // Decode original filename from UTF-8
+      const name = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      cb(null, name);
     }
+  }),
+  limits: { fileSize: 4 * 1024 * 1024 * 1024 } // 4 GB max
+});
+
+app.post('/files/upload', (req, res) => {
+  uploadToShare.array('files')(req, res, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const uploaded = (req.files || []).map(f => f.filename);
+    res.json({ success: true, uploaded });
+  });
+});
+
+// Create folder
+app.post('/files/mkdir', express.json(), (req, res) => {
+  const rel = req.body.path || '';
+  const target = safePath(rel);
+  if (!target) return res.status(403).json({ error: 'Access denied' });
+  try {
+    fs.mkdirSync(target, { recursive: true });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-}
+});
+
+// Delete file or folder
+app.delete('/files/delete', express.json(), (req, res) => {
+  const rel = req.body.path || '';
+  const target = safePath(rel);
+  if (!target) return res.status(403).json({ error: 'Access denied' });
+  if (!fs.existsSync(target)) return res.status(404).json({ error: 'Not found' });
+  try {
+    fs.rmSync(target, { recursive: true, force: true });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Rename
+app.patch('/files/rename', express.json(), (req, res) => {
+  const rel = req.body.path || '';
+  const newName = req.body.newName || '';
+  const target = safePath(rel);
+  if (!target || !newName) return res.status(400).json({ error: 'Invalid request' });
+  const dir = path.dirname(target);
+  const dest = path.join(dir, newName);
+  if (!dest.startsWith(path.resolve(SHARE_DIR))) return res.status(403).json({ error: 'Access denied' });
+  try {
+    fs.renameSync(target, dest);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Debounce timer for async history writes
 let _saveHistoryTimer = null;
@@ -356,7 +432,7 @@ function rateLimit(req, res, next) {
     cleanPath === '/favicon.ico' ||
     cleanPath.startsWith('/vendor/') ||
     cleanPath.startsWith('/received/') ||
-    cleanPath.startsWith('/webdav')
+    cleanPath.startsWith('/files')
   ) {
     return next();
   }
@@ -401,7 +477,6 @@ const upload = multer({
 });
 
 // ─── Express App ───────────────────────────────────────────────
-const app = express();
 app.use(rateLimit);
 
 // Dynamic Content-Type body parsers (prevents stream consumption conflicts with Multer)
@@ -410,11 +485,6 @@ const urlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
 const rawParser = express.raw({ type: '*/*', limit: '50mb' });
 
 app.use((req, res, next) => {
-  // Bypass body parsers completely for WebDAV paths to prevent stream consumption conflicts
-  if (req.path === '/webdav' || req.path.startsWith('/webdav/')) {
-    return next();
-  }
-
   const contentType = req.headers['content-type'] || '';
   if (contentType.includes('multipart/form-data')) {
     next();
@@ -430,13 +500,10 @@ app.use((req, res, next) => {
 // CORS — allow all local network access
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  // Support standard WebDAV HTTP methods
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE, PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK');
-  // Support and expose WebDAV headers
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Depth, Destination, Overwrite, If, Lock-Token');
-  res.header('Access-Control-Expose-Headers', 'DAV, Allow, Lock-Token');
-  
-  if (req.method === 'OPTIONS' && !req.path.startsWith('/webdav')) {
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
   next();
@@ -1228,7 +1295,7 @@ app.post('/api/settings', async (req, res) => {
       fs.unlinkSync(tempFile);
       
       SHARE_DIR = resolvedSharePath;
-      updateWebDAVMount();
+      // (SHARE_DIR updated — file browser serves dynamically so no remount needed)
     }
 
     if (deviceName !== undefined) {
@@ -1771,10 +1838,10 @@ app.get('/m', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
 });
 
-// SPA fallback — serve index.html for any unmatched route (except /m and /webdav)
+// SPA fallback — serve index.html for any unmatched route (except /m and /files)
 app.get('*', (req, res, next) => {
-  if (req.path === '/webdav' || req.path.startsWith('/webdav/')) {
-    return next();
+  if (req.path === '/files' || req.path.startsWith('/files/')) {
+    return next(); // Let /files routes handle it
   }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -1918,6 +1985,7 @@ function startServer(portCallback) {
       broadcastSSE('trackpad_status', { connected: false });
     });
   });
+
   
   serverInstance.on('error', (err) => {
     console.error('Server error:', err);
@@ -1955,6 +2023,7 @@ module.exports = {
   stopServer,
   getPort: () => PORT,
   getSaveDir: () => SAVE_DIR,
+  getShareDir: () => SHARE_DIR,
   setSaveDir,
   getLocalIP,
   serverEvents

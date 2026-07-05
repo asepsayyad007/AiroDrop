@@ -410,6 +410,8 @@
         <span class="dot" id="connDot"></span>
         <span id="connText">Connecting...</span>
       </div>
+      <!-- Universal Connection Button -->
+      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 8px;">🔌 Connect PC Services</button>
       <button id="btnUniversalRefresh" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; border: 1px solid var(--card-border); cursor: pointer; color: var(--text); outline: none;" title="Refresh Page Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
@@ -478,6 +480,15 @@
       <span id="scratchpadStatus" style="font-size: 0.68rem; color: var(--text3); float: right; margin-top: 4px;">Saved</span>
     </div>
 
+
+    <!-- File Manager Card -->
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>📁 File Manager</h3>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 10px;">Browse, upload &amp; download files in your PC's shared folder directly from this page.</p>
+      <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem;">📂 Open File Manager</button>
+    </div>
+
+
     <!-- PC REMOTE CONTROL -->
     <div class="section-title">PC System Control</div>
     <div class="sender-card" style="margin-bottom: 16px;">
@@ -515,6 +526,14 @@
       <h3>Remote Trackpad</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Control mouse and keyboard of your PC in real-time</p>
       <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);">🖱️ Open Fullscreen Trackpad</button>
+    </div>
+
+    <!-- PC LIVE SCREENCAST -->
+    <div class="section-title">PC Live Screen</div>
+    <div class="sender-card" style="margin-bottom: 16px;">
+      <h3>🖥️ Live Screencast</h3>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at ~15fps directly to this page. Requires PC Services connected.</p>
+      <button class="btn" id="btnOpenScreencast" style="margin-top: 10px; background: linear-gradient(135deg, #7c3aed, #4f46e5);">📺 Open Live Screen</button>
     </div>
 
     <div style="height: 30px;"></div>
@@ -594,7 +613,10 @@
       connectMobileSSE();
       setupMobileControl();
       setupMobileScreenshot();
+      setupUniversalConnect();
       setupMobileTrackpad();
+      setupScreencastOverlay();
+      setupFileBrowserOverlay();
     }
 
     // ─── Auto-poll every 10 seconds ───────────────────────
@@ -1107,6 +1129,126 @@
 
     let trackpadSocket = null;
     let isTrackpadOpen = false;
+    let wsWantsConnected = false;
+    let wsConnecting = false;
+
+    function updateUniversalConnectButton(state) {
+      const btn = document.getElementById('btnUniversalConnect');
+      if (!btn) return;
+      switch (state) {
+        case 'disconnected':
+          btn.innerHTML = '🔌 Connect PC Services';
+          btn.style.background = 'rgba(255,255,255,0.08)';
+          btn.style.borderColor = 'var(--card-border)';
+          break;
+        case 'connecting':
+          btn.innerHTML = '⏳ Connecting to PC...';
+          btn.style.background = 'rgba(255,255,255,0.05)';
+          btn.style.borderColor = 'var(--card-border)';
+          break;
+        case 'connected':
+          btn.innerHTML = '🟢 Services Connected';
+          btn.style.background = 'rgba(16,185,129,0.15)';
+          btn.style.borderColor = '#10b981';
+          break;
+        case 'failed':
+          btn.innerHTML = '🔴 Connection Failed — Retry';
+          btn.style.background = 'rgba(239,68,68,0.15)';
+          btn.style.borderColor = '#ef4444';
+          break;
+      }
+    }
+
+    function connectWS() {
+      if (wsConnecting) return;
+      wsConnecting = true;
+      updateUniversalConnectButton('connecting');
+
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${proto}//${window.location.host}/trackpad`);
+
+      ws.onopen = () => {
+        wsConnecting = false;
+        trackpadSocket = ws;
+        updateUniversalConnectButton('connected');
+        showToast('Connected to PC Services');
+        let mobileName = 'Mobile Device';
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mobileName = 'iPhone';
+        else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
+        sendWS({ type: 'identify', deviceName: mobileName });
+
+        // Trigger pending stream features automatically on connection
+        if (window._pendingScreencastStart) {
+          window._pendingScreencastStart = false;
+          const btn = document.getElementById('btnOpenScreencast');
+          if (btn) btn.click();
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'screencast_frame') {
+            const liveFrame = document.getElementById('liveScreenFrame');
+            if (liveFrame && liveFrame.closest('#screencastOverlay').style.display !== 'none') {
+              liveFrame.src = data.image;
+              window._scFrameCount = (window._scFrameCount || 0) + 1;
+            }
+          }
+        } catch (err) {}
+      };
+
+      ws.onerror = () => {
+        wsConnecting = false;
+        updateUniversalConnectButton('failed');
+      };
+
+      ws.onclose = () => {
+        wsConnecting = false;
+        if (trackpadSocket === ws) trackpadSocket = null;
+        updateUniversalConnectButton('disconnected');
+        if (wsWantsConnected) {
+          setTimeout(() => {
+            if (wsWantsConnected && !wsConnecting) {
+              connectWS();
+            }
+          }, 3000);
+        }
+      };
+    }
+
+    function disconnectWS() {
+      wsWantsConnected = false;
+      wsConnecting = false;
+      if (trackpadSocket) {
+        const ws = trackpadSocket;
+        trackpadSocket = null;
+        ws.close();
+      }
+      updateUniversalConnectButton('disconnected');
+    }
+
+    function sendWS(msg) {
+      if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+        trackpadSocket.send(JSON.stringify(msg));
+      }
+    }
+
+    function setupUniversalConnect() {
+      const btn = document.getElementById('btnUniversalConnect');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+          disconnectWS();
+        } else {
+          wsWantsConnected = true;
+          connectWS();
+        }
+      });
+      // Auto-connect on page load
+      wsWantsConnected = true;
+      connectWS();
+    }
 
     function setupMobileTrackpad() {
       const btnOpen = document.getElementById('btnOpenTrackpad');
@@ -1116,132 +1258,19 @@
       const keyboardInput = document.getElementById('trackpadKeyboardInput');
       const btnLeft = document.getElementById('btnTrackpadLeftClick');
       const btnRight = document.getElementById('btnTrackpadRightClick');
-      const btnConnect = document.getElementById('btnTrackpadConnect');
       const btnToggleKbd = document.getElementById('btnToggleKeyboard');
       const kbdPanel = document.getElementById('keyboardPanel');
 
       if (!btnOpen || !overlay || !btnClose || !touchpadArea) return;
 
-      // ── Connection State Machine ──
-      const btnScreencast = document.getElementById('btnTrackpadScreencast');
-      let wantsConnected = false;
-      let isConnecting = false;
-      let isScreencastActive = false;
-
-      function resetScreencastUI() {
-        isScreencastActive = false;
-        if (btnScreencast) {
-          btnScreencast.textContent = '📺 Screencast';
-          btnScreencast.style.background = 'rgba(255,255,255,0.08)';
-          btnScreencast.style.display = 'none';
-        }
-        const screencastFrame = document.getElementById('screencastFrame');
-        const touchpadHelpText = document.getElementById('touchpadHelpText');
-        if (screencastFrame) screencastFrame.style.display = 'none';
-        if (touchpadHelpText) touchpadHelpText.style.display = 'block';
-      }
-
-      function updateConnectButton(state) {
-        if (!btnConnect) return;
-        switch (state) {
-          case 'disconnected':
-            btnConnect.textContent = '🔌 Connect';
-            btnConnect.style.background = 'rgba(255,255,255,0.08)';
-            resetScreencastUI();
-            break;
-          case 'connecting':
-            btnConnect.textContent = '⏳ Connecting...';
-            btnConnect.style.background = 'rgba(255,255,255,0.08)';
-            break;
-          case 'connected':
-            btnConnect.textContent = '🟢 Connected';
-            btnConnect.style.background = '#10b981';
-            if (btnScreencast) btnScreencast.style.display = 'block';
-            break;
-          case 'failed':
-            btnConnect.textContent = '🔴 Retry';
-            btnConnect.style.background = '#ef4444';
-            resetScreencastUI();
-            break;
-        }
-      }
-
-      function connectWS() {
-        if (isConnecting) return;
-        isConnecting = true;
-        updateConnectButton('connecting');
-
-        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${proto}//${window.location.host}/trackpad`);
-
-        ws.onopen = () => {
-          isConnecting = false;
-          trackpadSocket = ws;
-          updateConnectButton('connected');
-          showToast('Trackpad connected');
-          // Send device identification
-          let mobileName = 'Mobile Device';
-          if (/iPad|iPhone|iPod/.test(navigator.userAgent)) mobileName = 'iPhone';
-          else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
-          sendWS({ type: 'identify', deviceName: mobileName });
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'screencast_frame' && isScreencastActive) {
-              const screencastFrame = document.getElementById('screencastFrame');
-              if (screencastFrame) {
-                screencastFrame.src = data.image;
-              }
-            }
-          } catch (err) {
-            // silent catch
-          }
-        };
-
-        ws.onerror = () => {
-          isConnecting = false;
-          updateConnectButton('failed');
-        };
-
-        ws.onclose = () => {
-          isConnecting = false;
-          if (trackpadSocket === ws) trackpadSocket = null;
-          updateConnectButton('disconnected');
-          // Auto-reconnect ONLY if user wants it AND overlay is open
-          if (wantsConnected && isTrackpadOpen) {
-            setTimeout(() => {
-              if (wantsConnected && isTrackpadOpen && !isConnecting) {
-                connectWS();
-              }
-            }, 3000);
-          }
-        };
-      }
-
-      function disconnectWS() {
-        wantsConnected = false;
-        isConnecting = false;
-        if (trackpadSocket) {
-          const ws = trackpadSocket;
-          trackpadSocket = null; // clear ref BEFORE close to prevent onclose from reconnecting
-          ws.close();
-        }
-        updateConnectButton('disconnected');
-      }
-
-      function sendWS(msg) {
-        if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
-          trackpadSocket.send(JSON.stringify(msg));
-        }
-      }
-
       // ── Overlay Open / Close ──
       btnOpen.addEventListener('click', () => {
+        if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
+          wsWantsConnected = true;
+          connectWS();
+        }
         overlay.style.display = 'flex';
         isTrackpadOpen = true;
-        // Do NOT auto-connect. User must click Connect.
         setTimeout(() => {
           if (keyboardInput) {
             keyboardInput.value = '';
@@ -1253,45 +1282,9 @@
       btnClose.addEventListener('click', () => {
         overlay.style.display = 'none';
         isTrackpadOpen = false;
-        disconnectWS();
       });
 
-      // ── Connect Button ──
-      if (btnConnect) {
-        btnConnect.addEventListener('click', () => {
-          if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
-            disconnectWS();
-          } else {
-            wantsConnected = true;
-            connectWS();
-          }
-        });
-      }
-
-      if (btnScreencast) {
-        btnScreencast.addEventListener('click', () => {
-          if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
-            showToast('Trackpad not connected');
-            return;
-          }
-
-          isScreencastActive = !isScreencastActive;
-          if (isScreencastActive) {
-            btnScreencast.textContent = '📺 Stop Stream';
-            btnScreencast.style.background = 'linear-gradient(135deg, var(--accent), #ff8800)';
-            document.getElementById('screencastFrame').style.display = 'block';
-            document.getElementById('touchpadHelpText').style.display = 'none';
-            sendWS({ type: 'screencast_start' });
-          } else {
-            btnScreencast.textContent = '📺 Screencast';
-            btnScreencast.style.background = 'rgba(255,255,255,0.08)';
-            document.getElementById('screencastFrame').style.display = 'none';
-            document.getElementById('touchpadHelpText').style.display = 'block';
-            sendWS({ type: 'screencast_stop' });
-          }
-        });
-      }
-
+      // ── Screencast button removed from trackpad overlay (now separate overlay)
       // ── Keyboard Panel Toggle ──
       if (btnToggleKbd && kbdPanel) {
         btnToggleKbd.addEventListener('click', () => {
@@ -1408,6 +1401,112 @@
       });
     }
 
+    // ─── Screencast Overlay Setup ───────────────────────────────
+    function setupScreencastOverlay() {
+      const overlay = document.getElementById('screencastOverlay');
+      const frame = document.getElementById('liveScreenFrame');
+      const btnClose = document.getElementById('btnCloseScreencast');
+      const btnMode = document.getElementById('btnScreencastMode');
+      const fpsEl = document.getElementById('screencastFPS');
+      const btnOpen = document.getElementById('btnOpenScreencast');
+
+      if (!overlay || !btnOpen) return;
+
+      let interactiveMode = false;
+      let streamActive = false;
+
+      // FPS counter
+      setInterval(() => {
+        if (fpsEl && streamActive) {
+          fpsEl.textContent = (window._scFrameCount || 0) + ' fps';
+          window._scFrameCount = 0;
+        }
+      }, 1000);
+
+      btnOpen.addEventListener('click', () => {
+        if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
+          wsWantsConnected = true;
+          window._pendingScreencastStart = true;
+          connectWS();
+          showToast('Connecting to PC Services...');
+          return;
+        }
+        overlay.style.display = 'flex';
+        streamActive = true;
+        sendWS({ type: 'screencast_start' });
+      });
+
+      btnClose.addEventListener('click', () => {
+        overlay.style.display = 'none';
+        streamActive = false;
+        if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+          sendWS({ type: 'screencast_stop' });
+        }
+      });
+
+      btnMode.addEventListener('click', () => {
+        interactiveMode = !interactiveMode;
+        btnMode.textContent = interactiveMode ? '🖱️ Interactive' : '👁️ View Only';
+        btnMode.style.background = interactiveMode ? 'rgba(255,85,0,0.3)' : 'rgba(255,255,255,0.08)';
+        frame.style.cursor = interactiveMode ? 'crosshair' : 'default';
+        showToast(interactiveMode ? 'Interactive mode: tap to click' : 'View-only mode');
+      });
+
+      // Touch → PC mouse click in interactive mode
+      frame.addEventListener('touchend', (e) => {
+        if (!interactiveMode || !trackpadSocket) return;
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        const rect = frame.getBoundingClientRect();
+        // Map tap position to screen percentage
+        const xRatio = (touch.clientX - rect.left) / rect.width;
+        const yRatio = (touch.clientY - rect.top) / rect.height;
+        // Move to that position on PC (relative jump from center)
+        // We use absolute positioning via moveAbs message
+        sendWS({ type: 'click_abs', xRatio, yRatio });
+      }, { passive: false });
+
+      // Also support drag in interactive mode
+      let lastTX = 0, lastTY = 0;
+      frame.addEventListener('touchstart', (e) => {
+        if (!interactiveMode) return;
+        lastTX = e.touches[0].clientX;
+        lastTY = e.touches[0].clientY;
+      }, { passive: true });
+      frame.addEventListener('touchmove', (e) => {
+        if (!interactiveMode) return;
+        e.preventDefault();
+        const dx = (e.touches[0].clientX - lastTX) * 2.5;
+        const dy = (e.touches[0].clientY - lastTY) * 2.5;
+        sendWS({ type: 'move', dx, dy });
+        lastTX = e.touches[0].clientX;
+        lastTY = e.touches[0].clientY;
+      }, { passive: false });
+    }
+
+
+
+    // ─── File Browser Overlay Setup ─────────────────────────────
+    function setupFileBrowserOverlay() {
+      const btnOpen = document.getElementById('btnOpenFileBrowser');
+      const overlay = document.getElementById('fileBrowserOverlay');
+      const iframe = document.getElementById('fileBrowserIframe');
+      const btnClose = document.getElementById('btnCloseFileBrowser');
+
+      if (!btnOpen || !overlay || !iframe || !btnClose) return;
+
+      btnOpen.addEventListener('click', () => {
+        iframe.src = '/files';
+        overlay.style.display = 'flex';
+      });
+
+      btnClose.addEventListener('click', () => {
+        overlay.style.display = 'none';
+        iframe.src = 'about:blank';
+      });
+    }
+
+
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);
   </script>
@@ -1419,8 +1518,6 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
       <h3 style="font-size: 1.05rem; color: var(--text); margin: 0;">Remote Trackpad</h3>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="btnTrackpadScreencast" class="btn" style="margin: 0; background: rgba(255,255,255,0.08); font-size: 0.75rem; padding: 6px 14px; width: auto; border: 1px solid var(--card-border); border-radius: 8px; display: none;">📺 Screencast</button>
-        <button id="btnTrackpadConnect" class="btn" style="margin: 0; background: rgba(255,255,255,0.08); font-size: 0.75rem; padding: 6px 14px; width: auto; border: 1px solid var(--card-border); border-radius: 8px;">🔌 Connect</button>
         <button id="btnCloseTrackpad" style="background: none; border: none; color: var(--text2); font-size: 1.5rem; cursor: pointer; padding: 5px;">&times;</button>
       </div>
     </div>
@@ -1557,9 +1654,8 @@
       </div>
     </div>
 
-    <!-- Touchpad Area -->
+    <!-- Touchpad Area (clean - no screencast) -->
     <div id="touchpadArea" style="flex: 1; background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.08); border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 10px; touch-action: none; min-height: 120px;">
-      <img id="screencastFrame" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: 1; display: none;">
       <span id="touchpadHelpText" style="color: var(--text3); font-size: 0.78rem; pointer-events: none; text-align: center; padding: 20px; line-height: 1.6; z-index: 2;">
         Drag one finger to move cursor<br>
         Tap → Left Click &bull; Double-tap → Double Click<br>
@@ -1578,5 +1674,42 @@
   <div style="text-align: center; padding: 20px; font-size: 11px; color: var(--text3); margin-top: 20px;">
     Created by Asep with Love ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: var(--primary); text-decoration: none;">github.com/asepsayyad007</a>
   </div>
+  <!-- Fullscreen Screencast Overlay -->
+  <div id="screencastOverlay" style="display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; touch-action: none;">
+    <!-- Top Bar -->
+    <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 502; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); pointer-events: auto;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.8); animation: blink 1s infinite;"></div>
+        <span style="font-size: 0.82rem; font-weight: 600; color: white;">🖥️ PC Screen</span>
+        <span id="screencastFPS" style="font-size: 0.68rem; color: rgba(255,255,255,0.5); margin-left: 4px;">0 fps</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="btnScreencastMode" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer;">👁️ View Only</button>
+        <button id="btnCloseScreencast" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+    </div>
+    <!-- Live Frame -->
+    <img id="liveScreenFrame" src="" alt="PC Screen" style="width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 501; touch-action: none;">
+    <!-- Bottom Hint -->
+    <div style="position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.6); font-size: 0.68rem; padding: 6px 14px; border-radius: 20px; pointer-events: none; z-index: 503; white-space: nowrap;">
+      Interactive: tap to click &bull; drag to move mouse
+    </div>
+  </div>
+
+  <!-- Fullscreen File Browser Overlay (Same window frame integration) -->
+  <div id="fileBrowserOverlay" style="display: none; position: fixed; inset: 0; background: #09090f; z-index: 600; flex-direction: column; touch-action: auto;">
+    <!-- Top Bar -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); border-bottom: 1px solid var(--card-border); background: rgba(9,9,15,0.95); backdrop-filter: blur(20px); z-index: 602; flex-shrink: 0;">
+      <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px;">📁 PC Shared Folder</h3>
+      <button id="btnCloseFileBrowser" style="background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: var(--text); padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">✕ Close</button>
+    </div>
+    <!-- Iframe Container -->
+    <iframe id="fileBrowserIframe" src="about:blank" style="flex: 1; border: none; width: 100%; height: 100%; background: #09090f; z-index: 601;"></iframe>
+  </div>
+
+  <style>
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  </style>
+
 </body>
 </html>
