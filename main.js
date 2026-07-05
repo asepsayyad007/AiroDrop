@@ -126,7 +126,18 @@ function setupAutoUpdater() {
     if (mainWindow) mainWindow.webContents.send('update-status', 'error', err.message);
     if (isManualCheck) {
       isManualCheck = false;
-      dialog.showErrorBox('Update Error', `Error checking for updates: ${err.message}`);
+      
+      let friendlyMessage = `Error checking for updates: ${err.message}`;
+      if (err.message.includes('latest.yml') || err.message.includes('404')) {
+        friendlyMessage = `No auto-update configuration (latest.yml) found on GitHub for this release.\n\nThis is normal since your current published release (v4.7.0) does not have auto-updates enabled yet. Once you publish version v4.8.0 with latest.yml, auto-updates will work automatically!`;
+        dialog.showMessageBox(mainWindow || null, {
+          type: 'warning',
+          title: 'Update Check',
+          message: friendlyMessage
+        });
+      } else {
+        dialog.showErrorBox('Update Error', friendlyMessage);
+      }
     }
   });
 
