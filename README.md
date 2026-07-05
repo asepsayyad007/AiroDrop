@@ -21,6 +21,14 @@ AiroDrop has received a massive feature and visual upgrade:
 
 ---
 
+## 📥 Downloads (v4.5.0)
+
+Get the latest pre-compiled binaries for Windows:
+* **[Download Setup Installer (v4.5.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.5.0/AiroDrop.Setup.4.5.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.5.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.5.0/AiroDrop-Portable-4.5.0.exe)** — Standalone execution without installation.
+
+---
+
 ## How It Works
 
 * **Text & Links:** Copying text on your phone pushes it to your PC's clipboard (Ctrl+V) instantly. Shared links from Safari/Chrome have clean URLs extracted automatically.
