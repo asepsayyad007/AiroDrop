@@ -105,7 +105,7 @@ function setupAutoUpdater() {
       dialog.showMessageBox(mainWindow || null, {
         type: 'info',
         title: 'Update Available',
-        message: `Version ${info.version} is available and is downloading in the background.`
+        message: 'New update available!'
       });
     }
   });
@@ -116,8 +116,8 @@ function setupAutoUpdater() {
       isManualCheck = false;
       dialog.showMessageBox(mainWindow || null, {
         type: 'info',
-        title: 'No Updates',
-        message: `You are up to date! Version ${app.getVersion()} is the latest version.`
+        title: 'AiroDrop Update',
+        message: 'You are up to date!'
       });
     }
   });
@@ -126,18 +126,11 @@ function setupAutoUpdater() {
     if (mainWindow) mainWindow.webContents.send('update-status', 'error', err.message);
     if (isManualCheck) {
       isManualCheck = false;
-      
-      let friendlyMessage = `Error checking for updates: ${err.message}`;
-      if (err.message.includes('latest.yml') || err.message.includes('404')) {
-        friendlyMessage = `No auto-update configuration (latest.yml) found on GitHub for this release.\n\nThis is normal since your current published release (v4.7.0) does not have auto-updates enabled yet. Once you publish version v4.8.0 with latest.yml, auto-updates will work automatically!`;
-        dialog.showMessageBox(mainWindow || null, {
-          type: 'warning',
-          title: 'Update Check',
-          message: friendlyMessage
-        });
-      } else {
-        dialog.showErrorBox('Update Error', friendlyMessage);
-      }
+      dialog.showMessageBox(mainWindow || null, {
+        type: 'warning',
+        title: 'Update Check',
+        message: 'Update check failed.'
+      });
     }
   });
 

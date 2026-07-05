@@ -1,8 +1,8 @@
-# AiroDrop v4.8.0 🚀
+# AiroDrop v4.8.2 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.8.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.8.2-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,23 +17,24 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.8.0
+## 🚀 What's New in v4.8.2
 
-This release brings version 4.8.0, introducing major video streaming range fixes, auto-updates, and upload optimizations:
+This release brings version 4.8.2, wrapping up auto-update fixes and version configurations:
 
 ### ✅ New Features & Updates
 1. **🚀 Instant Range-Based Video Streaming** — Added high-performance range-seeking media handlers. Buffering is now instant even for large video files.
 2. **🔄 Integrated Auto-Updates** — Checks for updates on startup natively via GitHub Releases. Added check buttons in both the Settings Modal and the Windows system tray.
 3. **📁 Direct File Stream Uploads** — Upgraded the chunked upload pipeline to pipe request streams directly to disk, avoiding memory constraints.
 4. **🔒 iOS Iframe Download Sandbox Fix** — Triggered Blob downloads in a new tab context (`_blank`) to prevent parent iframe refreshes.
+5. **💬 Clean Update Dialog Alerts** — Simplified all Electron update check prompts and alerts to short message notifications.
 
 ---
 
-## 📥 Downloads (v4.8.0)
+## 📥 Downloads (v4.8.2)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.8.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.0/AiroDrop.Setup.4.8.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.8.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.0/AiroDrop-Portable-4.8.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.8.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.2/AiroDrop.Setup.4.8.2.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.8.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.2/AiroDrop-Portable-4.8.2.exe)** — Standalone execution without installation.
 
 ---
 
