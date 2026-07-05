@@ -268,7 +268,7 @@ function initWebDAV() {
 
     // Trailing slash redirect for WebDAV clients (like iOS Files app and macOS Finder)
     app.use((req, res, next) => {
-      if (req.path === '/webdav') {
+      if (req.method === 'GET' && req.path === '/webdav') {
         return res.redirect(301, '/webdav/');
       }
       next();
@@ -355,7 +355,8 @@ function rateLimit(req, res, next) {
     cleanPath === '/sw.js' ||
     cleanPath === '/favicon.ico' ||
     cleanPath.startsWith('/vendor/') ||
-    cleanPath.startsWith('/received/')
+    cleanPath.startsWith('/received/') ||
+    cleanPath.startsWith('/webdav')
   ) {
     return next();
   }
