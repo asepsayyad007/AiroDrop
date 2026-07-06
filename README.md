@@ -1,8 +1,8 @@
-# AiroDrop v4.8.9 🚀
+# AiroDrop v4.9.0 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.8.9-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,24 +17,25 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.8.9
+## 🚀 What's New in v4.9.0
 
-This release brings version 4.8.9, focusing on virtual desktop interaction and screencast usability upgrades:
+This release brings version 4.9.0, focusing on production deployments and robust delivery releases:
 
 ### ✅ New Features & Updates
-1. **🎯 Virtual Cursor Mode (AnyDesk-style)** — Added a switchable Virtual Cursor mode in Screencast. Moving your finger relative-drags the cursor; tapping clicks at the cursor's current location to eliminate position jumps.
-2. **🎹 Screencast Remote Keyboard** — Integrated the full Trackpad remote keyboard panel into Screencast mode, accessible from a clean toggle dropdown button.
-3. **🔍 Fit Screen Options (90% - 80% - 70%)** — Introduced size scaling options to prevent top status bars or camera notches on mobile screens from cutting off the desktop display.
-4. **🔄 Smart Trackpad Orientation Auto-Hide** — Trackpad automatically hides in Landscape orientation to maximize visual space, and displays only in Portrait mode.
-5. **✨ Polished Screencast Layout** — Removed the old orange dot overlay and optimized interactive layouts using premium dark glassmorphism.
+1. **🛠️ Automated GitHub Actions Release Pipeline** — Integrated a complete CI/CD release workflow. Pushing version tags automatically compiles Windows setup installers and portable binaries on GitHub's cloud infrastructure and uploads them directly to a fresh GitHub Release.
+2. **🎯 Virtual Cursor Mode (AnyDesk-style)** — Added a switchable Virtual Cursor mode in Screencast. Moving your finger relative-drags the cursor; tapping clicks at the cursor's current location to eliminate position jumps.
+3. **🎹 Screencast Remote Keyboard** — Integrated the full Trackpad remote keyboard panel into Screencast mode, accessible from a clean toggle dropdown button.
+4. **🔍 Fit Screen Options (90% - 80% - 70%)** — Introduced size scaling options to prevent top status bars or camera notches on mobile screens from cutting off the desktop display.
+5. **🔄 Smart Trackpad Orientation Auto-Hide** — Trackpad automatically hides in Landscape orientation to maximize visual space, and displays only in Portrait mode.
+6. **✨ Polished Screencast Layout** — Removed the old orange dot overlay and optimized interactive layouts using premium dark glassmorphism.
 
 ---
 
-## 📥 Downloads (v4.8.9)
+## 📥 Downloads (v4.9.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.8.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.9/AiroDrop.Setup.4.8.9.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.8.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.8.9/AiroDrop-Portable-4.8.9.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.0/AiroDrop.Setup.4.9.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.0/AiroDrop-Portable-4.9.0.exe)** — Standalone execution without installation.
 
 ---
 
