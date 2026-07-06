@@ -371,20 +371,30 @@ app.post('/files/upload-chunk', (req, res) => {
     
     req.pipe(writeStream);
     
-    writeStream.on('finish', () => {
-      if (chunkIndex === totalChunks - 1) {
-        if (fs.existsSync(finalPath)) {
-          fs.unlinkSync(finalPath);
+    writeStream.on('close', () => {
+      if (res.headersSent) return;
+      try {
+        if (chunkIndex === totalChunks - 1) {
+          if (fs.existsSync(finalPath)) {
+            fs.unlinkSync(finalPath);
+          }
+          fs.renameSync(tempPath, finalPath);
+          return res.json({ success: true, completed: true, filename: fileName });
         }
-        fs.renameSync(tempPath, finalPath);
-        return res.json({ success: true, completed: true, filename: fileName });
+        res.json({ success: true, completed: false });
+      } catch (err) {
+        console.error('[UPLOAD] Error finalizing chunk upload:', err.message);
+        if (!res.headersSent) {
+          res.status(500).json({ error: err.message });
+        }
       }
-      res.json({ success: true, completed: false });
     });
     
     writeStream.on('error', (err) => {
       console.error('[UPLOAD] Chunk write stream error:', err.message);
-      res.status(500).json({ error: err.message });
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message });
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
