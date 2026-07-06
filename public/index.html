@@ -92,8 +92,6 @@
       </div>
     </header>
 
-
-
     <!-- ─── Main Content ────────────────────────────────── -->
     <main class="main">
       <!-- Tabs Navigation -->
@@ -192,7 +190,7 @@
         </div>
       </section>
 
-      <!-- Tab 3: Tools -->
+      <!-- Tab 4: Tools -->
       <section class="tab-content" id="tab-tools">
         <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
           
@@ -205,7 +203,7 @@
               <div class="qr-placeholder" style="color: var(--text-muted); font-size: 0.76rem;">Start typing to generate...</div>
             </div>
           </div>
- 
+
           <!-- Tool 2: Shared Scratchpad -->
           <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column; grid-column: auto !important;">
             <h3>Shared Scratchpad</h3>
@@ -458,7 +456,7 @@
       <div class="settings-modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <h2>Settings & Preferences</h2>
-          <span style="background: var(--accent-bg); color: var(--accent-light); font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; border: 1px solid var(--accent-dark); font-family: sans-serif;">v4.8.2</span>
+          <span style="background: var(--accent-bg); color: var(--accent-light); font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; border: 1px solid var(--accent-dark); font-family: sans-serif;">v4.8.9</span>
         </div>
         <span class="settings-modal-close" id="btnCloseSettings">&times;</span>
       </div>
@@ -569,34 +567,15 @@
               </div>
             </div>
 
-            <!-- Unified Application Updates Card -->
-            <div class="settings-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; flex: 1;">
-              <h3>🔄 Application Updates</h3>
-              
-              <!-- Visible inside Electron -->
-              <div id="electronSettingsCard" style="display: none; flex-direction: column; gap: 10px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Local Version: <strong id="appVersionText">v4.8.2</strong></span>
-                  <button class="btn btn-secondary" id="btnCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer; border-radius: 8px;">🔄 Check Update</button>
-                </div>
-                <div id="updateProgressContainer" style="display: none; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-                  <div style="display: flex; justify-content: space-between; font-size: 0.72rem;">
-                    <span id="updateProgressLabel" style="font-weight: 500;">Downloading update...</span>
-                    <span id="updateProgressPercent" style="font-weight: 600; color: var(--accent-light);">0%</span>
-                  </div>
-                  <div style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
-                    <div id="updateProgressBarFill" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); width: 0%; transition: width 0.1s ease;"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Visible in Web browser -->
-              <div id="webSettingsCard" style="display: none; flex-direction: column; gap: 10px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 0.8rem; color: var(--text-secondary);">Web Version: <strong id="webAppVersion">v4.8.2</strong></span>
-                  <button class="btn btn-secondary" id="btnWebCheckUpdates" style="padding: 6px 12px; font-size: 0.74rem; cursor: pointer; border-radius: 8px;">🔄 Check Update</button>
-                </div>
-                <div id="webUpdateStatusMessage" style="display: none; margin-top: 10px; font-size: 0.78rem; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center; font-weight: 500;"></div>
+            <!-- Application Updates Card -->
+            <div class="settings-card" style="margin-bottom: 0;">
+              <h3>🚀 Application Updates</h3>
+              <div class="settings-switch-row" style="border-bottom: none; padding: 4px 0;">
+                <span>Check for updates automatically</span>
+                <label class="switch">
+                  <input type="checkbox" id="autoUpdaterInput">
+                  <span class="slider"></span>
+                </label>
               </div>
             </div>
 

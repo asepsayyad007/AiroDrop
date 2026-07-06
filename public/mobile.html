@@ -617,6 +617,44 @@
       setupMobileTrackpad();
       setupScreencastOverlay();
       setupFileBrowserOverlay();
+
+      // Auto-hide/show trackpad card and overlay when rotating
+      window.addEventListener('resize', () => {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const trackpadCard = document.getElementById('btnOpenTrackpad')?.closest('.sender-card');
+        const trackpadOverlay = document.getElementById('trackpadOverlay');
+
+        if (isLandscape) {
+          if (trackpadCard) {
+            trackpadCard.style.display = 'none';
+          }
+          // Also hide section title if exists
+          const titles = document.querySelectorAll('.section-title');
+          titles.forEach(t => {
+            if (t.textContent.includes('Trackpad & Keyboard')) {
+              t.style.setProperty('display', 'none', 'important');
+            }
+          });
+
+          if (isTrackpadOpen && trackpadOverlay) {
+            trackpadOverlay.style.display = 'none';
+            isTrackpadOpen = false;
+            showToast('Landscape: Trackpad closed');
+          }
+        } else {
+          if (trackpadCard) {
+            trackpadCard.style.display = 'block';
+          }
+          const titles = document.querySelectorAll('.section-title');
+          titles.forEach(t => {
+            if (t.textContent.includes('Trackpad & Keyboard')) {
+              t.style.setProperty('display', 'block', 'important');
+            }
+          });
+        }
+      });
+      // Run once on load to ensure initial orientation state is correct
+      window.dispatchEvent(new Event('resize'));
     }
 
     // ─── Auto-poll every 10 seconds ───────────────────────
@@ -1128,6 +1166,7 @@
     }
 
     let trackpadSocket = null;
+    let phonePC = null;
     let isTrackpadOpen = false;
     let wsWantsConnected = false;
     let wsConnecting = false;
@@ -1184,9 +1223,6 @@
           if (btn) btn.click();
         }
       };
-
-      // Global peer connection variable
-      let phonePC = null;
 
       function createPhonePeerConnection() {
         if (phonePC) {
@@ -1481,13 +1517,17 @@
       const btnScKeyboardClear = document.getElementById('btnScKeyboardClear');
       const btnScKeyboardClose = document.getElementById('btnScKeyboardClose');
       const viewHint = document.getElementById('scViewHint');
+      const btnFit = document.getElementById('btnScreencastFit');
+      const btnControlStyle = document.getElementById('btnScreencastControlStyle');
 
       if (!overlay || !btnOpen) return;
 
       let interactiveMode = false;
       let streamActive = false;
-
-
+      let controlStyle = 'touch'; // 'touch' or 'cursor'
+      let fitMode = 100; // 100, 90, 80, 70
+      let virtualX = 0.5;
+      let virtualY = 0.5;
 
       // ── Open button ──
       btnOpen.addEventListener('click', () => {
@@ -1508,9 +1548,9 @@
         overlay.style.display = 'none';
         streamActive = false;
         interactiveMode = false;
-        if (cursorDot) cursorDot.style.display = 'none';
         if (keyboardPanel) keyboardPanel.style.display = 'none';
         if (btnKeyboard) btnKeyboard.style.display = 'none';
+        if (btnControlStyle) btnControlStyle.style.display = 'none';
         if (phonePC) {
           try { phonePC.close(); } catch(e) {}
           phonePC = null;
@@ -1523,6 +1563,51 @@
         }
       });
 
+      // ── Fit Screen Toggle ──
+      if (btnFit) {
+        btnFit.addEventListener('click', () => {
+          if (fitMode === 100) fitMode = 90;
+          else if (fitMode === 90) fitMode = 80;
+          else if (fitMode === 80) fitMode = 70;
+          else fitMode = 100;
+
+          btnFit.textContent = `🔍 Fit: ${fitMode}%`;
+          btnFit.style.background = fitMode !== 100 ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
+          btnFit.style.borderColor = fitMode !== 100 ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
+          
+          if (fitMode === 100) {
+            frame.style.width = '100%';
+            frame.style.height = '100%';
+            frame.style.top = '0';
+            frame.style.left = '0';
+          } else {
+            frame.style.width = `${fitMode}%`;
+            frame.style.height = `${fitMode}%`;
+            const offset = (100 - fitMode) / 2;
+            frame.style.top = `${offset}%`;
+            frame.style.left = `${offset}%`;
+          }
+        });
+      }
+
+      // ── Control Style Toggle ──
+      if (btnControlStyle) {
+        btnControlStyle.addEventListener('click', () => {
+          controlStyle = controlStyle === 'touch' ? 'cursor' : 'touch';
+          btnControlStyle.textContent = controlStyle === 'touch' ? '🖱️ Touch Mode' : '🎯 Cursor Mode';
+          btnControlStyle.style.background = controlStyle === 'cursor' ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
+          btnControlStyle.style.borderColor = controlStyle === 'cursor' ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
+          
+          if (controlStyle === 'cursor') {
+            virtualX = 0.5;
+            virtualY = 0.5;
+            showToast('🎯 Cursor Mode: drag to move cursor, tap to click');
+          } else {
+            showToast('🖱️ Touch Mode: tap anywhere to click absolutely');
+          }
+        });
+      }
+
       // ── Mode toggle (View Only ↔ Interactive) ──
       btnMode.addEventListener('click', () => {
         interactiveMode = !interactiveMode;
@@ -1531,10 +1616,17 @@
         btnMode.style.borderColor = interactiveMode ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
         frame.style.cursor = interactiveMode ? 'none' : 'default';
         if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
-        if (cursorDot) cursorDot.style.display = interactiveMode ? 'block' : 'none';
+        if (btnControlStyle) btnControlStyle.style.display = interactiveMode ? 'block' : 'none';
         if (viewHint) viewHint.style.display = interactiveMode ? 'none' : 'block';
         if (!interactiveMode && keyboardPanel) keyboardPanel.style.display = 'none';
-        showToast(interactiveMode ? '🖱️ Interactive: tap to click, drag to move' : '👁️ View-only mode');
+        
+        if (interactiveMode) {
+          if (controlStyle === 'cursor') {
+            virtualX = 0.5;
+            virtualY = 0.5;
+          }
+          showToast(controlStyle === 'cursor' ? '🎯 Cursor Mode active' : '🖱️ Touch Mode active');
+        }
       });
 
       // ── Keyboard panel toggle ──
@@ -1581,23 +1673,22 @@
         });
       }
 
-      // ── Quick key shortcuts ──
-      document.querySelectorAll('.sc-quick-key').forEach(btn => {
+      // ── Virtual Key Grid (Screencast Keyboard) ──
+      document.querySelectorAll('.btn-sc-kbd').forEach(btn => {
         btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-key');
-          if (!key) return;
-          sendWS({ type: 'key', code: key });
-          showToast('⌨️ ' + key, 800);
+          const code = parseInt(btn.getAttribute('data-code'), 10);
+          const char = btn.getAttribute('data-char');
+          if (code) {
+            sendWS({ type: 'key', code });
+          } else if (char) {
+            sendWS({ type: 'type', text: char });
+          }
+          btn.style.background = 'rgba(255,255,255,0.25)';
+          setTimeout(() => { btn.style.background = ''; }, 120);
         });
       });
 
-      // ── Touch → cursor dot position tracker ──
-      function updateCursorDot(clientX, clientY) {
-        if (!cursorDot || !interactiveMode) return;
-        const rect = overlay.getBoundingClientRect();
-        cursorDot.style.left = (clientX - rect.left) + 'px';
-        cursorDot.style.top = (clientY - rect.top) + 'px';
-      }
+
 
       // Helper to map click coordinate relative to the actual video inside contain mode
       function getClickRatios(clientX, clientY, frameEl) {
@@ -1659,6 +1750,8 @@
         };
       }
 
+
+
       frame.addEventListener('touchstart', (e) => {
         if (!interactiveMode) return;
         
@@ -1670,11 +1763,11 @@
           scStartTime = Date.now();
           scLastTouchX = touches[0].clientX;
           scLastTouchY = touches[0].clientY;
-          updateCursorDot(scLastTouchX, scLastTouchY);
 
-          // Position mouse under finger immediately on tap down
-          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
-          sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
+          if (controlStyle === 'touch') {
+            const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
+            sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
+          }
         } else if (touches.length === 2) {
           scMaxTouches = 2;
           scIsTwoFinger = true;
@@ -1700,12 +1793,28 @@
           e.preventDefault();
           const tx = touches[0].clientX;
           const ty = touches[0].clientY;
-          if (Math.abs(tx - scLastTouchX) > 4 || Math.abs(ty - scLastTouchY) > 4) {
-            scHasMoved = true;
+          
+          if (controlStyle === 'cursor') {
+            const dx = tx - scLastTouchX;
+            const dy = ty - scLastTouchY;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+              scHasMoved = true;
+            }
+            const rect = frame.getBoundingClientRect();
+            // Scale movement speed for precise trackpad feel
+            const speed = 1.0;
+            virtualX = Math.max(0, Math.min(1, virtualX + (dx / rect.width) * speed));
+            virtualY = Math.max(0, Math.min(1, virtualY + (dy / rect.height) * speed));
+            
+            sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
+          } else {
+            if (Math.abs(tx - scLastTouchX) > 4 || Math.abs(ty - scLastTouchY) > 4) {
+              scHasMoved = true;
+            }
+            const coords = getClickRatios(tx, ty, frame);
+            sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
           }
-          const coords = getClickRatios(tx, ty, frame);
-          sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
-          updateCursorDot(tx, ty);
+          
           scLastTouchX = tx;
           scLastTouchY = ty;
         }
@@ -1719,10 +1828,18 @@
 
         const duration = Date.now() - scStartTime;
 
+        // Determine click coordinates ratio based on control style
+        let clickX = virtualX;
+        let clickY = virtualY;
+        if (controlStyle === 'touch') {
+          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
+          clickX = coords.xRatio;
+          clickY = coords.yRatio;
+        }
+
         if (scMaxTouches === 2) {
           if (!scHasMoved && duration < 250) {
-            const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
-            sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'right' });
+            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
             showToast('🖱️ Right Click', 600);
           }
           scIsTwoFinger = false;
@@ -1730,20 +1847,19 @@
         }
 
         if (duration < 250) {
-          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
           const now = Date.now();
           if (now - scLastTapTime < 300) {
             if (scTapTimeout) clearTimeout(scTapTimeout);
-            sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
             setTimeout(() => {
-              sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
             }, 50);
             showToast('🖱️ Double Click', 600);
             scLastTapTime = 0;
           } else {
             scLastTapTime = now;
             scTapTimeout = setTimeout(() => {
-              sendWS({ type: 'click_abs', xRatio: coords.xRatio, yRatio: coords.yRatio, button: 'left' });
+              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
               showToast('🖱️ Left Click', 600);
               scTapTimeout = null;
             }, 200);
@@ -1982,6 +2098,10 @@
         <span style="font-size: 0.8rem; font-weight: 600; color: white;">🖥️ PC Screen</span>
       </div>
       <div style="display: flex; gap: 6px; align-items: center;">
+        <!-- Fit screen toggle (Always shown) -->
+        <button id="btnScreencastFit" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🔍 Fit: 100%</button>
+        <!-- Control Style toggle (only shown in interactive mode) -->
+        <button id="btnScreencastControlStyle" style="display:none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🖱️ Touch Mode</button>
         <!-- Interactive / View toggle -->
         <button id="btnScreencastMode" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">👁️ View Only</button>
         <!-- Keyboard toggle (only shown in interactive mode) -->
@@ -1994,8 +2114,7 @@
     <!-- Live Frame -->
     <video id="liveScreenFrame" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 501; touch-action: none;"></video>
 
-    <!-- Cursor Dot (shown in interactive mode at touch position) -->
-    <div id="scCursorDot" style="display: none; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,85,0,0.85); border: 2px solid white; box-shadow: 0 0 8px rgba(255,85,0,0.6); z-index: 504; pointer-events: none; transform: translate(-50%, -50%); transition: left 0.04s linear, top 0.04s linear;"></div>
+
 
     <!-- Keyboard Input Panel (slides up from bottom) -->
     <div id="scKeyboardPanel" style="display: none; position: absolute; bottom: 0; left: 0; right: 0; z-index: 505; background: rgba(15,15,20,0.97); border-top: 1px solid rgba(255,255,255,0.12); padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px)); backdrop-filter: blur(20px);">
@@ -2009,16 +2128,111 @@
           style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 0.88rem; outline: none; caret-color: #ff5500;">
         <button id="btnScKeyboardClear" style="padding: 10px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 0.82rem; cursor: pointer;">✕</button>
       </div>
-      <!-- Quick key shortcuts row -->
-      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-        <button class="sc-quick-key" data-key="Enter">↵ Enter</button>
-        <button class="sc-quick-key" data-key="Escape">Esc</button>
-        <button class="sc-quick-key" data-key="Tab">Tab</button>
-        <button class="sc-quick-key" data-key="Backspace">⌫ Back</button>
-        <button class="sc-quick-key" data-key="ctrl+c">Ctrl+C</button>
-        <button class="sc-quick-key" data-key="ctrl+v">Ctrl+V</button>
-        <button class="sc-quick-key" data-key="ctrl+z">Ctrl+Z</button>
-        <button class="sc-quick-key" data-key="ctrl+a">Ctrl+A</button>
+      <!-- Full Keyboard Panel (scrollable) -->
+      <div id="scKeyboardRows" style="max-height: 185px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 4px;">
+        <!-- Row 1: Fn/Number Row -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key mod" data-code="27" style="flex:0.7;">Esc</button>
+          <button class="btn-sc-kbd kbd-key" data-code="112" style="flex:0.6; font-size:0.58rem;">F1</button>
+          <button class="btn-sc-kbd kbd-key" data-code="113" style="flex:0.6; font-size:0.58rem;">F2</button>
+          <button class="btn-sc-kbd kbd-key" data-code="114" style="flex:0.6; font-size:0.58rem;">F3</button>
+          <button class="btn-sc-kbd kbd-key" data-code="115" style="flex:0.6; font-size:0.58rem;">F4</button>
+          <button class="btn-sc-kbd kbd-key" data-code="116" style="flex:0.6; font-size:0.58rem;">F5</button>
+          <button class="btn-sc-kbd kbd-key" data-code="117" style="flex:0.6; font-size:0.58rem;">F6</button>
+          <button class="btn-sc-kbd kbd-key" data-code="118" style="flex:0.6; font-size:0.58rem;">F7</button>
+          <button class="btn-sc-kbd kbd-key" data-code="119" style="flex:0.6; font-size:0.58rem;">F8</button>
+          <button class="btn-sc-kbd kbd-key" data-code="120" style="flex:0.6; font-size:0.58rem;">F9</button>
+          <button class="btn-sc-kbd kbd-key" data-code="121" style="flex:0.6; font-size:0.58rem;">F10</button>
+          <button class="btn-sc-kbd kbd-key" data-code="122" style="flex:0.6; font-size:0.58rem;">F11</button>
+          <button class="btn-sc-kbd kbd-key" data-code="123" style="flex:0.6; font-size:0.58rem;">F12</button>
+        </div>
+        <!-- Row 2: Numbers -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key" data-char="`">`</button>
+          <button class="btn-sc-kbd kbd-key" data-char="1">1</button>
+          <button class="btn-sc-kbd kbd-key" data-char="2">2</button>
+          <button class="btn-sc-kbd kbd-key" data-char="3">3</button>
+          <button class="btn-sc-kbd kbd-key" data-char="4">4</button>
+          <button class="btn-sc-kbd kbd-key" data-char="5">5</button>
+          <button class="btn-sc-kbd kbd-key" data-char="6">6</button>
+          <button class="btn-sc-kbd kbd-key" data-char="7">7</button>
+          <button class="btn-sc-kbd kbd-key" data-char="8">8</button>
+          <button class="btn-sc-kbd kbd-key" data-char="9">9</button>
+          <button class="btn-sc-kbd kbd-key" data-char="0">0</button>
+          <button class="btn-sc-kbd kbd-key" data-char="-">-</button>
+          <button class="btn-sc-kbd kbd-key" data-char="=">=</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="8" style="flex:1.4;">⌫</button>
+        </div>
+        <!-- Row 3: QWERTY -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key mod" data-code="9" style="flex:1.3;">Tab</button>
+          <button class="btn-sc-kbd kbd-key" data-char="q">Q</button>
+          <button class="btn-sc-kbd kbd-key" data-char="w">W</button>
+          <button class="btn-sc-kbd kbd-key" data-char="e">E</button>
+          <button class="btn-sc-kbd kbd-key" data-char="r">R</button>
+          <button class="btn-sc-kbd kbd-key" data-char="t">T</button>
+          <button class="btn-sc-kbd kbd-key" data-char="y">Y</button>
+          <button class="btn-sc-kbd kbd-key" data-char="u">U</button>
+          <button class="btn-sc-kbd kbd-key" data-char="i">I</button>
+          <button class="btn-sc-kbd kbd-key" data-char="o">O</button>
+          <button class="btn-sc-kbd kbd-key" data-char="p">P</button>
+          <button class="btn-sc-kbd kbd-key" data-char="[">[</button>
+          <button class="btn-sc-kbd kbd-key" data-char="]">]</button>
+          <button class="btn-sc-kbd kbd-key" data-char="\">\</button>
+        </div>
+        <!-- Row 4: ASDF -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key mod" data-code="20" style="flex:1.6;">Caps</button>
+          <button class="btn-sc-kbd kbd-key" data-char="a">A</button>
+          <button class="btn-sc-kbd kbd-key" data-char="s">S</button>
+          <button class="btn-sc-kbd kbd-key" data-char="d">D</button>
+          <button class="btn-sc-kbd kbd-key" data-char="f">F</button>
+          <button class="btn-sc-kbd kbd-key" data-char="g">G</button>
+          <button class="btn-sc-kbd kbd-key" data-char="h">H</button>
+          <button class="btn-sc-kbd kbd-key" data-char="j">J</button>
+          <button class="btn-sc-kbd kbd-key" data-char="k">K</button>
+          <button class="btn-sc-kbd kbd-key" data-char="l">L</button>
+          <button class="btn-sc-kbd kbd-key" data-char=";">;</button>
+          <button class="btn-sc-kbd kbd-key" data-char="'">'</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="13" style="flex:1.6;">Enter</button>
+        </div>
+        <!-- Row 5: ZXCV -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
+          <button class="btn-sc-kbd kbd-key" data-char="z">Z</button>
+          <button class="btn-sc-kbd kbd-key" data-char="x">X</button>
+          <button class="btn-sc-kbd kbd-key" data-char="c">C</button>
+          <button class="btn-sc-kbd kbd-key" data-char="v">V</button>
+          <button class="btn-sc-kbd kbd-key" data-char="b">B</button>
+          <button class="btn-sc-kbd kbd-key" data-char="n">N</button>
+          <button class="btn-sc-kbd kbd-key" data-char="m">M</button>
+          <button class="btn-sc-kbd kbd-key" data-char=",">,</button>
+          <button class="btn-sc-kbd kbd-key" data-char=".">.</button>
+          <button class="btn-sc-kbd kbd-key" data-char="/">/</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
+        </div>
+        <!-- Row 6: Bottom -->
+        <div class="kbd-row">
+          <button class="btn-sc-kbd kbd-key mod" data-code="17" style="flex:1.2;">Ctrl</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="91" style="flex:1;">Win</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+          <button class="btn-sc-kbd kbd-key wide" data-code="32" style="flex:5;">Space</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="46" style="flex:1;">Del</button>
+          <button class="btn-sc-kbd kbd-key" data-code="37" style="flex:0.8;">◀</button>
+          <button class="btn-sc-kbd kbd-key" data-code="38" style="flex:0.8;">▲</button>
+          <button class="btn-sc-kbd kbd-key" data-code="40" style="flex:0.8;">▼</button>
+          <button class="btn-sc-kbd kbd-key" data-code="39" style="flex:0.8;">▶</button>
+        </div>
+        <!-- Extra Row -->
+        <div class="kbd-row" style="margin-top: 2px;">
+          <button class="btn-sc-kbd kbd-key mod" data-code="36">Home</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="35">End</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="33">PgUp</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="34">PgDn</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="44">PrtSc</button>
+          <button class="btn-sc-kbd kbd-key mod" data-code="45">Ins</button>
+        </div>
       </div>
     </div>
 
@@ -2032,8 +2246,7 @@
         overflow: hidden;
       }
       #liveScreenFrame {
-        transform: scale(1.025);
-        transform-origin: center;
+        /* No scaling - natural fit within container */
       }
       .sc-quick-key {
         padding: 6px 12px;
