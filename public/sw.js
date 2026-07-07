@@ -49,10 +49,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // 1. Bypass Service Worker entirely for APIs, WebDAV, and WebSockets
+  // 1. Bypass Service Worker entirely for APIs, WebDAV, WebSockets, Files, and Received folder routes
   if (url.pathname.startsWith('/api/') || 
       url.pathname.startsWith('/webdav') || 
       url.pathname.startsWith('/trackpad') ||
+      url.pathname.startsWith('/files/') ||
+      url.pathname.startsWith('/received/') ||
       event.request.url.startsWith('ws') || 
       event.request.headers.get('Upgrade') === 'websocket') {
     return;

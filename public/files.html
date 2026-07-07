@@ -372,17 +372,8 @@
   }
 
   let currentTransfer = {
-    type: null, // 'upload' or 'download'
-    status: 'idle', // 'transferring', 'paused', 'stopped', 'cancelled'
-    file: null,
+    status: 'idle', // 'idle' or 'transferring'
     xhr: null,
-    currentChunk: 0,
-    totalChunks: 0,
-    chunkSize: 1024 * 1024 * 2, // 2MB
-    totalBytes: 0,
-    downloadedChunks: [],
-    relPath: '',
-    uploadId: '',
     resolvePromise: null
   };
 
@@ -391,9 +382,8 @@
     document.getElementById('progressLabel').textContent = label;
     document.getElementById('progressPct').textContent = '0%';
     document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('btnProgressPause').textContent = '⏸ Pause';
-    document.getElementById('btnProgressPause').style.display = 'inline-block';
-    document.getElementById('btnProgressStop').style.display = 'inline-block';
+    document.getElementById('btnProgressPause').style.display = 'none';
+    document.getElementById('btnProgressStop').style.display = 'none';
     document.getElementById('btnProgressCancel').style.display = 'inline-block';
   }
 
@@ -405,9 +395,12 @@
     }
   }
 
-  function updateProgressUI(pct) {
+  function updateProgressUI(pct, label) {
     document.getElementById('progressPct').textContent = pct + '%';
     document.getElementById('progressFill').style.width = pct + '%';
+    if (label) {
+      document.getElementById('progressLabel').textContent = label;
+    }
   }
 
   function handleTap(entry) {
@@ -423,110 +416,18 @@
   }
 
   function downloadFile(entry) {
-    if (currentTransfer.status === 'transferring') {
-      toast('Another transfer is already in progress!', true);
-      return;
-    }
     const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
-    const size = parseInt(entry.size, 10) || 0;
+    const a = document.createElement('a');
+    a.href = `/files/download?path=${encodeURIComponent(rel)}`;
+    a.download = entry.name;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast(`📥 Downloading: ${entry.name}`);
     
-    if (!size) {
-      const a = document.createElement('a');
-      a.href = `/files/download?path=${encodeURIComponent(rel)}`;
-      a.download = entry.name;
-      a.target = '_blank'; // Opens in new window to prevent iframe navigation flash
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      
-      // Instantly show location notice since download runs natively
-      document.getElementById('downloadInfoOverlay').style.display = 'flex';
-      return;
-    }
-
-    const chunkSize = 1024 * 1024 * 2; // 2MB
-    const totalChunks = Math.ceil(size / chunkSize);
-
-    currentTransfer = {
-      type: 'download',
-      status: 'transferring',
-      file: entry,
-      currentChunk: 0,
-      totalChunks: totalChunks,
-      chunkSize: chunkSize,
-      totalBytes: size,
-      downloadedChunks: [],
-      relPath: rel
-    };
-
-    showProgressArea(`Downloading: ${entry.name}`);
-    downloadNextChunk();
-  }
-
-  function downloadNextChunk() {
-    if (currentTransfer.status !== 'transferring') return;
-
-    const start = currentTransfer.currentChunk * currentTransfer.chunkSize;
-    const end = Math.min(currentTransfer.totalBytes - 1, start + currentTransfer.chunkSize - 1);
-    
-    const xhr = new XMLHttpRequest();
-    currentTransfer.xhr = xhr;
-    
-    xhr.open('GET', `/files/download?path=${encodeURIComponent(currentTransfer.relPath)}`);
-    xhr.setRequestHeader('Range', `bytes=${start}-${end}`);
-    xhr.responseType = 'arraybuffer';
-
-    xhr.onprogress = (e) => {
-      if (e.lengthComputable && currentTransfer.status === 'transferring') {
-        const loadedBytes = start + e.loaded;
-        const pct = Math.min(99, Math.round((loadedBytes / currentTransfer.totalBytes) * 100));
-        updateProgressUI(pct);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status === 200 || xhr.status === 206) {
-        currentTransfer.downloadedChunks.push(xhr.response);
-        currentTransfer.currentChunk++;
-
-        const pct = Math.min(99, Math.round(((currentTransfer.currentChunk * currentTransfer.chunkSize) / currentTransfer.totalBytes) * 100));
-        updateProgressUI(pct);
-
-        if (currentTransfer.currentChunk >= currentTransfer.totalChunks) {
-          updateProgressUI(100);
-          setTimeout(() => {
-            const blob = new Blob(currentTransfer.downloadedChunks, { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentTransfer.file.name;
-            a.target = '_blank'; // Opens in new tab context window to prevent parent page reload
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            toast(`✅ Download completed!`);
-            hideProgressArea();
-
-            // Display location notice to guide the user
-            document.getElementById('downloadInfoOverlay').style.display = 'flex';
-          }, 300);
-        } else {
-          if (currentTransfer.status === 'transferring') {
-            downloadNextChunk();
-          }
-        }
-      } else {
-        toast('Download failed: ' + xhr.statusText, true);
-        hideProgressArea();
-      }
-    };
-
-    xhr.onerror = () => {
-      toast('Download network error', true);
-      hideProgressArea();
-    };
-
-    xhr.send();
+    const overlay = document.getElementById('downloadInfoOverlay');
+    if (overlay) overlay.style.display = 'flex';
   }
 
   function streamVideo(entry) {
@@ -656,154 +557,76 @@
       return;
     }
     for (let i = 0; i < files.length; i++) {
-      await startUpload(files[i]);
+      await startUpload(files[i], i + 1, files.length);
     }
     fileInput.value = '';
   }
 
-  function startUpload(file) {
+  function startUpload(file, currentNum, totalNum) {
     return new Promise((resolve) => {
-      const chunkSize = 1024 * 1024 * 2; // 2MB
-      const totalChunks = Math.ceil(file.size / chunkSize);
-      
       currentTransfer = {
-        type: 'upload',
         status: 'transferring',
-        file: file,
-        currentChunk: 0,
-        totalChunks: totalChunks,
-        chunkSize: chunkSize,
-        totalBytes: file.size,
-        uploadId: Date.now() + Math.random().toString(36).substr(2, 5),
+        xhr: null,
         resolvePromise: resolve
       };
 
-      showProgressArea(`Uploading: ${file.name}`);
-      uploadNextChunk();
+      const xhr = new XMLHttpRequest();
+      currentTransfer.xhr = xhr;
+
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const url = `/files/upload?path=${encodeURIComponent(currentPath)}`;
+      xhr.open('POST', url);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && currentTransfer.status === 'transferring') {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          updateProgressUI(pct, `Uploading (${currentNum}/${totalNum}): ${file.name}`);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          toast(`✅ Uploaded: ${file.name}`);
+        } else {
+          let errDetail = '';
+          try {
+            const res = JSON.parse(xhr.responseText);
+            errDetail = res.error || '';
+          } catch (_) {}
+          toast(`❌ Upload failed: ${file.name} ${errDetail ? '('+errDetail+')' : '(Status '+xhr.status+')'}`, true);
+        }
+        finishUpload();
+      };
+
+      xhr.onerror = () => {
+        toast(`❌ Upload failed: Network error`, true);
+        finishUpload();
+      };
+
+      xhr.onabort = () => {
+        toast(`⚠️ Upload cancelled`, true);
+        finishUpload();
+      };
+
+      showProgressArea(`Uploading (${currentNum}/${totalNum}): ${file.name}`);
+      xhr.send(formData);
     });
   }
 
-  function uploadNextChunk() {
-    if (currentTransfer.status !== 'transferring') return;
-    
-    const file = currentTransfer.file;
-    const start = currentTransfer.currentChunk * currentTransfer.chunkSize;
-    const end = Math.min(file.size, start + currentTransfer.chunkSize);
-    const chunk = file.slice(start, end);
-
-    const xhr = new XMLHttpRequest();
-    currentTransfer.xhr = xhr;
-    
-    const url = `/files/upload-chunk?path=${encodeURIComponent(currentPath)}&name=${encodeURIComponent(file.name)}&index=${currentTransfer.currentChunk}&total=${currentTransfer.totalChunks}`;
-    xhr.open('POST', url);
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-    
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && currentTransfer.status === 'transferring') {
-        const loadedBytes = start + e.loaded;
-        const pct = Math.min(99, Math.round((loadedBytes / currentTransfer.totalBytes) * 100));
-        updateProgressUI(pct);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        let res;
-        try {
-          res = JSON.parse(xhr.responseText);
-        } catch (e) {
-          toast('Upload failed (parse error): ' + xhr.responseText.substring(0, 40), true);
-          hideProgressArea();
-          currentTransfer.resolvePromise();
-          return;
-        }
-        currentTransfer.currentChunk++;
-        
-        const pct = Math.min(99, Math.round(((currentTransfer.currentChunk * currentTransfer.chunkSize) / currentTransfer.totalBytes) * 100));
-        updateProgressUI(pct);
-
-        if (res.completed) {
-          updateProgressUI(100);
-          setTimeout(() => {
-            toast(`✅ File uploaded successfully!`);
-            hideProgressArea();
-            loadDir();
-            currentTransfer.resolvePromise();
-          }, 300);
-        } else {
-          if (currentTransfer.status === 'transferring') {
-            uploadNextChunk();
-          }
-        }
-      } else {
-        toast('Upload failed: ' + xhr.statusText, true);
-        hideProgressArea();
-        currentTransfer.resolvePromise();
-      }
-    };
-
-    xhr.onerror = () => {
-      toast('Upload network error', true);
-      hideProgressArea();
+  function finishUpload() {
+    hideProgressArea();
+    loadDir();
+    currentTransfer.status = 'idle';
+    if (currentTransfer.resolvePromise) {
       currentTransfer.resolvePromise();
-    };
-
-    xhr.send(chunk);
+    }
   }
 
-  // Set up Progress Controls Event Listeners
-  document.getElementById('btnProgressPause').addEventListener('click', () => {
-    if (currentTransfer.status === 'transferring') {
-      currentTransfer.status = 'paused';
-      if (currentTransfer.xhr) {
-        try { currentTransfer.xhr.abort(); } catch(e) {}
-      }
-      document.getElementById('btnProgressPause').textContent = '▶ Resume';
-      document.getElementById('progressLabel').textContent = `${currentTransfer.type === 'upload' ? 'Uploading' : 'Downloading'} (Paused)...`;
-    } else if (currentTransfer.status === 'paused') {
-      currentTransfer.status = 'transferring';
-      document.getElementById('btnProgressPause').textContent = '⏸ Pause';
-      document.getElementById('progressLabel').textContent = `${currentTransfer.type === 'upload' ? 'Uploading' : 'Downloading'}: ${currentTransfer.file.name}`;
-      if (currentTransfer.type === 'upload') {
-        uploadNextChunk();
-      } else {
-        downloadNextChunk();
-      }
-    }
-  });
-
-  document.getElementById('btnProgressStop').addEventListener('click', () => {
-    if (currentTransfer.status !== 'idle') {
-      const wasType = currentTransfer.type;
-      currentTransfer.status = 'stopped';
-      if (currentTransfer.xhr) {
-        try { currentTransfer.xhr.abort(); } catch(e) {}
-      }
-      toast(`${wasType === 'upload' ? 'Upload' : 'Download'} stopped.`);
-      hideProgressArea();
-      if (currentTransfer.resolvePromise) currentTransfer.resolvePromise();
-    }
-  });
-
   document.getElementById('btnProgressCancel').addEventListener('click', () => {
-    if (currentTransfer.status !== 'idle') {
-      const wasType = currentTransfer.type;
-      currentTransfer.status = 'cancelled';
-      if (currentTransfer.xhr) {
-        try { currentTransfer.xhr.abort(); } catch(e) {}
-      }
-      
-      if (wasType === 'upload') {
-        fetch('/files/upload-cancel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: currentPath, name: currentTransfer.file.name })
-        });
-      }
-      
-      toast(`${wasType === 'upload' ? 'Upload' : 'Download'} cancelled.`);
-      hideProgressArea();
-      if (currentTransfer.resolvePromise) currentTransfer.resolvePromise();
+    if (currentTransfer.status === 'transferring' && currentTransfer.xhr) {
+      currentTransfer.xhr.abort();
     }
   });
 
