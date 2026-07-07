@@ -351,37 +351,78 @@ app.get('/files/download', (req, res) => {
 // Upload chunk for pause/resume/cancel support
 app.post('/files/upload-chunk', (req, res) => {
   const relPath = req.query.path || '';
-  const fileName = req.query.name;
+  const fileName = path.basename(req.query.name || '');
   const chunkIndex = parseInt(req.query.index, 10);
   const totalChunks = parseInt(req.query.total, 10);
+  
+  if (!fileName) return res.status(400).json({ error: 'Missing file name' });
   
   const targetDir = safePath(relPath);
   if (!targetDir) return res.status(403).json({ error: 'Access denied' });
   
   const finalPath = path.join(targetDir, fileName);
-  const tempPath = finalPath + '.part';
+  const chunkPath = finalPath + '.part.' + chunkIndex;
   
   try {
     fs.mkdirSync(targetDir, { recursive: true });
     
-    // Pipe the request body stream directly to a file write stream (avoiding memory consumption and parser conflicts)
-    const writeStream = chunkIndex === 0
-      ? fs.createWriteStream(tempPath)
-      : fs.createWriteStream(tempPath, { flags: 'a' });
-    
+    // Write chunk to its own dedicated temp file to prevent locking issues on Windows
+    const writeStream = fs.createWriteStream(chunkPath);
     req.pipe(writeStream);
     
-    writeStream.on('close', () => {
+    writeStream.on('finish', async () => {
       if (res.headersSent) return;
       try {
         if (chunkIndex === totalChunks - 1) {
-          if (fs.existsSync(finalPath)) {
-            fs.unlinkSync(finalPath);
+          // Last chunk received, let's merge all chunks into the final file
+          try {
+            if (fs.existsSync(finalPath)) {
+              fs.unlinkSync(finalPath);
+            }
+            
+            const mergeWriteStream = fs.createWriteStream(finalPath);
+            
+            for (let i = 0; i < totalChunks; i++) {
+              const cp = finalPath + '.part.' + i;
+              if (!fs.existsSync(cp)) {
+                throw new Error(`Missing chunk file: ${cp}`);
+              }
+              await new Promise((resolve, reject) => {
+                const readStream = fs.createReadStream(cp);
+                readStream.pipe(mergeWriteStream, { end: false });
+                readStream.on('end', () => {
+                  try { fs.unlinkSync(cp); } catch (_) {}
+                  resolve();
+                });
+                readStream.on('error', reject);
+              });
+            }
+            
+            mergeWriteStream.end();
+            await new Promise((resolve, reject) => {
+              mergeWriteStream.on('finish', resolve);
+              mergeWriteStream.on('error', reject);
+            });
+            
+            return res.json({ success: true, completed: true, filename: fileName });
+          } catch (mergeErr) {
+            console.error('[UPLOAD] Merge error:', mergeErr.message);
+            // Clean up all chunk parts
+            try {
+              const files = fs.readdirSync(targetDir);
+              for (const file of files) {
+                if (file.startsWith(fileName + '.part')) {
+                  try { fs.unlinkSync(path.join(targetDir, file)); } catch (_) {}
+                }
+              }
+            } catch (_) {}
+            if (!res.headersSent) {
+              return res.status(500).json({ error: 'Merge failed: ' + mergeErr.message });
+            }
           }
-          fs.renameSync(tempPath, finalPath);
-          return res.json({ success: true, completed: true, filename: fileName });
+        } else {
+          return res.json({ success: true, completed: false });
         }
-        res.json({ success: true, completed: false });
       } catch (err) {
         console.error('[UPLOAD] Error finalizing chunk upload:', err.message);
         if (!res.headersSent) {
@@ -404,15 +445,19 @@ app.post('/files/upload-chunk', (req, res) => {
 // Cancel chunk upload and clean up temporary file
 app.post('/files/upload-cancel', express.json(), (req, res) => {
   const relPath = req.body.path || '';
-  const fileName = req.body.name;
+  const fileName = path.basename(req.body.name || '');
+  if (!fileName) return res.status(400).json({ error: 'Missing file name' });
+  
   const targetDir = safePath(relPath);
   if (targetDir) {
-    const tempPath = path.join(targetDir, fileName + '.part');
-    if (fs.existsSync(tempPath)) {
-      try {
-        fs.unlinkSync(tempPath);
-      } catch (e) {}
-    }
+    try {
+      const files = fs.readdirSync(targetDir);
+      for (const file of files) {
+        if (file.startsWith(fileName + '.part')) {
+          try { fs.unlinkSync(path.join(targetDir, file)); } catch (_) {}
+        }
+      }
+    } catch (_) {}
   }
   res.json({ success: true });
 });

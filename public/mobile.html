@@ -771,14 +771,23 @@
       if (textItems.length === 0) {
         textList.innerHTML = '<div class="empty-receive">No texts received yet</div>';
       } else {
-        textList.innerHTML = textItems.map(item => `
-          <div class="receive-item" onclick="handleReceiveText('${escapeAttr(item.content)}', '${escapeAttr(item.id)}')">
-            <span class="receive-badge text">Copy</span>
-            <span class="receive-content">${escapeHtml(item.content)}</span>
-            <span class="receive-time">${timeAgo(item.timestamp)}</span>
-            <button class="delete-btn" onclick="event.stopPropagation(); deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center; margin-left:8px; z-index:10;">🗑️</button>
-          </div>
-        `).join('');
+        textList.innerHTML = textItems.map(item => {
+          // Dynamic data url to download text content as a file
+          const downloadUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(item.content)}`;
+          const downloadName = `text_${item.id}.txt`;
+          return `
+            <div class="receive-item" style="cursor: default;">
+              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">📋</span>
+              <span class="receive-content">${escapeHtml(item.content)}</span>
+              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
+                <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
+                <a href="${downloadUrl}" download="${escapeAttr(downloadName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
+              </div>
+            </div>
+          `;
+        }).join('');
       }
 
       if (fileItems.length === 0) {
@@ -796,7 +805,8 @@
             <div class="receive-item" style="cursor: default;">
               <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${icon}</span>
               <span class="receive-content">${escapeHtml(displayName)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto;">
+              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <a href="${downloadUrl}" download="${escapeAttr(displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
               </div>
@@ -822,7 +832,7 @@
       }
     }
 
-    async function handleReceiveText(text, itemId) {
+    async function handleReceiveText(text) {
       try {
         await navigator.clipboard.writeText(text);
         showToast('Copied to clipboard');
@@ -836,14 +846,6 @@
         document.body.removeChild(ta);
         showToast('Copied to clipboard');
       }
-      // Acknowledge item on server so it's removed from pending
-      if (itemId) {
-        try {
-          await fetch(`/api/pending/${itemId}/ack`, { method: 'POST' });
-        } catch { /* silent */ }
-      }
-      // Refresh inbox after ack
-      fetchPending();
     }
 
     // ─── PWA Install Banner ───────────────────────────────────
