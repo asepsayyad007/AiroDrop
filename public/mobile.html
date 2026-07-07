@@ -1521,6 +1521,7 @@
       const viewHint = document.getElementById('scViewHint');
       const btnFit = document.getElementById('btnScreencastFit');
       const btnControlStyle = document.getElementById('btnScreencastControlStyle');
+      const btnAudio = document.getElementById('btnScreencastAudio');
 
       if (!overlay || !btnOpen) return;
 
@@ -1559,6 +1560,12 @@
         }
         if (frame) {
           frame.srcObject = null;
+          frame.muted = true;
+        }
+        if (btnAudio) {
+          btnAudio.innerHTML = '🔇 Audio: Off';
+          btnAudio.style.background = 'rgba(255,255,255,0.08)';
+          btnAudio.style.borderColor = 'rgba(255,255,255,0.15)';
         }
         if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
           sendWS({ type: 'screencast_stop' });
@@ -1588,6 +1595,23 @@
             const offset = (100 - fitMode) / 2;
             frame.style.top = `${offset}%`;
             frame.style.left = `${offset}%`;
+          }
+        });
+      }
+
+      // ── Audio Toggle ──
+      if (btnAudio) {
+        btnAudio.addEventListener('click', () => {
+          if (frame) {
+            frame.muted = !frame.muted;
+            btnAudio.innerHTML = frame.muted ? '🔇 Audio: Off' : '🔊 Audio: On';
+            btnAudio.style.background = !frame.muted ? 'rgba(0,210,106,0.35)' : 'rgba(255,255,255,0.08)';
+            btnAudio.style.borderColor = !frame.muted ? 'rgba(0,210,106,0.6)' : 'rgba(255,255,255,0.15)';
+            if (!frame.muted) {
+              showToast('🔊 Screencast audio enabled');
+            } else {
+              showToast('🔇 Screencast audio muted');
+            }
           }
         });
       }
@@ -2108,6 +2132,8 @@
         <button id="btnScreencastMode" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">👁️ View Only</button>
         <!-- Keyboard toggle (only shown in interactive mode) -->
         <button id="btnScreencastKeyboard" style="display:none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer;">⌨️ Keyboard</button>
+        <!-- Audio toggle -->
+        <button id="btnScreencastAudio" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🔇 Audio: Off</button>
         <!-- Close -->
         <button id="btnCloseScreencast" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
       </div>

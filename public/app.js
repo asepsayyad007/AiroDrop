@@ -1975,21 +1975,45 @@
         }
 
         // 2. Capture desktop media stream
-        localStream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: sourceId,
-              minWidth: 1280,
-              maxWidth: 1920,
-              minHeight: 720,
-              maxHeight: 1080,
-              minFrameRate: 30,
-              maxFrameRate: 60
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId
+              }
+            },
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId,
+                minWidth: 1280,
+                maxWidth: 1920,
+                minHeight: 720,
+                maxHeight: 1080,
+                minFrameRate: 30,
+                maxFrameRate: 60
+              }
             }
-          }
-        });
+          });
+        } catch (audioErr) {
+          console.warn('[WebRTC] Failed to capture audio, falling back to video-only capture:', audioErr);
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: sourceId,
+                minWidth: 1280,
+                maxWidth: 1920,
+                minHeight: 720,
+                maxHeight: 1080,
+                minFrameRate: 30,
+                maxFrameRate: 60
+              }
+            }
+          });
+        }
 
         // 3. Create peer connection
         pc = new RTCPeerConnection({
