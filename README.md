@@ -1,8 +1,8 @@
-# AiroDrop v4.9.4 🚀
+# AiroDrop v4.9.5 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.4-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.5-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,31 +17,25 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.4
+## 🚀 What's New in v4.9.5
 
-This release brings version 4.9.4, focused on mobile PWA usability and view preferences:
+This release brings version 4.9.5, focusing on desktop preference persistence, update consent, and new dashboard feedback:
 
 ### ✅ New Features & Updates
-1. **☰ Default List View in File Manager** — Configured the File Manager directory browser to default to List view (instead of Grid view) for cleaner folder structure scanning on mobile devices.
-2. **📲 iOS PWA Caching & Navigation Bugfixes** — Resolved the critical iOS Safari standalone PWA navigation loop. Inbox download links and screenshots now use `target="_blank"` to open cleanly in native Safari tabs, ensuring the PWA app wrapper is never replaced by native previews and resolving the missing back button issue.
-3. **🚀 Simplified File Manager Architecture** — Completely replaced chunked JS-based downloads with browser-native file downloads. This prevents mobile PWA memory heap crashes on large files (e.g. movies, zip archives) which previously exceeded the RAM limits of iOS Safari/Android Chrome tabs.
-4. **📤 Reliable Multipart Uploads** — Upgraded the PWA file uploader to use the standard multipart upload route `/files/upload` (backed by Multer stream writing) with real-time UI progress updates. This eliminates custom chunk merge states, OS lockouts, and connection hangs.
-5. **⚡ Service Worker Caching Bypass** — Updated the PWA Service Worker (`sw.js`) to completely bypass caching for the `/files/` and `/received/` routes. This fixes the critical issue where PWAs stalled during transfers by attempting to clone and buffer giant download streams into local offline storage.
-6. **📲 PC → iPhone Inbox Action Buttons** — Added explicit, dedicated "Download" and "Delete" buttons for both texts and files received from the PC. Text items can now also be downloaded directly as `.txt` files in one tap. Auto-acknowledge on copy has been removed to allow manual list management.
-7. **🏷️ Truncated Long Filenames UI** — Repolished the transfer progress bar headers using flex layouts. Long filenames now truncate cleanly using ellipsis, keeping the progress percentage properly aligned.
-8. **🛠️ Automated GitHub Actions Release Pipeline** — Integrated a complete CI/CD release workflow. Pushing version tags automatically compiles Windows setup installers and portable binaries on GitHub's cloud infrastructure and uploads them directly to a fresh GitHub Release.
-9. **🎯 Virtual Cursor Mode (AnyDesk-style)** — Added a switchable Virtual Cursor mode in Screencast. Moving your finger relative-drags the cursor; tapping clicks at the cursor's current location to eliminate position jumps.
-10. **🎹 Screencast Remote Keyboard** — Integrated the full Trackpad remote keyboard panel into Screencast mode, accessible from a clean toggle dropdown button.
-11. **🔍 Fit Screen Options (90% - 80% - 70%)** — Introduced size scaling options to prevent top status bars or camera notches on mobile screens from cutting off the desktop display.
-12. **🔄 Smart Trackpad Orientation Auto-Hide** — Trackpad automatically hides in Landscape orientation to maximize visual space, and displays only in Portrait mode.
+1. **⚙️ Auto-Start & Auto-Check Settings Persistence** — Connected "Launch on Startup" and "Check for Updates" checkboxes in Settings to the server's backend configuration. State is now saved in `config.json` and survives application restarts.
+2. **🛡️ Consent-based Auto-updater** — Disabled silent background update downloads. When a new version is found, AiroDrop will now ask for your explicit consent before downloading and installing the update.
+3. **🏷️ Temporary Mode Status Badge** — Replaced the Export button on the dashboard with a clean, dynamic Temporary Mode (Auto-delete) indicator badge. Displays a Green Dot for **On** and a Red Dot for **Off** based on your settings.
+4. **📋 Download URL Address Link Copier** — Introduced a direct copy utility inside the download confirmation dialog. You can copy the full local URL with a single click to download files on other local devices or web browsers.
+5. **⚡ WebRTC STUN Binding Timeout Fix** — Removed public Google STUN servers from RTCPeerConnection to prevent connection timeouts and warning logs on isolated host-only adapters (VMware/VirtualBox), optimizing local network connections.
+6. **🔄 Auto-Refresh & Caching Fixes** — Prevented directory list caching on mobile web browsers by setting `Cache-Control` headers on `/files/browse` and appending a timestamp cache-buster parameter. Files deleted via the PWA now refresh immediately.
 
 ---
 
-## 📥 Downloads (v4.9.4)
+## 📥 Downloads (v4.9.5)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.4/AiroDrop.Setup.4.9.4.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.4/AiroDrop-Portable-4.9.4.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.5/AiroDrop.Setup.4.9.5.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.5/AiroDrop-Portable-4.9.5.exe)** — Standalone execution without installation.
 
 ---
 
