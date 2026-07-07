@@ -1,8 +1,8 @@
-# AiroDrop v4.9.6 🚀
+# AiroDrop v4.9.7 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.6-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.7-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,23 +17,22 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.6
+## 🚀 What's New in v4.9.7
 
-This release brings version 4.9.6, focusing on UI simplification, system audio loopback capture, and layout optimizations:
+This release brings version 4.9.7, focusing on high-res layout styling, relocated background audio controls, and audio stability enhancements:
 
 ### ✅ New Features & Updates
-1. **📦 Header Quick Controls Toolbar** — Replaced the bulky PC System Control cards with a clean, compact quick system control icons bar (🛑, 💤, 🔒, ⏯️, 🔉, 🔊, ⏮️, ⏭️) embedded directly under the header connection status dot.
-2. **🔊 Live Audio Streaming Support** — WebRTC Live Screen now captures and streams PC system audio loopback in real-time. Controlled by a mute/unmute toggle.
-3. **🔇 Quick System Audio Loopback Toggle** — Added a background system audio streaming toggle button to the quick controls toolbar. Plays PC audio in the background on your phone without opening full screen frames.
-4. **📐 Vertical Options Toolbar** — Realigned the screencast overlay controls toolbar to a vertical floating sidebar layout. Prevents horizontal clipping or overflowing on narrow screen devices (iPhone / mobile screens).
+1. **🎨 Premium Vector SVG Controls** — Replaced all simple emoji control buttons in the header quick-toolbar with modern, high-resolution vector inline SVGs, styled with premium color palettes and glassmorphism.
+2. **🔊 Relocated Audio-only streaming button** — Moved the background system audio streaming toggle button into the **Live Screencast** dashboard card. Upgraded it to a full-width pill button featuring a dynamic label (`Stream PC Audio Only: Off` / `On`) and high-res icon sync.
+3. **🛡️ Screen Wake Lock Integration** — Incorporated the Screen Wake Lock API to prevent devices from automatically dimming, locking, or entering sleep state during screencasting or audio streaming. This resolves mobile background audio freezing/stuttering issues on screen lock.
 
 ---
 
-## 📥 Downloads (v4.9.6)
+## 📥 Downloads (v4.9.7)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.6/AiroDrop.Setup.4.9.6.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.6/AiroDrop-Portable-4.9.6.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.7/AiroDrop.Setup.4.9.7.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.7/AiroDrop-Portable-4.9.7.exe)** — Standalone execution without installation.
 
 ---
 

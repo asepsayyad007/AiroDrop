@@ -415,20 +415,29 @@
       
       <!-- PC System Controls Quick Icons Toolbar -->
       <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-        <button class="btn-control-cmd" data-cmd="poweroff" title="Power Off PC" style="background: rgba(255,59,48,0.15); border: 1px solid rgba(255,59,48,0.3); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🛑</button>
-        <button class="btn-control-cmd" data-cmd="sleep" title="Sleep PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">💤</button>
-        <button class="btn-control-cmd" data-cmd="lock" title="Lock PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔒</button>
-        <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause Media" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏯️</button>
-        <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔉</button>
-        <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔊</button>
-        <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏮️</button>
-        <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏭️</button>
-        
-        <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.12); margin: 0 4px;"></div>
-        
-        <!-- Toggle button for Audio Streaming Only of Windows PC -->
-        <button id="btnQuickAudioStream" title="Toggle PC System Audio Streaming Only" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; width: 34px; height: 32px;">
-          <span id="quickAudioStreamIcon">🔇</span>
+        <button class="btn-control-cmd" data-cmd="poweroff" title="Power Off PC" style="background: rgba(255,59,48,0.12); border: 1px solid rgba(255,59,48,0.3); color: #ff453a; cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="sleep" title="Sleep PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="lock" title="Lock PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause Media" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
         </button>
       </div>
       <button id="btnUniversalRefresh" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; border: 1px solid var(--card-border); cursor: pointer; color: var(--text); outline: none;" title="Refresh Page Data">
@@ -538,7 +547,16 @@
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3>🖥️ Live Screencast</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at up to 30fps. Interactive mode lets you control your PC directly. Requires PC Services connected.</p>
-      <button class="btn" id="btnOpenScreencast" style="margin-top: 10px; background: linear-gradient(135deg, #7c3aed, #4f46e5);">📺 Open Live Screen</button>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem;">📺 Open Live Screen</button>
+        <!-- Toggle button for system audio streaming only -->
+        <button id="btnQuickAudioStream" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text); font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; height: 42px; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+          <span id="quickAudioStreamIcon" style="display: flex; align-items: center; justify-content: center; color: var(--text2);">
+            <svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          </span>
+          <span id="quickAudioStreamLabel">Stream PC Audio Only: Off</span>
+        </button>
+      </div>
     </div>
 
     <div style="height: 30px;"></div>
@@ -1177,6 +1195,33 @@
     let isTrackpadOpen = false;
     let audioOnlyStreamMode = false;
     let syncAudioStates = function() {};
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('[WakeLock] Screen Wake Lock active');
+        }
+      } catch (err) {
+        console.warn('[WakeLock] Failed to request screen wake lock:', err);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().then(() => {
+          wakeLock = null;
+          console.log('[WakeLock] Screen Wake Lock released');
+        });
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+      }
+    });
     let wsWantsConnected = false;
     let wsConnecting = false;
 
@@ -1549,12 +1594,32 @@
           btnAudio.style.background = !isMuted ? 'rgba(0,210,106,0.35)' : 'rgba(0,0,0,0.6)';
           btnAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.6)' : 'rgba(255,255,255,0.15)';
         }
-        if (btnQuickAudio && quickAudioIcon) {
-          quickAudioIcon.textContent = isMuted ? '🔇' : '🔊';
-          btnQuickAudio.style.background = !isMuted ? 'rgba(0,210,106,0.2)' : 'rgba(255,255,255,0.05)';
-          btnQuickAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.5)' : 'rgba(255,255,255,0.1)';
+        
+        const quickAudioLabel = document.getElementById('quickAudioStreamLabel');
+        if (btnQuickAudio && quickAudioIcon && quickAudioLabel) {
+          quickAudioLabel.textContent = isMuted ? 'Stream PC Audio Only: Off' : 'Stream PC Audio Only: On';
+          btnQuickAudio.style.background = !isMuted ? 'rgba(0,210,106,0.15)' : 'rgba(255,255,255,0.05)';
+          btnQuickAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.4)' : 'var(--card-border)';
+          btnQuickAudio.style.color = !isMuted ? '#00d26a' : 'var(--text)';
+          
+          if (isMuted) {
+            quickAudioIcon.innerHTML = `<svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+          } else {
+            quickAudioIcon.innerHTML = `<svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+          }
         }
+        updateWakeLockStatus();
       };
+
+      async function updateWakeLockStatus() {
+        const isOverlayVisible = overlay && overlay.style.display === 'flex';
+        const isAudioActive = frame && !frame.muted && frame.srcObject;
+        if (isOverlayVisible || isAudioActive) {
+          await requestWakeLock();
+        } else {
+          releaseWakeLock();
+        }
+      }
 
       if (!overlay || !btnOpen) return;
 
@@ -1577,6 +1642,7 @@
         }
         overlay.style.display = 'flex';
         streamActive = true;
+        updateWakeLockStatus();
 
         const isStreamActive = !!(frame && frame.srcObject);
         if (!isStreamActive) {
