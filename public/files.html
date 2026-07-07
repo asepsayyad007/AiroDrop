@@ -273,16 +273,26 @@
 
   <!-- Download Info Popup Modal -->
   <div id="downloadInfoOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 350; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 340px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 340px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div style="font-size: 2.2rem; text-align: center; margin-bottom: 12px;">📥</div>
       <h3 style="font-size: 1.05rem; font-weight: 600; text-align: center; margin-bottom: 12px;">Download Initialized</h3>
-      <div style="font-size: 0.76rem; color: var(--text2); line-height: 1.5; margin-bottom: 18px;">
+      
+      <!-- Copy Link Section -->
+      <div style="margin-bottom: 16px; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 8px; text-align: left;">
+        <span style="font-size: 0.72rem; font-weight: 600; color: var(--accent-light);">Download Address Link</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input id="dialogDownloadUrlInput" type="text" readonly style="flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--card-border); color: var(--text); font-size: 0.74rem; padding: 6px 10px; border-radius: 6px; font-family: monospace;" value="">
+          <button id="btnDialogCopyUrl" style="background: var(--accent); border: none; color: white; font-size: 0.74rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">Copy</button>
+        </div>
+      </div>
+
+      <div style="font-size: 0.76rem; color: var(--text2); line-height: 1.5; margin-bottom: 18px; text-align: left;">
         <p style="margin-bottom: 8px; color: var(--text); font-weight: 600;">Where does the file go?</p>
         <ul style="margin-left: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px;">
           <li><strong>iOS Safari:</strong> Saved to your default download location. Open the native <strong>Files app</strong> and look in the <strong>Downloads</strong> folder (iCloud Drive or On My iPhone).</li>
           <li><strong>Android Chrome:</strong> Saved directly to your device's <strong>Downloads</strong> folder.</li>
         </ul>
-        <p style="font-size: 0.7rem; color: var(--text3); border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 8px;"><em>Tip: You can customize the download location in Safari Settings (Settings &rarr; Safari &rarr; Downloads) or Chrome Settings.</em></p>
+        <p style="font-size: 0.7rem; color: var(--text3); border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 8px;"><em>Tip: You can copy the address link above to download this file on any other web browser or device on the same local network!</em></p>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="btn" id="btnDownloadInfoClose" style="margin: 0; padding: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); font-size: 0.85rem; border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 600;">Got It</button>
@@ -329,7 +339,7 @@
     document.getElementById('fileContainer').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:0.86rem">Loading...</div>';
     renderBreadcrumb();
     try {
-      const res = await fetch(`/files/browse?path=${encodeURIComponent(currentPath)}`);
+      const res = await fetch(`/files/browse?path=${encodeURIComponent(currentPath)}&t=${Date.now()}`);
       const data = await res.json();
       if (!res.ok) { toast(data.error||'Error loading directory', true); return; }
       renderEntries(data.entries);
@@ -417,6 +427,8 @@
 
   function downloadFile(entry) {
     const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
+    const downloadUrl = `${window.location.origin}/files/download?path=${encodeURIComponent(rel)}`;
+
     const a = document.createElement('a');
     a.href = `/files/download?path=${encodeURIComponent(rel)}`;
     a.download = entry.name;
@@ -426,6 +438,11 @@
     document.body.removeChild(a);
     toast(`📥 Downloading: ${entry.name}`);
     
+    const urlInput = document.getElementById('dialogDownloadUrlInput');
+    if (urlInput) {
+      urlInput.value = downloadUrl;
+    }
+
     const overlay = document.getElementById('downloadInfoOverlay');
     if (overlay) overlay.style.display = 'flex';
   }
@@ -490,6 +507,22 @@
   // Download Info Handler
   document.getElementById('btnDownloadInfoClose').addEventListener('click', () => {
     document.getElementById('downloadInfoOverlay').style.display = 'none';
+  });
+
+  document.getElementById('btnDialogCopyUrl').addEventListener('click', () => {
+    const urlInput = document.getElementById('dialogDownloadUrlInput');
+    if (urlInput) {
+      urlInput.select();
+      urlInput.setSelectionRange(0, 99999); // For mobile devices
+      try {
+        navigator.clipboard.writeText(urlInput.value);
+        toast('📋 Address copied!');
+      } catch (err) {
+        // Fallback if navigator.clipboard is not available
+        document.execCommand('copy');
+        toast('📋 Address copied!');
+      }
+    }
   });
 
   function openCtx(entry) {

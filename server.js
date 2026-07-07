@@ -262,6 +262,7 @@ app.get('/files', (req, res) => {
 
 // JSON directory listing
 app.get('/files/browse', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rel = req.query.path || '';
   const target = safePath(rel);
   if (!target) return res.status(403).json({ error: 'Access denied' });
