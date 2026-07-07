@@ -1,8 +1,8 @@
-# AiroDrop v4.9.8 🚀
+# AiroDrop v4.9.9 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.8-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.9-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,22 +17,22 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.8
+## 🚀 What's New in v4.9.9
 
-This release brings version 4.9.8, focusing on cleaner typography, emoji removal, and professional control dropdowns:
+This release brings version 4.9.9, focusing on premium high-resolution inline vector SVGs and screenshare cursor movement fixes:
 
 ### ✅ New Features & Updates
-1. **🧹 Clean Professional Design** — Removed outdated simple emojis from headers, button labels, and status badges project-wide (both PC settings and mobile dashboards).
-2. **🛠️ Screencast Tools Dropdown Menu** — Consolidated the screenshare floating buttons into a single clean **Tools** dropdown menu with an interactive SVG arrow. This keeps the screencast view uncluttered.
-3. **🎭 Refined Toggle States** — Optimized settings text indicators for View/Interactive mode, Touch/Cursor mode, Fit levels, and unmuted system audio to look crisp, uniform, and premium without relying on visual emojis.
+1. **🎨 Premium Inline Vector SVGs Project-wide** — Replaced all removed emoji occurrences with clean, high-resolution inline vector SVGs matching the device theme color palette for headers, buttons, and settings groups.
+2. **🖱️ Synced Screenshare Cursor Intensity** — Refined the screenshare mouse dragging (`controlStyle === 'cursor'`) behavior to use relative translation packets scaled at the same 1.8x multiplier as the trackpad functions.
+3. **🎭 Unified Absolute/Relative Actions** — Configured relative clicks/double-clicks for cursor-dragging modes to match the standard trackpad feel.
 
 ---
 
-## 📥 Downloads (v4.9.8)
+## 📥 Downloads (v4.9.9)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.8/AiroDrop.Setup.4.9.8.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.8/AiroDrop-Portable-4.9.8.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.9/AiroDrop.Setup.4.9.9.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.9/AiroDrop-Portable-4.9.9.exe)** — Standalone execution without installation.
 
 ---
 

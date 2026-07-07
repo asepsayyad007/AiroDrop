@@ -411,7 +411,7 @@
         <span id="connText">Connecting...</span>
       </div>
       <!-- Universal Connection Button -->
-      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 8px;">Connect PC Services</button>
+      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connect PC Services</button>
       
       <!-- PC System Controls Quick Icons Toolbar -->
       <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
@@ -511,9 +511,9 @@
 
     <!-- File Manager Card -->
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>File Manager</h3>
+      <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>File Manager</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 10px;">Browse, upload &amp; download files in your PC's shared folder directly from this page.</p>
-      <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem;">Open File Manager</button>
+      <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Open File Manager</button>
     </div>
 
 
@@ -522,8 +522,8 @@
     <!-- PC REMOTE SCREENSHOT -->
     <div class="section-title">PC Screenshot</div>
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>Fetch PC Desktop</h3>
-      <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px;">View PC Screen</button>
+      <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Fetch PC Desktop</h3>
+      <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>View PC Screen</button>
       <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 15px; width: 100%;">
         <img id="mobileScreenshotImg" src="" alt="PC Screen Grab" style="width: 100%; height: auto; max-width: 100%; object-fit: contain; display: block; border-radius: 8px; border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
@@ -537,18 +537,18 @@
     <!-- PC REMOTE TRACKPAD -->
     <div class="section-title">Trackpad & Keyboard</div>
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>Remote Trackpad</h3>
+      <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Remote Trackpad</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Control mouse and keyboard of your PC in real-time</p>
-      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);">Open Fullscreen Trackpad</button>
+      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Open Fullscreen Trackpad</button>
     </div>
 
     <!-- PC LIVE SCREENCAST -->
     <div class="section-title">PC Live Screen</div>
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>Live Screencast</h3>
+      <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Live Screencast</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at up to 30fps. Interactive mode lets you control your PC directly. Requires PC Services connected.</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem;">Open Live Screen</button>
+        <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Open Live Screen</button>
         <!-- Toggle button for system audio streaming only -->
         <button id="btnQuickAudioStream" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text); font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; height: 42px; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
           <span id="quickAudioStreamIcon" style="display: flex; align-items: center; justify-content: center; color: var(--text2);">
@@ -1996,16 +1996,11 @@
           if (controlStyle === 'cursor') {
             const dx = tx - scLastTouchX;
             const dy = ty - scLastTouchY;
-            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
               scHasMoved = true;
             }
-            const rect = frame.getBoundingClientRect();
-            // Scale movement speed for precise trackpad feel
-            const speed = 1.0;
-            virtualX = Math.max(0, Math.min(1, virtualX + (dx / rect.width) * speed));
-            virtualY = Math.max(0, Math.min(1, virtualY + (dy / rect.height) * speed));
-            
-            sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
+            // Scale movement speed to match the trackpad intensity (1.8x)
+            sendWS({ type: 'move', dx: dx * 1.8, dy: dy * 1.8 });
           } else {
             if (Math.abs(tx - scLastTouchX) > 4 || Math.abs(ty - scLastTouchY) > 4) {
               scHasMoved = true;
@@ -2028,9 +2023,10 @@
         const duration = Date.now() - scStartTime;
 
         // Determine click coordinates ratio based on control style
-        let clickX = virtualX;
-        let clickY = virtualY;
-        if (controlStyle === 'touch') {
+        let clickX = 0;
+        let clickY = 0;
+        let isTouchMode = (controlStyle === 'touch');
+        if (isTouchMode) {
           const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
           clickX = coords.xRatio;
           clickY = coords.yRatio;
@@ -2038,8 +2034,12 @@
 
         if (scMaxTouches === 2) {
           if (!scHasMoved && duration < 250) {
-            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
-            showToast('🖱️ Right Click', 600);
+            if (isTouchMode) {
+              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
+            } else {
+              sendWS({ type: 'click', button: 'right' });
+            }
+            showToast('Right Click', 600);
           }
           scIsTwoFinger = false;
           return;
@@ -2049,17 +2049,28 @@
           const now = Date.now();
           if (now - scLastTapTime < 300) {
             if (scTapTimeout) clearTimeout(scTapTimeout);
-            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-            setTimeout(() => {
+            if (isTouchMode) {
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-            }, 50);
-            showToast('🖱️ Double Click', 600);
+              setTimeout(() => {
+                sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
+              }, 50);
+            } else {
+              sendWS({ type: 'click', button: 'left' });
+              setTimeout(() => {
+                sendWS({ type: 'click', button: 'left' });
+              }, 50);
+            }
+            showToast('Double Click', 600);
             scLastTapTime = 0;
           } else {
             scLastTapTime = now;
             scTapTimeout = setTimeout(() => {
-              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-              showToast('🖱️ Left Click', 600);
+              if (isTouchMode) {
+                sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
+              } else {
+                sendWS({ type: 'click', button: 'left' });
+              }
+              showToast('Left Click', 600);
               scTapTimeout = null;
             }, 200);
           }
