@@ -114,6 +114,8 @@ let RATE_LIMIT_ENABLED = true;
 let NOTIFICATIONS_ENABLED = true;
 let TEMPORARY_MODE_HOURS = 2;
 let AUTO_OPEN_LINKS = false;
+let LAUNCH_ON_STARTUP = false;
+let AUTO_UPDATE = true;
 
 // ─── Initialize Paths ──────────────────────────────────────────
 function init(userDataPath) {
@@ -124,6 +126,18 @@ function init(userDataPath) {
   SHARE_DIR = path.join(userDataPath, 'shared');
   
   loadConfig();
+  
+  // Apply startup registry setting inside Electron on init
+  try {
+    const electron = require('electron');
+    if (electron && electron.app) {
+      electron.app.setLoginItemSettings({
+        openAtLogin: LAUNCH_ON_STARTUP,
+        path: process.execPath
+      });
+    }
+  } catch (_) {}
+
   loadHistory();
   loadScratchpad();
   initFileBrowser();
@@ -141,6 +155,8 @@ function loadConfig() {
       if (data.notificationsEnabled !== undefined) NOTIFICATIONS_ENABLED = !!data.notificationsEnabled;
       if (data.temporaryModeHours !== undefined) TEMPORARY_MODE_HOURS = parseFloat(data.temporaryModeHours) || 2;
       if (data.autoOpenLinks !== undefined) AUTO_OPEN_LINKS = !!data.autoOpenLinks;
+      if (data.launchOnStartup !== undefined) LAUNCH_ON_STARTUP = !!data.launchOnStartup;
+      if (data.autoUpdate !== undefined) AUTO_UPDATE = !!data.autoUpdate;
       if (data.saveDir) {
         // If relative, resolve against project directory
         SAVE_DIR = path.isAbsolute(data.saveDir) 
@@ -1406,7 +1422,8 @@ app.get('/api/info', async (req, res) => {
       saveDir: SAVE_DIR,
       uptime: process.uptime(),
       deviceName: DEVICE_NAME,
-      allIps
+      allIps,
+      temporaryMode: TEMPORARY_MODE
     });
   } catch {
     res.json({
@@ -1417,7 +1434,8 @@ app.get('/api/info', async (req, res) => {
       saveDir: SAVE_DIR,
       uptime: process.uptime(),
       deviceName: DEVICE_NAME,
-      allIps
+      allIps,
+      temporaryMode: TEMPORARY_MODE
     });
   }
 });
@@ -1472,14 +1490,16 @@ app.get('/api/settings', (req, res) => {
     rateLimitEnabled: RATE_LIMIT_ENABLED,
     notificationsEnabled: NOTIFICATIONS_ENABLED,
     temporaryModeHours: TEMPORARY_MODE_HOURS,
-    autoOpenLinks: AUTO_OPEN_LINKS
+    autoOpenLinks: AUTO_OPEN_LINKS,
+    launchOnStartup: LAUNCH_ON_STARTUP,
+    autoUpdate: AUTO_UPDATE
   });
 });
 
-// POST /api/settings — Update settings (saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours)
+// POST /api/settings — Update settings
 app.post('/api/settings', async (req, res) => {
   try {
-    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks } = req.body;
+    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks, launchOnStartup, autoUpdate } = req.body;
     
     let resolvedPath = SAVE_DIR;
     if (saveDir) {
@@ -1513,7 +1533,6 @@ app.post('/api/settings', async (req, res) => {
       fs.unlinkSync(tempFile);
       
       SHARE_DIR = resolvedSharePath;
-      // (SHARE_DIR updated — file browser serves dynamically so no remount needed)
     }
 
     if (deviceName !== undefined) {
@@ -1543,6 +1562,23 @@ app.post('/api/settings', async (req, res) => {
       TEMPORARY_MODE_HOURS = parseFloat(temporaryModeHours) || 2;
     }
 
+    if (launchOnStartup !== undefined) {
+      LAUNCH_ON_STARTUP = !!launchOnStartup;
+      try {
+        const electron = require('electron');
+        if (electron && electron.app) {
+          electron.app.setLoginItemSettings({
+            openAtLogin: LAUNCH_ON_STARTUP,
+            path: process.execPath
+          });
+        }
+      } catch (_) {}
+    }
+
+    if (autoUpdate !== undefined) {
+      AUTO_UPDATE = !!autoUpdate;
+    }
+
     const oldTempMode = TEMPORARY_MODE;
     if (temporaryMode !== undefined) {
       TEMPORARY_MODE = !!temporaryMode;
@@ -1564,7 +1600,9 @@ app.post('/api/settings', async (req, res) => {
       rateLimitEnabled: RATE_LIMIT_ENABLED,
       notificationsEnabled: NOTIFICATIONS_ENABLED,
       temporaryModeHours: TEMPORARY_MODE_HOURS,
-      autoOpenLinks: AUTO_OPEN_LINKS
+      autoOpenLinks: AUTO_OPEN_LINKS,
+      launchOnStartup: LAUNCH_ON_STARTUP,
+      autoUpdate: AUTO_UPDATE
     }, null, 2));
 
     writeLog(`Configurations updated: SaveFolder="${SAVE_DIR}", Port=${PORT}, DeviceName="${DEVICE_NAME}"`);
@@ -1578,7 +1616,9 @@ app.post('/api/settings', async (req, res) => {
       rateLimitEnabled: RATE_LIMIT_ENABLED,
       notificationsEnabled: NOTIFICATIONS_ENABLED,
       temporaryModeHours: TEMPORARY_MODE_HOURS,
-      autoOpenLinks: AUTO_OPEN_LINKS
+      autoOpenLinks: AUTO_OPEN_LINKS,
+      launchOnStartup: LAUNCH_ON_STARTUP,
+      autoUpdate: AUTO_UPDATE
     });
   } catch (err) {
     console.error('[CONFIG] Failed to update settings:', err.message);
@@ -2281,5 +2321,7 @@ module.exports = {
   setSaveDir,
   getLocalIP,
   serverEvents,
-  writeLog
+  writeLog,
+  getAutoUpdate: () => AUTO_UPDATE,
+  getLaunchOnStartup: () => LAUNCH_ON_STARTUP
 };

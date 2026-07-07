@@ -93,6 +93,7 @@ ipcMain.on('manual-check-update', () => {
 
 function setupAutoUpdater() {
   autoUpdater.logger = console;
+  autoUpdater.autoDownload = false; // Disable auto-downloading updates
 
   autoUpdater.on('checking-for-updates', () => {
     server.writeLog("Checking for updates...");
@@ -102,14 +103,24 @@ function setupAutoUpdater() {
   autoUpdater.on('update-available', (info) => {
     server.writeLog(`New update available: v${info.version}`);
     if (mainWindow) mainWindow.webContents.send('update-status', 'available', info);
-    if (isManualCheck) {
-      isManualCheck = false;
-      dialog.showMessageBox(mainWindow || null, {
-        type: 'info',
-        title: 'Update Available',
-        message: 'New update available!'
-      });
-    }
+    
+    // Prompt the user for consent before downloading the update
+    dialog.showMessageBox(mainWindow || null, {
+      type: 'question',
+      title: 'Update Available',
+      message: `A new version (v${info.version}) of AiroDrop is available. Would you like to download it now?`,
+      buttons: ['Download', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.downloadUpdate();
+        server.writeLog(`Downloading update v${info.version}...`);
+        if (mainWindow) mainWindow.webContents.send('update-status', 'downloading');
+      } else {
+        isManualCheck = false;
+      }
+    });
   });
 
   autoUpdater.on('update-not-available', (info) => {
@@ -157,9 +168,12 @@ function setupAutoUpdater() {
     });
   });
 
-  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-    console.error('[AutoUpdater] Check for updates failed:', err.message);
-  });
+  // Only perform auto update check if enabled in settings
+  if (server.getAutoUpdate()) {
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.error('[AutoUpdater] Auto check failed:', err.message);
+    });
+  }
 }
 
 // ─── Window Management ────────────────────────────────────────

@@ -274,6 +274,23 @@
     if (qrContainer) {
       qrContainer.innerHTML = `<img src="${getThemedQrUrl(`${baseUrl}/m`)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
     }
+
+    // Update temporary mode badge on dashboard
+    updateTemporaryModeBadge(info.temporaryMode);
+  }
+
+  function updateTemporaryModeBadge(temporaryMode) {
+    const dot = $('#tempModeStatusIndicatorDot');
+    const text = $('#tempModeStatusText');
+    if (dot && text) {
+      if (temporaryMode) {
+        dot.style.backgroundColor = '#00d26a';
+        text.textContent = 'On';
+      } else {
+        dot.style.backgroundColor = '#ff3b30';
+        text.textContent = 'Off';
+      }
+    }
   }
 
   function updateUptimeUI(seconds) {
@@ -793,27 +810,7 @@
       });
     }
 
-    // Export history
-    const exportBtn = $('#exportBtn');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', async () => {
-        try {
-          const res = await doFetch('/api/history/export');
-          if (res.ok) {
-            const blob = await res.blob();
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'airodrop_history.json';
-            link.click();
-            showToast('History exported successfully', 'success');
-          } else {
-            showToast('Failed to export history', 'error');
-          }
-        } catch {
-          showToast('Failed to export history', 'error');
-        }
-      });
-    }
+
 
     // Single item delete (using delegation)
     const feedEl = $('#feed');
@@ -1124,6 +1121,8 @@
     const rateLimitInput = $('#rateLimitInput');
     const tempModeHoursInput = $('#tempModeHoursInput');
     const autoOpenLinksInput = $('#autoOpenLinksInput');
+    const desktopAutoStartInput = $('#desktopAutoStart');
+    const autoUpdaterInput = $('#autoUpdaterInput');
 
     loadSettingsData();
 
@@ -1143,6 +1142,8 @@
             tempModeHoursInput.value = data.temporaryModeHours;
           }
           if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
+          if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
+          if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -1229,6 +1230,8 @@
         const rateLimitEnabled = rateLimitInput ? rateLimitInput.checked : true;
         const temporaryModeHours = tempModeHoursInput ? tempModeHoursInput.value : 2;
         const autoOpenLinks = autoOpenLinksInput ? autoOpenLinksInput.checked : false;
+        const launchOnStartup = desktopAutoStartInput ? desktopAutoStartInput.checked : false;
+        const autoUpdate = autoUpdaterInput ? autoUpdaterInput.checked : true;
 
         saveDirBtn.disabled = true;
         saveDirBtn.textContent = 'Saving...';
@@ -1247,7 +1250,9 @@
               notificationsEnabled, 
               rateLimitEnabled, 
               temporaryModeHours,
-              autoOpenLinks 
+              autoOpenLinks,
+              launchOnStartup,
+              autoUpdate
             })
           });
           const data = await res.json();
@@ -1263,6 +1268,9 @@
             if (rateLimitInput) rateLimitInput.checked = !!data.rateLimitEnabled;
             if (tempModeHoursInput) tempModeHoursInput.value = data.temporaryModeHours;
             if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
+            if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
+            if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
+            updateTemporaryModeBadge(data.temporaryMode);
             
             fetchServerInfo();
             showToast('Settings saved', 'success');
