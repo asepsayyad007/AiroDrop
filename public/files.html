@@ -226,11 +226,11 @@
     <div class="toolbar">
       <span class="file-count" id="fileCount">Loading...</span>
       <div class="view-toggle">
-        <button class="view-btn active" id="viewGrid">⊞ Grid</button>
-        <button class="view-btn" id="viewList">☰ List</button>
+        <button class="view-btn" id="viewGrid">⊞ Grid</button>
+        <button class="view-btn active" id="viewList">☰ List</button>
       </div>
     </div>
-    <div id="fileContainer" class="file-grid"></div>
+    <div id="fileContainer" class="file-list"></div>
   </div>
 
   <button class="fab" id="fabNewFolder" title="New Folder">
@@ -296,7 +296,7 @@
   const API = window.location.origin;
   let currentPath = '';
   let currentEntry = null;
-  let viewMode = 'grid';
+  let viewMode = 'list';
 
   function fileIcon(name, type) {
     if (type === 'dir') return '📁';

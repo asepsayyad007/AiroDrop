@@ -513,7 +513,7 @@
       <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 15px; width: 100%;">
         <img id="mobileScreenshotImg" src="" alt="PC Screen Grab" style="width: 100%; height: auto; max-width: 100%; object-fit: contain; display: block; border-radius: 8px; border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
-          <a id="btnDownloadScreenshot" href="" download="screenshot.png" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">💾 Download</a>
+          <a id="btnDownloadScreenshot" href="" download="screenshot.png" target="_blank" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">💾 Download</a>
           <button id="btnFullscreenScreenshot" class="btn" style="flex: 1; margin: 0; font-size: 0.8rem; background: rgba(255,255,255,0.08);">🔍 Fullscreen</button>
         </div>
         <button class="btn" id="btnCloseScreenshot" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top: 10px; width: 100%;">Close Preview</button>
@@ -782,7 +782,7 @@
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
-                <a href="${downloadUrl}" download="${escapeAttr(downloadName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <a href="${downloadUrl}" download="${escapeAttr(downloadName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
               </div>
             </div>
@@ -807,7 +807,7 @@
               <span class="receive-content">${escapeHtml(displayName)}</span>
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
-                <a href="${downloadUrl}" download="${escapeAttr(displayName)}" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <a href="${downloadUrl}" download="${escapeAttr(displayName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
               </div>
             </div>
