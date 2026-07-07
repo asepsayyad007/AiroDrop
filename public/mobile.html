@@ -412,6 +412,25 @@
       </div>
       <!-- Universal Connection Button -->
       <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 8px;">🔌 Connect PC Services</button>
+      
+      <!-- PC System Controls Quick Icons Toolbar -->
+      <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+        <button class="btn-control-cmd" data-cmd="poweroff" title="Power Off PC" style="background: rgba(255,59,48,0.15); border: 1px solid rgba(255,59,48,0.3); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🛑</button>
+        <button class="btn-control-cmd" data-cmd="sleep" title="Sleep PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">💤</button>
+        <button class="btn-control-cmd" data-cmd="lock" title="Lock PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔒</button>
+        <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause Media" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏯️</button>
+        <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔉</button>
+        <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">🔊</button>
+        <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏮️</button>
+        <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s;">⏭️</button>
+        
+        <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.12); margin: 0 4px;"></div>
+        
+        <!-- Toggle button for Audio Streaming Only of Windows PC -->
+        <button id="btnQuickAudioStream" title="Toggle PC System Audio Streaming Only" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; cursor: pointer; padding: 6px 10px; margin: 0; outline: none; border-radius: 8px; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; width: 34px; height: 32px;">
+          <span id="quickAudioStreamIcon">🔇</span>
+        </button>
+      </div>
       <button id="btnUniversalRefresh" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; padding: 0; margin: 0; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; border: 1px solid var(--card-border); cursor: pointer; color: var(--text); outline: none;" title="Refresh Page Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
@@ -489,21 +508,7 @@
     </div>
 
 
-    <!-- PC REMOTE CONTROL -->
-    <div class="section-title">PC System Control</div>
-    <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>Windows Controller</h3>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="poweroff" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🛑 Power Off</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="sleep" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">💤 Sleep PC</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="lock" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔒 Lock PC</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="play_pause" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏯️ Play/Pause</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="volume_up" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔊 Vol Up</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="volume_down" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">🔉 Vol Down</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="prev" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏮️ Prev</button>
-        <button class="btn btn-secondary btn-control-cmd" data-cmd="next" style="margin: 0; background: rgba(255,255,255,0.08); padding: 12px; font-size: 0.82rem;">⏭️ Next</button>
-      </div>
-    </div>
+
 
     <!-- PC REMOTE SCREENSHOT -->
     <div class="section-title">PC Screenshot</div>
@@ -1170,6 +1175,8 @@
     let trackpadSocket = null;
     let phonePC = null;
     let isTrackpadOpen = false;
+    let audioOnlyStreamMode = false;
+    let syncAudioStates = function() {};
     let wsWantsConnected = false;
     let wsConnecting = false;
 
@@ -1221,8 +1228,13 @@
         // Trigger pending stream features automatically on connection
         if (window._pendingScreencastStart) {
           window._pendingScreencastStart = false;
-          const btn = document.getElementById('btnOpenScreencast');
-          if (btn) btn.click();
+          if (window._pendingScreencastMode === 'audio') {
+            const btnQuick = document.getElementById('btnQuickAudioStream');
+            if (btnQuick) btnQuick.click();
+          } else {
+            const btn = document.getElementById('btnOpenScreencast');
+            if (btn) btn.click();
+          }
         }
       };
 
@@ -1246,6 +1258,10 @@
           const liveFrame = document.getElementById('liveScreenFrame');
           if (liveFrame && event.streams && event.streams[0]) {
             liveFrame.srcObject = event.streams[0];
+            if (audioOnlyStreamMode) {
+              liveFrame.muted = false;
+            }
+            syncAudioStates();
           }
         };
       }
@@ -1523,6 +1539,23 @@
       const btnControlStyle = document.getElementById('btnScreencastControlStyle');
       const btnAudio = document.getElementById('btnScreencastAudio');
 
+      const btnQuickAudio = document.getElementById('btnQuickAudioStream');
+      const quickAudioIcon = document.getElementById('quickAudioStreamIcon');
+
+      syncAudioStates = function() {
+        const isMuted = !frame || frame.muted || !frame.srcObject;
+        if (btnAudio) {
+          btnAudio.innerHTML = isMuted ? '🔇 Audio: Off' : '🔊 Audio: On';
+          btnAudio.style.background = !isMuted ? 'rgba(0,210,106,0.35)' : 'rgba(0,0,0,0.6)';
+          btnAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.6)' : 'rgba(255,255,255,0.15)';
+        }
+        if (btnQuickAudio && quickAudioIcon) {
+          quickAudioIcon.textContent = isMuted ? '🔇' : '🔊';
+          btnQuickAudio.style.background = !isMuted ? 'rgba(0,210,106,0.2)' : 'rgba(255,255,255,0.05)';
+          btnQuickAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.5)' : 'rgba(255,255,255,0.1)';
+        }
+      };
+
       if (!overlay || !btnOpen) return;
 
       let interactiveMode = false;
@@ -1537,13 +1570,25 @@
         if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
           wsWantsConnected = true;
           window._pendingScreencastStart = true;
+          window._pendingScreencastMode = 'full';
           connectWS();
           showToast('Connecting to PC Services...');
           return;
         }
         overlay.style.display = 'flex';
         streamActive = true;
-        sendWS({ type: 'screencast_start' });
+
+        const isStreamActive = !!(frame && frame.srcObject);
+        if (!isStreamActive) {
+          audioOnlyStreamMode = false;
+          sendWS({ type: 'screencast_start' });
+        } else {
+          // Stream is already running (e.g. from quick audio streaming)
+          // Transition audioOnlyStreamMode to false (since the user is opening the full screenshare UI)
+          audioOnlyStreamMode = false;
+          syncAudioStates();
+          showToast('🖥️ Screencast active');
+        }
       });
 
       // ── Close button ──
@@ -1551,6 +1596,7 @@
         overlay.style.display = 'none';
         streamActive = false;
         interactiveMode = false;
+        audioOnlyStreamMode = false;
         if (keyboardPanel) keyboardPanel.style.display = 'none';
         if (btnKeyboard) btnKeyboard.style.display = 'none';
         if (btnControlStyle) btnControlStyle.style.display = 'none';
@@ -1562,11 +1608,7 @@
           frame.srcObject = null;
           frame.muted = true;
         }
-        if (btnAudio) {
-          btnAudio.innerHTML = '🔇 Audio: Off';
-          btnAudio.style.background = 'rgba(255,255,255,0.08)';
-          btnAudio.style.borderColor = 'rgba(255,255,255,0.15)';
-        }
+        syncAudioStates();
         if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
           sendWS({ type: 'screencast_stop' });
         }
@@ -1604,13 +1646,52 @@
         btnAudio.addEventListener('click', () => {
           if (frame) {
             frame.muted = !frame.muted;
-            btnAudio.innerHTML = frame.muted ? '🔇 Audio: Off' : '🔊 Audio: On';
-            btnAudio.style.background = !frame.muted ? 'rgba(0,210,106,0.35)' : 'rgba(255,255,255,0.08)';
-            btnAudio.style.borderColor = !frame.muted ? 'rgba(0,210,106,0.6)' : 'rgba(255,255,255,0.15)';
+            syncAudioStates();
             if (!frame.muted) {
               showToast('🔊 Screencast audio enabled');
             } else {
               showToast('🔇 Screencast audio muted');
+            }
+          }
+        });
+      }
+
+      if (btnQuickAudio) {
+        btnQuickAudio.addEventListener('click', () => {
+          if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
+            wsWantsConnected = true;
+            window._pendingScreencastStart = true;
+            window._pendingScreencastMode = 'audio';
+            connectWS();
+            showToast('Connecting to PC Services...');
+            return;
+          }
+
+          const isStreamActive = !!(frame && frame.srcObject);
+          if (!isStreamActive) {
+            // Start stream in audio-only mode
+            audioOnlyStreamMode = true;
+            sendWS({ type: 'screencast_start' });
+            showToast('🔊 Streaming system audio in background...');
+          } else {
+            // Stream is already active
+            if (frame.muted) {
+              // Unmute it
+              frame.muted = false;
+              audioOnlyStreamMode = true;
+              showToast('🔊 PC system audio unmuted');
+              syncAudioStates();
+            } else {
+              // Mute/stop it
+              if (overlay.style.display === 'flex') {
+                // Screencast is visible, so we just mute audio but keep screenshare
+                frame.muted = true;
+                syncAudioStates();
+                showToast('🔇 Audio muted');
+              } else {
+                // Screencast is hidden, so stop the stream completely
+                btnClose.click();
+              }
             }
           }
         });
@@ -2123,20 +2204,22 @@
         <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.8); animation: blink 1s infinite;"></div>
         <span style="font-size: 0.8rem; font-weight: 600; color: white;">🖥️ PC Screen</span>
       </div>
-      <div style="display: flex; gap: 6px; align-items: center;">
-        <!-- Fit screen toggle (Always shown) -->
-        <button id="btnScreencastFit" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🔍 Fit: 100%</button>
-        <!-- Control Style toggle (only shown in interactive mode) -->
-        <button id="btnScreencastControlStyle" style="display:none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🖱️ Touch Mode</button>
-        <!-- Interactive / View toggle -->
-        <button id="btnScreencastMode" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">👁️ View Only</button>
-        <!-- Keyboard toggle (only shown in interactive mode) -->
-        <button id="btnScreencastKeyboard" style="display:none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer;">⌨️ Keyboard</button>
-        <!-- Audio toggle -->
-        <button id="btnScreencastAudio" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; white-space: nowrap;">🔇 Audio: Off</button>
-        <!-- Close -->
-        <button id="btnCloseScreencast" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
-      </div>
+      <!-- Close button on top-right -->
+      <button id="btnCloseScreencast" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+    </div>
+
+    <!-- Vertical Options Toolbar (Floating on right side) -->
+    <div style="position: absolute; right: 14px; top: calc(54px + env(safe-area-inset-top, 0px)); z-index: 502; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none;">
+      <!-- Fit screen toggle (Always shown) -->
+      <button id="btnScreencastFit" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🔍 Fit: 100%</button>
+      <!-- Control Style toggle (only shown in interactive mode) -->
+      <button id="btnScreencastControlStyle" style="display:none; pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🖱️ Touch Mode</button>
+      <!-- Interactive / View toggle -->
+      <button id="btnScreencastMode" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">👁️ View Only</button>
+      <!-- Keyboard toggle (only shown in interactive mode) -->
+      <button id="btnScreencastKeyboard" style="display:none; pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">⌨️ Keyboard</button>
+      <!-- Audio toggle -->
+      <button id="btnScreencastAudio" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🔇 Audio: Off</button>
     </div>
 
     <!-- Live Frame -->

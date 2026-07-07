@@ -1,8 +1,8 @@
-# AiroDrop v4.9.5 🚀
+# AiroDrop v4.9.6 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.5-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.6-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,25 +17,23 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.5
+## 🚀 What's New in v4.9.6
 
-This release brings version 4.9.5, focusing on desktop preference persistence, update consent, and new dashboard feedback:
+This release brings version 4.9.6, focusing on UI simplification, system audio loopback capture, and layout optimizations:
 
 ### ✅ New Features & Updates
-1. **⚙️ Auto-Start & Auto-Check Settings Persistence** — Connected "Launch on Startup" and "Check for Updates" checkboxes in Settings to the server's backend configuration. State is now saved in `config.json` and survives application restarts.
-2. **🛡️ Consent-based Auto-updater** — Disabled silent background update downloads. When a new version is found, AiroDrop will now ask for your explicit consent before downloading and installing the update.
-3. **🏷️ Temporary Mode Status Badge** — Replaced the Export button on the dashboard with a clean, dynamic Temporary Mode (Auto-delete) indicator badge. Displays a Green Dot for **On** and a Red Dot for **Off** based on your settings.
-4. **📋 Download URL Address Link Copier** — Introduced a direct copy utility inside the download confirmation dialog. You can copy the full local URL with a single click to download files on other local devices or web browsers.
-5. **⚡ WebRTC STUN Binding Timeout Fix** — Removed public Google STUN servers from RTCPeerConnection to prevent connection timeouts and warning logs on isolated host-only adapters (VMware/VirtualBox), optimizing local network connections.
-6. **🔄 Auto-Refresh & Caching Fixes** — Prevented directory list caching on mobile web browsers by setting `Cache-Control` headers on `/files/browse` and appending a timestamp cache-buster parameter. Files deleted via the PWA now refresh immediately.
+1. **📦 Header Quick Controls Toolbar** — Replaced the bulky PC System Control cards with a clean, compact quick system control icons bar (🛑, 💤, 🔒, ⏯️, 🔉, 🔊, ⏮️, ⏭️) embedded directly under the header connection status dot.
+2. **🔊 Live Audio Streaming Support** — WebRTC Live Screen now captures and streams PC system audio loopback in real-time. Controlled by a mute/unmute toggle.
+3. **🔇 Quick System Audio Loopback Toggle** — Added a background system audio streaming toggle button to the quick controls toolbar. Plays PC audio in the background on your phone without opening full screen frames.
+4. **📐 Vertical Options Toolbar** — Realigned the screencast overlay controls toolbar to a vertical floating sidebar layout. Prevents horizontal clipping or overflowing on narrow screen devices (iPhone / mobile screens).
 
 ---
 
-## 📥 Downloads (v4.9.5)
+## 📥 Downloads (v4.9.6)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.5/AiroDrop.Setup.4.9.5.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.5/AiroDrop-Portable-4.9.5.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.6/AiroDrop.Setup.4.9.6.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.6/AiroDrop-Portable-4.9.6.exe)** — Standalone execution without installation.
 
 ---
 
