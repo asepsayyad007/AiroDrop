@@ -1,8 +1,8 @@
-# AiroDrop v4.9.7 🚀
+# AiroDrop v4.9.8 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.7-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.9.8-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,22 +17,22 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.7
+## 🚀 What's New in v4.9.8
 
-This release brings version 4.9.7, focusing on high-res layout styling, relocated background audio controls, and audio stability enhancements:
+This release brings version 4.9.8, focusing on cleaner typography, emoji removal, and professional control dropdowns:
 
 ### ✅ New Features & Updates
-1. **🎨 Premium Vector SVG Controls** — Replaced all simple emoji control buttons in the header quick-toolbar with modern, high-resolution vector inline SVGs, styled with premium color palettes and glassmorphism.
-2. **🔊 Relocated Audio-only streaming button** — Moved the background system audio streaming toggle button into the **Live Screencast** dashboard card. Upgraded it to a full-width pill button featuring a dynamic label (`Stream PC Audio Only: Off` / `On`) and high-res icon sync.
-3. **🛡️ Screen Wake Lock Integration** — Incorporated the Screen Wake Lock API to prevent devices from automatically dimming, locking, or entering sleep state during screencasting or audio streaming. This resolves mobile background audio freezing/stuttering issues on screen lock.
+1. **🧹 Clean Professional Design** — Removed outdated simple emojis from headers, button labels, and status badges project-wide (both PC settings and mobile dashboards).
+2. **🛠️ Screencast Tools Dropdown Menu** — Consolidated the screenshare floating buttons into a single clean **Tools** dropdown menu with an interactive SVG arrow. This keeps the screencast view uncluttered.
+3. **🎭 Refined Toggle States** — Optimized settings text indicators for View/Interactive mode, Touch/Cursor mode, Fit levels, and unmuted system audio to look crisp, uniform, and premium without relying on visual emojis.
 
 ---
 
-## 📥 Downloads (v4.9.7)
+## 📥 Downloads (v4.9.8)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.7/AiroDrop.Setup.4.9.7.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.7/AiroDrop-Portable-4.9.7.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v4.9.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.8/AiroDrop.Setup.4.9.8.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v4.9.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.8/AiroDrop-Portable-4.9.8.exe)** — Standalone execution without installation.
 
 ---
 

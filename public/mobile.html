@@ -411,7 +411,7 @@
         <span id="connText">Connecting...</span>
       </div>
       <!-- Universal Connection Button -->
-      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 8px;">🔌 Connect PC Services</button>
+      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 8px;">Connect PC Services</button>
       
       <!-- PC System Controls Quick Icons Toolbar -->
       <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
@@ -511,9 +511,9 @@
 
     <!-- File Manager Card -->
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>📁 File Manager</h3>
+      <h3>File Manager</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 10px;">Browse, upload &amp; download files in your PC's shared folder directly from this page.</p>
-      <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem;">📂 Open File Manager</button>
+      <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem;">Open File Manager</button>
     </div>
 
 
@@ -523,12 +523,12 @@
     <div class="section-title">PC Screenshot</div>
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3>Fetch PC Desktop</h3>
-      <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px;">📸 View PC Screen</button>
+      <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px;">View PC Screen</button>
       <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 15px; width: 100%;">
         <img id="mobileScreenshotImg" src="" alt="PC Screen Grab" style="width: 100%; height: auto; max-width: 100%; object-fit: contain; display: block; border-radius: 8px; border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
         <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
-          <a id="btnDownloadScreenshot" href="" download="screenshot.png" target="_blank" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">💾 Download</a>
-          <button id="btnFullscreenScreenshot" class="btn" style="flex: 1; margin: 0; font-size: 0.8rem; background: rgba(255,255,255,0.08);">🔍 Fullscreen</button>
+          <a id="btnDownloadScreenshot" href="" download="screenshot.png" target="_blank" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center;">Download</a>
+          <button id="btnFullscreenScreenshot" class="btn" style="flex: 1; margin: 0; font-size: 0.8rem; background: rgba(255,255,255,0.08);">Fullscreen</button>
         </div>
         <button class="btn" id="btnCloseScreenshot" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top: 10px; width: 100%;">Close Preview</button>
       </div>
@@ -539,16 +539,16 @@
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3>Remote Trackpad</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Control mouse and keyboard of your PC in real-time</p>
-      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);">🖱️ Open Fullscreen Trackpad</button>
+      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669);">Open Fullscreen Trackpad</button>
     </div>
 
     <!-- PC LIVE SCREENCAST -->
     <div class="section-title">PC Live Screen</div>
     <div class="sender-card" style="margin-bottom: 16px;">
-      <h3>🖥️ Live Screencast</h3>
+      <h3>Live Screencast</h3>
       <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at up to 30fps. Interactive mode lets you control your PC directly. Requires PC Services connected.</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem;">📺 Open Live Screen</button>
+        <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem;">Open Live Screen</button>
         <!-- Toggle button for system audio streaming only -->
         <button id="btnQuickAudioStream" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text); font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; height: 42px; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
           <span id="quickAudioStreamIcon" style="display: flex; align-items: center; justify-content: center; color: var(--text2);">
@@ -1583,6 +1583,9 @@
       const btnFit = document.getElementById('btnScreencastFit');
       const btnControlStyle = document.getElementById('btnScreencastControlStyle');
       const btnAudio = document.getElementById('btnScreencastAudio');
+      const btnTools = document.getElementById('btnScreencastTools');
+      const dropdownMenu = document.getElementById('screencastToolsDropdown');
+      const toolsArrow = document.getElementById('svgToolsArrow');
 
       const btnQuickAudio = document.getElementById('btnQuickAudioStream');
       const quickAudioIcon = document.getElementById('quickAudioStreamIcon');
@@ -1590,9 +1593,10 @@
       syncAudioStates = function() {
         const isMuted = !frame || frame.muted || !frame.srcObject;
         if (btnAudio) {
-          btnAudio.innerHTML = isMuted ? '🔇 Audio: Off' : '🔊 Audio: On';
-          btnAudio.style.background = !isMuted ? 'rgba(0,210,106,0.35)' : 'rgba(0,0,0,0.6)';
-          btnAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.6)' : 'rgba(255,255,255,0.15)';
+          btnAudio.innerHTML = isMuted ? 'Audio: Off' : 'Audio: On';
+          btnAudio.style.color = !isMuted ? '#00d26a' : 'white';
+          btnAudio.style.background = !isMuted ? 'rgba(0,210,106,0.12)' : 'rgba(255,255,255,0.06)';
+          btnAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.4)' : 'rgba(255,255,255,0.1)';
         }
         
         const quickAudioLabel = document.getElementById('quickAudioStreamLabel');
@@ -1663,6 +1667,8 @@
         streamActive = false;
         interactiveMode = false;
         audioOnlyStreamMode = false;
+        if (dropdownMenu) dropdownMenu.style.display = 'none';
+        if (toolsArrow) toolsArrow.style.transform = '';
         if (keyboardPanel) keyboardPanel.style.display = 'none';
         if (btnKeyboard) btnKeyboard.style.display = 'none';
         if (btnControlStyle) btnControlStyle.style.display = 'none';
@@ -1680,6 +1686,26 @@
         }
       });
 
+      // ── Tools Dropdown Toggle ──
+      if (btnTools && dropdownMenu) {
+        btnTools.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = dropdownMenu.style.display === 'flex';
+          dropdownMenu.style.display = isOpen ? 'none' : 'flex';
+          if (toolsArrow) {
+            toolsArrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+          }
+        });
+
+        // Close dropdown when tapping anywhere else on screencast screen
+        overlay.addEventListener('click', () => {
+          dropdownMenu.style.display = 'none';
+          if (toolsArrow) {
+            toolsArrow.style.transform = '';
+          }
+        });
+      }
+
       // ── Fit Screen Toggle ──
       if (btnFit) {
         btnFit.addEventListener('click', () => {
@@ -1688,7 +1714,7 @@
           else if (fitMode === 80) fitMode = 70;
           else fitMode = 100;
 
-          btnFit.textContent = `🔍 Fit: ${fitMode}%`;
+          btnFit.textContent = `Fit: ${fitMode}%`;
           btnFit.style.background = fitMode !== 100 ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
           btnFit.style.borderColor = fitMode !== 100 ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
           
@@ -1767,16 +1793,16 @@
       if (btnControlStyle) {
         btnControlStyle.addEventListener('click', () => {
           controlStyle = controlStyle === 'touch' ? 'cursor' : 'touch';
-          btnControlStyle.textContent = controlStyle === 'touch' ? '🖱️ Touch Mode' : '🎯 Cursor Mode';
+          btnControlStyle.textContent = controlStyle === 'touch' ? 'Touch Mode' : 'Cursor Mode';
           btnControlStyle.style.background = controlStyle === 'cursor' ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
           btnControlStyle.style.borderColor = controlStyle === 'cursor' ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
           
           if (controlStyle === 'cursor') {
             virtualX = 0.5;
             virtualY = 0.5;
-            showToast('🎯 Cursor Mode: drag to move cursor, tap to click');
+            showToast('Cursor Mode: drag to move cursor, tap to click');
           } else {
-            showToast('🖱️ Touch Mode: tap anywhere to click absolutely');
+            showToast('Touch Mode: tap anywhere to click absolutely');
           }
         });
       }
@@ -1784,7 +1810,7 @@
       // ── Mode toggle (View Only ↔ Interactive) ──
       btnMode.addEventListener('click', () => {
         interactiveMode = !interactiveMode;
-        btnMode.textContent = interactiveMode ? '🖱️ Interactive' : '👁️ View Only';
+        btnMode.textContent = interactiveMode ? 'Interactive' : 'View Only';
         btnMode.style.background = interactiveMode ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
         btnMode.style.borderColor = interactiveMode ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
         frame.style.cursor = interactiveMode ? 'none' : 'default';
@@ -2268,24 +2294,33 @@
     <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 502; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent); pointer-events: auto;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.8); animation: blink 1s infinite;"></div>
-        <span style="font-size: 0.8rem; font-weight: 600; color: white;">🖥️ PC Screen</span>
+        <span style="font-size: 0.8rem; font-weight: 600; color: white;">PC Screen</span>
       </div>
       <!-- Close button on top-right -->
       <button id="btnCloseScreencast" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
     </div>
 
-    <!-- Vertical Options Toolbar (Floating on right side) -->
-    <div style="position: absolute; right: 14px; top: calc(54px + env(safe-area-inset-top, 0px)); z-index: 502; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none;">
-      <!-- Fit screen toggle (Always shown) -->
-      <button id="btnScreencastFit" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🔍 Fit: 100%</button>
-      <!-- Control Style toggle (only shown in interactive mode) -->
-      <button id="btnScreencastControlStyle" style="display:none; pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🖱️ Touch Mode</button>
-      <!-- Interactive / View toggle -->
-      <button id="btnScreencastMode" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">👁️ View Only</button>
-      <!-- Keyboard toggle (only shown in interactive mode) -->
-      <button id="btnScreencastKeyboard" style="display:none; pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">⌨️ Keyboard</button>
-      <!-- Audio toggle -->
-      <button id="btnScreencastAudio" style="pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3); width: 100px; text-align: center;">🔇 Audio: Off</button>
+    <!-- Tools Dropdown Menu (Floating on right side) -->
+    <div style="position: absolute; right: 14px; top: calc(54px + env(safe-area-inset-top, 0px)); z-index: 502; display: flex; flex-direction: column; align-items: flex-end;">
+      <!-- Main Tools Button -->
+      <button id="btnScreencastTools" style="background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 14px; border-radius: 8px; font-size: 0.76rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); pointer-events: auto; outline: none;">
+        <span>Tools</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s;" id="svgToolsArrow"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      
+      <!-- Dropdown Items List -->
+      <div id="screencastToolsDropdown" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px; min-width: 130px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); pointer-events: auto; backdrop-filter: blur(10px);">
+        <!-- Fit screen toggle (Always shown) -->
+        <button id="btnScreencastFit" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Fit: 100%</button>
+        <!-- Interactive / View toggle -->
+        <button id="btnScreencastMode" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">View Only</button>
+        <!-- Control Style toggle (only shown in interactive mode) -->
+        <button id="btnScreencastControlStyle" style="display:none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Touch Mode</button>
+        <!-- Keyboard toggle (only shown in interactive mode) -->
+        <button id="btnScreencastKeyboard" style="display:none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Keyboard</button>
+        <!-- Audio toggle -->
+        <button id="btnScreencastAudio" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Audio: Off</button>
+      </div>
     </div>
 
     <!-- Live Frame -->
