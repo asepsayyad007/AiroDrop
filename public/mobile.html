@@ -1231,7 +1231,7 @@
           try { phonePC.close(); } catch(e) {}
         }
         phonePC = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          iceServers: []
         });
         phonePC.onicecandidate = (event) => {
           if (event.candidate) {
