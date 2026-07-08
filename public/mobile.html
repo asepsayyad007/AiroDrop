@@ -546,7 +546,7 @@
     <div class="section-title">PC Live Screen</div>
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Live Screencast</h3>
-      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at up to 30fps. Interactive mode lets you control your PC directly. Requires PC Services connected.</p>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Stream your PC screen at up to 30fps. Enables trackpad mouse controls to control your PC directly. Requires PC Services connected.</p>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="btn" id="btnOpenScreencast" style="margin: 0; background: linear-gradient(135deg, #7c3aed, #4f46e5); font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Open Live Screen</button>
         <!-- Toggle button for system audio streaming only -->
@@ -1581,9 +1581,9 @@
       const btnScKeyboardClose = document.getElementById('btnScKeyboardClose');
       const viewHint = document.getElementById('scViewHint');
       const btnFit = document.getElementById('btnScreencastFit');
-      const btnControlStyle = document.getElementById('btnScreencastControlStyle');
       const btnAudio = document.getElementById('btnScreencastAudio');
       const btnTools = document.getElementById('btnScreencastTools');
+      const btnSpeed = document.getElementById('btnScreencastSpeed');
       const dropdownMenu = document.getElementById('screencastToolsDropdown');
       const toolsArrow = document.getElementById('svgToolsArrow');
 
@@ -1627,12 +1627,13 @@
 
       if (!overlay || !btnOpen) return;
 
-      let interactiveMode = false;
+      let interactiveMode = true;
       let streamActive = false;
-      let controlStyle = 'touch'; // 'touch' or 'cursor'
+      let controlStyle = 'cursor';
       let fitMode = 100; // 100, 90, 80, 70
       let virtualX = 0.5;
       let virtualY = 0.5;
+      let cursorSpeed = 1.5;
 
       // ── Open button ──
       btnOpen.addEventListener('click', () => {
@@ -1665,13 +1666,14 @@
       btnClose.addEventListener('click', () => {
         overlay.style.display = 'none';
         streamActive = false;
-        interactiveMode = false;
+        interactiveMode = true;
         audioOnlyStreamMode = false;
         if (dropdownMenu) dropdownMenu.style.display = 'none';
         if (toolsArrow) toolsArrow.style.transform = '';
         if (keyboardPanel) keyboardPanel.style.display = 'none';
         if (btnKeyboard) btnKeyboard.style.display = 'none';
-        if (btnControlStyle) btnControlStyle.style.display = 'none';
+        cursorSpeed = 1.5;
+        if (btnSpeed) btnSpeed.textContent = 'Speed: 1.5x';
         if (phonePC) {
           try { phonePC.close(); } catch(e) {}
           phonePC = null;
@@ -1789,44 +1791,39 @@
         });
       }
 
-      // ── Control Style Toggle ──
-      if (btnControlStyle) {
-        btnControlStyle.addEventListener('click', () => {
-          controlStyle = controlStyle === 'touch' ? 'cursor' : 'touch';
-          btnControlStyle.textContent = controlStyle === 'touch' ? 'Touch Mode' : 'Cursor Mode';
-          btnControlStyle.style.background = controlStyle === 'cursor' ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
-          btnControlStyle.style.borderColor = controlStyle === 'cursor' ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
-          
-          if (controlStyle === 'cursor') {
-            virtualX = 0.5;
-            virtualY = 0.5;
-            showToast('Cursor Mode: drag to move cursor, tap to click');
-          } else {
-            showToast('Touch Mode: tap anywhere to click absolutely');
-          }
-        });
-      }
-
-      // ── Mode toggle (View Only ↔ Interactive) ──
+      // ── Controls Toggle (On/Off) ──
       btnMode.addEventListener('click', () => {
         interactiveMode = !interactiveMode;
-        btnMode.textContent = interactiveMode ? 'Interactive' : 'View Only';
-        btnMode.style.background = interactiveMode ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
-        btnMode.style.borderColor = interactiveMode ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
+        btnMode.textContent = interactiveMode ? 'Controls: On' : 'Controls: Off';
+        btnMode.style.color = interactiveMode ? '#00d26a' : 'white';
+        btnMode.style.background = interactiveMode ? 'rgba(0,210,106,0.12)' : 'rgba(255,255,255,0.06)';
+        btnMode.style.borderColor = interactiveMode ? 'rgba(0,210,106,0.4)' : 'rgba(255,255,255,0.1)';
+        
         frame.style.cursor = interactiveMode ? 'none' : 'default';
         if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
-        if (btnControlStyle) btnControlStyle.style.display = interactiveMode ? 'block' : 'none';
         if (viewHint) viewHint.style.display = interactiveMode ? 'none' : 'block';
         if (!interactiveMode && keyboardPanel) keyboardPanel.style.display = 'none';
         
         if (interactiveMode) {
-          if (controlStyle === 'cursor') {
-            virtualX = 0.5;
-            virtualY = 0.5;
-          }
-          showToast(controlStyle === 'cursor' ? '🎯 Cursor Mode active' : '🖱️ Touch Mode active');
+          virtualX = 0.5;
+          virtualY = 0.5;
         }
+        showToast(interactiveMode ? 'Controls enabled' : 'Controls disabled');
       });
+
+      // ── Mouse Speed Toggle ──
+      if (btnSpeed) {
+        btnSpeed.addEventListener('click', () => {
+          if (cursorSpeed === 1.0) cursorSpeed = 1.5;
+          else if (cursorSpeed === 1.5) cursorSpeed = 2.0;
+          else if (cursorSpeed === 2.0) cursorSpeed = 2.5;
+          else if (cursorSpeed === 2.5) cursorSpeed = 3.0;
+          else cursorSpeed = 1.0;
+          
+          btnSpeed.textContent = `Speed: ${cursorSpeed.toFixed(1)}x`;
+          showToast(`Cursor speed set to ${cursorSpeed.toFixed(1)}x`);
+        });
+      }
 
       // ── Keyboard panel toggle ──
       if (btnKeyboard) {
@@ -1889,46 +1886,7 @@
 
 
 
-      // Helper to map click coordinate relative to the actual video inside contain mode
-      function getClickRatios(clientX, clientY, frameEl) {
-        const rect = frameEl.getBoundingClientRect();
-        const videoWidth = frameEl.videoWidth;
-        const videoHeight = frameEl.videoHeight;
-        
-        if (!videoWidth || !videoHeight) {
-          return {
-            xRatio: (clientX - rect.left) / rect.width,
-            yRatio: (clientY - rect.top) / rect.height
-          };
-        }
-        
-        const containerWidth = rect.width;
-        const containerHeight = rect.height;
-        
-        const videoRatio = videoWidth / videoHeight;
-        const containerRatio = containerWidth / containerHeight;
-        
-        let actualWidth = containerWidth;
-        let actualHeight = containerHeight;
-        let xOffset = 0;
-        let yOffset = 0;
-        
-        if (containerRatio > videoRatio) {
-          actualWidth = containerHeight * videoRatio;
-          xOffset = (containerWidth - actualWidth) / 2;
-        } else {
-          actualHeight = containerWidth / videoRatio;
-          yOffset = (containerHeight - actualHeight) / 2;
-        }
-        
-        const touchX = clientX - rect.left - xOffset;
-        const touchY = clientY - rect.top - yOffset;
-        
-        return {
-          xRatio: Math.max(0, Math.min(1, touchX / actualWidth)),
-          yRatio: Math.max(0, Math.min(1, touchY / actualHeight))
-        };
-      }
+
 
       // ── Touch Gesture Processing variables ──
       let scMaxTouches = 0;
@@ -1962,11 +1920,6 @@
           scStartTime = Date.now();
           scLastTouchX = touches[0].clientX;
           scLastTouchY = touches[0].clientY;
-
-          if (controlStyle === 'touch') {
-            const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
-            sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
-          }
         } else if (touches.length === 2) {
           scMaxTouches = 2;
           scIsTwoFinger = true;
@@ -1993,21 +1946,18 @@
           const tx = touches[0].clientX;
           const ty = touches[0].clientY;
           
-          if (controlStyle === 'cursor') {
-            const dx = tx - scLastTouchX;
-            const dy = ty - scLastTouchY;
-            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-              scHasMoved = true;
-            }
-            // Scale movement speed to match the trackpad intensity (1.8x)
-            sendWS({ type: 'move', dx: dx * 1.8, dy: dy * 1.8 });
-          } else {
-            if (Math.abs(tx - scLastTouchX) > 4 || Math.abs(ty - scLastTouchY) > 4) {
-              scHasMoved = true;
-            }
-            const coords = getClickRatios(tx, ty, frame);
-            sendWS({ type: 'move_abs', xRatio: coords.xRatio, yRatio: coords.yRatio });
+          const dx = tx - scLastTouchX;
+          const dy = ty - scLastTouchY;
+          if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+            scHasMoved = true;
           }
+          const rect = frame.getBoundingClientRect();
+          // Scale movement speed for precise trackpad feel
+          const speed = cursorSpeed;
+          virtualX = Math.max(0, Math.min(1, virtualX + (dx / rect.width) * speed));
+          virtualY = Math.max(0, Math.min(1, virtualY + (dy / rect.height) * speed));
+          
+          sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
           
           scLastTouchX = tx;
           scLastTouchY = ty;
@@ -2022,23 +1972,13 @@
 
         const duration = Date.now() - scStartTime;
 
-        // Determine click coordinates ratio based on control style
-        let clickX = 0;
-        let clickY = 0;
-        let isTouchMode = (controlStyle === 'touch');
-        if (isTouchMode) {
-          const coords = getClickRatios(scLastTouchX, scLastTouchY, frame);
-          clickX = coords.xRatio;
-          clickY = coords.yRatio;
-        }
+        // Determine click coordinates ratio
+        let clickX = virtualX;
+        let clickY = virtualY;
 
         if (scMaxTouches === 2) {
           if (!scHasMoved && duration < 250) {
-            if (isTouchMode) {
-              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
-            } else {
-              sendWS({ type: 'click', button: 'right' });
-            }
+            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
             showToast('Right Click', 600);
           }
           scIsTwoFinger = false;
@@ -2049,27 +1989,18 @@
           const now = Date.now();
           if (now - scLastTapTime < 300) {
             if (scTapTimeout) clearTimeout(scTapTimeout);
-            if (isTouchMode) {
+            // Mouse mode acts as standard double click at accumulated virtual coords
+            sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
+            setTimeout(() => {
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-              setTimeout(() => {
-                sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-              }, 50);
-            } else {
-              sendWS({ type: 'click', button: 'left' });
-              setTimeout(() => {
-                sendWS({ type: 'click', button: 'left' });
-              }, 50);
-            }
+            }, 50);
             showToast('Double Click', 600);
             scLastTapTime = 0;
           } else {
             scLastTapTime = now;
             scTapTimeout = setTimeout(() => {
-              if (isTouchMode) {
-                sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-              } else {
-                sendWS({ type: 'click', button: 'left' });
-              }
+              // Mouse mode click at accumulated virtual coords
+              sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
               showToast('Left Click', 600);
               scTapTimeout = null;
             }, 200);
@@ -2323,12 +2254,12 @@
       <div id="screencastToolsDropdown" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px; min-width: 130px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); pointer-events: auto; backdrop-filter: blur(10px);">
         <!-- Fit screen toggle (Always shown) -->
         <button id="btnScreencastFit" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Fit: 100%</button>
-        <!-- Interactive / View toggle -->
-        <button id="btnScreencastMode" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">View Only</button>
-        <!-- Control Style toggle (only shown in interactive mode) -->
-        <button id="btnScreencastControlStyle" style="display:none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Touch Mode</button>
+        <!-- Controls (On/Off) toggle -->
+        <button id="btnScreencastMode" style="background: rgba(0,210,106,0.12); border: 1px solid rgba(0,210,106,0.4); color: #00d26a; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Controls: On</button>
         <!-- Keyboard toggle (only shown in interactive mode) -->
-        <button id="btnScreencastKeyboard" style="display:none; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Keyboard</button>
+        <button id="btnScreencastKeyboard" style="display:block; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Keyboard</button>
+        <!-- Mouse Speed toggle -->
+        <button id="btnScreencastSpeed" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Speed: 1.5x</button>
         <!-- Audio toggle -->
         <button id="btnScreencastAudio" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Audio: Off</button>
       </div>
@@ -2460,8 +2391,8 @@
     </div>
 
     <!-- Bottom Hint (view-only) -->
-    <div id="scViewHint" style="position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.55); font-size: 0.65rem; padding: 5px 12px; border-radius: 20px; pointer-events: none; z-index: 503; white-space: nowrap;">
-      Tap "Interactive" to control your PC
+    <div id="scViewHint" style="position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.55); font-size: 0.65rem; padding: 5px 12px; border-radius: 20px; pointer-events: none; z-index: 503; white-space: nowrap; display: none;">
+      Enable Controls to control your PC
     </div>
 
     <style>
