@@ -776,9 +776,27 @@ app.use((req, res, next) => {
     return next();
   }
 
+  // Helper to detect if a request originates from the host PC itself
+  function isLocalhostRequest(req) {
+    const ip = req.ip || req.connection.remoteAddress;
+    if (!ip) return false;
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+      return true;
+    }
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (ip === iface.address || ip === `::ffff:${iface.address}`) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // Check if request is from localhost (PC Dashboard)
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+  req.isLocalhost = isLocalhostRequest(req);
+  if (req.isLocalhost) {
     return next();
   }
 
@@ -924,8 +942,7 @@ app.get('/api/auth/verify', (req, res) => {
 });
 
 app.get('/api/auth/list', (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+  if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can view devices' });
   }
   
@@ -943,8 +960,7 @@ app.get('/api/auth/list', (req, res) => {
 });
 
 app.post('/api/auth/unban', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+  if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can unban devices' });
   }
   
@@ -962,8 +978,7 @@ app.post('/api/auth/unban', express.json(), (req, res) => {
 });
 
 app.post('/api/auth/revoke', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+  if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can revoke devices' });
   }
   
@@ -972,6 +987,16 @@ app.post('/api/auth/revoke', express.json(), (req, res) => {
     const name = authorizedDevices[deviceToken].name;
     delete authorizedDevices[deviceToken];
     saveConfig();
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.deviceToken === deviceToken) {
+          try {
+            client.send(JSON.stringify({ type: 'revoked' }));
+            client.close();
+          } catch(e) {}
+        }
+      });
+    }
     broadcastSSE('device-list-update', Object.values(authorizedDevices));
     writeLog(`Device revoked: ${name}`);
     res.json({ success: true });
@@ -980,23 +1005,8 @@ app.post('/api/auth/revoke', express.json(), (req, res) => {
   }
 });
 
-app.get('/api/auth/list', (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
-    return res.status(403).json({ error: 'Only localhost can list devices' });
-  }
-  
-  // Return list with tokens so dashboard can revoke them
-  const list = Object.entries(authorizedDevices).map(([token, data]) => ({
-    token,
-    ...data
-  }));
-  res.json({ success: true, devices: list });
-});
-
 app.post('/api/auth/ping', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+  if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can ping devices' });
   }
   
@@ -1021,8 +1031,7 @@ app.post('/api/auth/ping', express.json(), (req, res) => {
 
 // Screencast Pause Endpoint
 app.post('/api/auth/pause', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+  if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can pause screencast' });
   }
   

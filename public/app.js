@@ -165,6 +165,40 @@
     return `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent(text)}&dark=${darkParam}&light=${lightParam}`;
   }
 
+  let audioCtx = null;
+  function playPingSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    } catch (err) {
+      console.warn('AudioContext error:', err);
+    }
+  }
+
+  document.addEventListener('click', () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }, { once: true });
+
   function refreshAllQrs() {
     // 1. Mobile setup portal QR
     const qrContainer = $('#mobileQrContainer');
@@ -547,6 +581,16 @@
       fetchAuthorizedDevices();
     });
 
+    sseSource.addEventListener('ping-pc', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        playPingSound();
+        showToast(`Ping from ${data.name || 'Mobile Device'} (${data.ip || 'unknown IP'})`, 'info');
+      } catch (err) {
+        console.error('Error handling ping-pc event:', err);
+      }
+    });
+
     sseSource.onerror = () => {
       setConnectionStatus(false);
       sseSource.close();
@@ -776,21 +820,33 @@
   }
 
   window.unbanDevice = async (ip) => {
-    if (confirm('Are you sure you want to unban this device? It will be able to request access again.')) {
-      try {
-        const res = await doFetch('/api/auth/unban', {
-          method: 'POST',
-          body: JSON.stringify({ deviceIp: ip })
-        });
-        if (res.ok) {
-          showToast('Device unbanned');
-          fetchAuthorizedDevices();
-        } else {
-          showToast('Failed to unban device');
-        }
-      } catch (err) {
-        showToast('Network error');
+    if (!confirm('Are you sure you want to unban this device? It will be able to request access again.')) return;
+    
+    // Find the button and fade its card immediately
+    const btn = document.querySelector(`button[onclick="unbanDevice('${ip}')"]`);
+    if (btn) {
+      const card = btn.closest('div[style*="display: flex"]');
+      if (card) {
+        card.style.opacity = '0.3';
+        card.style.pointerEvents = 'none';
       }
+    }
+    
+    try {
+      const res = await doFetch('/api/auth/unban', {
+        method: 'POST',
+        body: JSON.stringify({ deviceIp: ip })
+      });
+      if (res.ok) {
+        showToast('Device unbanned', 'success');
+        fetchAuthorizedDevices();
+      } else {
+        showToast('Failed to unban device', 'error');
+        fetchAuthorizedDevices();
+      }
+    } catch (err) {
+      showToast('Network error', 'error');
+      fetchAuthorizedDevices();
     }
   };
 
@@ -1778,17 +1834,32 @@
 
   window.revokeDevice = async (token) => {
     if (!confirm('Are you sure you want to revoke this device? It will need to scan the QR code again to connect.')) return;
+    
+    // Find the button and fade its card immediately
+    const btn = document.querySelector(`button[onclick="revokeDevice('${token}')"]`);
+    if (btn) {
+      const card = btn.closest('div[style*="display: flex"]');
+      if (card) {
+        card.style.opacity = '0.3';
+        card.style.pointerEvents = 'none';
+      }
+    }
+    
     try {
       const res = await doFetch('/api/auth/revoke', {
         method: 'POST',
         body: JSON.stringify({ deviceToken: token })
       });
       if (res.ok) {
-        fetchAuthorizedDevices();
         showToast('Device revoked', 'success');
+        fetchAuthorizedDevices();
+      } else {
+        showToast('Failed to revoke device', 'error');
+        fetchAuthorizedDevices();
       }
     } catch (err) {
       showToast('Failed to revoke device', 'error');
+      fetchAuthorizedDevices();
     }
   };
 
