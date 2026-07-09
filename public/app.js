@@ -210,7 +210,7 @@
     const homepageQr = $('#homepageQrContainer');
     if (serverInfo) {
       const baseUrl = serverInfo.url;
-      const urlWithToken = `${baseUrl}/m?pairing_token=${serverInfo.pairingToken}`;
+      const urlWithToken = `${baseUrl}/m`;
       if (qrContainer) {
         qrContainer.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
       }
@@ -318,7 +318,7 @@
     // Setup QR code for mobile
     const qrContainer = $('#mobileQrContainer');
     const homepageQr = $('#homepageQrContainer');
-    const urlWithToken = `${baseUrl}/m?pairing_token=${info.pairingToken}`;
+    const urlWithToken = `${baseUrl}/m`;
     
     if (qrContainer) {
       qrContainer.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
@@ -480,68 +480,7 @@
       }
     });
 
-    let currentPairingReqId = null;
-    sseSource.addEventListener('pairing-request', (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        currentPairingReqId = data.reqId;
-        const modal = $('#pairingRequestModal');
-        if (modal) {
-          $('#pairingRequestDeviceName').textContent = data.name;
-          $('#pairingRequestDeviceIp').textContent = data.ip;
-          modal.style.display = 'flex';
-          
-          if (!isElectron && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            new Notification('AiroDrop Pairing Request', { body: `${data.name} wants to connect.` });
-          }
-        }
-      } catch (err) {
-        console.error('Error handling pairing-request', err);
-      }
-    });
 
-    const btnAcceptPairing = $('#btnAcceptPairing');
-    const btnRejectPairing = $('#btnRejectPairing');
-    
-    if (btnAcceptPairing) {
-      btnAcceptPairing.addEventListener('click', async () => {
-        if (!currentPairingReqId) return;
-        try {
-          const res = await fetch(`${isElectron ? apiBase : ''}/api/auth/approve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reqId: currentPairingReqId })
-          });
-          if (res.ok) {
-            showToast('Device connection approved!', 'success');
-            $('#pairingRequestModal').style.display = 'none';
-            currentPairingReqId = null;
-          }
-        } catch (err) {
-          showToast('Failed to approve request', 'error');
-        }
-      });
-    }
-
-    if (btnRejectPairing) {
-      btnRejectPairing.addEventListener('click', async () => {
-        if (!currentPairingReqId) return;
-        try {
-          const res = await fetch(`${isElectron ? apiBase : ''}/api/auth/reject`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reqId: currentPairingReqId })
-          });
-          if (res.ok) {
-            showToast('Device connection rejected', 'info');
-            $('#pairingRequestModal').style.display = 'none';
-            currentPairingReqId = null;
-          }
-        } catch (err) {
-          showToast('Failed to reject request', 'error');
-        }
-      });
-    }
 
     sseSource.addEventListener('log', (e) => {
       try {
@@ -582,9 +521,7 @@
       fetchPending();
     });
 
-    sseSource.addEventListener('device-list-update', () => {
-      fetchAuthorizedDevices();
-    });
+
 
     sseSource.addEventListener('ping-pc', (e) => {
       try {
@@ -824,36 +761,7 @@
     });
   }
 
-  window.unbanDevice = async (ip) => {
-    if (!confirm('Are you sure you want to unban this device? It will be able to request access again.')) return;
-    
-    // Find the button and fade its card immediately
-    const btn = document.querySelector(`button[onclick="unbanDevice('${ip}')"]`);
-    if (btn) {
-      const card = btn.closest('div[style*="display: flex"]');
-      if (card) {
-        card.style.opacity = '0.3';
-        card.style.pointerEvents = 'none';
-      }
-    }
-    
-    try {
-      const res = await doFetch('/api/auth/unban', {
-        method: 'POST',
-        body: JSON.stringify({ deviceIp: ip })
-      });
-      if (res.ok) {
-        showToast('Device unbanned', 'success');
-        fetchAuthorizedDevices();
-      } else {
-        showToast('Failed to unban device', 'error');
-        fetchAuthorizedDevices();
-      }
-    } catch (err) {
-      showToast('Network error', 'error');
-      fetchAuthorizedDevices();
-    }
-  };
+
 
   // ─── PWA Config ─────────────────────────────────────────────
   function setupTabs() {
@@ -1278,7 +1186,7 @@
     if (privacyPauseInput) {
       privacyPauseInput.addEventListener('change', async (e) => {
         try {
-          await doFetch('/api/auth/pause', {
+          await doFetch('/api/screencast/pause', {
             method: 'POST',
             body: JSON.stringify({ pause: e.target.checked })
           });
@@ -1341,7 +1249,7 @@
           if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
           if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
           updateTemporaryModeBadge(data.temporaryMode);
-          fetchAuthorizedDevices(); // Load authorized devices list at startup
+
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -1716,7 +1624,7 @@
         const defaultContent = $('#setup-devices');
         if (defaultContent) defaultContent.style.display = 'flex';
 
-        fetchAuthorizedDevices(); // Load devices list when opening Connect modal
+
         shortcutsModal.style.display = 'flex';
       });
     }
@@ -1750,123 +1658,7 @@
     });
   }
 
-  // ─── Authorized Devices ─────────────────────────────────────
-  async function fetchAuthorizedDevices() {
-    const authList = $('#homepageAuthorizedDevicesList');
-    const rejList = $('#homepageRejectedDevicesList');
-    if (!authList) return;
-    
-    try {
-      const res = await doFetch('/api/auth/list');
-      if (res.ok) {
-        const data = await res.json();
-        renderAuthorizedDevices(data.authorized || []);
-        if (rejList) renderRejectedDevices(data.rejected || []);
-      }
-    } catch (err) {
-      authList.innerHTML = `<div style="color: #ff3b30; text-align: center; padding: 10px;">Failed to load devices</div>`;
-      if (rejList) rejList.innerHTML = `<div style="color: #ff3b30; text-align: center; padding: 10px;">Failed to load devices</div>`;
-    }
-  }
 
-  function renderAuthorizedDevices(devices) {
-    const list = $('#homepageAuthorizedDevicesList');
-    if (!list) return;
-    
-    if (devices.length === 0) {
-      list.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px;">No devices authorized yet.</div>`;
-      return;
-    }
-    
-    list.innerHTML = devices.map(d => {
-      const date = new Date(d.lastSeen).toLocaleString();
-      return `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--glass-border);">
-          <div>
-            <div style="font-weight: 600; font-size: 0.86rem; color: #fff;">${escapeHtml(d.name)}</div>
-            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">IP: ${d.ipAddress} • Last seen: ${date}</div>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <button onclick="pingDevice('${d.token}')" style="background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); color: #4da6ff; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s;">Ping</button>
-            <button onclick="revokeDevice('${d.token}')" style="background: rgba(255, 59, 48, 0.15); border: 1px solid rgba(255, 59, 48, 0.3); color: #ff5247; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s;">Revoke</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  function renderRejectedDevices(devices) {
-    const list = $('#homepageRejectedDevicesList');
-    if (!list) return;
-    
-    if (devices.length === 0) {
-      list.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding: 10px;">No rejected devices.</div>`;
-      return;
-    }
-    
-    list.innerHTML = devices.map(d => {
-      const date = new Date(d.rejectedAt).toLocaleString();
-      return `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.05); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-          <div>
-            <div style="font-weight: 600; font-size: 0.86rem; color: #fff;">${escapeHtml(d.name)}</div>
-            <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">IP: ${d.ip} • Rejected: ${date}</div>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <button onclick="unbanDevice('${d.ip}')" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s;">Unban</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  window.pingDevice = async (token) => {
-    try {
-      const res = await doFetch('/api/auth/ping', {
-        method: 'POST',
-        body: JSON.stringify({ deviceToken: token })
-      });
-      const data = await res.json();
-      if (data.success && data.delivered) {
-        showToast('Ping sent to device!', 'success');
-      } else {
-        showToast('Device is not currently connected via WebSocket.', 'warning');
-      }
-    } catch (err) {
-      showToast('Failed to ping device', 'error');
-    }
-  };
-
-  window.revokeDevice = async (token) => {
-    if (!confirm('Are you sure you want to revoke this device? It will need to scan the QR code again to connect.')) return;
-    
-    // Find the button and fade its card immediately
-    const btn = document.querySelector(`button[onclick="revokeDevice('${token}')"]`);
-    if (btn) {
-      const card = btn.closest('div[style*="display: flex"]');
-      if (card) {
-        card.style.opacity = '0.3';
-        card.style.pointerEvents = 'none';
-      }
-    }
-    
-    try {
-      const res = await doFetch('/api/auth/revoke', {
-        method: 'POST',
-        body: JSON.stringify({ deviceToken: token })
-      });
-      if (res.ok) {
-        showToast('Device revoked', 'success');
-        fetchAuthorizedDevices();
-      } else {
-        showToast('Failed to revoke device', 'error');
-        fetchAuthorizedDevices();
-      }
-    } catch (err) {
-      showToast('Failed to revoke device', 'error');
-      fetchAuthorizedDevices();
-    }
-  };
 
   // ─── Settings Modal Setup ──────────────────────────────────
   function setupSettingsModal() {

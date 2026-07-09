@@ -119,11 +119,6 @@ let LAUNCH_ON_STARTUP = false;
 let AUTO_UPDATE = true;
 
 // ─── Security Configuration ──────────────────────────────────────
-const pairingToken = crypto.randomBytes(16).toString('hex');
-let authorizedDevices = {}; // { deviceToken: { name, lastSeen, ipAddress } }
-let rejectedDevices = {}; // { ipAddress: { name, rejectedAt } }
-let pendingPairingRequests = {}; // { reqId: { name, ip, time, pairingToken } }
-let completedPairingRequests = {}; // { reqId: { status: 'approved'|'rejected', deviceToken? } }
 let privacyPause = false; // PC Screencast pause state
 
 // ─── Initialize Paths ──────────────────────────────────────────
@@ -179,12 +174,7 @@ function loadConfig() {
       } else {
         SHARE_DIR = SAVE_DIR;
       }
-      if (data.authorizedDevices) {
-        authorizedDevices = data.authorizedDevices;
-      }
-      if (data.rejectedDevices) {
-        rejectedDevices = data.rejectedDevices;
-      }
+
     }
   } catch (err) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
@@ -230,8 +220,6 @@ function saveConfig() {
     data.autoUpdate = AUTO_UPDATE;
     data.saveDir = SAVE_DIR;
     data.shareDir = SHARE_DIR;
-    data.authorizedDevices = authorizedDevices;
-    data.rejectedDevices = rejectedDevices;
     
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
   } catch (err) {
@@ -757,199 +745,8 @@ app.use((req, res, next) => {
   return next();
 });
 
-// ─── Authentication Endpoints ──────────────────────────────────
-app.post('/api/auth/bind', express.json(), (req, res) => {
-  const { pairingToken: reqToken, deviceName } = req.body;
-  const ip = req.ip || req.connection.remoteAddress;
-
-  if (rejectedDevices[ip]) {
-    return res.status(403).json({ error: 'Device is permanently banned.' });
-  }
-
-  // Token is optional now since we manually approve/reject via PC UI.
-  // If it's provided, we can validate it to be strict.
-  if (reqToken && reqToken !== pairingToken) {
-    return res.status(401).json({ error: 'Invalid pairing token' });
-  }
-  
-  const reqId = crypto.randomBytes(8).toString('hex');
-  
-  pendingPairingRequests[reqId] = {
-    reqId,
-    name: deviceName || 'Unknown Device',
-    ip,
-    time: Date.now(),
-    pairingToken: reqToken
-  };
-  
-  broadcastSSE('pairing-request', pendingPairingRequests[reqId]);
-  writeLog(`Pairing request received from: ${pendingPairingRequests[reqId].name} (${ip})`);
-  
-  res.json({ success: true, status: 'pending', reqId });
-});
-
-app.get('/api/auth/bind-status', (req, res) => {
-  const { id } = req.query;
-  if (!id) return res.status(400).json({ error: 'Missing reqId' });
-  
-  if (completedPairingRequests[id]) {
-    res.json(completedPairingRequests[id]);
-  } else if (pendingPairingRequests[id]) {
-    res.json({ status: 'pending' });
-  } else {
-    res.status(404).json({ error: 'Request not found or expired' });
-  }
-});
-
-app.post('/api/auth/approve', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
-    return res.status(403).json({ error: 'Only localhost can approve devices' });
-  }
-  
-  const { reqId } = req.body;
-  const pending = pendingPairingRequests[reqId];
-  if (!pending) return res.status(404).json({ error: 'Pending request not found' });
-  
-  const deviceToken = crypto.randomBytes(32).toString('hex');
-  authorizedDevices[deviceToken] = {
-    name: pending.name,
-    lastSeen: Date.now(),
-    ipAddress: pending.ip,
-    boundAt: Date.now()
-  };
-  
-  saveConfig();
-  broadcastSSE('device-list-update', Object.values(authorizedDevices));
-  writeLog(`Device approved: ${pending.name} (${pending.ip})`);
-  
-  completedPairingRequests[reqId] = { status: 'approved', deviceToken };
-  delete pendingPairingRequests[reqId];
-  
-  res.json({ success: true });
-});
-
-app.post('/api/auth/reject', express.json(), (req, res) => {
-  const ip = req.ip || req.connection.remoteAddress;
-  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
-    return res.status(403).json({ error: 'Only localhost can reject devices' });
-  }
-  
-  const { reqId } = req.body;
-  if (!pendingPairingRequests[reqId]) return res.status(404).json({ error: 'Pending request not found' });
-  
-  const pending = pendingPairingRequests[reqId];
-  writeLog(`Device rejected and banned: ${pending.name} (${pending.ip})`);
-  
-  rejectedDevices[pending.ip] = {
-    name: pending.name,
-    rejectedAt: Date.now()
-  };
-  saveConfig();
-  broadcastSSE('device-list-update', Object.values(authorizedDevices));
-  
-  completedPairingRequests[reqId] = { status: 'rejected' };
-  delete pendingPairingRequests[reqId];
-  
-  res.json({ success: true });
-});
-
-app.get('/api/auth/verify', (req, res) => {
-  // Mobile hits this to silently verify its stored token.
-  // The middleware already intercepts invalid tokens, so if we reach here, it's valid.
-  res.json({ success: true, token: req.deviceToken || '' });
-});
-
-app.get('/api/auth/list', (req, res) => {
-  if (!req.isLocalhost) {
-    return res.status(403).json({ error: 'Only localhost can view devices' });
-  }
-  
-  const authList = Object.keys(authorizedDevices).map(token => ({
-    token,
-    ...authorizedDevices[token]
-  }));
-  
-  const rejectList = Object.keys(rejectedDevices).map(ip => ({
-    ip,
-    ...rejectedDevices[ip]
-  }));
-  
-  res.json({ authorized: authList, rejected: rejectList });
-});
-
-app.post('/api/auth/unban', express.json(), (req, res) => {
-  if (!req.isLocalhost) {
-    return res.status(403).json({ error: 'Only localhost can unban devices' });
-  }
-  
-  const { deviceIp } = req.body;
-  if (rejectedDevices[deviceIp]) {
-    const name = rejectedDevices[deviceIp].name;
-    delete rejectedDevices[deviceIp];
-    saveConfig();
-    broadcastSSE('device-list-update', Object.values(authorizedDevices));
-    writeLog(`Device unbanned: ${name} (${deviceIp})`);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Device not found in rejected list' });
-  }
-});
-
-app.post('/api/auth/revoke', express.json(), (req, res) => {
-  if (!req.isLocalhost) {
-    return res.status(403).json({ error: 'Only localhost can revoke devices' });
-  }
-  
-  const { deviceToken } = req.body;
-  if (authorizedDevices[deviceToken]) {
-    const name = authorizedDevices[deviceToken].name;
-    delete authorizedDevices[deviceToken];
-    saveConfig();
-    if (wss) {
-      wss.clients.forEach((client) => {
-        if (client.deviceToken === deviceToken) {
-          try {
-            client.send(JSON.stringify({ type: 'revoked' }));
-            client.close();
-          } catch(e) {}
-        }
-      });
-    }
-    broadcastSSE('device-list-update', Object.values(authorizedDevices));
-    writeLog(`Device revoked: ${name}`);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: 'Device not found' });
-  }
-});
-
-app.post('/api/auth/ping', express.json(), (req, res) => {
-  if (!req.isLocalhost) {
-    return res.status(403).json({ error: 'Only localhost can ping devices' });
-  }
-  
-  const { deviceToken } = req.body;
-  if (authorizedDevices[deviceToken]) {
-    const name = authorizedDevices[deviceToken].name;
-    let found = false;
-    if (wss) {
-      wss.clients.forEach((client) => {
-        if (client.deviceToken === deviceToken && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'ping' }));
-          found = true;
-        }
-      });
-    }
-    writeLog(`Pinged device: ${name}`);
-    res.json({ success: true, delivered: found });
-  } else {
-    res.status(404).json({ error: 'Device not found' });
-  }
-});
-
-// Screencast Pause Endpoint
-app.post('/api/auth/pause', express.json(), (req, res) => {
+// ─── Screencast Pause Endpoint ──────────────────────────────────
+app.post('/api/screencast/pause', express.json(), (req, res) => {
   if (!req.isLocalhost) {
     return res.status(403).json({ error: 'Only localhost can pause screencast' });
   }
@@ -1664,7 +1461,7 @@ app.get('/api/check-update', (req, res) => {
 app.get('/api/info', async (req, res) => {
   const ip = getLocalIP();
   const url = `http://${ip}:${PORT}`;
-  const mobileUrl = `${url}/m?pairing_token=${pairingToken}`;
+  const mobileUrl = `${url}/m`;
   const allIps = getAllIPs();
 
   try {
@@ -1683,7 +1480,7 @@ app.get('/api/info', async (req, res) => {
       deviceName: DEVICE_NAME,
       allIps,
       temporaryMode: TEMPORARY_MODE,
-      pairingToken: pairingToken
+      pairingToken: ''
     });
   } catch {
     res.json({
@@ -1696,7 +1493,7 @@ app.get('/api/info', async (req, res) => {
       deviceName: DEVICE_NAME,
       allIps,
       temporaryMode: TEMPORARY_MODE,
-      pairingToken: pairingToken
+      pairingToken: ''
     });
   }
 });
@@ -1705,7 +1502,7 @@ app.get('/api/info', async (req, res) => {
 app.get('/api/qr.png', async (req, res) => {
   try {
     const ip = getLocalIP();
-    const mobileUrl = `http://${ip}:${PORT}/m?pairing_token=${pairingToken}`;
+    const mobileUrl = `http://${ip}:${PORT}/m`;
     res.setHeader('Content-Type', 'image/png');
     await QRCode.toFileStream(res, mobileUrl, {
       width: 240,
