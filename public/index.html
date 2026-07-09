@@ -102,6 +102,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             Send to Phone
           </button>
+          <button class="tab" data-tab="scratchpad">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Scratchpad
+          </button>
         </div>
       </nav>
 
@@ -180,8 +184,8 @@
         </div>
       </section>
 
-      <!-- Tab 4: Tools -->
-      <section class="tab-content" id="tab-tools">
+      <!-- Tab 3: Scratchpad -->
+      <section class="tab-content" id="tab-scratchpad">
         <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
           
           <!-- Tool 1: Instant QR Generator -->
@@ -204,6 +208,11 @@
         </div>
       </section>
     </main>
+
+    <!-- ─── Footer ────────────────────────────────────────── -->
+    <div class="web-footer" style="text-align: center; padding: 20px; font-size: 12px; color: var(--text-secondary); margin-top: auto; z-index: 10;">
+      Created by Asep with Love ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: var(--accent-light); text-decoration: none; font-weight: 500;">github.com/asepsayyad007</a>
+    </div>
   </div>
 
   <!-- ─── Lightbox ──────────────────────────────────────── -->
@@ -442,21 +451,7 @@
               </div>
             </div>
 
-            <!-- Theme Selector Card -->
-            <div class="settings-card" style="margin-bottom: 0; margin-top: 16px;">
-              <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.3444 19.4858 5.7681 20 5.7681 20.7812V21C5.7681 21.5523 6.21581 22 6.7681 22H12Z"/><circle cx="7.5" cy="10.5" r="1.5"/><circle cx="11.5" cy="7.5" r="1.5"/><circle cx="16.5" cy="9.5" r="1.5"/><circle cx="15.5" cy="14.5" r="1.5"/></svg>Appearance &amp; Theme</h3>
-              <div class="settings-input-group" style="margin-bottom: 0;">
-                <label class="settings-input-label">Select Color Theme</label>
-                <select id="themeSelectInput" class="settings-text-input" style="width: 100%; cursor: pointer; outline: none; background: rgba(0,0,0,0.3); color: #fff;">
-                  <option value="dark">Dark Mode</option>
-                  <option value="liquid-glass">Liquid Glass</option>
-                  <option value="light">Light Mode</option>
-                  <option value="midnight">Midnight Ocean</option>
-                  <option value="aurora">Aurora Green</option>
-                  <option value="cyberpunk">Cyberpunk</option>
-                </select>
-              </div>
-            </div>
+
 
           </div>
 
@@ -584,10 +579,7 @@
     </div>
   </div>
 
-  <!-- ─── Footer ────────────────────────────────────────── -->
-  <div class="web-footer" style="text-align: center; padding: 20px; font-size: 12px; color: #888;">
-    Created by Asep with Love ❤️ | <a href="https://github.com/asepsayyad007" target="_blank" style="color: #6366f1; text-decoration: none;">github.com/asepsayyad007</a>
-  </div>
+
 
   <script src="app.js"></script>
   <script>
