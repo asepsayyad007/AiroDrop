@@ -9,12 +9,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0a0f">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="alternate icon" type="image/png" href="logo.png">
-  <link rel="apple-touch-icon" href="logo-192.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="logo-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="logo.png">
+  <link rel="apple-touch-icon" href="/logo-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/logo-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/logo.png">
   <title>Send to PC</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,13 +51,74 @@
     }
 
     .app {
+      display: none; /* Hidden by default until authorized */
       position: relative;
       z-index: 1;
       max-width: 480px;
       margin: 0 auto;
       padding: 0 16px;
       padding-top: env(safe-area-inset-top, 20px);
-      padding-bottom: env(safe-area-inset-bottom, 20px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 70px); /* Leave space for bottom nav */
+    }
+
+    /* Tabs */
+    .mobile-tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .mobile-tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      display: none; /* Hidden by default */
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(64px + env(safe-area-inset-bottom, 0px));
+      background: rgba(15, 15, 20, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 100;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text3);
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 8px 0;
+      transition: all 0.25s;
+    }
+    .bottom-nav-item.active {
+      color: var(--accent);
+    }
+    .bottom-nav-item svg {
+      transition: transform 0.25s;
+    }
+    .bottom-nav-item.active svg {
+      transform: scale(1.15);
+    }
+    .bottom-nav-item span {
+      font-size: 0.65rem;
+      font-weight: 600;
     }
 
     /* Header */
@@ -401,7 +462,8 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <!-- MAIN APP UI -->
+  <div class="app" id="mainAppContainer" style="display: none;">
     <!-- Header -->
     <div class="header" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
       <img src="logo.svg" alt="AiroDrop Logo" style="width: 64px; height: 64px; margin-bottom: 12px; filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));">
@@ -410,6 +472,10 @@
         <span class="dot" id="connDot"></span>
         <span id="connText">Connecting...</span>
       </div>
+      <button class="btn" id="btnPingPC" style="margin-top: 12px; font-size: 0.72rem; padding: 6px 12px; background: rgba(0, 122, 255, 0.15); border: 1px solid rgba(0, 122, 255, 0.3); color: #4da6ff; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Ping PC
+      </button>
       <!-- Universal Connection Button -->
       <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connect PC Services</button>
       
@@ -448,7 +514,8 @@
     <!-- RECEIVE FROM PC -->
     <div class="section-title">From PC → iPhone</div>
     
-    <!-- Text Inbox Box -->
+    <div id="tabHome" class="mobile-tab-content active">
+      <!-- Text Inbox Box -->
     <div class="sender-card" style="margin-bottom: 12px;">
       <h3>Text Inbox</h3>
       <div class="receive-list" id="textInboxList">
@@ -499,7 +566,10 @@
       </div>
     </div>
 
-    <!-- TOOLS & SCRATCHPAD -->
+    </div>
+
+    <div id="tabTools" class="mobile-tab-content">
+      <!-- TOOLS & SCRATCHPAD -->
     <div class="section-title">Tools & Scratchpad</div>
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3>Shared Scratchpad</h3>
@@ -538,8 +608,33 @@
     <div class="section-title">Trackpad & Keyboard</div>
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Remote Trackpad</h3>
-      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 8px;">Control mouse and keyboard of your PC in real-time</p>
-      <button class="btn" id="btnOpenTrackpad" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Open Fullscreen Trackpad</button>
+      <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 12px;">Control mouse and keyboard of your PC in real-time</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 0.8rem; font-weight: 500;">Haptic Feedback</span>
+            <span style="font-size: 0.65rem; color: var(--text2);">Vibrate on clicks and keys</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="hapticFeedbackToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div style="height: 1px; background: rgba(255,255,255,0.05); width: 100%;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 0.8rem; font-weight: 500;">Presentation Mode</span>
+            <span style="font-size: 0.65rem; color: var(--text2);">Tap left/right to change slides</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="presentationModeToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn" id="btnOpenTrackpad" style="margin-top: 4px; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Open Fullscreen Trackpad</button>
     </div>
 
     <!-- PC LIVE SCREENCAST -->
@@ -559,8 +654,26 @@
       </div>
     </div>
 
+    </div>
+
     <div style="height: 30px;"></div>
-  </div>
+  </div> <!-- End MAIN APP UI -->
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav" id="bottomNavContainer" style="display: none;">
+    <button class="bottom-nav-item active" data-tab="tabHome">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span>Home</span>
+    </button>
+    <button class="bottom-nav-item" data-tab="tabTools">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>Tools</span>
+    </button>
+    <button class="bottom-nav-item" id="btnBottomNavFiles">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span>Files</span>
+    </button>
+  </nav>
 
   <!-- Lightbox Overlay for Fullscreen Screenshot -->
   <div id="screenshotLightbox" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; align-items: center; justify-content: center; flex-direction: column;">
@@ -585,8 +698,31 @@
     <button class="pwa-close" id="pwaClose">&times;</button>
   </div>
 
+  <!-- Pairing Modal Overlay -->
+  <div id="pairingOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div style="background: var(--bg); border: 1px solid var(--card-border); padding: 24px; border-radius: var(--radius); width: 90%; max-width: 400px; text-align: center;">
+      <h2 style="margin-bottom: 12px; color: var(--accent);">Pair with PC</h2>
+      <p style="color: var(--text2); font-size: 0.85rem; margin-bottom: 20px;">Enter a name for this device to securely connect to your PC.</p>
+      <input type="text" id="pairingDeviceName" placeholder="e.g. Asep's iPhone" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: white; margin-bottom: 16px; outline: none; text-align: center; font-size: 1rem;">
+      <button id="btnConfirmPairing" class="btn" style="width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent-light));">Connect Device</button>
+    </div>
+  </div>
+
   <script>
     const SERVER = window.location.origin;
+    
+    function doFetch(url, options = {}) {
+      const token = localStorage.getItem('deviceToken');
+      if (token) {
+        options.headers = options.headers || {};
+        if (options.headers instanceof Headers) {
+          options.headers.append('Authorization', `Bearer ${token}`);
+        } else {
+          options.headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+      return fetch(url, options);
+    }
     // (photo vars removed — not used in this page)
 
     // Auto-poll state
@@ -598,6 +734,185 @@
 
     // ─── Init ─────────────────────────────────────
     async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const pairingToken = urlParams.get('pairing_token');
+      let storedToken = localStorage.getItem('deviceToken');
+
+      // Try to verify token silently. We check even if storedToken is missing to support IP-based authorization.
+      try {
+        const headers = {};
+        if (storedToken) {
+          headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+        const verifyRes = await fetch('/api/auth/verify', { headers });
+        if (verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            if (verifyData.token) {
+              localStorage.setItem('deviceToken', verifyData.token);
+              storedToken = verifyData.token;
+            }
+            if (pairingToken) {
+              window.history.replaceState({}, document.title, '/m');
+            }
+            initAppComponents();
+            return; // Authorized! Stop execution of the rest of init.
+          }
+        } else {
+          localStorage.removeItem('deviceToken');
+          storedToken = null;
+        }
+      } catch (e) {
+        console.warn('Could not verify token due to network error, proceeding anyway.');
+        if (storedToken) {
+          // If we had a token and it was a network error, let it load the components.
+          initAppComponents();
+          return;
+        }
+      }
+
+      if (!storedToken && pairingToken) {
+        document.getElementById('pairingOverlay').style.display = 'flex';
+        
+        let defaultName = 'Mobile Device';
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) defaultName = 'iPhone';
+        else if (/Android/.test(navigator.userAgent)) defaultName = 'Android Device';
+        document.getElementById('pairingDeviceName').value = defaultName;
+
+        const btnConfirm = document.getElementById('btnConfirmPairing');
+        btnConfirm.addEventListener('click', async () => {
+          const name = document.getElementById('pairingDeviceName').value.trim();
+          try {
+            btnConfirm.innerHTML = 'Requesting...';
+            btnConfirm.disabled = true;
+            
+            const res = await fetch('/api/auth/bind', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pairingToken, deviceName: name || defaultName })
+            });
+            const data = await res.json();
+            
+            if (data.status === 'pending' && data.reqId) {
+              btnConfirm.innerHTML = 'Waiting for PC Approval... <span class="loader" style="width:14px;height:14px;display:inline-block;border:2px solid #fff;border-bottom-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-left:8px;"></span>';
+              
+              const pollInterval = setInterval(async () => {
+                try {
+                  const pollRes = await fetch(`/api/auth/bind-status?id=${data.reqId}`);
+                  const pollData = await pollRes.json();
+                  
+                  if (pollData.status === 'approved') {
+                    clearInterval(pollInterval);
+                    localStorage.setItem('deviceToken', pollData.deviceToken);
+                    window.history.replaceState({}, document.title, '/m');
+                    document.getElementById('pairingOverlay').style.display = 'none';
+                    // Re-run init logic to setup PWA and components
+                    initAppComponents();
+                  } else if (pollData.status === 'rejected') {
+                    clearInterval(pollInterval);
+                    showToast('Pairing request was rejected by PC.');
+                    btnConfirm.innerHTML = 'Pair Device';
+                    btnConfirm.disabled = false;
+                  }
+                } catch (err) {
+                  // Ignore network errors during polling
+                }
+              }, 2000);
+            } else {
+              showToast('Pairing failed: ' + (data.error || 'Unknown error'));
+              btnConfirm.innerHTML = 'Pair Device';
+              btnConfirm.disabled = false;
+            }
+          } catch (err) {
+            showToast('Pairing request failed.');
+            btnConfirm.innerHTML = 'Pair Device';
+            btnConfirm.disabled = false;
+          }
+        });
+        return; // Halt initialization until paired
+      }
+
+      if (!storedToken) {
+        document.body.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; background: #0a0a0f; color: white;">
+            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 320px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" style="margin-bottom: 12px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <h2 style="color: #ff5500; margin-bottom: 12px; font-size: 1.2rem;">Device Not Paired</h2>
+              <p style="color: #888; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;">To securely connect, please scan the QR code on your PC Dashboard, or request access below if you are on the same WiFi network.</p>
+              
+              <input type="text" id="pwaDeviceName" placeholder="Your Name (e.g. John's iPhone)" style="width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 1rem; text-align: center;">
+              <button id="btnPwaRequest" style="width: 100%; padding: 14px; border-radius: 8px; border: none; background: #ff5500; color: white; font-weight: bold; font-size: 1rem; cursor: pointer;">Request Pairing</button>
+            </div>
+          </div>
+        `;
+        
+        let defaultName = 'Mobile Device';
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) defaultName = 'iPhone';
+        else if (/Android/.test(navigator.userAgent)) defaultName = 'Android Device';
+        document.getElementById('pwaDeviceName').value = defaultName;
+
+        document.getElementById('btnPwaRequest').addEventListener('click', async () => {
+          const btn = document.getElementById('btnPwaRequest');
+          const name = document.getElementById('pwaDeviceName').value.trim() || defaultName;
+          
+          try {
+            btn.innerHTML = 'Requesting...';
+            btn.disabled = true;
+            
+            const res = await fetch('/api/auth/bind', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pairingToken: '', deviceName: name })
+            });
+            const data = await res.json();
+            
+            if (data.status === 'pending' && data.reqId) {
+              btn.innerHTML = 'Waiting for PC Approval... <span class="loader" style="width:14px;height:14px;display:inline-block;border:2px solid #fff;border-bottom-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-left:8px;"></span>';
+              
+              const pollInterval = setInterval(async () => {
+                try {
+                  const pollRes = await fetch(`/api/auth/bind-status?id=${data.reqId}`);
+                  const pollData = await pollRes.json();
+                  
+                  if (pollData.status === 'approved') {
+                    clearInterval(pollInterval);
+                    localStorage.setItem('deviceToken', pollData.deviceToken);
+                    window.location.href = '/m';
+                  } else if (pollData.status === 'rejected') {
+                    clearInterval(pollInterval);
+                    showToast('Request was rejected (permanently banned).');
+                    btn.innerHTML = 'Banned by PC';
+                    btn.style.background = '#ef4444';
+                  }
+                } catch (err) {}
+              }, 2000);
+            } else {
+              showToast('Pairing failed: ' + (data.error || 'Unknown error'));
+              btn.innerHTML = 'Request Pairing';
+              btn.disabled = false;
+            }
+          } catch (err) {
+            showToast('Request failed.');
+            btn.innerHTML = 'Request Pairing';
+            btn.disabled = false;
+          }
+        });
+        return;
+      }
+
+      // If we fall through here, either storedToken is valid or we just paired.
+      initAppComponents();
+    }
+
+    function initAppComponents() {
+      const storedToken = localStorage.getItem('deviceToken');
+      
+      // Reveal UI
+      const mainApp = document.getElementById('mainAppContainer');
+      const bottomNav = document.getElementById('bottomNavContainer');
+      if (mainApp) mainApp.style.display = 'block';
+      if (bottomNav) bottomNav.style.display = 'flex';
+      
       setupPWA();
       checkConnection();
       document.getElementById('checkPendingBtn').addEventListener('click', () => {
@@ -620,7 +935,7 @@
           await fetchPending(false);
           const scratchpad = document.getElementById('mobileScratchpad');
           if (scratchpad) {
-            fetch('/api/scratchpad')
+            doFetch('/api/scratchpad')
               .then(res => res.json())
               .then(data => {
                 scratchpad.value = data.text || '';
@@ -639,7 +954,52 @@
       setupUniversalConnect();
       setupMobileTrackpad();
       setupScreencastOverlay();
+      
+      // Update File Browser to use token
+      const fileIframe = document.getElementById('fileBrowserIframe');
+      if (fileIframe && storedToken) {
+        fileIframe.src = `/files?token=${storedToken}`;
+      }
+      // Ping PC button
+      const btnPingPC = document.getElementById('btnPingPC');
+      if (btnPingPC) {
+        btnPingPC.addEventListener('click', () => {
+          if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+            sendWS({ type: 'ping_pc' });
+            showToast('Ping sent to PC!', 'success');
+          } else {
+            showToast('Not connected to PC services.', 'warning');
+          }
+        });
+      }
+
       setupFileBrowserOverlay();
+
+      // Setup Bottom Navigation
+      document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Reset tabs
+          document.querySelectorAll('.mobile-tab-content').forEach(c => c.classList.remove('active'));
+          document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+          
+          // Set active tab
+          btn.classList.add('active');
+          document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+        });
+      });
+
+      // File manager button triggers overlay directly
+      document.getElementById('btnBottomNavFiles').addEventListener('click', () => {
+        document.getElementById('fileBrowserOverlay').style.display = 'flex';
+      });
+
+      // Redirect legacy open file browser button to just open the overlay
+      const btnLegacyOpenFileBrowser = document.getElementById('btnOpenFileBrowser');
+      if (btnLegacyOpenFileBrowser) {
+        btnLegacyOpenFileBrowser.addEventListener('click', () => {
+          document.getElementById('fileBrowserOverlay').style.display = 'flex';
+        });
+      }
 
       // Auto-hide/show trackpad card and overlay when rotating
       window.addEventListener('resize', () => {
@@ -710,7 +1070,7 @@
       const dot = document.getElementById('connDot');
       const text = document.getElementById('connText');
       try {
-        const res = await fetch('/api/info', { signal: AbortSignal.timeout(5000) });
+        const res = await doFetch('/api/info', { signal: AbortSignal.timeout(5000) });
         const info = await res.json();
         dot.className = 'dot ok';
         text.textContent = `Connected to ${info.ip}`;
@@ -743,7 +1103,7 @@
         showSkeleton('fileInboxList');
       }
       try {
-        const res = await fetch('/api/pending');
+        const res = await doFetch('/api/pending');
         const data = await res.json();
         renderPending(data.items);
       } catch {
@@ -842,7 +1202,7 @@
     async function deletePendingItem(itemId) {
       if (!itemId) return;
       try {
-        const res = await fetch(`/api/pending/${itemId}/ack`, { method: 'POST' });
+        const res = await doFetch(`/api/pending/${itemId}/ack`, { method: 'POST' });
         if (res.ok) {
           showToast('Item deleted');
           fetchPending();
@@ -951,7 +1311,7 @@
           if (!text) return showToast('Please enter some text');
           sendTextBtn.disabled = true;
           try {
-            const res = await fetch('/api/text', {
+            const res = await doFetch('/api/text', {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain' },
               body: text
@@ -1014,7 +1374,7 @@
           formData.append('file', selectedFile);
 
           try {
-            const res = await fetch('/api/file', {
+            const res = await doFetch('/api/file', {
               method: 'POST',
               body: formData
             });
@@ -1040,7 +1400,7 @@
       const scratchpad = document.getElementById('mobileScratchpad');
       const scratchpadStatus = document.getElementById('scratchpadStatus');
       if (scratchpad) {
-        fetch('/api/scratchpad')
+        doFetch('/api/scratchpad')
           .then(res => res.json())
           .then(data => {
             scratchpad.value = data.text || '';
@@ -1055,7 +1415,7 @@
           clearTimeout(scratchpadTimer);
           scratchpadTimer = setTimeout(async () => {
             try {
-              const res = await fetch('/api/scratchpad', {
+              const res = await doFetch('/api/scratchpad', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: scratchpad.value })
@@ -1079,7 +1439,9 @@
     }
 
     function connectMobileSSE() {
-      const sse = new EventSource('/api/events');
+      const token = localStorage.getItem('deviceToken');
+      const sseUrl = `/api/events?token=${token}`;
+      const sse = new EventSource(sseUrl);
       sse.addEventListener('scratchpad', (e) => {
         const data = JSON.parse(e.data);
         const scratchpad = document.getElementById('mobileScratchpad');
@@ -1104,7 +1466,7 @@
           const action = btn.getAttribute('data-cmd');
           btn.disabled = true;
           try {
-            const res = await fetch('/api/control', {
+            const res = await doFetch('/api/control', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action })
@@ -1224,6 +1586,30 @@
     });
     let wsWantsConnected = false;
     let wsConnecting = false;
+    let pingAudio = null;
+
+    function playPingSound() {
+      if (!pingAudio) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.3);
+        }
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200, 100, 200]);
+        }
+      }
+    }
 
     function updateUniversalConnectButton(state) {
       const btn = document.getElementById('btnUniversalConnect');
@@ -1257,8 +1643,9 @@
       wsConnecting = true;
       updateUniversalConnectButton('connecting');
 
+      const token = localStorage.getItem('deviceToken') || '';
       const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${proto}//${window.location.host}/trackpad`);
+      const ws = new WebSocket(`${proto}//${window.location.host}/trackpad?token=${token}`);
 
       ws.onopen = () => {
         wsConnecting = false;
@@ -1270,7 +1657,6 @@
         else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
         sendWS({ type: 'identify', deviceName: mobileName });
 
-        // Trigger pending stream features automatically on connection
         if (window._pendingScreencastStart) {
           window._pendingScreencastStart = false;
           if (window._pendingScreencastMode === 'audio') {
@@ -1314,6 +1700,25 @@
       ws.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (data.type === 'ping') {
+            playPingSound();
+            showToast('Device Pinged by PC!');
+            return;
+          }
+          if (data.type === 'privacy_pause') {
+            if (window._isScreencasting) {
+              const previewImg = document.getElementById('scPreviewImg');
+              if (previewImg) {
+                previewImg.style.filter = data.pause ? 'blur(15px) brightness(0.5)' : '';
+              }
+              if (data.pause) {
+                showToast('PC Paused Screencast for Privacy');
+              } else {
+                showToast('PC Resumed Screencast');
+              }
+            }
+            return;
+          }
           if (data.type === 'webrtc_offer') {
             console.log('[WebRTC] SDP Offer received from PC.');
             createPhonePeerConnection();
@@ -1462,6 +1867,10 @@
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
         if (touches.length === 1 && !touchpadIsScrolling) {
+          // If in presentation mode, don't move cursor, wait for touchend tap
+          const presMode = document.getElementById('presentationModeToggle');
+          if (presMode && presMode.checked) return;
+
           const cx = touches[0].clientX, cy = touches[0].clientY;
           if (Math.abs(cx - touchpadStartX) > 6 || Math.abs(cy - touchpadStartY) > 6) {
             touchpadHasMoved = true;
@@ -1494,6 +1903,25 @@
         }
 
         if (!touchpadHasMoved && duration < 250) {
+          const hapticToggle = document.getElementById('hapticFeedbackToggle');
+          if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
+            navigator.vibrate(10);
+          }
+
+          const presMode = document.getElementById('presentationModeToggle');
+          if (presMode && presMode.checked) {
+            // Presentation mode tap logic
+            const screenWidth = window.innerWidth;
+            if (touchpadLastX < screenWidth / 2) {
+              sendWS({ type: 'key', code: 37 }); // ArrowLeft
+              showToast('⏮ Previous Slide', 600);
+            } else {
+              sendWS({ type: 'key', code: 39 }); // ArrowRight
+              showToast('⏭ Next Slide', 600);
+            }
+            return;
+          }
+
           const now = Date.now();
           if (now - touchpadLastTapTime < 300) {
             if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
@@ -1513,8 +1941,16 @@
       }, { passive: false });
 
       // ── Click Buttons ──
-      btnLeft.addEventListener('click', () => sendWS({ type: 'click', button: 'left' }));
-      btnRight.addEventListener('click', () => sendWS({ type: 'click', button: 'right' }));
+      const sendClick = (btnType) => {
+        const hapticToggle = document.getElementById('hapticFeedbackToggle');
+        if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
+          navigator.vibrate(15);
+        }
+        sendWS({ type: 'click', button: btnType });
+      };
+
+      btnLeft.addEventListener('click', () => sendClick('left'));
+      btnRight.addEventListener('click', () => sendClick('right'));
 
       // ── Keyboard Input (Diff Typing) ──
       let lastInputValue = '';
@@ -1553,6 +1989,10 @@
       // ── Virtual Key Grid ──
       document.querySelectorAll('.btn-kbd').forEach(btn => {
         btn.addEventListener('click', () => {
+          const hapticToggle = document.getElementById('hapticFeedbackToggle');
+          if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
+            navigator.vibrate(5);
+          }
           const code = parseInt(btn.getAttribute('data-code'), 10);
           const char = btn.getAttribute('data-char');
           if (code) {
@@ -1586,6 +2026,25 @@
       const btnSpeed = document.getElementById('btnScreencastSpeed');
       const dropdownMenu = document.getElementById('screencastToolsDropdown');
       const toolsArrow = document.getElementById('svgToolsArrow');
+      const btnPiP = document.getElementById('btnScreencastPiP');
+
+      if (btnPiP && document.pictureInPictureEnabled) {
+        btnPiP.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          try {
+            if (document.pictureInPictureElement) {
+              await document.exitPictureInPicture();
+            } else {
+              await frame.requestPictureInPicture();
+            }
+          } catch (err) {
+            showToast('PiP failed: ' + err.message);
+          }
+          dropdownMenu.style.display = 'none';
+        });
+      } else if (btnPiP) {
+        btnPiP.style.display = 'none'; // hide if not supported
+      }
 
       const btnQuickAudio = document.getElementById('btnQuickAudioStream');
       const quickAudioIcon = document.getElementById('quickAudioStreamIcon');
@@ -2254,6 +2713,8 @@
       <div id="screencastToolsDropdown" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px; min-width: 130px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); pointer-events: auto; backdrop-filter: blur(10px);">
         <!-- Fit screen toggle (Always shown) -->
         <button id="btnScreencastFit" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Fit: 100%</button>
+        <!-- PiP toggle -->
+        <button id="btnScreencastPiP" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Picture in Picture</button>
         <!-- Controls (On/Off) toggle -->
         <button id="btnScreencastMode" style="background: rgba(0,210,106,0.12); border: 1px solid rgba(0,210,106,0.4); color: #00d26a; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Controls: On</button>
         <!-- Keyboard toggle (only shown in interactive mode) -->

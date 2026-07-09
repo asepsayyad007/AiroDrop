@@ -22,6 +22,7 @@ const os = require('os');
 const koffi = require('koffi');
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const crypto = require('crypto');
 const serverEvents = new EventEmitter();
 const app = express();
 
@@ -117,6 +118,14 @@ let AUTO_OPEN_LINKS = false;
 let LAUNCH_ON_STARTUP = false;
 let AUTO_UPDATE = true;
 
+// ─── Security Configuration ──────────────────────────────────────
+const pairingToken = crypto.randomBytes(16).toString('hex');
+let authorizedDevices = {}; // { deviceToken: { name, lastSeen, ipAddress } }
+let rejectedDevices = {}; // { ipAddress: { name, rejectedAt } }
+let pendingPairingRequests = {}; // { reqId: { name, ip, time, pairingToken } }
+let completedPairingRequests = {}; // { reqId: { status: 'approved'|'rejected', deviceToken? } }
+let privacyPause = false; // PC Screencast pause state
+
 // ─── Initialize Paths ──────────────────────────────────────────
 function init(userDataPath) {
   CONFIG_FILE = path.join(userDataPath, 'config.json');
@@ -170,6 +179,12 @@ function loadConfig() {
       } else {
         SHARE_DIR = SAVE_DIR;
       }
+      if (data.authorizedDevices) {
+        authorizedDevices = data.authorizedDevices;
+      }
+      if (data.rejectedDevices) {
+        rejectedDevices = data.rejectedDevices;
+      }
     }
   } catch (err) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
@@ -195,6 +210,32 @@ function loadConfig() {
   } catch (err) {
     console.error('[CONFIG] Failed to create share directory, falling back to SAVE_DIR:', err.message);
     SHARE_DIR = SAVE_DIR;
+  }
+}
+
+function saveConfig() {
+  try {
+    let data = {};
+    if (fs.existsSync(CONFIG_FILE)) {
+      data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    }
+    data.port = PORT;
+    data.temporaryMode = TEMPORARY_MODE;
+    data.deviceName = DEVICE_NAME;
+    data.rateLimitEnabled = RATE_LIMIT_ENABLED;
+    data.notificationsEnabled = NOTIFICATIONS_ENABLED;
+    data.temporaryModeHours = TEMPORARY_MODE_HOURS;
+    data.autoOpenLinks = AUTO_OPEN_LINKS;
+    data.launchOnStartup = LAUNCH_ON_STARTUP;
+    data.autoUpdate = AUTO_UPDATE;
+    data.saveDir = SAVE_DIR;
+    data.shareDir = SHARE_DIR;
+    data.authorizedDevices = authorizedDevices;
+    data.rejectedDevices = rejectedDevices;
+    
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('[CONFIG] Failed to save config.json:', err.message);
   }
 }
 
@@ -705,6 +746,296 @@ app.use((req, res, next) => {
     return res.sendStatus(204);
   }
   next();
+});
+
+// ─── Authentication Middleware ─────────────────────────────────
+app.use((req, res, next) => {
+  const cleanPath = req.path.toLowerCase();
+  // Public paths (verify should NOT be bypassed)
+  if (
+    cleanPath === '/' ||
+    cleanPath === '/m' ||
+    cleanPath === '/api/auth/bind' ||
+    cleanPath === '/api/auth/bind-status' ||
+    cleanPath === '/api/auth/revoke' ||
+    cleanPath === '/api/info' ||
+    cleanPath === '/api/qr.png' ||
+    cleanPath === '/style.css' ||
+    cleanPath === '/app.js' ||
+    cleanPath === '/mobile.html' ||
+    cleanPath === '/manifest.json' ||
+    cleanPath === '/sw.js' ||
+    cleanPath === '/favicon.ico' ||
+    cleanPath === '/logo.svg' ||
+    cleanPath === '/logo.png' ||
+    cleanPath === '/logo-192.png' ||
+    cleanPath.startsWith('/vendor/') ||
+    cleanPath.startsWith('/css/') ||
+    cleanPath.startsWith('/js/')
+  ) {
+    return next();
+  }
+
+  // Check if request is from localhost (PC Dashboard)
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+    return next();
+  }
+
+  // Subnet restriction - only allow private IPs
+  const isPrivateIP = (ip) => {
+    return ip.includes('192.168.') || ip.includes('10.') || ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) || ip.includes('::ffff:192.168.') || ip.includes('::ffff:10.') || ip.match(/^::ffff:172\.(1[6-9]|2[0-9]|3[0-1])\./);
+  };
+  
+  if (!isPrivateIP(ip)) {
+    return res.status(403).json({ error: 'Access denied: Outside local network' });
+  }
+
+  // Check if the IP is already authorized (IP-based authorization fast path)
+  const devEntry = Object.entries(authorizedDevices).find(([t, d]) => d.ipAddress === ip);
+  if (devEntry) {
+    const [token, dev] = devEntry;
+    req.device = dev;
+    req.deviceToken = token;
+    dev.lastSeen = Date.now();
+    return next();
+  }
+
+  // Token Validation
+  let token = req.query.token;
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      token = parts[1];
+    }
+  }
+
+  if (token && authorizedDevices[token]) {
+    req.device = authorizedDevices[token];
+    req.deviceToken = token;
+    authorizedDevices[token].lastSeen = Date.now();
+    return next();
+  }
+
+  res.status(401).json({ error: 'Unauthorized: Invalid or missing token' });
+});
+
+// ─── Authentication Endpoints ──────────────────────────────────
+app.post('/api/auth/bind', express.json(), (req, res) => {
+  const { pairingToken: reqToken, deviceName } = req.body;
+  const ip = req.ip || req.connection.remoteAddress;
+
+  if (rejectedDevices[ip]) {
+    return res.status(403).json({ error: 'Device is permanently banned.' });
+  }
+
+  // Token is optional now since we manually approve/reject via PC UI.
+  // If it's provided, we can validate it to be strict.
+  if (reqToken && reqToken !== pairingToken) {
+    return res.status(401).json({ error: 'Invalid pairing token' });
+  }
+  
+  const reqId = crypto.randomBytes(8).toString('hex');
+  
+  pendingPairingRequests[reqId] = {
+    reqId,
+    name: deviceName || 'Unknown Device',
+    ip,
+    time: Date.now(),
+    pairingToken: reqToken
+  };
+  
+  broadcastSSE('pairing-request', pendingPairingRequests[reqId]);
+  writeLog(`Pairing request received from: ${pendingPairingRequests[reqId].name} (${ip})`);
+  
+  res.json({ success: true, status: 'pending', reqId });
+});
+
+app.get('/api/auth/bind-status', (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ error: 'Missing reqId' });
+  
+  if (completedPairingRequests[id]) {
+    res.json(completedPairingRequests[id]);
+  } else if (pendingPairingRequests[id]) {
+    res.json({ status: 'pending' });
+  } else {
+    res.status(404).json({ error: 'Request not found or expired' });
+  }
+});
+
+app.post('/api/auth/approve', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can approve devices' });
+  }
+  
+  const { reqId } = req.body;
+  const pending = pendingPairingRequests[reqId];
+  if (!pending) return res.status(404).json({ error: 'Pending request not found' });
+  
+  const deviceToken = crypto.randomBytes(32).toString('hex');
+  authorizedDevices[deviceToken] = {
+    name: pending.name,
+    lastSeen: Date.now(),
+    ipAddress: pending.ip,
+    boundAt: Date.now()
+  };
+  
+  saveConfig();
+  broadcastSSE('device-list-update', Object.values(authorizedDevices));
+  writeLog(`Device approved: ${pending.name} (${pending.ip})`);
+  
+  completedPairingRequests[reqId] = { status: 'approved', deviceToken };
+  delete pendingPairingRequests[reqId];
+  
+  res.json({ success: true });
+});
+
+app.post('/api/auth/reject', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can reject devices' });
+  }
+  
+  const { reqId } = req.body;
+  if (!pendingPairingRequests[reqId]) return res.status(404).json({ error: 'Pending request not found' });
+  
+  const pending = pendingPairingRequests[reqId];
+  writeLog(`Device rejected and banned: ${pending.name} (${pending.ip})`);
+  
+  rejectedDevices[pending.ip] = {
+    name: pending.name,
+    rejectedAt: Date.now()
+  };
+  saveConfig();
+  broadcastSSE('device-list-update', Object.values(authorizedDevices));
+  
+  completedPairingRequests[reqId] = { status: 'rejected' };
+  delete pendingPairingRequests[reqId];
+  
+  res.json({ success: true });
+});
+
+app.get('/api/auth/verify', (req, res) => {
+  // Mobile hits this to silently verify its stored token.
+  // The middleware already intercepts invalid tokens, so if we reach here, it's valid.
+  res.json({ success: true, token: req.deviceToken || '' });
+});
+
+app.get('/api/auth/list', (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can view devices' });
+  }
+  
+  const authList = Object.keys(authorizedDevices).map(token => ({
+    token,
+    ...authorizedDevices[token]
+  }));
+  
+  const rejectList = Object.keys(rejectedDevices).map(ip => ({
+    ip,
+    ...rejectedDevices[ip]
+  }));
+  
+  res.json({ authorized: authList, rejected: rejectList });
+});
+
+app.post('/api/auth/unban', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can unban devices' });
+  }
+  
+  const { deviceIp } = req.body;
+  if (rejectedDevices[deviceIp]) {
+    const name = rejectedDevices[deviceIp].name;
+    delete rejectedDevices[deviceIp];
+    saveConfig();
+    broadcastSSE('device-list-update', Object.values(authorizedDevices));
+    writeLog(`Device unbanned: ${name} (${deviceIp})`);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Device not found in rejected list' });
+  }
+});
+
+app.post('/api/auth/revoke', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can revoke devices' });
+  }
+  
+  const { deviceToken } = req.body;
+  if (authorizedDevices[deviceToken]) {
+    const name = authorizedDevices[deviceToken].name;
+    delete authorizedDevices[deviceToken];
+    saveConfig();
+    broadcastSSE('device-list-update', Object.values(authorizedDevices));
+    writeLog(`Device revoked: ${name}`);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Device not found' });
+  }
+});
+
+app.get('/api/auth/list', (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can list devices' });
+  }
+  
+  // Return list with tokens so dashboard can revoke them
+  const list = Object.entries(authorizedDevices).map(([token, data]) => ({
+    token,
+    ...data
+  }));
+  res.json({ success: true, devices: list });
+});
+
+app.post('/api/auth/ping', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can ping devices' });
+  }
+  
+  const { deviceToken } = req.body;
+  if (authorizedDevices[deviceToken]) {
+    const name = authorizedDevices[deviceToken].name;
+    let found = false;
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.deviceToken === deviceToken && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'ping' }));
+          found = true;
+        }
+      });
+    }
+    writeLog(`Pinged device: ${name}`);
+    res.json({ success: true, delivered: found });
+  } else {
+    res.status(404).json({ error: 'Device not found' });
+  }
+});
+
+// Screencast Pause Endpoint
+app.post('/api/auth/pause', express.json(), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip !== '127.0.0.1' && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    return res.status(403).json({ error: 'Only localhost can pause screencast' });
+  }
+  
+  privacyPause = req.body.pause;
+  if (wss) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'privacy_pause', pause: privacyPause }));
+      }
+    });
+  }
+  writeLog(`Privacy Pause: ${privacyPause ? 'ON' : 'OFF'}`);
+  res.json({ success: true, pause: privacyPause });
 });
 
 // ─── Helper: Get Local IP ──────────────────────────────────────
@@ -1405,7 +1736,7 @@ app.get('/api/check-update', (req, res) => {
 app.get('/api/info', async (req, res) => {
   const ip = getLocalIP();
   const url = `http://${ip}:${PORT}`;
-  const mobileUrl = `${url}/m`;
+  const mobileUrl = `${url}/m?pairing_token=${pairingToken}`;
   const allIps = getAllIPs();
 
   try {
@@ -1423,7 +1754,8 @@ app.get('/api/info', async (req, res) => {
       uptime: process.uptime(),
       deviceName: DEVICE_NAME,
       allIps,
-      temporaryMode: TEMPORARY_MODE
+      temporaryMode: TEMPORARY_MODE,
+      pairingToken: pairingToken
     });
   } catch {
     res.json({
@@ -1435,7 +1767,8 @@ app.get('/api/info', async (req, res) => {
       uptime: process.uptime(),
       deviceName: DEVICE_NAME,
       allIps,
-      temporaryMode: TEMPORARY_MODE
+      temporaryMode: TEMPORARY_MODE,
+      pairingToken: pairingToken
     });
   }
 });
@@ -1444,7 +1777,7 @@ app.get('/api/info', async (req, res) => {
 app.get('/api/qr.png', async (req, res) => {
   try {
     const ip = getLocalIP();
-    const mobileUrl = `http://${ip}:${PORT}/m`;
+    const mobileUrl = `http://${ip}:${PORT}/m?pairing_token=${pairingToken}`;
     res.setHeader('Content-Type', 'image/png');
     await QRCode.toFileStream(res, mobileUrl, {
       width: 240,
@@ -2152,7 +2485,26 @@ function startServer(portCallback) {
     try {
       const pathname = request.url.split('?')[0];
       if (pathname === '/trackpad') {
+        const urlParams = new URLSearchParams(request.url.split('?')[1] || '');
+        const token = urlParams.get('token');
+        const ip = socket.remoteAddress;
+        
+        let isAuthorized = false;
+        if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+          isAuthorized = true;
+        } else if (token && authorizedDevices[token]) {
+          isAuthorized = true;
+          authorizedDevices[token].lastSeen = Date.now();
+        }
+        
+        if (!isAuthorized) {
+          socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+
         wss.handleUpgrade(request, socket, head, (ws) => {
+          ws.deviceToken = token || 'localhost';
           wss.emit('connection', ws, request);
         });
       }
@@ -2265,6 +2617,9 @@ function startServer(portCallback) {
             break;
           case 'webrtc_ice_candidate':
             serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
+            break;
+          case 'ping_pc':
+            serverEvents.emit('ping_pc', ws);
             break;
         }
       } catch (err) {

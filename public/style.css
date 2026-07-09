@@ -2215,3 +2215,18 @@ input:checked + .slider:before {
     box-shadow: 0 0 0 0 rgba(0, 210, 106, 0);
   }
 }
+
+/* Modal Overlay Styling for Alerts and Prompts */
+.modal-overlay {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10005 !important;
+}
