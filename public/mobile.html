@@ -1668,7 +1668,10 @@
         else if (/Android/.test(navigator.userAgent)) mobileName = 'Android Device';
         sendWS({ type: 'identify', deviceName: mobileName });
 
-        if (window._pendingScreencastStart) {
+        if (streamActive) {
+          console.log('[WebRTC] Re-requesting active background stream after reconnect...');
+          sendWS({ type: 'screencast_start', audioOnly: audioOnlyStreamMode });
+        } else if (window._pendingScreencastStart) {
           window._pendingScreencastStart = false;
           if (window._pendingScreencastMode === 'audio') {
             const btnQuick = document.getElementById('btnQuickAudioStream');
@@ -2066,6 +2069,9 @@
         btnPiP.addEventListener('click', async (e) => {
           e.stopPropagation();
           try {
+            if (window.navigator.standalone) {
+              throw new Error('iOS limits PiP in standalone PWA mode. Please open AiroDrop in regular Safari to use Picture-in-Picture.');
+            }
             if (document.pictureInPictureElement) {
               await document.exitPictureInPicture();
             } else if (frame.webkitPresentationMode === "picture-in-picture") {
@@ -2076,7 +2082,7 @@
               frame.webkitSetPresentationMode("picture-in-picture");
             }
           } catch (err) {
-            showToast('PiP failed: ' + err.message);
+            showToast(err.message, 'warning', 6000);
           }
           dropdownMenu.style.display = 'none';
         });

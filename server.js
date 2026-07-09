@@ -2190,6 +2190,7 @@ app.use((err, req, res, next) => {
 // ─── Server Lifecycle ──────────────────────────────────────────
 let serverInstance = null;
 let wss = null;
+let screencastStopTimeout = null;
 
 function startServer(portCallback) {
   if (serverInstance) return;
@@ -2329,6 +2330,11 @@ function startServer(portCallback) {
             }
             break;
           case 'screencast_start':
+            if (screencastStopTimeout) {
+              clearTimeout(screencastStopTimeout);
+              screencastStopTimeout = null;
+              console.log('[TRACKPAD] screencastStopTimeout cleared on reconnection');
+            }
             serverEvents.emit('screencast_start', ws);
             break;
           case 'screencast_stop':
@@ -2352,7 +2358,11 @@ function startServer(portCallback) {
     
     ws.on('close', () => {
       console.log('[TRACKPAD] Phone disconnected');
-      serverEvents.emit('screencast_stop', ws);
+      if (screencastStopTimeout) clearTimeout(screencastStopTimeout);
+      screencastStopTimeout = setTimeout(() => {
+        console.log('[TRACKPAD] screencastStopTimeout triggered; stopping screencast');
+        serverEvents.emit('screencast_stop', ws);
+      }, 30000); // 30 seconds grace period to prevent disconnecting background audio stream
       broadcastSSE('trackpad_status', { connected: false });
     });
   });

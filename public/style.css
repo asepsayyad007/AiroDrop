@@ -1168,18 +1168,25 @@ body::before {
 
 .send-split-container {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
+  align-items: stretch;
 }
 
 .send-split-container > .send-card {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 380px;
 }
 
 @media (max-width: 768px) {
   .send-split-container {
     flex-direction: column;
+  }
+  .send-split-container > .send-card {
+    min-height: auto;
   }
 }
 
@@ -1205,7 +1212,7 @@ body::before {
 .send-card h3 {
   font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .send-card textarea {
@@ -1217,10 +1224,12 @@ body::before {
   background: var(--bg-card);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
-  resize: vertical;
+  resize: none;
   outline: none;
   transition: var(--transition);
   line-height: 1.5;
+  flex: 1;
+  margin-bottom: 12px;
 }
 
 .send-card textarea:focus {
@@ -1233,11 +1242,10 @@ body::before {
 }
 
 .send-card .btn-primary {
-  margin-top: 12px;
+  margin-top: auto;
   width: 100%;
 }
 
-.file-drop,
 #dropzone,
 .dropzone {
   display: flex;
@@ -1255,6 +1263,27 @@ body::before {
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(8px);
+}
+
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: hsla(240, 25%, 10%, 0.4);
+  border: 2px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-secondary);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  flex: 1;
+  margin-bottom: 12px;
+  min-height: 180px;
 }
 
 .file-drop::before {
@@ -1326,6 +1355,15 @@ body::before {
   flex-direction: column;
   gap: 12px;
   align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  min-height: 180px;
 }
 
 .send-image-preview img {
