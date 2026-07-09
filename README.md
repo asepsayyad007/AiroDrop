@@ -1,8 +1,8 @@
-# AiroDrop v5.0.4 🚀
+# AiroDrop v5.0.5 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-5.0.4-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-5.0.5-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,27 +17,26 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v5.0.4
+## 🚀 What's New in v5.0.5
 
-This release brings version 5.0.4, focusing on a complete premium dark-mode glassmorphism UI redesign, bugs fixes, and native iOS ergonomics:
+This release brings version 5.0.5, focusing on screenshare cursor movements uniformity, GitHub auto-update pipeline corrections, and minor layout polishes:
 
 ### ✅ New Features & Updates
-1. **🎨 Premium Dark-Mode Glassmorphism Redesign** — Completely overhauled the visual interface of the PC dashboard and mobile portals. Features high-res SVG icons, centered backdrop-blurred overlays, custom styled inputs/switches, and clean remote control cards.
-2. **📳 iPhone Haptic Feedback Workaround** — Added a compatibility layer for iOS/Safari (which lacks standard vibration support) utilizing a hidden native iOS 18+ toggle switch element to programmatically click and trigger Taptic Engine haptic responses on iPhone.
-3. **📺 WebKit Video Picture-in-Picture (PiP)** — Enabled support for WebKit-specific presentation modes (`webkitPresentationMode` and `webkitSetPresentationMode`) to allow flawless screen PiP streaming in iOS Safari.
-4. **📋 Copyable File Links** — Added a "Copy Link" action beside the "Download" option inside the mobile received files loop, copying the absolute URL to the clipboard.
-5. **📝 Cleaned Scratchpad & Layout order**:
-   - Restored the **Scratchpad** tab to the PC header navigation. Removed the Instant QR Generator card to leave a clean, centered full-width scratchpad text area.
-   - Organized mobile Remote tools in order (Screenshare first, then File Manager, Trackpad, Shared Scratchpad, and PC Screenshot).
-   - Ensured footer credits are persistent and clearly visible at the bottom of both dashboards.
+1. **🖱️ Screenshare Cursor speed uniformity** — Resolved the vertical screenshare cursor speed difference (which was more than 2x slower than horizontal dragging). The vertical divisor now dynamically scales according to the video stream's actual aspect ratio (`frame.videoHeight / frame.videoWidth`) instead of the container's letterboxed overlay bounding box.
+2. **🔄 Corrected GitHub Auto-Updater Pipeline**
+   - Configured GitHub Actions to automatically run builds and release assets on every `push` to `main`, keeping the application up to date on every commit.
+   - Fixed the auto-updater check by including `dist/latest.yml` in the uploaded release assets (which was missing and causing `electron-updater` to fail).
+   - Set the workflow to auto-overwrite existing assets and mark the latest build as the primary release.
+3. **🎨 Polished Send to Phone Layout** — Redesigned columns to stretch symmetrically under flexbox, locking input textareas to prevent offset mismatches and pinning buttons to the card bottoms for perfect horizontal alignment.
+4. **🔒 Purged Device pairing & Authentication** — Stripped all legacy pairing overlays, auth routes (`/api/auth/...`), local state saves, and dead functions for a completely clean, direct local connection.
 
 ---
 
-## 📥 Downloads (v5.0.4)
+## 📥 Downloads (v5.0.5)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v5.0.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.4/AiroDrop.Setup.5.0.4.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v5.0.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.4/AiroDrop-Portable-5.0.4.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v5.0.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.5/AiroDrop.Setup.5.0.5.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v5.0.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.5/AiroDrop-Portable-5.0.5.exe)** — Standalone execution without installation.
 
 ---
 
