@@ -2457,8 +2457,11 @@
           const rect = frame.getBoundingClientRect();
           // Scale movement speed for precise trackpad feel
           const speed = cursorSpeed;
-          virtualX = Math.max(0, Math.min(1, virtualX + (dx / rect.width) * speed));
-          virtualY = Math.max(0, Math.min(1, virtualY + (dy / rect.height) * speed));
+          const aspect = (frame.videoHeight && frame.videoWidth) ? (frame.videoHeight / frame.videoWidth) : (9 / 16);
+          const scaleX = rect.width;
+          const scaleY = rect.width * aspect;
+          virtualX = Math.max(0, Math.min(1, virtualX + (dx / scaleX) * speed));
+          virtualY = Math.max(0, Math.min(1, virtualY + (dy / scaleY) * speed));
           
           sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
           

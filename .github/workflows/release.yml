@@ -2,6 +2,8 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
 
@@ -29,17 +31,26 @@ jobs:
       - name: Compile and Build App
         run: npm run build
         env:
-          # Pass GITHUB_TOKEN in case electron-builder uses it for building/signing info,
-          # though we handle the assets upload manually via action-gh-release.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.exe
+            dist/latest.yml
           generate_release_notes: true
           draft: false
           prerelease: false
+          overwrite: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
