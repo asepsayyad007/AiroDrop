@@ -596,6 +596,12 @@
   </style>
 </head>
 <body>
+  <!-- Hidden switcher input for iOS 18+ haptics workaround -->
+  <div style="position: fixed; top: -100px; left: -100px; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; visibility: hidden;">
+    <input type="checkbox" switch id="iosHapticSwitch">
+    <label for="iosHapticSwitch" id="iosHapticLabel"></label>
+  </div>
+
   <!-- MAIN APP UI -->
   <div class="app" id="mainAppContainer" style="display: none;">
     <!-- Header -->
@@ -837,6 +843,39 @@
 
   <script>
     const SERVER = window.location.origin;
+
+    function triggerHaptic(arg) {
+      const hapticToggle = document.getElementById('hapticFeedbackToggle');
+      if (hapticToggle && !hapticToggle.checked) return;
+
+      // 1. Android/Chrome native Vibration API
+      if (navigator.vibrate) {
+        try {
+          navigator.vibrate(arg);
+        } catch (e) {
+          console.warn('Vibration API error:', e);
+        }
+        return;
+      }
+
+      // 2. iOS 18+ switch haptic workaround
+      const iosLabel = document.getElementById('iosHapticLabel');
+      if (iosLabel) {
+        if (Array.isArray(arg)) {
+          let delay = 0;
+          arg.forEach((val, idx) => {
+            if (idx % 2 === 0) { // vibrate duration
+              setTimeout(() => {
+                iosLabel.click();
+              }, delay);
+            }
+            delay += val;
+          });
+        } else {
+          iosLabel.click();
+        }
+      }
+    }
     
     function doFetch(url, options = {}) {
       const token = localStorage.getItem('deviceToken');
@@ -1744,9 +1783,7 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.3);
         }
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]);
-        }
+        triggerHaptic([100, 50, 100]);
       } catch (err) {
         console.warn('AudioContext error:', err);
       }
@@ -2080,10 +2117,7 @@
         }
 
         if (!touchpadHasMoved && duration < 250) {
-          const hapticToggle = document.getElementById('hapticFeedbackToggle');
-          if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
-            navigator.vibrate(10);
-          }
+          triggerHaptic(10);
 
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) {
@@ -2119,10 +2153,7 @@
 
       // ── Click Buttons ──
       const sendClick = (btnType) => {
-        const hapticToggle = document.getElementById('hapticFeedbackToggle');
-        if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
-          navigator.vibrate(15);
-        }
+        triggerHaptic(15);
         sendWS({ type: 'click', button: btnType });
       };
 
@@ -2163,13 +2194,9 @@
         });
       }
 
-      // ── Virtual Key Grid ──
       document.querySelectorAll('.btn-kbd').forEach(btn => {
         btn.addEventListener('click', () => {
-          const hapticToggle = document.getElementById('hapticFeedbackToggle');
-          if (hapticToggle && hapticToggle.checked && navigator.vibrate) {
-            navigator.vibrate(5);
-          }
+          triggerHaptic(5);
           const code = parseInt(btn.getAttribute('data-code'), 10);
           const char = btn.getAttribute('data-char');
           if (code) {
@@ -2205,14 +2232,21 @@
       const toolsArrow = document.getElementById('svgToolsArrow');
       const btnPiP = document.getElementById('btnScreencastPiP');
 
-      if (btnPiP && document.pictureInPictureEnabled) {
+      const isPiPSupported = (document.pictureInPictureEnabled && frame.requestPictureInPicture) ||
+                             (frame.webkitSupportsPresentationMode && frame.webkitSupportsPresentationMode("picture-in-picture"));
+
+      if (btnPiP && isPiPSupported) {
         btnPiP.addEventListener('click', async (e) => {
           e.stopPropagation();
           try {
             if (document.pictureInPictureElement) {
               await document.exitPictureInPicture();
-            } else {
+            } else if (frame.webkitPresentationMode === "picture-in-picture") {
+              frame.webkitSetPresentationMode("inline");
+            } else if (frame.requestPictureInPicture) {
               await frame.requestPictureInPicture();
+            } else if (frame.webkitSetPresentationMode) {
+              frame.webkitSetPresentationMode("picture-in-picture");
             }
           } catch (err) {
             showToast('PiP failed: ' + err.message);
