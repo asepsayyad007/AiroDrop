@@ -867,10 +867,9 @@
 
     // ─── Init ─────────────────────────────────────
     async function init() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const pairingToken = urlParams.get('pairing_token');
-      let storedToken = localStorage.getItem('deviceToken');
-
+      localStorage.setItem('deviceToken', 'public-device');
+      initAppComponents();
+      return;
       // Try to verify token silently. We check even if storedToken is missing to support IP-based authorization.
       try {
         const headers = {};

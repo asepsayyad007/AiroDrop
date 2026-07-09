@@ -750,92 +750,11 @@ app.use((req, res, next) => {
 
 // ─── Authentication Middleware ─────────────────────────────────
 app.use((req, res, next) => {
-  const cleanPath = req.path.toLowerCase();
-  // Public paths (verify should NOT be bypassed)
-  if (
-    cleanPath === '/' ||
-    cleanPath === '/m' ||
-    cleanPath === '/api/auth/bind' ||
-    cleanPath === '/api/auth/bind-status' ||
-    cleanPath === '/api/auth/revoke' ||
-    cleanPath === '/api/info' ||
-    cleanPath === '/api/qr.png' ||
-    cleanPath === '/style.css' ||
-    cleanPath === '/app.js' ||
-    cleanPath === '/mobile.html' ||
-    cleanPath === '/manifest.json' ||
-    cleanPath === '/sw.js' ||
-    cleanPath === '/favicon.ico' ||
-    cleanPath === '/logo.svg' ||
-    cleanPath === '/logo.png' ||
-    cleanPath === '/logo-192.png' ||
-    cleanPath.startsWith('/vendor/') ||
-    cleanPath.startsWith('/css/') ||
-    cleanPath.startsWith('/js/')
-  ) {
-    return next();
-  }
-
-  // Helper to detect if a request originates from the host PC itself
-  function isLocalhostRequest(req) {
-    const ip = req.ip || req.connection.remoteAddress;
-    if (!ip) return false;
-    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
-      return true;
-    }
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        if (ip === iface.address || ip === `::ffff:${iface.address}`) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Check if request is from localhost (PC Dashboard)
-  req.isLocalhost = isLocalhostRequest(req);
-  if (req.isLocalhost) {
-    return next();
-  }
-
-  // Subnet restriction - only allow private IPs
-  const isPrivateIP = (ip) => {
-    return ip.includes('192.168.') || ip.includes('10.') || ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) || ip.includes('::ffff:192.168.') || ip.includes('::ffff:10.') || ip.match(/^::ffff:172\.(1[6-9]|2[0-9]|3[0-1])\./);
-  };
-  
-  if (!isPrivateIP(ip)) {
-    return res.status(403).json({ error: 'Access denied: Outside local network' });
-  }
-
-  // Check if the IP is already authorized (IP-based authorization fast path)
-  const devEntry = Object.entries(authorizedDevices).find(([t, d]) => d.ipAddress === ip);
-  if (devEntry) {
-    const [token, dev] = devEntry;
-    req.device = dev;
-    req.deviceToken = token;
-    dev.lastSeen = Date.now();
-    return next();
-  }
-
-  // Token Validation
-  let token = req.query.token;
-  if (!token && req.headers.authorization) {
-    const parts = req.headers.authorization.split(' ');
-    if (parts.length === 2 && parts[0] === 'Bearer') {
-      token = parts[1];
-    }
-  }
-
-  if (token && authorizedDevices[token]) {
-    req.device = authorizedDevices[token];
-    req.deviceToken = token;
-    authorizedDevices[token].lastSeen = Date.now();
-    return next();
-  }
-
-  res.status(401).json({ error: 'Unauthorized: Invalid or missing token' });
+  // Device pairing disabled - allow all devices directly
+  req.isLocalhost = true;
+  req.deviceToken = 'public-device';
+  req.device = { name: 'Mobile Device', ipAddress: req.ip || req.connection.remoteAddress };
+  return next();
 });
 
 // ─── Authentication Endpoints ──────────────────────────────────
@@ -2505,19 +2424,7 @@ function startServer(portCallback) {
         const token = urlParams.get('token');
         const ip = socket.remoteAddress;
         
-        let isAuthorized = false;
-        if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
-          isAuthorized = true;
-        } else if (token && authorizedDevices[token]) {
-          isAuthorized = true;
-          authorizedDevices[token].lastSeen = Date.now();
-        }
-        
-        if (!isAuthorized) {
-          socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-          socket.destroy();
-          return;
-        }
+        let isAuthorized = true;
 
         wss.handleUpgrade(request, socket, head, (ws) => {
           ws.deviceToken = token || 'localhost';
