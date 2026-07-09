@@ -1874,18 +1874,10 @@
     const settingsModal = $('#settingsModal');
     const btnCloseSettings = $('#btnCloseSettings');
 
-    const btnRefreshDevices = $('#btnRefreshDevices');
-    if (btnRefreshDevices) {
-      btnRefreshDevices.addEventListener('click', () => {
-        fetchAuthorizedDevices();
-      });
-    }
-
     if (btnHeaderSettings && settingsModal) {
       btnHeaderSettings.addEventListener('click', () => {
         btnHeaderSettings.classList.add('glow');
         settingsModal.style.display = 'flex';
-        fetchAuthorizedDevices();
       });
     }
 

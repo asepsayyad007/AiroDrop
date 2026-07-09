@@ -2396,3 +2396,62 @@ input:checked + .slider:before {
   justify-content: center !important;
   z-index: 10005 !important;
 }
+
+/* Compact Small Checkbox Toggle Switch */
+.switch-sm {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.switch-sm input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-sm .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 99px;
+}
+
+.switch-sm .slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #e2e8f0;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.switch-sm:hover .slider {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.switch-sm input:checked + .slider {
+  background-color: var(--accent);
+  border-color: rgba(255, 85, 0, 0.4);
+  box-shadow: 0 0 8px rgba(255, 85, 0, 0.3);
+}
+
+.switch-sm input:checked + .slider:before {
+  transform: translateX(16px);
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 6px rgba(255, 255, 255, 0.8);
+}
+

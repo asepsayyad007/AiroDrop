@@ -2123,7 +2123,7 @@ app.get('/api/events', (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 // POST /api/send — Unified endpoint that accepts text, image, or generic files
-app.post('/api/send', upload.single('content'), async (req, res) => {
+app.post('/api/send', upload.any(), async (req, res) => {
   try {
     let savedPath;
     let filename;
@@ -2139,13 +2139,15 @@ app.post('/api/send', upload.single('content'), async (req, res) => {
                          contentType.startsWith('video/') ||
                          contentType.includes('octet-stream');
 
+    const reqFile = req.file || (req.files && req.files[0]);
+
     // 1. Check if it's parsed by multer as a form-data file
-    if (req.file) {
-      savedPath = req.file.path;
-      filename = req.file.filename;
-      originalName = req.file.originalname;
-      fileSize = req.file.size;
-      mimeType = req.file.mimetype;
+    if (reqFile) {
+      savedPath = reqFile.path;
+      filename = reqFile.filename;
+      originalName = reqFile.originalname;
+      fileSize = reqFile.size;
+      mimeType = reqFile.mimetype;
       
       if (mimeType.startsWith('image/')) {
         isImage = true;
@@ -2542,6 +2544,7 @@ function startServer(portCallback) {
             serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
             break;
           case 'ping_pc':
+            broadcastSSE('ping-pc', { device: ws.deviceToken || 'mobile' });
             serverEvents.emit('ping_pc', ws);
             break;
         }
