@@ -2141,14 +2141,15 @@ body.is-electron .web-footer {
 }
 
 .settings-modal-content {
-  background: rgba(14, 14, 22, 0.78) !important;
+  background: rgba(10, 10, 16, 0.86) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(25px) !important;
-  -webkit-backdrop-filter: blur(25px) !important;
-  max-width: 680px !important;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.65), inset 0 1px 1px rgba(255,255,255,0.08) !important;
-  border-radius: 20px !important;
-  padding: 28px !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  max-width: 900px !important;
+  width: 92% !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.08) !important;
+  border-radius: 24px !important;
+  padding: 32px !important;
   animation: modalSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -2340,13 +2341,19 @@ input:checked + .slider:before {
 }
 
 /* Responsive grid and padding overrides for broader settings modal */
-@media (max-width: 600px) {
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
   .settings-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 16px !important;
   }
   .settings-modal-content {
-    padding: 20px 16px !important;
+    padding: 24px 16px !important;
     max-height: 90vh;
     overflow-y: auto;
   }

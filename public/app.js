@@ -158,10 +158,15 @@
   }
 
   function getThemedQrUrl(text) {
-    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim().replace('#', '');
-    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary').trim().replace('#', '');
-    const darkParam = textColor || '000000';
-    const lightParam = bgColor || 'ffffff';
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    let darkParam = 'ffffff';
+    let lightParam = '0a0a10';
+    
+    if (theme === 'light' || theme === 'liquid-glass') {
+      darkParam = '0a0a10';
+      lightParam = 'ffffff';
+    }
+    
     return `${isElectron ? apiBase : ''}/api/qr-gen.png?text=${encodeURIComponent(text)}&dark=${darkParam}&light=${lightParam}`;
   }
 

@@ -1806,8 +1806,15 @@ app.get('/api/qr-gen.png', async (req, res) => {
     if (!text) {
       return res.status(400).send('No text provided');
     }
-    const darkColor = dark ? (dark.startsWith('#') ? dark : '#' + dark) : '#000000';
-    const lightColor = light ? (light.startsWith('#') ? light : '#' + light) : '#ffffff';
+    const hexRegex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
+    let darkColor = '#000000';
+    let lightColor = '#ffffff';
+    if (dark && hexRegex.test(dark)) {
+      darkColor = dark.startsWith('#') ? dark : '#' + dark;
+    }
+    if (light && hexRegex.test(light)) {
+      lightColor = light.startsWith('#') ? light : '#' + light;
+    }
 
     res.setHeader('Content-Type', 'image/png');
     await QRCode.toFileStream(res, text, {
