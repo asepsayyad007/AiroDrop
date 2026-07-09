@@ -1,8 +1,8 @@
-# AiroDrop v4.9.9 🚀
+# AiroDrop v5.0.4 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-4.9.9-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-5.0.4-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,22 +17,27 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v4.9.9
+## 🚀 What's New in v5.0.4
 
-This release brings version 4.9.9, focusing on premium high-resolution inline vector SVGs and screenshare cursor movement fixes:
+This release brings version 5.0.4, focusing on a complete premium dark-mode glassmorphism UI redesign, bugs fixes, and native iOS ergonomics:
 
 ### ✅ New Features & Updates
-1. **🎨 Premium Inline Vector SVGs Project-wide** — Replaced all removed emoji occurrences with clean, high-resolution inline vector SVGs matching the device theme color palette for headers, buttons, and settings groups.
-2. **🖱️ Synced Screenshare Cursor Intensity** — Refined the screenshare mouse dragging (`controlStyle === 'cursor'`) behavior to use relative translation packets scaled at the same 1.8x multiplier as the trackpad functions.
-3. **🎭 Unified Absolute/Relative Actions** — Configured relative clicks/double-clicks for cursor-dragging modes to match the standard trackpad feel.
+1. **🎨 Premium Dark-Mode Glassmorphism Redesign** — Completely overhauled the visual interface of the PC dashboard and mobile portals. Features high-res SVG icons, centered backdrop-blurred overlays, custom styled inputs/switches, and clean remote control cards.
+2. **📳 iPhone Haptic Feedback Workaround** — Added a compatibility layer for iOS/Safari (which lacks standard vibration support) utilizing a hidden native iOS 18+ toggle switch element to programmatically click and trigger Taptic Engine haptic responses on iPhone.
+3. **📺 WebKit Video Picture-in-Picture (PiP)** — Enabled support for WebKit-specific presentation modes (`webkitPresentationMode` and `webkitSetPresentationMode`) to allow flawless screen PiP streaming in iOS Safari.
+4. **📋 Copyable File Links** — Added a "Copy Link" action beside the "Download" option inside the mobile received files loop, copying the absolute URL to the clipboard.
+5. **📝 Cleaned Scratchpad & Layout order**:
+   - Restored the **Scratchpad** tab to the PC header navigation. Removed the Instant QR Generator card to leave a clean, centered full-width scratchpad text area.
+   - Organized mobile Remote tools in order (Screenshare first, then File Manager, Trackpad, Shared Scratchpad, and PC Screenshot).
+   - Ensured footer credits are persistent and clearly visible at the bottom of both dashboards.
 
 ---
 
-## 📥 Downloads (v4.9.9)
+## 📥 Downloads (v5.0.4)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v4.9.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.9/AiroDrop.Setup.4.9.9.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v4.9.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v4.9.9/AiroDrop-Portable-4.9.9.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v5.0.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.4/AiroDrop.Setup.5.0.4.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v5.0.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.4/AiroDrop-Portable-5.0.4.exe)** — Standalone execution without installation.
 
 ---
 
