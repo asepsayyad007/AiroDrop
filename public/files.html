@@ -118,17 +118,66 @@
     .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
     .file-list { display: flex; flex-direction: column; gap: 6px; }
     .file-card {
-      background: var(--card); border: 1px solid var(--card-border);
-      border-radius: var(--radius); padding: 14px 12px; cursor: pointer;
-      transition: all 0.2s; position: relative; display: flex;
-      flex-direction: column; align-items: center; text-align: center;
-      gap: 8px; overflow: hidden; min-height: 100px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      overflow: hidden;
+      min-height: 120px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
-    .file-card:active { transform: scale(0.97); background: rgba(255,255,255,0.07); }
-    .file-card.dir { border-color: rgba(255,170,0,0.15); }
-    .file-icon { font-size: 2rem; line-height: 1; }
-    .file-name { font-size: 0.76rem; font-weight: 500; word-break: break-all; max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
-    .file-meta { font-size: 0.66rem; color: var(--text3); margin-top: auto; }
+    .file-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .file-card:active {
+      transform: scale(0.96) translateY(0);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .file-card.dir {
+      border-color: rgba(255, 170, 0, 0.2);
+      background: rgba(255, 170, 0, 0.02);
+    }
+    .file-card.dir:hover {
+      border-color: rgba(255, 170, 0, 0.4);
+      background: rgba(255, 170, 0, 0.05);
+    }
+    .file-icon {
+      font-size: 2rem;
+      line-height: 1;
+      transition: transform 0.25s ease;
+    }
+    .file-card:hover .file-icon {
+      transform: scale(1.1);
+    }
+    .file-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      word-break: break-all;
+      max-width: 100%;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .file-meta {
+      font-size: 0.68rem;
+      color: var(--text2);
+      margin-top: auto;
+    }
     .file-row {
       display: flex; align-items: center; gap: 12px;
       padding: 10px 14px; border-radius: var(--radius);
@@ -259,7 +308,7 @@
   </div>
 
   <!-- File Action Dialog (Stream vs Download) -->
-  <div id="actionDialogOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 250; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div id="actionDialogOverlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 6, 10, 0.85); z-index: 250; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
     <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 320px; padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <h3 id="dialogTitle" style="font-size: 1rem; font-weight: 600; margin-bottom: 8px; word-break: break-all;">File Name</h3>
       <p style="font-size: 0.76rem; color: var(--text2); margin-bottom: 20px;">Choose what you would like to do with this file</p>
@@ -272,7 +321,7 @@
   </div>
 
   <!-- Download Info Popup Modal -->
-  <div id="downloadInfoOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 350; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div id="downloadInfoOverlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 6, 10, 0.85); z-index: 350; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
     <div style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: var(--radius); width: 85%; max-width: 340px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div style="font-size: 2.2rem; text-align: center; margin-bottom: 12px;">📥</div>
       <h3 style="font-size: 1.05rem; font-weight: 600; text-align: center; margin-bottom: 12px;">Download Initialized</h3>
