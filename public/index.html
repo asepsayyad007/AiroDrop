@@ -186,24 +186,13 @@
 
       <!-- Tab 3: Scratchpad -->
       <section class="tab-content" id="tab-scratchpad">
-        <div class="tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; max-width: 100%;">
-          
-          <!-- Tool 1: Instant QR Generator -->
-          <div class="send-card tool-card" style="margin: 0; grid-column: auto !important;">
-            <h3>Instant QR Code Generator</h3>
-            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Enter text or URL to generate a scannable QR code instantly</p>
-            <textarea id="qrTextInput" rows="3" placeholder="Type text or paste link here..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box;"></textarea>
-            <div class="qr-container" id="instantQrContainer" style="margin-top: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 8px;">
-              <div class="qr-placeholder" style="color: var(--text-muted); font-size: 0.76rem;">Start typing to generate...</div>
-            </div>
-          </div>
-
-          <!-- Tool 2: Shared Scratchpad -->
-          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column; grid-column: auto !important;">
+        <div style="max-width: 800px; margin: 0 auto; padding: 10px 0;">
+          <!-- Shared Scratchpad -->
+          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column; width: 100%;">
             <h3>Shared Scratchpad</h3>
-            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 10px;">Text typed here syncs instantly to your phone and vice-versa</p>
-            <textarea id="dashboardScratchpad" rows="8" placeholder="Type notes here to sync with your phone..." style="font-size: 0.8rem; padding: 8px; width: 100%; box-sizing: border-box; resize: vertical; flex: 1; min-height: 120px;"></textarea>
-            <span id="scratchpadStatus" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right; margin-top: 4px;">Saved</span>
+            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 12px;">Text typed here syncs instantly to your phone and vice-versa</p>
+            <textarea id="dashboardScratchpad" rows="12" placeholder="Type notes here to sync with your phone..." style="font-size: 0.82rem; padding: 12px; width: 100%; box-sizing: border-box; resize: vertical; min-height: 250px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; line-height: 1.5; outline: none;"></textarea>
+            <span id="scratchpadStatus" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right; margin-top: 6px;">Saved</span>
           </div>
         </div>
       </section>
