@@ -1,5 +1,5 @@
 // Progressive Web App Service Worker for AiroDrop
-const CACHE_NAME = 'airodrop-cache-v3';
+const CACHE_NAME = 'airodrop-cache-v4';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to pre-cache on service worker installation
@@ -11,7 +11,8 @@ const PRECACHE_ASSETS = [
   '/logo-192.png',
   '/style.css',
   '/app.js',
-  '/mobile.html' // Mobile view cache
+  '/mobile.html',
+  '/mobile-app.js'
 ];
 
 // Installation event: Pre-cache assets and activate immediately

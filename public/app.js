@@ -7,7 +7,7 @@
   'use strict';
 
   // ─── Electron Detection & API Base ─────────────────────────
-  const ipcRenderer = typeof window !== 'undefined' && window.require ? window.require('electron').ipcRenderer : null;
+  const ipcRenderer = typeof window !== 'undefined' && window.electronAPI ? window.electronAPI : null;
   const isElectron = !!ipcRenderer;
   let apiBase = '';
   if (isElectron && ipcRenderer) {
