@@ -108,6 +108,7 @@ function init(userDataPath) {
       if (data.launchOnStartup !== undefined) state.LAUNCH_ON_STARTUP = !!data.launchOnStartup;
       if (data.autoUpdate !== undefined) state.AUTO_UPDATE = !!data.autoUpdate;
       if (data.httpsEnabled !== undefined) state.HTTPS_ENABLED = !!data.httpsEnabled;
+      if (data.contextMenuEnabled !== undefined) state.CONTEXT_MENU_ENABLED = !!data.contextMenuEnabled;
       if (data.saveDir) {
         state.SAVE_DIR = path.isAbsolute(data.saveDir) ? data.saveDir : path.resolve(__dirname, data.saveDir);
       }
@@ -194,6 +195,8 @@ function startServer(portCallback) {
       console.log('  ╠══════════════════════════════════════════════╣');
       console.log(`  ║   Server URL : ${activeUrl.padEnd(29)}║`);
       console.log(`  ║   Dashboard  : ${activeUrl.padEnd(29)}║`);
+      const fallbackUrl = `http://${ip}:${state.PORT + 1}`;
+      console.log(`  ║   Shortcuts  : ${fallbackUrl.padEnd(29)}║`);
       console.log(`  ║   Save Folder: ${state.SAVE_DIR.padEnd(29)}║`);
       console.log('  ╚══════════════════════════════════════════════╝');
       console.log('');
@@ -207,6 +210,19 @@ function startServer(portCallback) {
       console.error('Server error:', err);
       if (portCallback) portCallback(null, err);
     });
+
+    // Start HTTP fallback server for iOS Shortcuts unconditionally
+    try {
+      const http = require('http');
+      const fallbackPort = state.PORT + 1;
+      state.httpFallbackInstance = http.createServer(app);
+      state.httpFallbackInstance.listen(fallbackPort, '0.0.0.0', () => {
+        utils.writeLog(`AiroDrop HTTP Fallback active at http://${ip}:${fallbackPort}`);
+      });
+      setupWebSocket(state.httpFallbackInstance, serverEvents);
+    } catch (fallbackErr) {
+      console.error('[HTTP] Failed to start HTTP fallback server:', fallbackErr.message);
+    }
   };
 
   const startHttps = () => {
@@ -273,6 +289,12 @@ function stopServer() {
     state.serverInstance.close();
     state.serverInstance = null;
     console.log('Server stopped.');
+  }
+  if (state.httpFallbackInstance) {
+    try {
+      state.httpFallbackInstance.close();
+    } catch (e) {}
+    state.httpFallbackInstance = null;
   }
 }
 

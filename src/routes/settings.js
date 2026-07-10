@@ -167,14 +167,16 @@ router.get('/settings', (req, res) => {
     autoOpenLinks: state.AUTO_OPEN_LINKS,
     launchOnStartup: state.LAUNCH_ON_STARTUP,
     autoUpdate: state.AUTO_UPDATE,
-    httpsEnabled: state.HTTPS_ENABLED
+    httpsEnabled: state.HTTPS_ENABLED,
+    contextMenuEnabled: state.CONTEXT_MENU_ENABLED,
+    platform: process.platform
   });
 });
 
 // POST /api/settings
 router.post('/settings', async (req, res) => {
   try {
-    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks, launchOnStartup, autoUpdate, httpsEnabled } = req.body;
+    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks, launchOnStartup, autoUpdate, httpsEnabled, contextMenuEnabled } = req.body;
     
     let resolvedPath = state.SAVE_DIR;
     if (saveDir) {
@@ -258,6 +260,14 @@ router.post('/settings', async (req, res) => {
       state.HTTPS_ENABLED = !!httpsEnabled;
     }
 
+    if (contextMenuEnabled !== undefined) {
+      const oldVal = state.CONTEXT_MENU_ENABLED;
+      state.CONTEXT_MENU_ENABLED = !!contextMenuEnabled;
+      if (state.CONTEXT_MENU_ENABLED !== oldVal) {
+        utils.updateWindowsContextMenu(state.CONTEXT_MENU_ENABLED);
+      }
+    }
+
     const oldTempMode = state.TEMPORARY_MODE;
     if (temporaryMode !== undefined) {
       state.TEMPORARY_MODE = !!temporaryMode;
@@ -282,7 +292,8 @@ router.post('/settings', async (req, res) => {
       autoOpenLinks: state.AUTO_OPEN_LINKS,
       launchOnStartup: state.LAUNCH_ON_STARTUP,
       autoUpdate: state.AUTO_UPDATE,
-      httpsEnabled: state.HTTPS_ENABLED
+      httpsEnabled: state.HTTPS_ENABLED,
+      contextMenuEnabled: state.CONTEXT_MENU_ENABLED
     }, null, 2));
 
     utils.writeLog(`Configurations updated: SaveFolder="${state.SAVE_DIR}", Port=${state.PORT}, DeviceName="${state.DEVICE_NAME}"`);
@@ -299,7 +310,8 @@ router.post('/settings', async (req, res) => {
       autoOpenLinks: state.AUTO_OPEN_LINKS,
       launchOnStartup: state.LAUNCH_ON_STARTUP,
       autoUpdate: state.AUTO_UPDATE,
-      httpsEnabled: state.HTTPS_ENABLED
+      httpsEnabled: state.HTTPS_ENABLED,
+      contextMenuEnabled: state.CONTEXT_MENU_ENABLED
     });
   } catch (err) {
     console.error('[CONFIG] Failed to update settings:', err.message);
@@ -522,6 +534,31 @@ router.post('/screencast/pause', express.json(), (req, res) => {
     }
   }
   res.json({ success: true, paused: state.privacyPause });
+});
+
+// POST /api/open-url — Open a URL in the PC's default browser
+router.post('/open-url', express.json(), async (req, res) => {
+  const { url } = req.body || {};
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'url field required' });
+  }
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return res.status(400).json({ error: 'Only http/https URLs are allowed' });
+  }
+  try {
+    try {
+      const { shell } = require('electron');
+      await shell.openExternal(trimmed);
+    } catch {
+      const { exec } = require('child_process');
+      exec(`start "" "${trimmed.replace(/"/g, '')}"`);
+    }
+    utils.writeLog(`Opened URL in browser: ${trimmed}`);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Pending TTL expire check interval

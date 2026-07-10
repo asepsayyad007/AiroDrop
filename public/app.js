@@ -614,10 +614,12 @@
       }
       
       if (item.type === 'text') {
+        const isUrl = /^https?:\/\//i.test((item.content || '').trim());
+        const urlHref = isUrl ? escapeAttr(item.content.trim()) : '';
         return `
-          <div class="feed-item type-text${isNewClass}" id="item-${item.id}">
+          <div class="feed-item type-text${isNewClass}${isUrl ? ' type-url' : ''}" id="item-${item.id}">
             <div class="item-header" style="width: 100%;">
-              <span class="item-type-badge text">Text</span>
+              <span class="item-type-badge ${isUrl ? 'url' : 'text'}">${isUrl ? '🔗 Link' : 'Text'}</span>
               <div style="display:flex;align-items:center;gap:10px;">
                 <span class="item-time">${timeStr}</span>
                 <button class="delete-btn" data-id="${item.id}" title="Delete">
@@ -626,12 +628,20 @@
               </div>
             </div>
             <div class="item-body" style="width: 100%; margin: 8px 0;">
-              <pre class="item-text-content">${escapeHtml(item.content)}</pre>
+              ${isUrl
+                ? `<a href="${urlHref}" target="_blank" class="item-url-preview" style="color:var(--accent);word-break:break-all;font-size:0.85rem;text-decoration:none;" title="${urlHref}">${escapeHtml(item.content.trim())}</a>`
+                : `<pre class="item-text-content">${escapeHtml(item.content)}</pre>`
+              }
             </div>
             <div class="item-actions">
               <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.content)}" title="Copy to PC clipboard">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
+              ${isUrl ? `
+              <button class="btn btn-primary open-url-btn" data-url="${urlHref}" title="Open in Browser" style="display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:0.75rem;border-radius:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Open in Browser
+              </button>` : ''}
             </div>
           </div>`;
       }
@@ -758,6 +768,30 @@
         const fn = btn.getAttribute('data-fn');
         if (isElectron && ipcRenderer && fn) {
           ipcRenderer.send('open-file-folder', fn);
+        }
+      });
+    });
+
+    $$('.open-url-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const url = btn.getAttribute('data-url');
+        if (!url) return;
+        try {
+          // Try server-side open (Electron / Windows start command)
+          const r = await doFetch('/api/open-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          if (r.ok) {
+            showToast('Opening URL in browser…', 'success');
+          } else {
+            // Fallback: open in same tab via window.open
+            window.open(url, '_blank', 'noopener');
+          }
+        } catch {
+          window.open(url, '_blank', 'noopener');
         }
       });
     });
@@ -1229,6 +1263,8 @@
     const desktopAutoStartInput = $('#desktopAutoStart');
     const autoUpdaterInput = $('#autoUpdaterInput');
     const httpsEnabledInput = $('#httpsEnabledInput');
+    const contextMenuInput = $('#contextMenuInput');
+    const contextMenuSettingRow = $('#contextMenuSettingRow');
 
     loadSettingsData();
 
@@ -1252,6 +1288,10 @@
           if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
           if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
           if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
+          if (contextMenuInput) contextMenuInput.checked = !!data.contextMenuEnabled;
+          if (isElectron && data.platform === 'win32' && contextMenuSettingRow) {
+            contextMenuSettingRow.style.display = 'flex';
+          }
           updateTemporaryModeBadge(data.temporaryMode);
 
         }
@@ -1343,6 +1383,7 @@
         const launchOnStartup = desktopAutoStartInput ? desktopAutoStartInput.checked : false;
         const autoUpdate = autoUpdaterInput ? autoUpdaterInput.checked : true;
         const httpsEnabled = httpsEnabledInput ? httpsEnabledInput.checked : false;
+        const contextMenuEnabled = contextMenuInput ? contextMenuInput.checked : false;
 
         saveDirBtn.disabled = true;
         saveDirBtn.textContent = 'Saving...';
@@ -1364,7 +1405,8 @@
               autoOpenLinks,
               launchOnStartup,
               autoUpdate,
-              httpsEnabled
+              httpsEnabled,
+              contextMenuEnabled
             })
           });
           const data = await res.json();
@@ -1385,6 +1427,7 @@
             if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
             if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
             if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
+            if (contextMenuInput) contextMenuInput.checked = !!data.contextMenuEnabled;
             updateTemporaryModeBadge(data.temporaryMode);
             
             fetchServerInfo();
@@ -1605,6 +1648,7 @@
           const infoIPSetup = $('#infoIPSetup');
           if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
           $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
+          $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port, 10) + 1);
 
           // File Browser URL setup
           const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');

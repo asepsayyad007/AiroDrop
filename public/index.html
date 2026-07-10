@@ -324,14 +324,14 @@
                   <li>Under <strong>Then</strong> (Files/Images path):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Shortcut Input</strong></li>
                     </ul>
                   </li>
                   <li>Under <strong>Else</strong> (Text/URL path):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
                     </ul>
                   </li>
@@ -348,14 +348,14 @@
                   <li>Under <strong>Then</strong> (Files/Images path):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Clipboard</strong></li>
                     </ul>
                   </li>
                   <li>Under <strong>Else</strong> (Text/URL path):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:3478/api/send</code></li>
+                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Clipboard</strong></li>
                     </ul>
                   </li>
@@ -481,6 +481,13 @@
                   <span>Auto-open links on PC</span>
                   <label class="switch">
                     <input type="checkbox" id="autoOpenLinksInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="settings-switch-row" id="contextMenuSettingRow" style="display: none;">
+                  <span>Add to Windows Right-click Menu</span>
+                  <label class="switch">
+                    <input type="checkbox" id="contextMenuInput">
                     <span class="slider"></span>
                   </label>
                 </div>

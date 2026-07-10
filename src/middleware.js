@@ -56,6 +56,10 @@ function registerMiddleware(app) {
       return next();
     }
     const contentType = req.headers['content-type'] || '';
+    // Skip body parsing for /api/send — multer handles it directly (raw binary + multipart)
+    if (req.path === '/api/send') {
+      return next();
+    }
     if (contentType.includes('multipart/form-data')) {
       next();
     } else if (contentType.includes('application/json')) {

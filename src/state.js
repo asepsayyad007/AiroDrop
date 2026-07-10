@@ -21,6 +21,7 @@ const state = {
   LAUNCH_ON_STARTUP: false,
   AUTO_UPDATE: true,
   HTTPS_ENABLED: false,
+  CONTEXT_MENU_ENABLED: false,
 
   // Screencast Security Settings
   privacyPause: false,
@@ -36,6 +37,7 @@ const state = {
 
   // Server Lifecycle Instances
   serverInstance: null,
+  httpFallbackInstance: null,
   wss: null,
   screencastStopTimeout: null
 };

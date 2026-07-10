@@ -214,11 +214,9 @@ async function handleIncomingText(text) {
     try {
       const { shell } = require('electron');
       shell.openExternal(trimmed);
-      console.log(`[CAST] Auto-opened URL in Electron: ${trimmed}`);
     } catch {
       const { exec } = require('child_process');
       exec(`start "" "${trimmed}"`);
-      console.log(`[CAST] Auto-opened URL via Win32 shell: ${trimmed}`);
     }
   }
   return clipResult;
@@ -256,6 +254,53 @@ setInterval(() => {
   }
 }, 60000);
 
+function updateWindowsContextMenu(enable) {
+  if (process.platform !== 'win32') return;
+
+  const { exec } = require('child_process');
+  const path = require('path');
+
+  if (!enable) {
+    exec('reg delete "HKCU\\Software\\Classes\\*\\shell\\AiroDrop" /f', (err) => {
+      if (err) {
+        writeLog(`Failed to remove Windows Explorer context menu: ${err.message}`);
+      } else {
+        writeLog('Windows Explorer context menu removed successfully.');
+      }
+    });
+    return;
+  }
+
+  const exePath = process.execPath;
+  let cmdValue = `\\"${exePath}\\" \\"%1\\"`;
+
+  const isDev = exePath.toLowerCase().includes('electron.exe') || exePath.toLowerCase().includes('node.exe');
+  if (isDev) {
+    const projectDir = path.resolve(__dirname, '..');
+    cmdValue = `\\"${exePath}\\" \\"${projectDir}\\" \\"%1\\"`;
+  }
+
+  const addVerb = `reg add "HKCU\\Software\\Classes\\*\\shell\\AiroDrop" /v "MUIVerb" /t REG_SZ /d "Send to Phone (AiroDrop)" /f`;
+  const addIcon = `reg add "HKCU\\Software\\Classes\\*\\shell\\AiroDrop" /v "Icon" /t REG_SZ /d "${exePath}" /f`;
+  const addCommand = `reg add "HKCU\\Software\\Classes\\*\\shell\\AiroDrop\\command" /ve /t REG_SZ /d "${cmdValue}" /f`;
+
+  exec(addVerb, (err1) => {
+    if (err1) return writeLog(`Failed to register MUIVerb: ${err1.message}`);
+    
+    exec(addIcon, (err2) => {
+      if (err2) return writeLog(`Failed to register Icon: ${err2.message}`);
+      
+      exec(addCommand, (err3) => {
+        if (err3) {
+          writeLog(`Failed to register command value: ${err3.message}`);
+        } else {
+          writeLog('Windows Explorer context menu registered successfully.');
+        }
+      });
+    });
+  });
+}
+
 module.exports = {
   saveHistory,
   notifyText,
@@ -267,5 +312,6 @@ module.exports = {
   getAllIPs,
   isBufferImage,
   tryExtractUrlFromHtmlFile,
-  handleIncomingText
+  handleIncomingText,
+  updateWindowsContextMenu
 };

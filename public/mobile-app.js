@@ -1244,6 +1244,7 @@
       const viewHint = document.getElementById('scViewHint');
       const btnFit = document.getElementById('btnScreencastFit');
       const btnAudio = document.getElementById('btnScreencastAudio');
+      const btnScreencastMic = document.getElementById('btnScreencastMic');
       const btnTools = document.getElementById('btnScreencastTools');
       const btnSpeed = document.getElementById('btnScreencastSpeed');
       const dropdownMenu = document.getElementById('screencastToolsDropdown');
@@ -1437,6 +1438,17 @@
             } else {
               showToast('🔇 Screencast audio muted');
             }
+          }
+        });
+      }
+
+      // ── Mic Toggle in Tools ──
+      if (btnScreencastMic) {
+        btnScreencastMic.addEventListener('click', async () => {
+          if (!isMicStreaming) {
+            await startMicStreaming();
+          } else {
+            stopMicStreaming();
           }
         });
       }
@@ -1828,6 +1840,15 @@
           btnToggleMicStream.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
         }
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Stop Microphone Stream';
+
+        const btnScreencastMic = document.getElementById('btnScreencastMic');
+        if (btnScreencastMic) {
+          btnScreencastMic.textContent = 'Mic: On';
+          btnScreencastMic.style.color = '#00d26a';
+          btnScreencastMic.style.background = 'rgba(0,210,106,0.12)';
+          btnScreencastMic.style.borderColor = 'rgba(0,210,106,0.4)';
+        }
+
         showToast('Microphone stream active!', 'success');
 
       } catch (err) {
@@ -1864,6 +1885,15 @@
         btnToggleMicStream.style.background = '';
       }
       if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
+
+      const btnScreencastMic = document.getElementById('btnScreencastMic');
+      if (btnScreencastMic) {
+        btnScreencastMic.textContent = 'Mic: Off';
+        btnScreencastMic.style.color = 'white';
+        btnScreencastMic.style.background = 'rgba(255,255,255,0.06)';
+        btnScreencastMic.style.borderColor = 'rgba(255,255,255,0.1)';
+      }
+
       showToast('Microphone stream stopped.', 'info');
     }
 

@@ -452,151 +452,272 @@ router.get('/screenshot', (req, res) => {
 });
 
 // POST /api/send — UNIFIED: auto-detect text vs image/file
-router.post('/send', upload.any(), async (req, res) => {
+router.post('/send', async (req, res) => {
   try {
-    let text = req.body.text || '';
-    let files = req.files || [];
+    const contentType = req.headers['content-type'] || '';
 
-    if (req.body.text === undefined && req.body.content === undefined && files.length === 0) {
-      if (Buffer.isBuffer(req.body) && req.body.length > 0) {
-        const detectedMime = utils.isBufferImage(req.body);
-        if (detectedMime) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-          const filename = `${timestamp}_raw_image.jpg`;
-          const savedPath = path.join(state.SAVE_DIR, filename);
-          fs.writeFileSync(savedPath, req.body);
-          
-          const clipRes = await copyImage(savedPath);
+    // ── Case 1: multipart/form-data (iOS Shortcuts "File" body, or curl -F) ──
+    if (contentType.includes('multipart/form-data')) {
+      return upload.any()(req, res, async (multerErr) => {
+        if (multerErr) {
+          return res.status(500).json({ error: 'Multipart upload failed: ' + multerErr.message });
+        }
+
+        const files = req.files || [];
+        let text = (req.body && (req.body.text || req.body.content)) || '';
+
+        if (files.length > 0) {
+          const fileObj = files[0];
+          const savedPath = fileObj.path;
+          const filename = fileObj.filename;
+          const originalName = fileObj.originalname;
+          const fileSize = fileObj.size;
+          const mimeType = fileObj.mimetype || '';
+
+          const extractedUrl = await utils.tryExtractUrlFromHtmlFile(savedPath, mimeType);
+          if (extractedUrl) {
+            const clipRes = await utils.handleIncomingText(extractedUrl);
+            const item = {
+              id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+              type: 'text', content: extractedUrl, preview: extractedUrl,
+              timestamp: new Date().toISOString(), clipboardSuccess: clipRes.success
+            };
+            utils.addToHistory(item);
+            utils.notifyText(extractedUrl);
+            return res.json({ success: true, id: item.id, type: 'text', message: 'URL extracted and copied' });
+          }
+
           const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
+          const isImg = mimeType.startsWith('image/');
+          let clipResult = { success: false };
+          if (isImg) {
+            const { copyImage } = require('../../clipboard');
+            clipResult = await copyImage(savedPath);
+          }
 
           const item = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-            type: 'image',
-            filename: filename,
-            originalName: filename,
-            path: relativePath,
-            size: req.body.length,
-            mimetype: 'image/jpeg',
+            type: isImg ? 'image' : 'file',
+            filename, originalName, path: relativePath,
+            size: fileSize, mimetype: mimeType,
             timestamp: new Date().toISOString(),
-            clipboardSuccess: clipRes.success
+            clipboardSuccess: isImg ? clipResult.success : false
           };
           utils.addToHistory(item);
-          utils.notifyImage(filename);
-
-          return res.json({ success: true, id: item.id, type: 'image', message: 'Image received and saved' });
-        } else {
-          text = req.body.toString('utf8');
+          isImg ? utils.notifyImage(filename) : utils.notifyText(`Received File: ${originalName}`);
+          return res.json({ success: true, id: item.id, type: isImg ? 'image' : 'file', filename });
         }
-      }
+
+        if (text) {
+          return handleTextSend(text, res);
+        }
+
+        return res.status(400).json({ error: 'No file or text provided in multipart body' });
+      });
     }
 
-    if (files.length > 0) {
-      const fileObj = files[0];
-      const savedPath = fileObj.path;
-      const filename = fileObj.filename;
-      const originalName = fileObj.originalname;
-      const fileSize = fileObj.size;
-      const mimeType = fileObj.mimetype;
+    // ── Case 2: raw binary file (iOS Shortcuts "File" body sends raw bytes with a specific Content-Type) ──
+    // Covers: image/*, video/*, audio/*, application/pdf, application/zip, etc.
+    const mimeToExt = {
+      // Images
+      'image/jpeg': '.jpg', 'image/jpg': '.jpg',
+      'image/png': '.png', 'image/gif': '.gif',
+      'image/webp': '.webp', 'image/bmp': '.bmp',
+      'image/heic': '.heic', 'image/heif': '.heif',
+      'image/tiff': '.tiff', 'image/avif': '.avif',
+      'image/svg+xml': '.svg',
+      // Videos
+      'video/mp4': '.mp4', 'video/quicktime': '.mov',
+      'video/x-msvideo': '.avi', 'video/webm': '.webm',
+      'video/3gpp': '.3gp', 'video/3gpp2': '.3g2',
+      'video/mpeg': '.mpeg', 'video/ogg': '.ogv',
+      // Audio
+      'audio/mpeg': '.mp3', 'audio/mp4': '.m4a',
+      'audio/ogg': '.ogg', 'audio/wav': '.wav',
+      'audio/webm': '.weba', 'audio/aac': '.aac',
+      'audio/flac': '.flac', 'audio/x-m4a': '.m4a',
+      'audio/x-wav': '.wav',
+      // Documents
+      'application/pdf': '.pdf',
+      'application/msword': '.doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+      'application/vnd.ms-excel': '.xls',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+      'application/vnd.ms-powerpoint': '.ppt',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+      // Archives
+      'application/zip': '.zip', 'application/x-zip-compressed': '.zip',
+      'application/x-rar-compressed': '.rar', 'application/x-7z-compressed': '.7z',
+      'application/gzip': '.gz', 'application/x-tar': '.tar',
+      // Text & Code
+      'text/plain': '.txt', 'text/html': '.html',
+      'text/css': '.css', 'application/javascript': '.js',
+      'application/json': '.json', 'text/csv': '.csv',
+      'text/xml': '.xml', 'application/xml': '.xml',
+      // Other
+      'application/octet-stream': '.bin',
+    };
 
-      const extractedUrl = await utils.tryExtractUrlFromHtmlFile(savedPath, mimeType);
-      if (extractedUrl) {
-        const clipRes = await utils.handleIncomingText(extractedUrl);
+    const rawMime = contentType.split(';')[0].trim().toLowerCase();
+    // Treat as raw binary file if it's NOT a text/form content type
+    const isTextContentType = rawMime === 'application/json' ||
+                              rawMime === 'application/x-www-form-urlencoded' ||
+                              rawMime === 'text/plain' ||
+                              rawMime === 'text/html' ||   // Safari Share Sheet sends HTML — extract URL from it
+                              rawMime === '' ;
+    const isRawBinaryFile = !isTextContentType && rawMime !== '';
+
+    if (isRawBinaryFile) {
+      const chunks = [];
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', async () => {
+        try {
+          const buf = Buffer.concat(chunks);
+          if (!buf.length) return res.status(400).json({ error: 'Empty file body' });
+
+          // Determine file category and extension
+          const isImg   = rawMime.startsWith('image/');
+          const isVideo = rawMime.startsWith('video/');
+          const isAudio = rawMime.startsWith('audio/');
+          const category = isImg ? 'image' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
+
+          const ext = mimeToExt[rawMime] || '.bin';
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+          const prefix = isImg ? 'photo' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
+          const filename = `${timestamp}_${prefix}${ext}`;
+          const savedPath = path.join(state.SAVE_DIR, filename);
+          fs.writeFileSync(savedPath, buf);
+
+          const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
+          let clipResult = { success: false };
+          // Only attempt clipboard copy for images on Windows-supported formats
+          if (isImg && ['.jpg', '.png', '.gif', '.bmp', '.webp'].includes(ext)) {
+            const { copyImage } = require('../../clipboard');
+            clipResult = await copyImage(savedPath).catch(() => ({ success: false }));
+          }
+
+          const item = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            type: category,
+            filename, originalName: filename,
+            path: relativePath, size: buf.length, mimetype: rawMime,
+            timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
+          };
+          utils.addToHistory(item);
+          isImg
+            ? utils.notifyImage(filename)
+            : utils.notifyText(`Received ${category}: ${filename}`);
+
+          return res.json({ success: true, id: item.id, type: category, filename, message: `${category} received` });
+        } catch (e) {
+          return res.status(500).json({ error: e.message });
+        }
+      });
+      req.on('error', e => res.status(500).json({ error: e.message }));
+      return; // response sent inside 'end' handler above
+    }
+
+    // ── Case 3: urlencoded / json text (iOS Shortcuts "Form" body with key content or text) ──
+    const rawParser = require('express').raw({ type: '*/*', limit: '50mb' });
+    const jsonParser = require('express').json({ limit: '10mb' });
+    const urlencodedParser = require('express').urlencoded({ extended: true, limit: '10mb' });
+
+    const parseBody = (parserFn) => new Promise((resolve, reject) => {
+      parserFn(req, res, (err) => err ? reject(err) : resolve());
+    });
+
+    try {
+      if (contentType.includes('application/json')) {
+        await parseBody(jsonParser);
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        await parseBody(urlencodedParser);
+      } else {
+        await parseBody(rawParser);
+      }
+    } catch (parseErr) {
+      return res.status(400).json({ error: 'Failed to parse body: ' + parseErr.message });
+    }
+
+    let text = '';
+    if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+      text = req.body.text || req.body.content || '';
+    } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      // Last resort: check magic bytes for raw binary that didn't have image/* content-type
+      const detectedMime = utils.isBufferImage(req.body);
+      if (detectedMime) {
+        const ext = mimeToExt[detectedMime] || '.jpg';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const filename = `${timestamp}_photo${ext}`;
+        const savedPath = path.join(state.SAVE_DIR, filename);
+        fs.writeFileSync(savedPath, req.body);
+        const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
+        const { copyImage } = require('../../clipboard');
+        const clipResult = await copyImage(savedPath);
         const item = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          type: 'text',
-          content: extractedUrl,
-          preview: extractedUrl,
-          timestamp: new Date().toISOString(),
-          clipboardSuccess: clipRes.success
+          type: 'image', filename, originalName: filename,
+          path: relativePath, size: req.body.length, mimetype: detectedMime,
+          timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
         };
         utils.addToHistory(item);
-        utils.notifyText(extractedUrl);
-        return res.json({ success: true, id: item.id, type: 'text', message: 'URL extracted and copied' });
-      }
-
-      const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
-      const isImg = utils.isBufferImage(req.body) || (mimeType && mimeType.startsWith('image/'));
-      let clipResult = { success: false, error: 'Not an image' };
-      if (isImg) {
-        const { copyImage } = require('../../clipboard');
-        clipResult = await copyImage(savedPath);
-      }
-
-      const item = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        type: isImg ? 'image' : 'file',
-        filename: filename,
-        originalName: originalName,
-        path: relativePath,
-        size: fileSize,
-        mimetype: mimeType,
-        timestamp: new Date().toISOString(),
-        clipboardSuccess: isImg ? clipResult.success : false
-      };
-      utils.addToHistory(item);
-
-      if (isImg) {
         utils.notifyImage(filename);
-      } else {
-        utils.notifyText(`Received File: ${originalName}`);
+        return res.json({ success: true, id: item.id, type: 'image', message: 'Photo received' });
       }
-
-      return res.json({ success: true, id: item.id, type: isImg ? 'image' : 'file', filename });
+      text = req.body.toString('utf8');
     }
 
-    if (text) {
-      if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
-        const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                               text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-        const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                        text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-        const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-        
-        let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-        if (!extractedUrl) {
-          const allUrls = text.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
-          if (allUrls) {
-            const cleanUrl = allUrls.find(u => {
-              const low = u.toLowerCase();
-              return !low.endsWith('.js') && 
-                     !low.endsWith('.css') && 
-                     !low.endsWith('.png') && 
-                     !low.endsWith('.jpg') && 
-                     !low.endsWith('.jpeg') && 
-                     !low.endsWith('.gif') && 
-                     !low.endsWith('.svg') && 
-                     !low.endsWith('.woff') && 
-                     !low.endsWith('.woff2') &&
-                     !low.includes('schema.org') &&
-                     !low.includes('w3.org');
-            });
-            if (cleanUrl) extractedUrl = cleanUrl;
-          }
-        }
-        if (extractedUrl) text = extractedUrl;
-      }
-
-      const clipResult = await utils.handleIncomingText(text);
-
-      const item = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        type: 'text',
-        content: text,
-        preview: text.length > 200 ? text.substring(0, 200) + '...' : text,
-        timestamp: new Date().toISOString(),
-        clipboardSuccess: clipResult.success
-      };
-      utils.addToHistory(item);
-      utils.notifyText(text);
-
-      return res.json({ success: true, id: item.id, type: 'text', message: 'Text synced' });
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'No text or file provided' });
     }
 
-    res.status(400).json({ error: 'No text or file provided' });
+    return handleTextSend(text, res);
+
   } catch (err) {
     console.error('[UNIFIED-SEND] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
+async function handleTextSend(text, res) {
+  // HTML / web-page URL extraction
+  if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
+    const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                           text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+    const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
+                    text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
+    const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
+
+    let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
+    if (!extractedUrl) {
+      const allUrls = text.match(/https?:\/\/[^\s"'<>()\]]+/gi);
+      if (allUrls) {
+        const cleanUrl = allUrls.find(u => {
+          const low = u.toLowerCase();
+          return !low.endsWith('.js') && !low.endsWith('.css') &&
+                 !low.endsWith('.png') && !low.endsWith('.jpg') &&
+                 !low.endsWith('.jpeg') && !low.endsWith('.gif') &&
+                 !low.endsWith('.svg') && !low.endsWith('.woff') &&
+                 !low.endsWith('.woff2') &&
+                 !low.includes('schema.org') && !low.includes('w3.org');
+        });
+        if (cleanUrl) extractedUrl = cleanUrl;
+      }
+    }
+    if (extractedUrl) text = extractedUrl;
+  }
+
+  const clipResult = await require('../utils').handleIncomingText(text);
+  const item = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    type: 'text',
+    content: text,
+    preview: text.length > 200 ? text.substring(0, 200) + '...' : text,
+    timestamp: new Date().toISOString(),
+    clipboardSuccess: clipResult.success
+  };
+  require('../utils').addToHistory(item);
+  require('../utils').notifyText(text);
+  return res.json({ success: true, id: item.id, type: 'text', message: 'Text synced' });
+}
 
 module.exports = router;

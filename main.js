@@ -2,6 +2,7 @@ const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog, desktopCapturer 
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const server = require('./server'); // Our refactored server.js
 
 let mainWindow = null;
@@ -17,13 +18,104 @@ if (!gotTheLock) {
   process.exit(0);
 }
 
-app.on('second-instance', () => {
+app.on('second-instance', (event, commandLine) => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
   }
+  processCommandLineArgs(commandLine);
 });
+
+// Helper functions for context menu file sending
+function queueFileForPhone(filePath) {
+  const state = require('./src/state');
+  const utils = require('./src/utils');
+
+  try {
+    const originalName = path.basename(filePath);
+    const ext = path.extname(originalName) || '.bin';
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
+    const filename = `${timestamp}_${safeName || 'file'}${ext}`;
+    const destination = path.join(state.SAVE_DIR, filename);
+
+    if (!fs.existsSync(state.SAVE_DIR)) {
+      fs.mkdirSync(state.SAVE_DIR, { recursive: true });
+    }
+
+    fs.copyFileSync(filePath, destination);
+    const stats = fs.statSync(destination);
+
+    const mimeMap = {
+      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif',
+      '.webp': 'image/webp', '.bmp': 'image/bmp', '.heic': 'image/heic', '.heif': 'image/heif',
+      '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
+      '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.wav': 'audio/wav',
+      '.pdf': 'application/pdf', '.zip': 'application/zip', '.rar': 'application/x-rar-compressed',
+      '.txt': 'text/plain', '.html': 'text/html', '.htm': 'text/html', '.json': 'application/json'
+    };
+    const mimeType = mimeMap[ext.toLowerCase()] || 'application/octet-stream';
+
+    const item = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      type: 'file',
+      filename: filename,
+      originalName: originalName,
+      size: stats.size,
+      mimeType: mimeType,
+      timestamp: new Date().toISOString()
+    };
+
+    state.pendingForPhone.unshift(item);
+    if (state.pendingForPhone.length > 50) state.pendingForPhone.pop();
+    utils.broadcastSSE('phone-queued', item);
+    utils.writeLog(`Queued file via context menu command: ${originalName}`);
+
+    const notifier = require('node-notifier');
+    notifier.notify({
+      title: 'AiroDrop',
+      message: `File queued for iPhone: ${originalName}`,
+      icon: path.join(__dirname, 'public', 'logo.png')
+    });
+  } catch (err) {
+    console.error('Failed to queue file for phone:', err);
+  }
+}
+
+function processCommandLineArgs(argv) {
+  if (!argv || argv.length === 0) return;
+
+  for (const arg of argv) {
+    if (arg.startsWith('-') || arg.startsWith('--')) continue;
+    if (arg === process.execPath) continue;
+    if (arg === '.' || arg.endsWith('main.js')) continue;
+
+    let resolvedPath = arg;
+    if (!path.isAbsolute(resolvedPath)) {
+      resolvedPath = path.resolve(resolvedPath);
+    }
+
+    if (fs.existsSync(resolvedPath)) {
+      try {
+        const stats = fs.statSync(resolvedPath);
+        if (stats.isFile()) {
+          queueFileForPhone(resolvedPath);
+        }
+      } catch (e) {
+        console.error('Error processing argument path:', e);
+      }
+    }
+  }
+}
+
+// ─── Suppress Chromium internal SSL / net log noise ─────────────
+// These flags silence the low-level Chromium log lines like
+// "handshake failed; returned -1, SSL error code 1, net_error -202"
+// that appear because we use a self-signed cert on localhost.
+app.commandLine.appendSwitch('log-level', '3');          // Only show fatal Chromium logs
+app.commandLine.appendSwitch('disable-logging');          // Disable Chromium file-logging
+app.commandLine.appendSwitch('ignore-certificate-errors'); // Belt-and-suspenders cert trust
 
 // ─── Main Initialization ──────────────────────────────────────
 app.whenReady().then(() => {
@@ -47,6 +139,7 @@ app.whenReady().then(() => {
         error: err ? err.message : null 
       });
     }
+    processCommandLineArgs(process.argv);
   });
 
   createWindow();
@@ -286,9 +379,8 @@ app.on('before-quit', () => {
   server.stopServer();
 });
 
-// Ignore self-signed certificate errors for local HTTPS loopback and server port requests
+// Ignore self-signed certificate errors for local HTTPS loopback
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-  console.log(`[Electron Cert Bypass] Trusting URL: ${url} (Error: ${error})`);
   event.preventDefault();
   callback(true);
 });
