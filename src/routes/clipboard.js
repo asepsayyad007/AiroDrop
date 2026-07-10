@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10 GB max
   fileFilter: (req, file, cb) => {
     cb(null, true);
   }
@@ -221,6 +221,47 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
     });
   } catch (err) {
     console.error('[FILE] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/clipboard — Read the current PC clipboard text
+router.get('/clipboard', async (req, res) => {
+  try {
+    const { readText } = require('../../clipboard');
+    const result = await readText();
+    if (result.success) {
+      res.json({
+        success: true,
+        text: result.text
+      });
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to read PC clipboard' });
+    }
+  } catch (err) {
+    console.error('[GET-CLIPBOARD] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/latest-file — Return details for the latest pending file/image
+router.get('/latest-file', (req, res) => {
+  try {
+    const latestFile = state.pendingForPhone.find(item => item.type === 'file' || item.type === 'image');
+    if (latestFile) {
+      const localIP = utils.getLocalIP();
+      const httpPort = parseInt(state.PORT, 10) + 1;
+      const downloadUrl = `http://${localIP}:${httpPort}/received/${latestFile.filename}`;
+      res.json({
+        success: true,
+        filename: latestFile.originalName || latestFile.filename,
+        url: downloadUrl
+      });
+    } else {
+      res.status(404).json({ success: false, error: 'No pending files found' });
+    }
+  } catch (err) {
+    console.error('[LATEST-FILE] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

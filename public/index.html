@@ -303,6 +303,16 @@
                 <a href="https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
               </div>
 
+              <!-- Shortcut Card 3 -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">3. Get PC Text & Files</h4>
+                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">Separate widgets to instantly get copied text/links or download queued files from your PC onto your iPhone.</p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
+                  <img id="imgGetPCClipboard" alt="Get PC Clipboard QR" width="110" height="110" style="display: block;">
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">See Manual tab for setup steps</div>
+              </div>
+
             </div>
           </div>
 
@@ -360,6 +370,29 @@
                     </ul>
                   </li>
                 </ol>
+              </div>
+
+              <!-- Shortcut 3 Manual Instructions -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut C: "Get PC Clipboard Text" (Linear, 3 Actions)</h4>
+                  <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
+                    <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
+                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong></li>
+                    <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>text</code> and dictionary to <strong>Contents of URL</strong></li>
+                    <li>Add: <strong>"Copy to Clipboard"</strong> ➜ set target to <strong>Dictionary Value</strong></li>
+                  </ol>
+                </div>
+                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                  <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut D: "Get PC File" (Linear, 4 Actions)</h4>
+                  <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
+                    <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
+                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/latest-file</code> ➜ Method: <strong>GET</strong></li>
+                    <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>url</code> and dictionary to <strong>Contents of URL</strong></li>
+                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ set target to the <strong>Dictionary Value</strong> (downloads the file)</li>
+                    <li>Add: <strong>"Save File"</strong> ➜ set input to the downloaded <strong>Contents of URL</strong>. Turn off <em>Ask Where to Save</em> and choose the <em>Downloads</em> folder.</li>
+                  </ol>
+                </div>
               </div>
             </div>
           </div>

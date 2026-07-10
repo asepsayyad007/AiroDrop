@@ -33,6 +33,32 @@ async function getClipboardy() {
   return clipboardyWrite;
 }
 
+let clipboardyRead = null;
+async function getClipboardyRead() {
+  if (!clipboardyRead) {
+    const mod = await import('clipboardy');
+    clipboardyRead = mod.default ? mod.default.read : mod.read;
+  }
+  return clipboardyRead;
+}
+
+/**
+ * Read text from the system clipboard
+ */
+async function readText() {
+  try {
+    if (electronClipboard) {
+      return { success: true, text: electronClipboard.readText() || '' };
+    }
+    const read = await getClipboardyRead();
+    const text = await read();
+    return { success: true, text: text || '' };
+  } catch (err) {
+    console.error('[Clipboard] Failed to read text:', err.message);
+    return { success: false, error: err.message, text: '' };
+  }
+}
+
 /**
  * Write text to the system clipboard
  */
@@ -93,4 +119,4 @@ $img.Dispose();
   }
 }
 
-module.exports = { copyText, copyImage };
+module.exports = { copyText, copyImage, readText };

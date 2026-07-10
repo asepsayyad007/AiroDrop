@@ -230,7 +230,7 @@ const uploadToShare = multer({
       cb(null, name);
     }
   }),
-  limits: { fileSize: 4 * 1024 * 1024 * 1024 } // 4 GB max
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 } // 10 GB max
 });
 
 router.post('/upload', (req, res) => {

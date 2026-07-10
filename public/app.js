@@ -231,12 +231,16 @@
     // 3. Shortcuts modal QRs
     const imgShareToPC = $('#imgShareToPC');
     const imgClipboardToPC = $('#imgClipboardToPC');
+    const imgGetPCClipboard = $('#imgGetPCClipboard');
 
     if (imgShareToPC && imgShareToPC.src) {
       imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
     }
     if (imgClipboardToPC && imgClipboardToPC.src) {
       imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
+    }
+    if (imgGetPCClipboard && imgGetPCClipboard.src) {
+      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/06c3cd9783f94793b8f0ca4316c49cc8');
     }
     // Update File Browser and SMB URL displays
     const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
@@ -1633,6 +1637,7 @@
     const closeModal = $('#closeModal');
     const imgShareToPC = $('#imgShareToPC');
     const imgClipboardToPC = $('#imgClipboardToPC');
+    const imgGetPCClipboard = $('#imgGetPCClipboard');
     const tabBtns = $$('.setup-tab-btn');
     const tabContents = $$('.setup-tab-content');
 
@@ -1643,6 +1648,9 @@
         }
         if (imgClipboardToPC) {
           imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
+        }
+        if (imgGetPCClipboard) {
+          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/06c3cd9783f94793b8f0ca4316c49cc8');
         }
         if (serverInfo) {
           const infoIPSetup = $('#infoIPSetup');

@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10 GB max
   fileFilter: (req, file, cb) => {
     cb(null, true);
   }
@@ -354,7 +354,7 @@ router.post('/settings/browse', async (req, res) => {
 });
 
 // POST /api/send-to-phone
-router.post('/send-to-phone', upload.single('file'), (req, res) => {
+router.post('/send-to-phone', upload.single('file'), async (req, res) => {
   try {
     if (req.file) {
       const item = {
@@ -384,6 +384,15 @@ router.post('/send-to-phone', upload.single('file'), (req, res) => {
       state.pendingForPhone.unshift(item);
       if (state.pendingForPhone.length > 50) state.pendingForPhone.pop();
       utils.broadcastSSE('phone-queued', item);
+      
+      // Auto-copy to PC system clipboard
+      try {
+        const { copyText } = require('../../clipboard');
+        await copyText(text);
+      } catch (err) {
+        console.error('Failed to copy sent text to PC clipboard:', err.message);
+      }
+
       return res.json({ success: true, id: item.id, message: 'Text queued for iPhone' });
     }
 
@@ -450,7 +459,7 @@ router.get('/stats', (req, res) => {
 router.get('/storage', (req, res) => {
   try {
     if (!fs.existsSync(state.SAVE_DIR)) {
-      return res.json({ count: 0, size: 0, limit: 5 * 1024 * 1024 * 1024 });
+      return res.json({ count: 0, size: 0, limit: 50 * 1024 * 1024 * 1024 });
     }
     const files = fs.readdirSync(state.SAVE_DIR);
     let totalSize = 0;
@@ -468,7 +477,7 @@ router.get('/storage', (req, res) => {
         }
       } catch {}
     }
-    res.json({ count, size: totalSize, limit: 5 * 1024 * 1024 * 1024 });
+    res.json({ count, size: totalSize, limit: 50 * 1024 * 1024 * 1024 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
