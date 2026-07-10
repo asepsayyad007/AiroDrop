@@ -121,24 +121,6 @@ function init(userDataPath) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
   }
 
-  // Generate self-signed TLS certificates if HTTPS is enabled and key/cert don't exist
-  if (state.HTTPS_ENABLED) {
-    try {
-      if (!fs.existsSync(state.KEY_FILE) || !fs.existsSync(state.CERT_FILE)) {
-        console.log('[HTTPS] Generating self-signed TLS certificates...');
-        const selfsigned = require('selfsigned');
-        const attrs = [{ name: 'commonName', value: 'airodrop.local' }];
-        const pems = selfsigned.generate(attrs, { days: 365 });
-        fs.writeFileSync(state.KEY_FILE, pems.private, 'utf8');
-        fs.writeFileSync(state.CERT_FILE, pems.cert, 'utf8');
-        console.log('[HTTPS] Certificates generated successfully.');
-      }
-    } catch (certErr) {
-      console.error('[HTTPS] Failed to generate self-signed certificates:', certErr.message);
-      state.HTTPS_ENABLED = false; // Fallback to HTTP
-    }
-  }
-
   // Ensure Save and Share directories exist
   try {
     if (!fs.existsSync(state.SAVE_DIR)) {
@@ -201,7 +183,33 @@ function startServer(portCallback) {
 
   const ip = utils.getLocalIP();
 
-  if (state.HTTPS_ENABLED) {
+  const listenAndSetup = () => {
+    state.serverInstance.listen(state.PORT, '0.0.0.0', () => {
+      const activeUrl = `${state.HTTPS_ENABLED ? 'https' : 'http'}://${ip}:${state.PORT}`;
+      utils.writeLog(`AiroDrop Server active at ${activeUrl}`);
+
+      console.log('');
+      console.log('  ╔══════════════════════════════════════════════╗');
+      console.log('  ║   iPhone → PC : AirDrop Alternative         ║');
+      console.log('  ╠══════════════════════════════════════════════╣');
+      console.log(`  ║   Server URL : ${activeUrl.padEnd(29)}║`);
+      console.log(`  ║   Dashboard  : ${activeUrl.padEnd(29)}║`);
+      console.log(`  ║   Save Folder: ${state.SAVE_DIR.padEnd(29)}║`);
+      console.log('  ╚══════════════════════════════════════════════╝');
+      console.log('');
+
+      if (portCallback) portCallback(state.PORT);
+    });
+
+    setupWebSocket(state.serverInstance, serverEvents);
+
+    state.serverInstance.on('error', (err) => {
+      console.error('Server error:', err);
+      if (portCallback) portCallback(null, err);
+    });
+  };
+
+  const startHttps = () => {
     try {
       const https = require('https');
       const options = {
@@ -209,40 +217,49 @@ function startServer(portCallback) {
         cert: fs.readFileSync(state.CERT_FILE)
       };
       state.serverInstance = https.createServer(options, app);
+      listenAndSetup();
     } catch (err) {
       console.error('[HTTPS] Failed to start HTTPS server, falling back to HTTP:', err.message);
       state.HTTPS_ENABLED = false;
-      const http = require('http');
-      state.serverInstance = http.createServer(app);
+      startHttp();
     }
-  } else {
+  };
+
+  const startHttp = () => {
     const http = require('http');
     state.serverInstance = http.createServer(app);
+    listenAndSetup();
+  };
+
+  if (state.HTTPS_ENABLED) {
+    if (!fs.existsSync(state.KEY_FILE) || !fs.existsSync(state.CERT_FILE)) {
+      console.log('[HTTPS] Generating self-signed TLS certificates...');
+      try {
+        const selfsigned = require('selfsigned');
+        const attrs = [{ name: 'commonName', value: 'airodrop.local' }];
+        selfsigned.generate(attrs, { days: 365 })
+          .then((pems) => {
+            fs.writeFileSync(state.KEY_FILE, pems.private, 'utf8');
+            fs.writeFileSync(state.CERT_FILE, pems.cert, 'utf8');
+            console.log('[HTTPS] Certificates generated successfully.');
+            startHttps();
+          })
+          .catch((certErr) => {
+            console.error('[HTTPS] Failed to generate self-signed certificates:', certErr.message);
+            state.HTTPS_ENABLED = false;
+            startHttp();
+          });
+      } catch (requireErr) {
+        console.error('[HTTPS] selfsigned module failed to load:', requireErr.message);
+        state.HTTPS_ENABLED = false;
+        startHttp();
+      }
+    } else {
+      startHttps();
+    }
+  } else {
+    startHttp();
   }
-
-  state.serverInstance.listen(state.PORT, '0.0.0.0', () => {
-    const activeUrl = `${state.HTTPS_ENABLED ? 'https' : 'http'}://${ip}:${state.PORT}`;
-    utils.writeLog(`AiroDrop Server active at ${activeUrl}`);
-
-    console.log('');
-    console.log('  ╔══════════════════════════════════════════════╗');
-    console.log('  ║   iPhone → PC : AirDrop Alternative         ║');
-    console.log('  ╠══════════════════════════════════════════════╣');
-    console.log(`  ║   Server URL : ${activeUrl.padEnd(29)}║`);
-    console.log(`  ║   Dashboard  : ${activeUrl.padEnd(29)}║`);
-    console.log(`  ║   Save Folder: ${state.SAVE_DIR.padEnd(29)}║`);
-    console.log('  ╚══════════════════════════════════════════════╝');
-    console.log('');
-
-    if (portCallback) portCallback(state.PORT);
-  });
-
-  setupWebSocket(state.serverInstance, serverEvents);
-
-  state.serverInstance.on('error', (err) => {
-    console.error('Server error:', err);
-    if (portCallback) portCallback(null, err);
-  });
 }
 
 // Stop servers
