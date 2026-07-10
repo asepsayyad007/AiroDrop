@@ -1773,6 +1773,16 @@
       const btnToggleMicStream = document.getElementById('btnToggleMicStream');
       const btnMicStreamLabel = document.getElementById('btnMicStreamLabel');
 
+      if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('Microphone access requires a secure HTTPS connection. Please enable HTTPS in PC settings and reload.', 'error', 8000);
+        if (btnToggleMicStream) {
+          btnToggleMicStream.disabled = false;
+          btnToggleMicStream.style.background = '';
+        }
+        if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
+        return;
+      }
+
       try {
         if (btnToggleMicStream) btnToggleMicStream.disabled = true;
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Requesting Permission...';
