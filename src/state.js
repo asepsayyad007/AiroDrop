@@ -5,6 +5,8 @@ const state = {
   CONFIG_FILE: '',
   HISTORY_FILE: '',
   SCRATCHPAD_FILE: '',
+  KEY_FILE: '',
+  CERT_FILE: '',
 
   // Server Settings
   PORT: 3478,
@@ -18,6 +20,7 @@ const state = {
   AUTO_OPEN_LINKS: false,
   LAUNCH_ON_STARTUP: false,
   AUTO_UPDATE: true,
+  HTTPS_ENABLED: false,
 
   // Screencast Security Settings
   privacyPause: false,

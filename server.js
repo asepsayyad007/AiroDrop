@@ -91,6 +91,8 @@ function init(userDataPath) {
   state.SCRATCHPAD_FILE = path.join(userDataPath, 'scratchpad.txt');
   state.SAVE_DIR = path.join(userDataPath, 'received');
   state.SHARE_DIR = path.join(userDataPath, 'shared');
+  state.KEY_FILE = path.join(userDataPath, 'key.pem');
+  state.CERT_FILE = path.join(userDataPath, 'cert.pem');
 
   // Load Settings from config.json
   try {
@@ -105,6 +107,7 @@ function init(userDataPath) {
       if (data.autoOpenLinks !== undefined) state.AUTO_OPEN_LINKS = !!data.autoOpenLinks;
       if (data.launchOnStartup !== undefined) state.LAUNCH_ON_STARTUP = !!data.launchOnStartup;
       if (data.autoUpdate !== undefined) state.AUTO_UPDATE = !!data.autoUpdate;
+      if (data.httpsEnabled !== undefined) state.HTTPS_ENABLED = !!data.httpsEnabled;
       if (data.saveDir) {
         state.SAVE_DIR = path.isAbsolute(data.saveDir) ? data.saveDir : path.resolve(__dirname, data.saveDir);
       }
@@ -116,6 +119,24 @@ function init(userDataPath) {
     }
   } catch (err) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
+  }
+
+  // Generate self-signed TLS certificates if HTTPS is enabled and key/cert don't exist
+  if (state.HTTPS_ENABLED) {
+    try {
+      if (!fs.existsSync(state.KEY_FILE) || !fs.existsSync(state.CERT_FILE)) {
+        console.log('[HTTPS] Generating self-signed TLS certificates...');
+        const selfsigned = require('selfsigned');
+        const attrs = [{ name: 'commonName', value: 'airodrop.local' }];
+        const pems = selfsigned.generate(attrs, { days: 365 });
+        fs.writeFileSync(state.KEY_FILE, pems.private, 'utf8');
+        fs.writeFileSync(state.CERT_FILE, pems.cert, 'utf8');
+        console.log('[HTTPS] Certificates generated successfully.');
+      }
+    } catch (certErr) {
+      console.error('[HTTPS] Failed to generate self-signed certificates:', certErr.message);
+      state.HTTPS_ENABLED = false; // Fallback to HTTP
+    }
   }
 
   // Ensure Save and Share directories exist
@@ -174,21 +195,41 @@ function init(userDataPath) {
   }
 }
 
-// Start HTTP and WS servers
+// Start HTTP or HTTPS and WS servers
 function startServer(portCallback) {
   if (state.serverInstance) return;
 
-  state.serverInstance = app.listen(state.PORT, '0.0.0.0', () => {
-    const ip = utils.getLocalIP();
-    const url = `http://${ip}:${state.PORT}`;
-    utils.writeLog(`AiroDrop Server active at ${url}`);
+  const ip = utils.getLocalIP();
+
+  if (state.HTTPS_ENABLED) {
+    try {
+      const https = require('https');
+      const options = {
+        key: fs.readFileSync(state.KEY_FILE),
+        cert: fs.readFileSync(state.CERT_FILE)
+      };
+      state.serverInstance = https.createServer(options, app);
+    } catch (err) {
+      console.error('[HTTPS] Failed to start HTTPS server, falling back to HTTP:', err.message);
+      state.HTTPS_ENABLED = false;
+      const http = require('http');
+      state.serverInstance = http.createServer(app);
+    }
+  } else {
+    const http = require('http');
+    state.serverInstance = http.createServer(app);
+  }
+
+  state.serverInstance.listen(state.PORT, '0.0.0.0', () => {
+    const activeUrl = `${state.HTTPS_ENABLED ? 'https' : 'http'}://${ip}:${state.PORT}`;
+    utils.writeLog(`AiroDrop Server active at ${activeUrl}`);
 
     console.log('');
     console.log('  ╔══════════════════════════════════════════════╗');
     console.log('  ║   iPhone → PC : AirDrop Alternative         ║');
     console.log('  ╠══════════════════════════════════════════════╣');
-    console.log(`  ║   Server URL : ${url.padEnd(29)}║`);
-    console.log(`  ║   Dashboard  : ${url.padEnd(29)}║`);
+    console.log(`  ║   Server URL : ${activeUrl.padEnd(29)}║`);
+    console.log(`  ║   Dashboard  : ${activeUrl.padEnd(29)}║`);
     console.log(`  ║   Save Folder: ${state.SAVE_DIR.padEnd(29)}║`);
     console.log('  ╚══════════════════════════════════════════════╝');
     console.log('');
@@ -254,5 +295,6 @@ module.exports = {
   serverEvents,
   writeLog: utils.writeLog,
   getAutoUpdate: () => state.AUTO_UPDATE,
-  getLaunchOnStartup: () => state.LAUNCH_ON_STARTUP
+  getLaunchOnStartup: () => state.LAUNCH_ON_STARTUP,
+  getHttpsEnabled: () => state.HTTPS_ENABLED
 };

@@ -286,6 +286,16 @@ app.on('before-quit', () => {
   server.stopServer();
 });
 
+// Ignore self-signed certificate errors for local HTTPS loopback requests
+app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+  if (url.startsWith('https://localhost:') || url.startsWith('https://127.0.0.1:')) {
+    event.preventDefault();
+    callback(true);
+  } else {
+    callback(false);
+  }
+});
+
 // ─── IPC Communication with GUI ───────────────────────────────
 ipcMain.on('start-server', (event) => {
   server.startServer((port, err) => {
@@ -351,6 +361,10 @@ ipcMain.on('force-kill-all', () => {
 
 ipcMain.on('get-port-sync', (event) => {
   event.returnValue = server.getPort() || 3478;
+});
+
+ipcMain.on('get-protocol-sync', (event) => {
+  event.returnValue = server.getHttpsEnabled() ? 'https' : 'http';
 });
 
 ipcMain.on('open-file-folder', (event, filename) => {

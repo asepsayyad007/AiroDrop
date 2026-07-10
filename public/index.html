@@ -481,6 +481,13 @@
                   </label>
                 </div>
                 <div class="settings-switch-row">
+                  <span>Enable HTTPS (Secure SSL/TLS)</span>
+                  <label class="switch">
+                    <input type="checkbox" id="httpsEnabledInput">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="settings-switch-row">
                   <span>Temporary Mode (Auto-delete)</span>
                   <label class="switch">
                     <input type="checkbox" id="tempModeInput">
@@ -504,12 +511,16 @@
             <!-- Application Updates Card -->
             <div class="settings-card" style="margin-bottom: 0;">
               <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Application Updates</h3>
-              <div class="settings-switch-row" style="border-bottom: none; padding: 4px 0;">
+              <div class="settings-switch-row" style="padding: 4px 0;">
                 <span>Check for updates automatically</span>
                 <label class="switch">
                   <input type="checkbox" id="autoUpdaterInput">
                   <span class="slider"></span>
                 </label>
+              </div>
+              <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <button class="settings-browse-btn" id="checkUpdatesManualBtn" style="padding: 6px 12px; font-size: 0.78rem;">Check for Updates Now</button>
+                <span id="updateStatusText" style="font-size: 0.74rem; color: var(--text-secondary);"></span>
               </div>
             </div>
 

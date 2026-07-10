@@ -67,7 +67,8 @@ router.get('/check-update', (req, res) => {
 // GET /api/info
 router.get('/info', async (req, res) => {
   const ip = utils.getLocalIP();
-  const url = `http://${ip}:${state.PORT}`;
+  const protocol = state.HTTPS_ENABLED ? 'https' : 'http';
+  const url = `${protocol}://${ip}:${state.PORT}`;
   const mobileUrl = `${url}/m`;
   const allIps = utils.getAllIPs();
 
@@ -109,7 +110,8 @@ router.get('/info', async (req, res) => {
 router.get('/qr.png', async (req, res) => {
   try {
     const ip = utils.getLocalIP();
-    const mobileUrl = `http://${ip}:${state.PORT}/m`;
+    const protocol = state.HTTPS_ENABLED ? 'https' : 'http';
+    const mobileUrl = `${protocol}://${ip}:${state.PORT}/m`;
     res.setHeader('Content-Type', 'image/png');
     await QRCode.toFileStream(res, mobileUrl, {
       width: 240,
@@ -164,14 +166,15 @@ router.get('/settings', (req, res) => {
     temporaryModeHours: state.TEMPORARY_MODE_HOURS,
     autoOpenLinks: state.AUTO_OPEN_LINKS,
     launchOnStartup: state.LAUNCH_ON_STARTUP,
-    autoUpdate: state.AUTO_UPDATE
+    autoUpdate: state.AUTO_UPDATE,
+    httpsEnabled: state.HTTPS_ENABLED
   });
 });
 
 // POST /api/settings
 router.post('/settings', async (req, res) => {
   try {
-    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks, launchOnStartup, autoUpdate } = req.body;
+    const { saveDir, shareDir, temporaryMode, deviceName, port, rateLimitEnabled, notificationsEnabled, temporaryModeHours, autoOpenLinks, launchOnStartup, autoUpdate, httpsEnabled } = req.body;
     
     let resolvedPath = state.SAVE_DIR;
     if (saveDir) {
@@ -251,6 +254,10 @@ router.post('/settings', async (req, res) => {
       state.AUTO_UPDATE = !!autoUpdate;
     }
 
+    if (httpsEnabled !== undefined) {
+      state.HTTPS_ENABLED = !!httpsEnabled;
+    }
+
     const oldTempMode = state.TEMPORARY_MODE;
     if (temporaryMode !== undefined) {
       state.TEMPORARY_MODE = !!temporaryMode;
@@ -274,7 +281,8 @@ router.post('/settings', async (req, res) => {
       temporaryModeHours: state.TEMPORARY_MODE_HOURS,
       autoOpenLinks: state.AUTO_OPEN_LINKS,
       launchOnStartup: state.LAUNCH_ON_STARTUP,
-      autoUpdate: state.AUTO_UPDATE
+      autoUpdate: state.AUTO_UPDATE,
+      httpsEnabled: state.HTTPS_ENABLED
     }, null, 2));
 
     utils.writeLog(`Configurations updated: SaveFolder="${state.SAVE_DIR}", Port=${state.PORT}, DeviceName="${state.DEVICE_NAME}"`);
@@ -290,7 +298,8 @@ router.post('/settings', async (req, res) => {
       temporaryModeHours: state.TEMPORARY_MODE_HOURS,
       autoOpenLinks: state.AUTO_OPEN_LINKS,
       launchOnStartup: state.LAUNCH_ON_STARTUP,
-      autoUpdate: state.AUTO_UPDATE
+      autoUpdate: state.AUTO_UPDATE,
+      httpsEnabled: state.HTTPS_ENABLED
     });
   } catch (err) {
     console.error('[CONFIG] Failed to update settings:', err.message);

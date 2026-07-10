@@ -13,9 +13,11 @@
   if (isElectron && ipcRenderer) {
     try {
       const port = ipcRenderer.sendSync('get-port-sync') || 3478;
-      apiBase = `http://localhost:${port}`;
+      const protocol = ipcRenderer.sendSync('get-protocol-sync') || 'http';
+      apiBase = `${protocol}://localhost:${port}`;
     } catch (e) {
-      console.error('IPC get-port-sync failed:', e);
+      console.error('IPC get-port-sync/get-protocol-sync failed:', e);
+      apiBase = `http://localhost:3478`;
     }
   }
 
@@ -1226,6 +1228,7 @@
     const autoOpenLinksInput = $('#autoOpenLinksInput');
     const desktopAutoStartInput = $('#desktopAutoStart');
     const autoUpdaterInput = $('#autoUpdaterInput');
+    const httpsEnabledInput = $('#httpsEnabledInput');
 
     loadSettingsData();
 
@@ -1248,6 +1251,7 @@
           if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
           if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
           if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
+          if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
           updateTemporaryModeBadge(data.temporaryMode);
 
         }
@@ -1338,6 +1342,7 @@
         const autoOpenLinks = autoOpenLinksInput ? autoOpenLinksInput.checked : false;
         const launchOnStartup = desktopAutoStartInput ? desktopAutoStartInput.checked : false;
         const autoUpdate = autoUpdaterInput ? autoUpdaterInput.checked : true;
+        const httpsEnabled = httpsEnabledInput ? httpsEnabledInput.checked : false;
 
         saveDirBtn.disabled = true;
         saveDirBtn.textContent = 'Saving...';
@@ -1358,7 +1363,8 @@
               temporaryModeHours,
               autoOpenLinks,
               launchOnStartup,
-              autoUpdate
+              autoUpdate,
+              httpsEnabled
             })
           });
           const data = await res.json();
@@ -1378,6 +1384,7 @@
             if (autoOpenLinksInput) autoOpenLinksInput.checked = !!data.autoOpenLinks;
             if (desktopAutoStartInput) desktopAutoStartInput.checked = !!data.launchOnStartup;
             if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
+            if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
             updateTemporaryModeBadge(data.temporaryMode);
             
             fetchServerInfo();
@@ -1863,64 +1870,117 @@
 
     // ─── Auto-Updater Controls ───
     const btnCheckUpdates = $('#btnCheckUpdates');
+    const checkUpdatesManualBtn = $('#checkUpdatesManualBtn');
+    const updateStatusText = $('#updateStatusText');
     const updateProgressContainer = $('#updateProgressContainer');
     const updateProgressLabel = $('#updateProgressLabel');
     const updateProgressPercent = $('#updateProgressPercent');
     const updateProgressBarFill = $('#updateProgressBarFill');
     const appVersionText = $('#appVersionText');
 
-    if (btnCheckUpdates) {
-      // Get the version from the packages/main process if possible
-      btnCheckUpdates.addEventListener('click', () => {
+    const triggerManualCheck = async () => {
+      if (checkUpdatesManualBtn) {
+        checkUpdatesManualBtn.disabled = true;
+        checkUpdatesManualBtn.textContent = 'Checking...';
+      }
+      if (btnCheckUpdates) {
         btnCheckUpdates.disabled = true;
         btnCheckUpdates.textContent = '🔄 Checking...';
+      }
+      if (updateStatusText) updateStatusText.textContent = 'Connecting to server...';
+
+      if (isElectron && ipcRenderer) {
         ipcRenderer.send('manual-check-update');
-      });
+      } else {
+        try {
+          const res = await doFetch('/api/check-update');
+          const data = await res.json();
+          if (data.updateAvailable) {
+            if (updateStatusText) {
+              updateStatusText.innerHTML = `Update available: <a href="${data.url}" target="_blank" style="color: var(--accent); font-weight: 700; text-decoration: underline;">v${data.latest}</a>`;
+            }
+            showToast(`New update v${data.latest} is available!`, 'info');
+          } else {
+            if (updateStatusText) updateStatusText.textContent = `Up to date (v${data.current})`;
+            showToast('You are running the latest version.', 'success');
+          }
+        } catch (err) {
+          console.error('Update check failed:', err);
+          if (updateStatusText) updateStatusText.textContent = 'Check failed';
+          showToast('Failed to check for updates.', 'error');
+        } finally {
+          if (checkUpdatesManualBtn) {
+            checkUpdatesManualBtn.disabled = false;
+            checkUpdatesManualBtn.textContent = 'Check for Updates Now';
+          }
+          if (btnCheckUpdates) {
+            btnCheckUpdates.disabled = false;
+            btnCheckUpdates.textContent = '🔄 Check for Updates';
+          }
+        }
+      }
+    };
+
+    if (btnCheckUpdates) {
+      btnCheckUpdates.addEventListener('click', triggerManualCheck);
+    }
+    if (checkUpdatesManualBtn) {
+      checkUpdatesManualBtn.addEventListener('click', triggerManualCheck);
     }
 
-    ipcRenderer.on('update-status', (event, status, info) => {
-      if (!btnCheckUpdates) return;
+    if (isElectron && ipcRenderer) {
+      ipcRenderer.on('update-status', (event, status, info) => {
+        const updateBtnText = status === 'checking' ? '🔄 Checking...' : 
+                             status === 'available' ? '📥 Update Available' : '🔄 Check for Updates';
+        const manualBtnText = status === 'checking' ? 'Checking...' :
+                             status === 'available' ? 'Downloading...' : 'Check for Updates Now';
+        const isBtnDisabled = status === 'checking' || status === 'available';
 
-      switch (status) {
-        case 'checking':
-          btnCheckUpdates.disabled = true;
-          btnCheckUpdates.textContent = '🔄 Checking...';
-          break;
-        case 'available':
-          btnCheckUpdates.disabled = true;
-          btnCheckUpdates.textContent = '📥 Update Available';
-          showToast(`Update v${info.version} available! Downloading...`, 'info');
-          if (updateProgressContainer) updateProgressContainer.style.display = 'flex';
-          break;
-        case 'not-available':
-          btnCheckUpdates.disabled = false;
-          btnCheckUpdates.textContent = '🔄 Check for Updates';
-          showToast('You are already running the latest version!', 'success');
-          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
-          break;
-        case 'error':
-          btnCheckUpdates.disabled = false;
-          btnCheckUpdates.textContent = '🔄 Check for Updates';
-          showToast('Update check failed. Try again later.', 'error');
-          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
-          break;
-        case 'downloaded':
-          btnCheckUpdates.disabled = false;
-          btnCheckUpdates.textContent = '🔄 Check for Updates';
-          showToast('Update downloaded successfully! Restart to apply.', 'success');
-          if (updateProgressContainer) updateProgressContainer.style.display = 'none';
-          break;
-      }
-    });
+        if (btnCheckUpdates) {
+          btnCheckUpdates.disabled = isBtnDisabled;
+          btnCheckUpdates.textContent = updateBtnText;
+        }
+        if (checkUpdatesManualBtn) {
+          checkUpdatesManualBtn.disabled = isBtnDisabled;
+          checkUpdatesManualBtn.textContent = manualBtnText;
+        }
 
-    ipcRenderer.on('update-download-progress', (event, progressObj) => {
-      if (updateProgressPercent) updateProgressPercent.textContent = `${Math.round(progressObj.percent)}%`;
-      if (updateProgressBarFill) updateProgressBarFill.style.width = `${progressObj.percent}%`;
-      if (updateProgressLabel) {
-        const speed = (progressObj.bytesPerSecond / 1024 / 1024).toFixed(1);
-        updateProgressLabel.textContent = `Downloading (${speed} MB/s)`;
-      }
-    });
+        switch (status) {
+          case 'checking':
+            if (updateStatusText) updateStatusText.textContent = 'Checking for updates...';
+            break;
+          case 'available':
+            showToast(`Update v${info.version} available! Downloading...`, 'info');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'flex';
+            if (updateStatusText) updateStatusText.textContent = `New update v${info.version} downloading...`;
+            break;
+          case 'not-available':
+            showToast('You are already running the latest version!', 'success');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateStatusText) updateStatusText.textContent = 'Up to date';
+            break;
+          case 'error':
+            showToast('Update check failed. Try again later.', 'error');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateStatusText) updateStatusText.textContent = 'Check failed';
+            break;
+          case 'downloaded':
+            showToast('Update downloaded successfully! Restart to apply.', 'success');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateStatusText) updateStatusText.textContent = 'Update downloaded. Restart to apply.';
+            break;
+        }
+      });
+
+      ipcRenderer.on('update-download-progress', (event, progressObj) => {
+        if (updateProgressPercent) updateProgressPercent.textContent = `${Math.round(progressObj.percent)}%`;
+        if (updateProgressBarFill) updateProgressBarFill.style.width = `${progressObj.percent}%`;
+        if (updateProgressLabel) {
+          const speed = (progressObj.bytesPerSecond / 1024 / 1024).toFixed(1);
+          updateProgressLabel.textContent = `Downloading (${speed} MB/s)`;
+        }
+      });
+    }
 
 
     function updateControlCenterStatus(status) {
