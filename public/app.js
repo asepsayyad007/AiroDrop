@@ -1293,8 +1293,12 @@
           if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
           if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
           if (contextMenuInput) contextMenuInput.checked = !!data.contextMenuEnabled;
-          if (isElectron && data.platform === 'win32' && contextMenuSettingRow) {
+           if (isElectron && data.platform === 'win32' && contextMenuSettingRow) {
             contextMenuSettingRow.style.display = 'flex';
+          }
+          if (data.version) {
+            const versionEl = document.getElementById('appVersionTag');
+            if (versionEl) versionEl.textContent = `v${data.version}`;
           }
           updateTemporaryModeBadge(data.temporaryMode);
 

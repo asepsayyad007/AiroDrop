@@ -8,6 +8,17 @@ const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
 
+let appVersion = '5.1.0';
+try {
+  const pkg = require('../../package.json');
+  appVersion = pkg.version || '5.1.0';
+} catch (e) {
+  try {
+    const pkg = require('../package.json');
+    appVersion = pkg.version || '5.1.0';
+  } catch {}
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, state.SAVE_DIR);
@@ -169,7 +180,8 @@ router.get('/settings', (req, res) => {
     autoUpdate: state.AUTO_UPDATE,
     httpsEnabled: state.HTTPS_ENABLED,
     contextMenuEnabled: state.CONTEXT_MENU_ENABLED,
-    platform: process.platform
+    platform: process.platform,
+    version: appVersion
   });
 });
 
