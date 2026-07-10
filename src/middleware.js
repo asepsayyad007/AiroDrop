@@ -15,6 +15,9 @@ function registerMiddleware(app) {
       cleanPath === '/app.js' ||
       cleanPath === '/manifest.json' ||
       cleanPath === '/sw.js' ||
+      cleanPath === '/logo.png' ||
+      cleanPath === '/logo-192.png' ||
+      cleanPath === '/logo.svg' ||
       cleanPath === '/favicon.ico' ||
       cleanPath.startsWith('/vendor/') ||
       cleanPath.startsWith('/received/') ||

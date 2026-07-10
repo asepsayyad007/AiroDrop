@@ -954,6 +954,10 @@
         if (isMicStreaming) {
           stopMicStreaming();
         }
+        const btnCloseScreencast = document.getElementById('btnCloseScreencast');
+        if (btnCloseScreencast) {
+          btnCloseScreencast.click();
+        }
         if (wsWantsConnected) {
           setTimeout(() => {
             if (wsWantsConnected && !wsConnecting) {
