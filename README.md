@@ -1,8 +1,8 @@
-# AiroDrop v5.0.5 🚀
+# AiroDrop v5.1.0 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-5.0.5-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-5.1.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,26 +17,26 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v5.0.5
+## 🚀 What's New in v5.1.0
 
-This release brings version 5.0.5, focusing on screenshare cursor movements uniformity, GitHub auto-update pipeline corrections, and minor layout polishes:
+This release brings version 5.1.0, focusing on Windows right-click Explorer context menu support, dedicated linear iOS shortcuts for text and files, large file transfer capability, and dynamic client/server version reporting:
 
 ### ✅ New Features & Updates
-1. **🖱️ Screenshare Cursor speed uniformity** — Resolved the vertical screenshare cursor speed difference (which was more than 2x slower than horizontal dragging). The vertical divisor now dynamically scales according to the video stream's actual aspect ratio (`frame.videoHeight / frame.videoWidth`) instead of the container's letterboxed overlay bounding box.
-2. **🔄 Corrected GitHub Auto-Updater Pipeline**
-   - Configured GitHub Actions to automatically run builds and release assets on every `push` to `main`, keeping the application up to date on every commit.
-   - Fixed the auto-updater check by including `dist/latest.yml` in the uploaded release assets (which was missing and causing `electron-updater` to fail).
-   - Set the workflow to auto-overwrite existing assets and mark the latest build as the primary release.
-3. **🎨 Polished Send to Phone Layout** — Redesigned columns to stretch symmetrically under flexbox, locking input textareas to prevent offset mismatches and pinning buttons to the card bottoms for perfect horizontal alignment.
-4. **🔒 Purged Device pairing & Authentication** — Stripped all legacy pairing overlays, auth routes (`/api/auth/...`), local state saves, and dead functions for a completely clean, direct local connection.
+1. **🖱️ Windows Explorer Right-Click Context Menu Support** — Right-click any file on your PC and click "Send to Phone" to automatically queue it for your iPhone.
+2. **📱 Dedicated iOS Shortcuts for Text and Files** — Bypassed type-casting limitations and simplified setup with two 100% linear, non-branching shortcuts:
+   - **Get PC Text:** Instantly copies your PC system clipboard text or dashboard-sent text to your iPhone clipboard.
+   - **Get PC File:** Automatically downloads and saves files/photos queued from the context menu or dashboard directly to your iPhone's **Downloads** folder.
+3. **📦 10 GB File Transfer Support** — Increased upload limits across all backend endpoints to **10 GB** (from 50MB/4GB) and expanded the dashboard storage readout representation to **50 GB**.
+4. **🔄 Dynamic Version Display** — Removed hardcoded client-side version strings in favor of dynamically fetching the server version directly from `package.json`.
+5. **🔒 HTTP Fallback for Downloads** — Configured download links to route through the plain HTTP fallback port (`PORT + 1`, e.g. `3479`), preventing SSL handshake errors on iOS devices when executing downloading shortcuts.
 
 ---
 
-## 📥 Downloads (v5.0.5)
+## 📥 Downloads (v5.1.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v5.0.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.5/AiroDrop.Setup.5.0.5.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v5.0.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.0.5/AiroDrop-Portable-5.0.5.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v5.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.0/AiroDrop.Setup.5.1.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v5.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.0/AiroDrop-Portable-5.1.0.exe)** — Standalone execution without installation.
 
 ---
 
