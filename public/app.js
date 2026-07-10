@@ -2244,6 +2244,86 @@
         pc = null;
       }
     });
+
+    // ─── WebRTC Microphone Streaming Receiver ──────────────────────
+    let micPC = null;
+    const mobileMicActiveBadge = $('#mobileMicActiveBadge');
+
+    ipcRenderer.on('mic-offer', async (event, offer) => {
+      console.log('[MicWebRTC] Received offer from mobile phone.');
+      if (micPC) {
+        try { micPC.close(); } catch (e) {}
+      }
+
+      micPC = new RTCPeerConnection({
+        iceServers: []
+      });
+
+      micPC.onicecandidate = (e) => {
+        if (e.candidate) {
+          ipcRenderer.send('send-mic-candidate', e.candidate);
+        }
+      };
+
+      micPC.ontrack = (e) => {
+        console.log('[MicWebRTC] Track received:', e.streams);
+        if (e.streams && e.streams[0]) {
+          let audioEl = document.getElementById('pcMicStreamAudio');
+          if (!audioEl) {
+            audioEl = document.createElement('audio');
+            audioEl.id = 'pcMicStreamAudio';
+            audioEl.autoplay = true;
+            audioEl.style.display = 'none';
+            document.body.appendChild(audioEl);
+          }
+          audioEl.srcObject = e.streams[0];
+          audioEl.play().catch(err => {
+            console.warn('[MicWebRTC] Playback blocked by browser autoplay policy.', err);
+            showToast('Mic streaming active. Click the app to enable audio.', 'info');
+          });
+          if (mobileMicActiveBadge) mobileMicActiveBadge.style.display = 'inline-flex';
+          showToast('Mobile Microphone Connected!', 'success');
+        }
+      };
+
+      try {
+        await micPC.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await micPC.createAnswer();
+        await micPC.setLocalDescription(answer);
+        ipcRenderer.send('send-mic-answer', answer);
+      } catch (err) {
+        console.error('[MicWebRTC] Failed to handle mobile mic offer:', err);
+      }
+    });
+
+    ipcRenderer.on('mic-ice-candidate', async (event, candidate) => {
+      if (micPC && candidate) {
+        try {
+          await micPC.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error('[MicWebRTC] Failed to add ICE candidate:', err);
+        }
+      }
+    });
+
+    ipcRenderer.on('mic-stop', () => {
+      console.log('[MicWebRTC] Received mic stop event.');
+      stopPCMicStream();
+    });
+
+    function stopPCMicStream() {
+      if (micPC) {
+        try { micPC.close(); } catch(e) {}
+        micPC = null;
+      }
+      const audioEl = document.getElementById('pcMicStreamAudio');
+      if (audioEl) {
+        audioEl.srcObject = null;
+        try { audioEl.remove(); } catch(e) {}
+      }
+      if (mobileMicActiveBadge) mobileMicActiveBadge.style.display = 'none';
+      showToast('Mobile Microphone Disconnected.', 'info');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => { init(); });

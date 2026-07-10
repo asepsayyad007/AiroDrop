@@ -393,8 +393,20 @@ ipcMain.handle('get-screen-source', async () => {
   return null;
 });
 
-// ─── WebRTC Screencast Signaling Loop ──────────────────────────────
+// ─── WebRTC Screencast & Microphone Signaling Loop ─────────────────
 let activePhoneWs = null;
+
+server.serverEvents.on('phone_connected', (ws) => {
+  activePhoneWs = ws;
+  console.log('[MAIN] Active phone WS reference registered.');
+});
+
+server.serverEvents.on('phone_disconnected', (ws) => {
+  if (activePhoneWs === ws) {
+    activePhoneWs = null;
+    console.log('[MAIN] Active phone WS reference cleared.');
+  }
+});
 
 server.serverEvents.on('screencast_start', (ws) => {
   activePhoneWs = ws;
@@ -404,7 +416,6 @@ server.serverEvents.on('screencast_start', (ws) => {
 });
 
 server.serverEvents.on('screencast_stop', (ws) => {
-  activePhoneWs = null;
   if (mainWindow) {
     mainWindow.webContents.send('screencast-stop');
   }
@@ -436,6 +447,52 @@ ipcMain.on('send-webrtc-candidate', (event, candidate) => {
     activePhoneWs.send(JSON.stringify({
       type: 'webrtc_ice_candidate',
       candidate: candidate
+    }));
+  }
+});
+
+// Microphone Signaling Event Listeners (Phone -> PC)
+server.serverEvents.on('mic_offer', (ws, offer) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('mic-offer', offer);
+  }
+});
+
+server.serverEvents.on('mic_ice_candidate', (ws, candidate) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('mic-ice-candidate', candidate);
+  }
+});
+
+server.serverEvents.on('mic_stop', (ws) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('mic-stop');
+  }
+});
+
+// Outbound Microphone Signaling IPC Triggers (PC -> Phone)
+ipcMain.on('send-mic-answer', (event, answer) => {
+  if (activePhoneWs && activePhoneWs.readyState === 1) {
+    activePhoneWs.send(JSON.stringify({
+      type: 'mic_answer',
+      answer: answer
+    }));
+  }
+});
+
+ipcMain.on('send-mic-candidate', (event, candidate) => {
+  if (activePhoneWs && activePhoneWs.readyState === 1) {
+    activePhoneWs.send(JSON.stringify({
+      type: 'mic_ice_candidate',
+      candidate: candidate
+    }));
+  }
+});
+
+ipcMain.on('send-mic-stop', () => {
+  if (activePhoneWs && activePhoneWs.readyState === 1) {
+    activePhoneWs.send(JSON.stringify({
+      type: 'mic_stop'
     }));
   }
 });

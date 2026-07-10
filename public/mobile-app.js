@@ -120,6 +120,7 @@
 
 
       setupFileBrowserOverlay();
+      setupMicStream();
 
       // Setup Bottom Navigation
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
@@ -720,6 +721,9 @@
 
     let trackpadSocket = null;
     let phonePC = null;
+    let micPC = null;
+    let micStream = null;
+    let isMicStreaming = false;
     let isTrackpadOpen = false;
     let audioOnlyStreamMode = false;
     let syncAudioStates = function() {};
@@ -920,6 +924,18 @@
             if (phonePC && data.candidate) {
               await phonePC.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
+          } else if (data.type === 'mic_answer') {
+            console.log('[MicWebRTC] Received SDP Answer from PC.');
+            if (micPC) {
+              await micPC.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+          } else if (data.type === 'mic_ice_candidate') {
+            if (micPC && data.candidate) {
+              await micPC.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+          } else if (data.type === 'mic_stop') {
+            console.log('[MicWebRTC] Received mic stop trigger from PC.');
+            stopMicStreaming();
           }
         } catch (err) {
           console.error('[WebRTC] Signaling message handling failed:', err);
@@ -935,6 +951,9 @@
         wsConnecting = false;
         if (trackpadSocket === ws) trackpadSocket = null;
         updateUniversalConnectButton('disconnected');
+        if (isMicStreaming) {
+          stopMicStreaming();
+        }
         if (wsWantsConnected) {
           setTimeout(() => {
             if (wsWantsConnected && !wsConnecting) {
@@ -1733,6 +1752,106 @@
         }
       }
     });
+
+    // ─── WebRTC Microphone Streaming Sender ────────────────────────
+    function setupMicStream() {
+      const btnToggleMicStream = document.getElementById('btnToggleMicStream');
+      const btnMicStreamLabel = document.getElementById('btnMicStreamLabel');
+
+      if (!btnToggleMicStream) return;
+
+      btnToggleMicStream.addEventListener('click', async () => {
+        if (!isMicStreaming) {
+          await startMicStreaming();
+        } else {
+          stopMicStreaming();
+        }
+      });
+    }
+
+    async function startMicStreaming() {
+      const btnToggleMicStream = document.getElementById('btnToggleMicStream');
+      const btnMicStreamLabel = document.getElementById('btnMicStreamLabel');
+
+      try {
+        if (btnToggleMicStream) btnToggleMicStream.disabled = true;
+        if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Requesting Permission...';
+
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+        if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Connecting...';
+
+        if (micPC) {
+          try { micPC.close(); } catch(e) {}
+        }
+
+        micPC = new RTCPeerConnection({
+          iceServers: []
+        });
+
+        micStream.getTracks().forEach(track => micPC.addTrack(track, micStream));
+
+        micPC.onicecandidate = (event) => {
+          if (event.candidate) {
+            sendWS({
+              type: 'mic_ice_candidate',
+              candidate: event.candidate
+            });
+          }
+        };
+
+        const offer = await micPC.createOffer();
+        await micPC.setLocalDescription(offer);
+
+        sendWS({
+          type: 'mic_offer',
+          offer: offer
+        });
+
+        isMicStreaming = true;
+        if (btnToggleMicStream) {
+          btnToggleMicStream.disabled = false;
+          btnToggleMicStream.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+        }
+        if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Stop Microphone Stream';
+        showToast('Microphone stream active!', 'success');
+
+      } catch (err) {
+        console.error('Failed to start microphone stream:', err);
+        showToast('Failed to access microphone.', 'error');
+        isMicStreaming = false;
+        if (btnToggleMicStream) {
+          btnToggleMicStream.disabled = false;
+          btnToggleMicStream.style.background = '';
+        }
+        if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
+      }
+    }
+
+    function stopMicStreaming() {
+      const btnToggleMicStream = document.getElementById('btnToggleMicStream');
+      const btnMicStreamLabel = document.getElementById('btnMicStreamLabel');
+
+      if (micPC) {
+        try { micPC.close(); } catch(e) {}
+        micPC = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+      }
+      sendWS({
+        type: 'mic_stop'
+      });
+
+      isMicStreaming = false;
+      if (btnToggleMicStream) {
+        btnToggleMicStream.disabled = false;
+        btnToggleMicStream.style.background = '';
+      }
+      if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
+      showToast('Microphone stream stopped.', 'info');
+    }
 
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);

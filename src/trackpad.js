@@ -93,6 +93,7 @@ function setupWebSocket(serverInstance, serverEvents) {
 
   state.wss.on('connection', (ws) => {
     console.log('[TRACKPAD] Phone connected via WebSocket');
+    serverEvents.emit('phone_connected', ws);
     let accumX = 0;
     let accumY = 0;
     
@@ -139,8 +140,27 @@ function setupWebSocket(serverInstance, serverEvents) {
             break;
           case 'scroll':
             if (mouse_event) {
-              const delta = Math.round(data.dy * 120);
-              mouse_event(0x0800, 0, 0, delta, 0);
+              const amount = Math.round(data.amount);
+              mouse_event(0x0800, 0, 0, amount, 0); // MOUSEEVENTF_WHEEL
+            }
+            break;
+          case 'keyboard':
+            try {
+              const key = data.key;
+              const type = data.action || 'press';
+              if (type === 'press') {
+                if (key.length === 1) {
+                  // Text typing
+                  const ks = require('node-key-sender');
+                  ks.sendText(key);
+                } else {
+                  // Special key
+                  const ks = require('node-key-sender');
+                  ks.sendKey(key.toLowerCase());
+                }
+              }
+            } catch (keyErr) {
+              console.error('[TRACKPAD] Key event processing failed:', keyErr.message);
             }
             break;
           case 'identify':
@@ -197,6 +217,15 @@ function setupWebSocket(serverInstance, serverEvents) {
           case 'webrtc_ice_candidate':
             serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
             break;
+          case 'mic_offer':
+            serverEvents.emit('mic_offer', ws, data.offer);
+            break;
+          case 'mic_ice_candidate':
+            serverEvents.emit('mic_ice_candidate', ws, data.candidate);
+            break;
+          case 'mic_stop':
+            serverEvents.emit('mic_stop', ws);
+            break;
           case 'ping_pc':
             utils.broadcastSSE('ping-pc', { device: ws.deviceToken || 'mobile' });
             serverEvents.emit('ping_pc', ws);
@@ -209,6 +238,7 @@ function setupWebSocket(serverInstance, serverEvents) {
     
     ws.on('close', () => {
       console.log('[TRACKPAD] Phone disconnected');
+      serverEvents.emit('phone_disconnected', ws);
       if (state.screencastStopTimeout) clearTimeout(state.screencastStopTimeout);
       state.screencastStopTimeout = setTimeout(() => {
         console.log('[TRACKPAD] screencastStopTimeout triggered; stopping screencast');
