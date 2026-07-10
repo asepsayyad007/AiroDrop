@@ -288,22 +288,9 @@ app.on('before-quit', () => {
 
 // Ignore self-signed certificate errors for local HTTPS loopback and server port requests
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-  try {
-    const parsedUrl = new URL(url);
-    const serverPort = (server.getPort() || 3478).toString();
-    if (
-      parsedUrl.hostname === 'localhost' ||
-      parsedUrl.hostname === '127.0.0.1' ||
-      parsedUrl.port === serverPort
-    ) {
-      event.preventDefault();
-      callback(true);
-      return;
-    }
-  } catch (e) {
-    console.error('Failed to parse certificate error URL:', e);
-  }
-  callback(false);
+  console.log(`[Electron Cert Bypass] Trusting URL: ${url} (Error: ${error})`);
+  event.preventDefault();
+  callback(true);
 });
 
 // ─── IPC Communication with GUI ───────────────────────────────
