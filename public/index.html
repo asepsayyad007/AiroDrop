@@ -376,26 +376,58 @@
               </div>
 
               <!-- Shortcut 3 Manual Instructions -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 10px;">
-                <div>
-                  <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut C: "Get PC Clipboard Text" (Linear, 3 Actions)</h4>
-                  <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
-                    <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
-                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong></li>
-                    <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>text</code> and dictionary to <strong>Contents of URL</strong></li>
-                    <li>Add: <strong>"Copy to Clipboard"</strong> ➜ set target to <strong>Dictionary Value</strong></li>
-                  </ol>
-                </div>
-                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
-                  <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut D: "Get PC File" (Linear, 4 Actions)</h4>
-                  <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
-                    <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
-                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/latest-file</code> ➜ Method: <strong>GET</strong></li>
-                    <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>url</code> and dictionary to <strong>Contents of URL</strong></li>
-                    <li>Add: <strong>"Get Contents of URL"</strong> ➜ set target to the <strong>Dictionary Value</strong> (downloads the file)</li>
-                    <li>Add: <strong>"Save File"</strong> ➜ set input to the downloaded <strong>Contents of URL</strong>. Turn off <em>Ask Where to Save</em> and choose the <em>Downloads</em> folder.</li>
-                  </ol>
-                </div>
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut C: "Receive from PC" (Unified, Handles Text &amp; Files)</h4>
+                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0; display: flex; flex-direction: column; gap: 4px;">
+                  <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
+                  <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong></li>
+                  <li>Add: <strong>"Get Dictionary from Input"</strong> ➜ set input to <strong>Contents of URL</strong></li>
+                  <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>success</code></li>
+                  <li>Add: <strong>"If"</strong> ➜ set condition to <code>is true</code>:
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>type</code> and dictionary to the top-level <strong>Dictionary</strong></li>
+                      <li>Add: <strong>"If"</strong> ➜ set condition to <code>is text</code>:
+                        <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
+                          <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>text</code></li>
+                          <li>Add: <strong>"Copy to Clipboard"</strong> ➜ set target to <strong>Dictionary Value</strong></li>
+                          <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>id</code></li>
+                          <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
+                          <li>Add: <strong>"Show Notification"</strong> ➜ Message: <em>Text copied to clipboard</em></li>
+                        </ul>
+                      </li>
+                      <li>Under <strong>Otherwise</strong> (File path):
+                        <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
+                          <li>Add: <strong>"Choose from Menu"</strong> ➜ Prompt: <em>Download File?</em> ➜ Options: <strong>Download</strong>, <strong>Cancel</strong></li>
+                          <li>Under <strong>Download</strong>:
+                            <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                              <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>url</code></li>
+                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ set target to the <strong>Dictionary Value</strong> (downloads file)</li>
+                              <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>mimeType</code></li>
+                              <li>Add: <strong>"If"</strong> ➜ set condition to <code>starts with image/ or video/</code>:
+                                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
+                                  <li>Add: <strong>"Save to Photo Album"</strong> ➜ input: downloaded <strong>Contents of URL</strong></li>
+                                </ul>
+                              </li>
+                              <li>Otherwise:
+                                <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
+                                  <li>Add: <strong>"Save File"</strong> ➜ input: downloaded <strong>Contents of URL</strong></li>
+                                </ul>
+                              </li>
+                              <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>id</code></li>
+                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
+                              <li>Add: <strong>"Show Notification"</strong> ➜ Message: <em>File downloaded successfully</em></li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>Under outer <strong>Otherwise</strong> (Empty state):
+                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
+                      <li>Add: <strong>"Show Notification"</strong> ➜ Message: <em>Clipboard is empty</em></li>
+                    </ul>
+                  </li>
+                </ol>
               </div>
             </div>
           </div>

@@ -225,26 +225,101 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
   }
 });
 
-// GET /api/clipboard — Read the current PC clipboard text
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function detectMimeType(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  const mimeTypes = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.heic': 'image/heic',
+    '.heif': 'image/heif',
+    '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.m4v': 'video/x-m4v',
+    '.mkv': 'video/x-matroska',
+    '.mp3': 'audio/mpeg',
+    '.m4a': 'audio/mp4',
+    '.wav': 'audio/wav',
+    '.pdf': 'application/pdf',
+    '.zip': 'application/zip',
+    '.txt': 'text/plain',
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json'
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
+// GET /api/clipboard — Read unified clipboard (queues first, fallback to PC clipboard)
 router.get('/clipboard', async (req, res) => {
   try {
+    // 1. Check explicit queue first
+    if (state.pendingForPhone && state.pendingForPhone.length > 0) {
+      const latestItem = state.pendingForPhone[0]; // first item is the most recent
+      if (latestItem.type === 'file' || latestItem.type === 'image') {
+        const localIP = utils.getLocalIP();
+        const httpPort = parseInt(state.PORT, 10) + 1; // fallback HTTP port
+        const downloadUrl = `http://${localIP}:${httpPort}/received/${latestItem.filename}`;
+        
+        const size = latestItem.size || 0;
+        const mime = latestItem.mimeType || latestItem.mimetype || detectMimeType(latestItem.filename);
+        
+        return res.json({
+          success: true,
+          id: latestItem.id,
+          type: 'file',
+          filename: latestItem.originalName || latestItem.filename,
+          mimeType: mime,
+          size: size,
+          sizeFormatted: formatBytes(size),
+          url: downloadUrl
+        });
+      } else if (latestItem.type === 'text') {
+        return res.json({
+          success: true,
+          id: latestItem.id,
+          type: 'text',
+          mimeType: 'text/plain',
+          text: latestItem.content
+        });
+      }
+    }
+
+    // 2. Fallback to reading the system clipboard
     const { readText } = require('../../clipboard');
     const result = await readText();
-    if (result.success) {
-      res.json({
+    if (result.success && result.text && result.text.trim().length > 0) {
+      return res.json({
         success: true,
+        type: 'text',
+        mimeType: 'text/plain',
         text: result.text
       });
-    } else {
-      res.status(500).json({ error: result.error || 'Failed to read PC clipboard' });
     }
+
+    // 3. Both are empty
+    res.json({
+      success: false,
+      message: 'Clipboard is empty'
+    });
   } catch (err) {
     console.error('[GET-CLIPBOARD] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/latest-file — Return details for the latest pending file/image
+// GET /api/latest-file — Return details for the latest pending file/image (Backward Compatibility)
 router.get('/latest-file', (req, res) => {
   try {
     const latestFile = state.pendingForPhone.find(item => item.type === 'file' || item.type === 'image');
