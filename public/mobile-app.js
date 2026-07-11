@@ -1126,16 +1126,16 @@
           touchpadAccumulatedScrollY += dy;
           touchpadInitialScrollY = cy;
 
-          // Discrete notch scrolling with standard Windows WHEEL_DELTA (120) units
-          while (touchpadAccumulatedScrollY > 12) {
+          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
+          while (touchpadAccumulatedScrollY > 3) {
             touchpadHasMoved = true;
-            sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
-            touchpadAccumulatedScrollY -= 12;
+            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
+            touchpadAccumulatedScrollY -= 3;
           }
-          while (touchpadAccumulatedScrollY < -12) {
+          while (touchpadAccumulatedScrollY < -3) {
             touchpadHasMoved = true;
-            sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
-            touchpadAccumulatedScrollY += 12;
+            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
+            touchpadAccumulatedScrollY += 3;
           }
         } else if (touches.length === 1 && !touchpadIsScrolling) {
           // If in presentation mode, don't move cursor, wait for touchend tap
@@ -1698,16 +1698,16 @@
           scAccumulatedScrollY += dy;
           scLastScrollY = cy;
 
-          // Discrete notch scrolling with standard Windows WHEEL_DELTA (120) units
-          while (scAccumulatedScrollY > 12) {
+          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
+          while (scAccumulatedScrollY > 3) {
             scHasMoved = true;
-            sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
-            scAccumulatedScrollY -= 12;
+            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
+            scAccumulatedScrollY -= 3;
           }
-          while (scAccumulatedScrollY < -12) {
+          while (scAccumulatedScrollY < -3) {
             scHasMoved = true;
-            sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
-            scAccumulatedScrollY += 12;
+            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
+            scAccumulatedScrollY += 3;
           }
         } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
