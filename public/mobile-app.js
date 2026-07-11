@@ -1416,11 +1416,13 @@
           }
         });
 
-        // Close dropdown when tapping anywhere else on screencast screen
-        overlay.addEventListener('click', () => {
-          dropdownMenu.style.display = 'none';
-          if (toolsArrow) {
-            toolsArrow.style.transform = '';
+        // Close dropdown when tapping anywhere else on screencast screen (but not when clicking controls/buttons)
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay || e.target === frame) {
+            dropdownMenu.style.display = 'none';
+            if (toolsArrow) {
+              toolsArrow.style.transform = '';
+            }
           }
         });
       }
