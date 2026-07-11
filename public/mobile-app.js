@@ -1078,6 +1078,7 @@
       let touchpadStartY = 0;
       let touchpadIsScrolling = false;
       let touchpadInitialScrollY = 0;
+      let touchpadAccumulatedScrollY = 0;
       let touchpadTapTimeout = null;
       let touchpadLastTapTime = 0;
 
@@ -1103,6 +1104,7 @@
           touchpadMaxTouches = 2;
           touchpadIsScrolling = true;
           touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+          touchpadAccumulatedScrollY = 0;
           
           const dot = document.getElementById('touchpadCursorDot');
           if (dot) dot.style.display = 'none';
@@ -1111,7 +1113,31 @@
 
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
-        if (touches.length === 1 && !touchpadIsScrolling) {
+        if (touches.length === 2) {
+          e.preventDefault();
+          const cy = (touches[0].clientY + touches[1].clientY) / 2;
+          // Auto-initialize if touchstart was missed or flags were reset
+          if (!touchpadIsScrolling || !touchpadInitialScrollY) {
+            touchpadIsScrolling = true;
+            touchpadInitialScrollY = cy;
+            touchpadAccumulatedScrollY = 0;
+          }
+          const dy = cy - touchpadInitialScrollY;
+          touchpadAccumulatedScrollY += dy;
+          touchpadInitialScrollY = cy;
+
+          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
+          while (touchpadAccumulatedScrollY > 3) {
+            touchpadHasMoved = true;
+            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
+            touchpadAccumulatedScrollY -= 3;
+          }
+          while (touchpadAccumulatedScrollY < -3) {
+            touchpadHasMoved = true;
+            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
+            touchpadAccumulatedScrollY += 3;
+          }
+        } else if (touches.length === 1 && !touchpadIsScrolling) {
           // If in presentation mode, don't move cursor, wait for touchend tap
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) return;
@@ -1130,14 +1156,6 @@
             dot.style.left = (cx - rect.left) + 'px';
             dot.style.top = (cy - rect.top) + 'px';
           }
-        } else if (touches.length === 2 && touchpadIsScrolling) {
-          e.preventDefault();
-          const cy = (touches[0].clientY + touches[1].clientY) / 2;
-          if (Math.abs(cy - touchpadInitialScrollY) > 2) {
-            touchpadHasMoved = true;
-          }
-          sendWS({ type: 'scroll', dy: (cy - touchpadInitialScrollY) / 100 });
-          touchpadInitialScrollY = cy;
         }
       }, { passive: false });
 
@@ -1190,7 +1208,7 @@
             }, 220);
           }
         }
-      }, { passive: false });
+      }, { passive: true });
 
       // ── Click Buttons ──
       const sendClick = (btnType) => {
@@ -1626,6 +1644,7 @@
       let scLastTouchY = 0;
       let scIsTwoFinger = false;
       let scLastScrollY = 0;
+      let scAccumulatedScrollY = 0;
       let scTapTimeout = null;
       let scLastTapTime = 0;
 
@@ -1655,28 +1674,40 @@
           scIsTwoFinger = true;
           const mid = getTouchMidpoint(e);
           scLastScrollY = mid.y;
+          scAccumulatedScrollY = 0;
           scStartTime = Date.now();
           scHasMoved = false;
-          // Prevent page scroll/zoom on two-finger start so touchmove preventDefault works
-          e.preventDefault();
         }
-      }, { passive: false });
+      }, { passive: true });
 
       frame.addEventListener('touchmove', (e) => {
         if (!interactiveMode) return;
 
         const touches = e.touches;
-        if (touches.length === 2 && scIsTwoFinger) {
+        if (touches.length === 2) {
           e.preventDefault();
           const mid = getTouchMidpoint(e);
-          const dy = (mid.y - scLastScrollY);
-          if (Math.abs(dy) > 1) {
+          const cy = mid.y;
+          // Auto-initialize if touchstart was missed or flags were reset
+          if (!scIsTwoFinger || !scLastScrollY) {
+            scIsTwoFinger = true;
+            scLastScrollY = cy;
+            scAccumulatedScrollY = 0;
+          }
+          const dy = cy - scLastScrollY;
+          scAccumulatedScrollY += dy;
+          scLastScrollY = cy;
+
+          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
+          while (scAccumulatedScrollY > 3) {
             scHasMoved = true;
-            // Windows mouse wheel expects standard scroll values (normally around 120 per notch).
-            // A scaling factor of 15-20x the pixel delta provides smooth, natural tracking.
-            const scrollAmount = -dy * 15;
-            sendWS({ type: 'scroll', amount: scrollAmount });
-            scLastScrollY = mid.y;
+            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
+            scAccumulatedScrollY -= 3;
+          }
+          while (scAccumulatedScrollY < -3) {
+            scHasMoved = true;
+            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
+            scAccumulatedScrollY += 3;
           }
         } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
@@ -1706,7 +1737,6 @@
 
       frame.addEventListener('touchend', (e) => {
         if (!interactiveMode || !trackpadSocket) return;
-        e.preventDefault();
 
         if (e.touches.length > 0) return; // Wait until all fingers are lifted
 
@@ -1746,7 +1776,7 @@
             }, 200);
           }
         }
-      }, { passive: false });
+      }, { passive: true });
     }
 
 
