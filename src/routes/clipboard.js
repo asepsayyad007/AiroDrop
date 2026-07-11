@@ -282,7 +282,8 @@ router.get('/clipboard', async (req, res) => {
           type: 'file',
           filename: latestItem.originalName || latestItem.filename,
           mimeType: mime,
-          size: formatBytes(size),
+          size: size,
+          sizeFormatted: formatBytes(size),
           url: downloadUrl
         });
       } else if (latestItem.type === 'text') {
