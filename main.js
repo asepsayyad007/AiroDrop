@@ -123,6 +123,25 @@ app.whenReady().then(() => {
   
   // Initialize server with userData path for persistent data
   const userDataPath = app.getPath('userData');
+
+  // Migrate configuration from old folder (ios-win-integration) if it exists and new folder is fresh
+  try {
+    const oldUserDataPath = path.join(path.dirname(userDataPath), 'ios-win-integration');
+    if (fs.existsSync(oldUserDataPath) && !fs.existsSync(path.join(userDataPath, 'config.json'))) {
+      const filesToMigrate = ['config.json', 'history.json', 'scratchpad.txt', 'key.pem', 'cert.pem'];
+      filesToMigrate.forEach(file => {
+        const oldFile = path.join(oldUserDataPath, file);
+        const newFile = path.join(userDataPath, file);
+        if (fs.existsSync(oldFile) && !fs.existsSync(newFile)) {
+          fs.copyFileSync(oldFile, newFile);
+        }
+      });
+      console.log('[MIGRATION] Configuration successfully migrated from ios-win-integration');
+    }
+  } catch (migErr) {
+    console.error('[MIGRATION] Failed to migrate configuration:', migErr.message);
+  }
+
   server.init(userDataPath);
 
   // Start the server FIRST so it's ready when window loads
@@ -402,6 +421,24 @@ ipcMain.on('stop-server', (event) => {
   serverPort = null;
   updateTrayMenu(false);
   if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
+});
+
+ipcMain.on('restart-server', (event) => {
+  server.stopServer();
+  serverRunning = false;
+  serverPort = null;
+  updateTrayMenu(false);
+  if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
+
+  setTimeout(() => {
+    server.startServer((port, err) => {
+      serverRunning = !err;
+      serverPort = port || server.getPort();
+      updateTrayMenu(serverRunning);
+      const status = { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message };
+      if (mainWindow) mainWindow.webContents.send('server-status', status);
+    });
+  }, 1000);
 });
 
 ipcMain.on('get-status', (event) => {

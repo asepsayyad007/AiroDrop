@@ -542,7 +542,7 @@
     sseSource.onerror = () => {
       setConnectionStatus(false);
       sseSource.close();
-      setTimeout(connectSSE, 3000);
+      setTimeout(connectSSE, 1000);
     };
   }
 
@@ -1844,6 +1844,7 @@
     const ccDirPath = $('#ccDirPath');
     const btnCcChangeDir = $('#btnCcChangeDir');
     const btnCcStart = $('#btnCcStart');
+    const btnCcRestart = $('#btnCcRestart');
     const btnCcStop = $('#btnCcStop');
     const btnCcKillAll = $('#btnCcKillAll');
 
@@ -1902,6 +1903,24 @@
         btnCcStart.style.opacity = '0.35';
         if (ccText) ccText.textContent = 'Starting...';
         ipcRenderer.send('start-server');
+      });
+    }
+
+    // Restart Server button
+    if (btnCcRestart) {
+      btnCcRestart.addEventListener('click', () => {
+        btnCcRestart.disabled = true;
+        btnCcRestart.style.opacity = '0.35';
+        if (btnCcStart) {
+          btnCcStart.disabled = true;
+          btnCcStart.style.opacity = '0.35';
+        }
+        if (btnCcStop) {
+          btnCcStop.disabled = true;
+          btnCcStop.style.opacity = '0.35';
+        }
+        if (ccText) ccText.textContent = 'Restarting...';
+        ipcRenderer.send('restart-server');
       });
     }
 
@@ -2059,6 +2078,11 @@
           btnCcStart.style.opacity = '0.35';
           btnCcStart.style.pointerEvents = 'none';
         }
+        if (btnCcRestart) {
+          btnCcRestart.disabled = false;
+          btnCcRestart.style.opacity = '1';
+          btnCcRestart.style.pointerEvents = 'auto';
+        }
         if (btnCcStop) {
           btnCcStop.disabled = false;
           btnCcStop.style.opacity = '1';
@@ -2088,6 +2112,11 @@
           btnCcStart.disabled = false;
           btnCcStart.style.opacity = '1';
           btnCcStart.style.pointerEvents = 'auto';
+        }
+        if (btnCcRestart) {
+          btnCcRestart.disabled = true;
+          btnCcRestart.style.opacity = '0.35';
+          btnCcRestart.style.pointerEvents = 'none';
         }
         if (btnCcStop) {
           btnCcStop.disabled = true;

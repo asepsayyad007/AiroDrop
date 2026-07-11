@@ -528,10 +528,16 @@ router.get('/events', (req, res) => {
   res.write(`event: connected\ndata: ${JSON.stringify({ count: state.history.length })}\n\n`);
   res.write(`event: logs-init\ndata: ${JSON.stringify(state.logHistory)}\n\n`);
 
+  // ─── SSE Heartbeat: send a comment every 20s to keep the connection alive on mobile ───
+  const heartbeat = setInterval(() => {
+    try { res.write(`:heartbeat\n\n`); } catch { clearInterval(heartbeat); }
+  }, 20000);
+
   state.sseClients.add(res);
   utils.writeLog("Dashboard client connected.");
 
   req.on('close', () => {
+    clearInterval(heartbeat);
     state.sseClients.delete(res);
   });
 });
