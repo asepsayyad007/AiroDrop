@@ -1078,6 +1078,7 @@
       let touchpadStartY = 0;
       let touchpadIsScrolling = false;
       let touchpadInitialScrollY = 0;
+      let touchpadAccumulatedScrollY = 0;
       let touchpadTapTimeout = null;
       let touchpadLastTapTime = 0;
 
@@ -1103,6 +1104,7 @@
           touchpadMaxTouches = 2;
           touchpadIsScrolling = true;
           touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+          touchpadAccumulatedScrollY = 0;
           
           const dot = document.getElementById('touchpadCursorDot');
           if (dot) dot.style.display = 'none';
@@ -1115,13 +1117,17 @@
           e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
           const dy = cy - touchpadInitialScrollY;
-          if (Math.abs(dy) > 1) {
+          touchpadAccumulatedScrollY += dy;
+          touchpadInitialScrollY = cy;
+
+          if (touchpadAccumulatedScrollY > 12) {
             touchpadHasMoved = true;
-            // Map the drag distance to Windows mouse wheel scroll amount.
-            // Natural scroll directions: dragging fingers down (dy > 0) scrolls down (positive wheel rotation).
-            const scrollAmount = dy * 1.5;
-            sendWS({ type: 'scroll', amount: scrollAmount });
-            touchpadInitialScrollY = cy;
+            sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
+            touchpadAccumulatedScrollY = 0;
+          } else if (touchpadAccumulatedScrollY < -12) {
+            touchpadHasMoved = true;
+            sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
+            touchpadAccumulatedScrollY = 0;
           }
         } else if (touches.length === 1 && !touchpadIsScrolling) {
           // If in presentation mode, don't move cursor, wait for touchend tap
@@ -1630,6 +1636,7 @@
       let scLastTouchY = 0;
       let scIsTwoFinger = false;
       let scLastScrollY = 0;
+      let scAccumulatedScrollY = 0;
       let scTapTimeout = null;
       let scLastTapTime = 0;
 
@@ -1659,6 +1666,7 @@
           scIsTwoFinger = true;
           const mid = getTouchMidpoint(e);
           scLastScrollY = mid.y;
+          scAccumulatedScrollY = 0;
           scStartTime = Date.now();
           scHasMoved = false;
         }
@@ -1672,13 +1680,17 @@
           e.preventDefault();
           const mid = getTouchMidpoint(e);
           const dy = (mid.y - scLastScrollY);
-          if (Math.abs(dy) > 1) {
+          scAccumulatedScrollY += dy;
+          scLastScrollY = mid.y;
+
+          if (scAccumulatedScrollY > 12) {
             scHasMoved = true;
-            // Windows mouse wheel expects standard scroll values.
-            // Dragging fingers down (dy > 0) scrolls down (positive wheel rotation).
-            const scrollAmount = dy * 12;
-            sendWS({ type: 'scroll', amount: scrollAmount });
-            scLastScrollY = mid.y;
+            sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
+            scAccumulatedScrollY = 0;
+          } else if (scAccumulatedScrollY < -12) {
+            scHasMoved = true;
+            sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
+            scAccumulatedScrollY = 0;
           }
         } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
