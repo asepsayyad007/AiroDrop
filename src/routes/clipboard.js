@@ -262,10 +262,37 @@ function detectMimeType(filename) {
   return mimeTypes[ext] || 'application/octet-stream';
 }
 
+let isLastClipboardInitialized = false;
+
 // GET /api/clipboard — Read unified clipboard (queues first, fallback to PC clipboard)
 router.get('/clipboard', async (req, res) => {
   try {
-    // 1. Check explicit queue first
+    const { readText } = require('../../clipboard');
+    const result = await readText();
+    const currentClipboardText = (result.success && result.text) ? result.text : '';
+
+    // Initialize lastPcClipboardText on first request so it doesn't trigger false copy event
+    if (!isLastClipboardInitialized) {
+      state.lastPcClipboardText = currentClipboardText;
+      isLastClipboardInitialized = true;
+    }
+
+    // 1. Detect if a NEW text was copied to the PC system clipboard
+    if (currentClipboardText && currentClipboardText.trim().length > 0 && currentClipboardText !== state.lastPcClipboardText) {
+      state.lastPcClipboardText = currentClipboardText;
+      
+      // If a new text was copied, replace any pending photo/file metadata with this text metadata
+      state.pendingForPhone = [];
+      
+      return res.json({
+        success: true,
+        type: 'text',
+        mimeType: 'text/plain',
+        text: currentClipboardText
+      });
+    }
+
+    // 2. Check explicit queue if clipboard hasn't changed
     if (state.pendingForPhone && state.pendingForPhone.length > 0) {
       const latestItem = state.pendingForPhone[0]; // first item is the most recent
       if (latestItem.type === 'file' || latestItem.type === 'image') {
@@ -297,19 +324,17 @@ router.get('/clipboard', async (req, res) => {
       }
     }
 
-    // 2. Fallback to reading the system clipboard
-    const { readText } = require('../../clipboard');
-    const result = await readText();
-    if (result.success && result.text && result.text.trim().length > 0) {
+    // 3. Fallback to reading the system clipboard (if queue is empty and text hasn't changed, but still present)
+    if (currentClipboardText && currentClipboardText.trim().length > 0) {
       return res.json({
         success: true,
         type: 'text',
         mimeType: 'text/plain',
-        text: result.text
+        text: currentClipboardText
       });
     }
 
-    // 3. Both are empty
+    // 4. Both are empty
     res.json({
       success: false,
       message: 'Clipboard is empty'
