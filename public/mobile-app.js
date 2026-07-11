@@ -1362,6 +1362,8 @@
         }
         overlay.style.display = 'flex';
         streamActive = true;
+        // Restore keyboard button visibility (may have been hidden on previous close)
+        if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
         updateWakeLockStatus();
 
         const isStreamActive = !!(frame && frame.srcObject);
@@ -1653,8 +1655,10 @@
           scLastScrollY = mid.y;
           scStartTime = Date.now();
           scHasMoved = false;
+          // Prevent page scroll/zoom on two-finger start so touchmove preventDefault works
+          e.preventDefault();
         }
-      }, { passive: true });
+      }, { passive: false });
 
       frame.addEventListener('touchmove', (e) => {
         if (!interactiveMode) return;

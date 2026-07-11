@@ -194,27 +194,46 @@ Now make it accessible from your Home Screen with one tap:
 
 ---
 
-## Creating a "Receive from PC" Shortcut (Two-Way)
+## Creating a "Receive from PC" Shortcut (Unified, Handles Text & Files)
 
-Since the dashboard supports sending content from PC to iPhone, you can create a shortcut that checks for pending items:
+Since the dashboard supports sending content and files from PC to iPhone, you can create a shortcut that checks the unified clipboard and pending items:
 
-### Step 1: Create "Check PC" Shortcut
+### Step 1: Create "Receive from PC" Shortcut
 
-1. Create a new shortcut named **"Check PC"**
+1. Create a new shortcut named **"Receive from PC"**
 2. Add **"Get Contents of URL"**:
-   - **URL:** `http://<PC-IP>:3478/api/pending`
+   - **URL:** `http://<PC-IP>:3479/api/clipboard` (using the fallback port `3479` to bypass self-signed SSL errors)
    - **Method:** **"GET"**
-3. Add **"Get Dictionary from Input"** (to parse the JSON)
-4. Add **"Get Dictionary Value"** → key: `"items"`
-5. Add **"Repeat with Each"** (to loop through items)
-6. Inside the repeat, add an **"If"** to check the item type
-7. For text items: add **"Copy to Clipboard"**
-8. For image items: add **"Save to Photo Album"**
-9. After processing, add a **notification** showing what was received
+3. Add **"Get Dictionary from Input"** (set input to the returned **Contents of URL**)
+4. Add **"Get Dictionary Value"** → set key to `"success"`
+5. Add an **"If"** block → set condition to `"is true"`:
+   * **Then (Valid Clipboard content):**
+     1. Add **"Get Dictionary Value"** → set key to `"type"` and dictionary to the top-level **Dictionary**
+     2. Add an **"If"** block → set condition to `"is text"`:
+        * **If Text:**
+          - Add **"Get Dictionary Value"** → set key to `"text"`
+          - Add **"Copy to Clipboard"** → set input to **Dictionary Value**
+          - Add **"Get Dictionary Value"** → set key to `"id"`
+          - Add **"Get Contents of URL"** → URL: `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST** (notifies the PC dashboard that the item was received and clears it from the queue)
+          - Add **"Show Notification"** → Message: `"Text copied to clipboard"`
+        * **Otherwise (If File):**
+          - Add **"Choose from Menu"** → Prompt: `"Download File?"` → Options: **Download**, **Cancel**
+          - Under **Download**:
+            - Add **"Get Dictionary Value"** → set key to `"url"`
+            - Add **"Get Contents of URL"** → set target to the `"url"` **Dictionary Value** (downloads the file)
+            - Add **"Get Dictionary Value"** → set key to `"mimeType"`
+            - Add an **"If"** block → set condition to `"starts with image/ or video/"`:
+              * **If Image/Video:** Add **"Save to Photo Album"** → set input to the downloaded **Contents of URL**
+              * **Otherwise:** Add **"Save File"** → set input to the downloaded **Contents of URL** (saves to AiroDrop folder)
+            - Add **"Get Dictionary Value"** → set key to `"id"`
+            - Add **"Get Contents of URL"** → URL: `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST**
+            - Add **"Show Notification"** → Message: `"File downloaded successfully"`
+   * **Otherwise (Empty/Failed state):**
+     - Add **"Show Notification"** → Message: `"Clipboard is empty"`
 
 ### Step 2: Add to Home Screen
 
-Add this shortcut to your Home Screen the same way as "Send Clipboard". Whenever you tap it, it checks if your PC has sent anything and processes it.
+Add this shortcut to your Home Screen as a widget. Whenever you tap it, it will fetch whatever text or files are ready on the PC.
 
 ---
 

@@ -25,9 +25,10 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.bin';
+    const base = path.basename(file.originalname, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
-    cb(null, `${timestamp}_${safeName || 'file'}${ext}`);
+    const safeBase = base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
+    cb(null, `${safeBase || 'file'}_${timestamp}${ext}`);
   }
 });
 
