@@ -404,6 +404,24 @@ ipcMain.on('stop-server', (event) => {
   if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
 });
 
+ipcMain.on('restart-server', (event) => {
+  server.stopServer();
+  serverRunning = false;
+  serverPort = null;
+  updateTrayMenu(false);
+  if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
+
+  setTimeout(() => {
+    server.startServer((port, err) => {
+      serverRunning = !err;
+      serverPort = port || server.getPort();
+      updateTrayMenu(serverRunning);
+      const status = { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message };
+      if (mainWindow) mainWindow.webContents.send('server-status', status);
+    });
+  }, 1000);
+});
+
 ipcMain.on('get-status', (event) => {
   event.reply('server-status', { running: serverRunning, port: serverPort || server.getPort(), ip: server.getLocalIP() });
 });
