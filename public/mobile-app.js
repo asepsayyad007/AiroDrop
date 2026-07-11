@@ -1208,7 +1208,7 @@
             }, 220);
           }
         }
-      }, { passive: false });
+      }, { passive: true });
 
       // ── Click Buttons ──
       const sendClick = (btnType) => {
@@ -1737,7 +1737,6 @@
 
       frame.addEventListener('touchend', (e) => {
         if (!interactiveMode || !trackpadSocket) return;
-        e.preventDefault();
 
         if (e.touches.length > 0) return; // Wait until all fingers are lifted
 
@@ -1777,7 +1776,7 @@
             }, 200);
           }
         }
-      }, { passive: false });
+      }, { passive: true });
     }
 
 
