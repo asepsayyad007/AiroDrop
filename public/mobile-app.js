@@ -1113,21 +1113,29 @@
 
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
-        if (touches.length === 2 && touchpadIsScrolling) {
+        if (touches.length === 2) {
           e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
+          // Auto-initialize if touchstart was missed or flags were reset
+          if (!touchpadIsScrolling || !touchpadInitialScrollY) {
+            touchpadIsScrolling = true;
+            touchpadInitialScrollY = cy;
+            touchpadAccumulatedScrollY = 0;
+          }
           const dy = cy - touchpadInitialScrollY;
           touchpadAccumulatedScrollY += dy;
           touchpadInitialScrollY = cy;
 
-          if (touchpadAccumulatedScrollY > 12) {
+          // Discrete notch scrolling with standard Windows WHEEL_DELTA (120) units
+          while (touchpadAccumulatedScrollY > 12) {
             touchpadHasMoved = true;
             sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
-            touchpadAccumulatedScrollY = 0;
-          } else if (touchpadAccumulatedScrollY < -12) {
+            touchpadAccumulatedScrollY -= 12;
+          }
+          while (touchpadAccumulatedScrollY < -12) {
             touchpadHasMoved = true;
             sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
-            touchpadAccumulatedScrollY = 0;
+            touchpadAccumulatedScrollY += 12;
           }
         } else if (touches.length === 1 && !touchpadIsScrolling) {
           // If in presentation mode, don't move cursor, wait for touchend tap
@@ -1676,21 +1684,30 @@
         if (!interactiveMode) return;
 
         const touches = e.touches;
-        if (touches.length === 2 && scIsTwoFinger) {
+        if (touches.length === 2) {
           e.preventDefault();
           const mid = getTouchMidpoint(e);
-          const dy = (mid.y - scLastScrollY);
+          const cy = mid.y;
+          // Auto-initialize if touchstart was missed or flags were reset
+          if (!scIsTwoFinger || !scLastScrollY) {
+            scIsTwoFinger = true;
+            scLastScrollY = cy;
+            scAccumulatedScrollY = 0;
+          }
+          const dy = cy - scLastScrollY;
           scAccumulatedScrollY += dy;
-          scLastScrollY = mid.y;
+          scLastScrollY = cy;
 
-          if (scAccumulatedScrollY > 12) {
+          // Discrete notch scrolling with standard Windows WHEEL_DELTA (120) units
+          while (scAccumulatedScrollY > 12) {
             scHasMoved = true;
             sendWS({ type: 'scroll', amount: -120 }); // Scroll Down
-            scAccumulatedScrollY = 0;
-          } else if (scAccumulatedScrollY < -12) {
+            scAccumulatedScrollY -= 12;
+          }
+          while (scAccumulatedScrollY < -12) {
             scHasMoved = true;
             sendWS({ type: 'scroll', amount: 120 });  // Scroll Up
-            scAccumulatedScrollY = 0;
+            scAccumulatedScrollY += 12;
           }
         } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
