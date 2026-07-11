@@ -1,8 +1,8 @@
-# AiroDrop v5.1.0 🚀
+# AiroDrop v5.1.6 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-![Version](https://img.shields.io/badge/version-5.1.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-5.1.6-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -17,26 +17,23 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v5.1.0
+## 🚀 What's New in v5.1.6
 
-This release brings version 5.1.0, focusing on Windows right-click Explorer context menu support, dedicated linear iOS shortcuts for text and files, large file transfer capability, and dynamic client/server version reporting:
+This release brings version 5.1.6, introducing a Unified Clipboard API, corrected duplicate file extension resolution, and optimized mobile remote gesture capabilities:
 
 ### ✅ New Features & Updates
-1. **🖱️ Windows Explorer Right-Click Context Menu Support** — Right-click any file on your PC and click "Send to Phone" to automatically queue it for your iPhone.
-2. **📱 Dedicated iOS Shortcuts for Text and Files** — Bypassed type-casting limitations and simplified setup with two 100% linear, non-branching shortcuts:
-   - **Get PC Text:** Instantly copies your PC system clipboard text or dashboard-sent text to your iPhone clipboard.
-   - **Get PC File:** Automatically downloads and saves files/photos queued from the context menu or dashboard directly to your iPhone's **Downloads** folder.
-3. **📦 10 GB File Transfer Support** — Increased upload limits across all backend endpoints to **10 GB** (from 50MB/4GB) and expanded the dashboard storage readout representation to **50 GB**.
-4. **🔄 Dynamic Version Display** — Removed hardcoded client-side version strings in favor of dynamically fetching the server version directly from `package.json`.
-5. **🔒 HTTP Fallback for Downloads** — Configured download links to route through the plain HTTP fallback port (`PORT + 1`, e.g. `3479`), preventing SSL handshake errors on iOS devices when executing downloading shortcuts.
+1. **📋 Unified Clipboard API** — Replaced split text/file check endpoints with a single `/api/clipboard` endpoint that dynamically inspects clipboards and responds with a unified JSON structure for simpler integration.
+2. **🕒 Filename Timestamp Formatting** — Implemented project-wide `basename_timestamp.ext` file formatting (removing bracket signs) and resolved duplicate file extension bugs.
+3. **🖱️ High-Precision Trackpad & Screencast Scroll** — Added discrete step emulation with threshold coordination (3px displacement = 30 wheel units) to resolve blocky/jumpy touch scrolling and make drag events highly responsive.
+4. **📱 iOS Touch Event Optimization** — Enabled passive event listeners on touchend interfaces to prevent iOS WebKit from blocking subsequent multi-finger coordinates.
 
 ---
 
-## 📥 Downloads (v5.1.0)
+## 📥 Downloads (v5.1.6)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v5.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.0/AiroDrop.Setup.5.1.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v5.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.0/AiroDrop-Portable-5.1.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v5.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.6/AiroDrop.Setup.5.1.6.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v5.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.6/AiroDrop-Portable-5.1.6.exe)** — Standalone execution without installation.
 
 ---
 
