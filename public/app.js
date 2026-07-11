@@ -240,7 +240,7 @@
       imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
     }
     if (imgGetPCClipboard && imgGetPCClipboard.src) {
-      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/06c3cd9783f94793b8f0ca4316c49cc8');
+      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/c35825d9722d48158b88e192ee0ced2d');
     }
     // Update File Browser and SMB URL displays
     const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
@@ -1654,7 +1654,7 @@
           imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
         }
         if (imgGetPCClipboard) {
-          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/06c3cd9783f94793b8f0ca4316c49cc8');
+          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/c35825d9722d48158b88e192ee0ced2d');
         }
         if (serverInfo) {
           const infoIPSetup = $('#infoIPSetup');
