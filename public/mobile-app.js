@@ -1103,29 +1103,27 @@
           touchpadMaxTouches = 2;
           touchpadIsScrolling = true;
           touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
-          // Prevent default behaviors like scroll/pinch-zoom immediately
-          e.preventDefault();
           
           const dot = document.getElementById('touchpadCursorDot');
           if (dot) dot.style.display = 'none';
         }
-      }, { passive: false });
+      }, { passive: true });
 
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
-        if (touches.length === 2) {
+        if (touches.length === 2 && touchpadIsScrolling) {
           e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
           const dy = cy - touchpadInitialScrollY;
           if (Math.abs(dy) > 1) {
             touchpadHasMoved = true;
-            // Map the drag distance to Windows mouse wheel scroll amount (120 per notch).
-            // Negative dy gives standard scroll behavior (drag fingers up to scroll down).
-            const scrollAmount = -dy * 10;
+            // Map the drag distance to Windows mouse wheel scroll amount.
+            // Natural scroll directions: dragging fingers down (dy > 0) scrolls down (positive wheel rotation).
+            const scrollAmount = dy * 1.5;
             sendWS({ type: 'scroll', amount: scrollAmount });
             touchpadInitialScrollY = cy;
           }
-        } else if (touches.length === 1) {
+        } else if (touches.length === 1 && !touchpadIsScrolling) {
           // If in presentation mode, don't move cursor, wait for touchend tap
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) return;
@@ -1663,28 +1661,26 @@
           scLastScrollY = mid.y;
           scStartTime = Date.now();
           scHasMoved = false;
-          // Prevent page scroll/zoom on two-finger start so touchmove preventDefault works
-          e.preventDefault();
         }
-      }, { passive: false });
+      }, { passive: true });
 
       frame.addEventListener('touchmove', (e) => {
         if (!interactiveMode) return;
 
         const touches = e.touches;
-        if (touches.length === 2) {
+        if (touches.length === 2 && scIsTwoFinger) {
           e.preventDefault();
           const mid = getTouchMidpoint(e);
           const dy = (mid.y - scLastScrollY);
           if (Math.abs(dy) > 1) {
             scHasMoved = true;
-            // Windows mouse wheel expects standard scroll values (normally around 120 per notch).
-            // A scaling factor of 15-20x the pixel delta provides smooth, natural tracking.
-            const scrollAmount = -dy * 15;
+            // Windows mouse wheel expects standard scroll values.
+            // Dragging fingers down (dy > 0) scrolls down (positive wheel rotation).
+            const scrollAmount = dy * 12;
             sendWS({ type: 'scroll', amount: scrollAmount });
             scLastScrollY = mid.y;
           }
-        } else if (touches.length === 1) {
+        } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
           const tx = touches[0].clientX;
           const ty = touches[0].clientY;
