@@ -1103,11 +1103,13 @@
           touchpadMaxTouches = 2;
           touchpadIsScrolling = true;
           touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+          // Prevent default behaviors like scroll/pinch-zoom immediately
+          e.preventDefault();
           
           const dot = document.getElementById('touchpadCursorDot');
           if (dot) dot.style.display = 'none';
         }
-      }, { passive: true });
+      }, { passive: false });
 
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
@@ -1133,11 +1135,15 @@
         } else if (touches.length === 2 && touchpadIsScrolling) {
           e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
-          if (Math.abs(cy - touchpadInitialScrollY) > 2) {
+          const dy = cy - touchpadInitialScrollY;
+          if (Math.abs(dy) > 1) {
             touchpadHasMoved = true;
+            // Map the drag distance to Windows mouse wheel scroll amount (120 per notch).
+            // Negative dy gives standard scroll behavior (drag fingers up to scroll down).
+            const scrollAmount = -dy * 10;
+            sendWS({ type: 'scroll', amount: scrollAmount });
+            touchpadInitialScrollY = cy;
           }
-          sendWS({ type: 'scroll', dy: (cy - touchpadInitialScrollY) / 100 });
-          touchpadInitialScrollY = cy;
         }
       }, { passive: false });
 
