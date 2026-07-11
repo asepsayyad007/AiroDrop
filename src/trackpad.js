@@ -74,6 +74,22 @@ function sendKeystroke(charOrCode) {
 function setupWebSocket(serverInstance, serverEvents) {
   state.wss = new WebSocket.Server({ noServer: true });
   
+  // ─── Keepalive: ping every 15s, terminate unresponsive clients ───
+  const WS_PING_INTERVAL = 15000;
+  if (!state._wsPingTimer) {
+    state._wsPingTimer = setInterval(() => {
+      if (!state.wss) return;
+      for (const ws of state.wss.clients) {
+        if (ws._isAlive === false) {
+          ws.terminate();
+          continue;
+        }
+        ws._isAlive = false;
+        ws.ping();
+      }
+    }, WS_PING_INTERVAL);
+  }
+
   serverInstance.on('upgrade', (request, socket, head) => {
     try {
       const pathname = request.url.split('?')[0];
@@ -93,6 +109,8 @@ function setupWebSocket(serverInstance, serverEvents) {
 
   state.wss.on('connection', (ws) => {
     console.log('[TRACKPAD] Phone connected via WebSocket');
+    ws._isAlive = true;
+    ws.on('pong', () => { ws._isAlive = true; });
     serverEvents.emit('phone_connected', ws);
     let accumX = 0;
     let accumY = 0;

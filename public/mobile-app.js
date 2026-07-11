@@ -605,10 +605,14 @@
       }
     }
 
+    let _mobileSSE = null;
     function connectMobileSSE() {
+      // Close any existing SSE connection before opening a new one
+      if (_mobileSSE) { try { _mobileSSE.close(); } catch {} _mobileSSE = null; }
       const token = localStorage.getItem('deviceToken');
       const sseUrl = `/api/events?token=${token}`;
       const sse = new EventSource(sseUrl);
+      _mobileSSE = sse;
       sse.addEventListener('scratchpad', (e) => {
         const data = JSON.parse(e.data);
         const scratchpad = document.getElementById('mobileScratchpad');
@@ -623,7 +627,8 @@
       });
       sse.onerror = () => {
         sse.close();
-        setTimeout(connectMobileSSE, 5000);
+        _mobileSSE = null;
+        setTimeout(connectMobileSSE, 1000);
       };
     }
 
@@ -750,12 +755,27 @@
     }
 
     document.addEventListener('visibilitychange', async () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        await requestWakeLock();
+      if (document.visibilityState === 'visible') {
+        // Re-acquire wake lock
+        if (wakeLock !== null) {
+          await requestWakeLock();
+        }
+        // ─── Instant reconnect on screen unlock ───
+        // When the phone was locked, iOS/Android kill idle TCP sockets.
+        // Instead of waiting for a timeout, reconnect immediately.
+        if (wsWantsConnected && (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN)) {
+          wsReconnectDelay = 200;
+          if (trackpadSocket) { try { trackpadSocket.close(); } catch {} trackpadSocket = null; }
+          wsConnecting = false;
+          connectWS();
+        }
+        // Reconnect SSE if it was dropped
+        connectMobileSSE();
       }
     });
     let wsWantsConnected = false;
     let wsConnecting = false;
+    let wsReconnectDelay = 200; // Start fast, back off on repeated failures
     let audioCtx = null;
     function playPingSound() {
       try {
@@ -829,6 +849,7 @@
 
       ws.onopen = () => {
         wsConnecting = false;
+        wsReconnectDelay = 200; // Reset backoff on successful connection
         trackpadSocket = ws;
         updateUniversalConnectButton('connected');
         showToast('Connected to PC Services');
@@ -959,11 +980,13 @@
           btnCloseScreencast.click();
         }
         if (wsWantsConnected) {
+          const delay = wsReconnectDelay;
+          wsReconnectDelay = Math.min(wsReconnectDelay * 2, 5000); // Exponential backoff, max 5s
           setTimeout(() => {
             if (wsWantsConnected && !wsConnecting) {
               connectWS();
             }
-          }, 3000);
+          }, delay);
         }
       };
     }

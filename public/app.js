@@ -542,7 +542,7 @@
     sseSource.onerror = () => {
       setConnectionStatus(false);
       sseSource.close();
-      setTimeout(connectSSE, 3000);
+      setTimeout(connectSSE, 1000);
     };
   }
 
