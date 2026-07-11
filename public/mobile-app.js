@@ -1113,7 +1113,19 @@
 
       touchpadArea.addEventListener('touchmove', (e) => {
         const touches = e.touches;
-        if (touches.length === 1 && !touchpadIsScrolling) {
+        if (touches.length === 2) {
+          e.preventDefault();
+          const cy = (touches[0].clientY + touches[1].clientY) / 2;
+          const dy = cy - touchpadInitialScrollY;
+          if (Math.abs(dy) > 1) {
+            touchpadHasMoved = true;
+            // Map the drag distance to Windows mouse wheel scroll amount (120 per notch).
+            // Negative dy gives standard scroll behavior (drag fingers up to scroll down).
+            const scrollAmount = -dy * 10;
+            sendWS({ type: 'scroll', amount: scrollAmount });
+            touchpadInitialScrollY = cy;
+          }
+        } else if (touches.length === 1) {
           // If in presentation mode, don't move cursor, wait for touchend tap
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) return;
@@ -1131,18 +1143,6 @@
           if (dot) {
             dot.style.left = (cx - rect.left) + 'px';
             dot.style.top = (cy - rect.top) + 'px';
-          }
-        } else if (touches.length === 2 && touchpadIsScrolling) {
-          e.preventDefault();
-          const cy = (touches[0].clientY + touches[1].clientY) / 2;
-          const dy = cy - touchpadInitialScrollY;
-          if (Math.abs(dy) > 1) {
-            touchpadHasMoved = true;
-            // Map the drag distance to Windows mouse wheel scroll amount (120 per notch).
-            // Negative dy gives standard scroll behavior (drag fingers up to scroll down).
-            const scrollAmount = -dy * 10;
-            sendWS({ type: 'scroll', amount: scrollAmount });
-            touchpadInitialScrollY = cy;
           }
         }
       }, { passive: false });
@@ -1672,7 +1672,7 @@
         if (!interactiveMode) return;
 
         const touches = e.touches;
-        if (touches.length === 2 && scIsTwoFinger) {
+        if (touches.length === 2) {
           e.preventDefault();
           const mid = getTouchMidpoint(e);
           const dy = (mid.y - scLastScrollY);
@@ -1684,7 +1684,7 @@
             sendWS({ type: 'scroll', amount: scrollAmount });
             scLastScrollY = mid.y;
           }
-        } else if (touches.length === 1 && !scIsTwoFinger) {
+        } else if (touches.length === 1) {
           e.preventDefault();
           const tx = touches[0].clientX;
           const ty = touches[0].clientY;
