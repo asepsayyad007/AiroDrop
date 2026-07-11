@@ -1669,10 +1669,15 @@
         if (touches.length === 2 && scIsTwoFinger) {
           e.preventDefault();
           const mid = getTouchMidpoint(e);
-          const dy = (mid.y - scLastScrollY) / 10;
-          if (Math.abs(dy) > 0.05) scHasMoved = true;
-          sendWS({ type: 'scroll', dy });
-          scLastScrollY = mid.y;
+          const dy = (mid.y - scLastScrollY);
+          if (Math.abs(dy) > 1) {
+            scHasMoved = true;
+            // Windows mouse wheel expects standard scroll values (normally around 120 per notch).
+            // A scaling factor of 15-20x the pixel delta provides smooth, natural tracking.
+            const scrollAmount = -dy * 15;
+            sendWS({ type: 'scroll', amount: scrollAmount });
+            scLastScrollY = mid.y;
+          }
         } else if (touches.length === 1 && !scIsTwoFinger) {
           e.preventDefault();
           const tx = touches[0].clientX;
