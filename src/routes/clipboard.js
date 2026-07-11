@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     const base = path.basename(file.originalname, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const safeBase = base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
-    cb(null, `${safeBase || 'file'}[${timestamp}]${ext}`);
+    cb(null, `${safeBase || 'file'}_${timestamp}${ext}`);
   }
 });
 
@@ -282,8 +282,7 @@ router.get('/clipboard', async (req, res) => {
           type: 'file',
           filename: latestItem.originalName || latestItem.filename,
           mimeType: mime,
-          size: size,
-          sizeFormatted: formatBytes(size),
+          size: formatBytes(size),
           url: downloadUrl
         });
       } else if (latestItem.type === 'text') {
