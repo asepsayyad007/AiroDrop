@@ -593,6 +593,9 @@
 
     const filtered = allItems.filter(item => {
       if (currentFilter === 'all') return true;
+      if (currentFilter === 'file') {
+        return item.type === 'file' || item.type === 'video' || item.type === 'audio';
+      }
       return item.type === currentFilter;
     });
 
@@ -682,8 +685,9 @@
           </div>`;
       }
       
-      if (item.type === 'file') {
-        const isAudio = item.mimeType && item.mimeType.startsWith('audio');
+      if (item.type === 'file' || item.type === 'video' || item.type === 'audio') {
+        const isAudio = item.type === 'audio' || (item.mimeType && item.mimeType.startsWith('audio'));
+        const isVideo = item.type === 'video' || (item.mimeType && item.mimeType.startsWith('video'));
         const isPdf = item.mimeType && item.mimeType.includes('pdf');
         
         let fileIcon = `
@@ -696,6 +700,12 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
             </svg>`;
+        } else if (isVideo) {
+          fileIcon = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 7l-7 5 7 5V7z"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>`;
         } else if (isPdf) {
           fileIcon = `
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -703,11 +713,15 @@
             </svg>`;
         }
 
+        let badgeLabel = 'File';
+        if (isVideo) badgeLabel = 'Video';
+        else if (isAudio) badgeLabel = 'Audio';
+
         return `
           <div class="feed-item type-file${isNewClass}" id="item-${item.id}">
             <div class="item-header" style="width: 100%;">
               <div style="display:flex;align-items:center;gap:10px;">
-                <span class="item-type-badge file">File</span>
+                <span class="item-type-badge file">${badgeLabel}</span>
                 <span class="item-time">${timeStr}</span>
               </div>
               <button class="delete-btn" data-id="${item.id}" title="Delete">
@@ -1196,8 +1210,8 @@
         previewText = item.content;
       } else if (item.type === 'image') {
         previewText = 'Image file';
-      } else if (item.type === 'file') {
-        previewText = item.originalName;
+      } else {
+        previewText = item.originalName || 'File';
       }
 
       return `
