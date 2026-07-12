@@ -15,11 +15,12 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname) || '.bin';
     const base = path.basename(file.originalname, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    let safeBase = base.replace(/[^a-zA-Z0-9._-]/g, '_');
-    if (safeBase.length > 15) {
-      safeBase = safeBase.slice(0, 15);
+    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
+    if (cleanBase.length > 15) {
+      cleanBase = cleanBase.slice(0, 15);
     }
-    cb(null, `${safeBase || 'file'}_${timestamp}${ext}`);
+    cleanBase = cleanBase.trim();
+    cb(null, `${cleanBase || 'file'}_${timestamp}${ext}`);
   }
 });
 
