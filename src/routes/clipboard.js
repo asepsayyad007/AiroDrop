@@ -136,35 +136,7 @@ router.post('/text', async (req, res) => {
 
     // HTML Web Page detection & URL extraction
     if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
-      const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                             text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-      const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                      text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-      const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-      
-      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-      if (!extractedUrl) {
-        const allUrls = text.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
-        if (allUrls) {
-          const cleanUrl = allUrls.find(u => {
-            const low = u.toLowerCase();
-            return !low.endsWith('.js') && 
-                   !low.endsWith('.css') && 
-                   !low.endsWith('.png') && 
-                   !low.endsWith('.jpg') && 
-                   !low.endsWith('.jpeg') && 
-                   !low.endsWith('.gif') && 
-                   !low.endsWith('.svg') && 
-                   !low.endsWith('.woff') && 
-                   !low.endsWith('.woff2') &&
-                   !low.includes('schema.org') &&
-                   !low.includes('w3.org');
-          });
-          if (cleanUrl) {
-            extractedUrl = cleanUrl;
-          }
-        }
-      }
+      const extractedUrl = utils.extractUrlFromHtml(text);
       if (extractedUrl) {
         text = extractedUrl;
       }
@@ -892,29 +864,10 @@ router.post('/send', async (req, res) => {
 async function handleTextSend(text, res) {
   // HTML / web-page URL extraction
   if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
-    const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                           text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-    const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                    text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-    const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-
-    let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-    if (!extractedUrl) {
-      const allUrls = text.match(/https?:\/\/[^\s"'<>()\]]+/gi);
-      if (allUrls) {
-        const cleanUrl = allUrls.find(u => {
-          const low = u.toLowerCase();
-          return !low.endsWith('.js') && !low.endsWith('.css') &&
-                 !low.endsWith('.png') && !low.endsWith('.jpg') &&
-                 !low.endsWith('.jpeg') && !low.endsWith('.gif') &&
-                 !low.endsWith('.svg') && !low.endsWith('.woff') &&
-                 !low.endsWith('.woff2') &&
-                 !low.includes('schema.org') && !low.includes('w3.org');
-        });
-        if (cleanUrl) extractedUrl = cleanUrl;
-      }
+    const extractedUrl = utils.extractUrlFromHtml(text);
+    if (extractedUrl) {
+      text = extractedUrl;
     }
-    if (extractedUrl) text = extractedUrl;
   }
 
   const clipResult = await require('../utils').handleIncomingText(text);
