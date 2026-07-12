@@ -911,7 +911,7 @@
     const clearBtn = $('#clearFeed');
     if (clearBtn) {
       clearBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to clear the dashboard queues? (Your files on the computer will NOT be deleted)')) return;
+        if (!confirm('Clear queue? (Files will not be deleted)')) return;
         try {
           const res = await doFetch('/api/history?files=false', { method: 'DELETE' });
           const data = await res.json();
@@ -932,7 +932,7 @@
     const deleteAllBtn = $('#deleteAllFiles');
     if (deleteAllBtn) {
       deleteAllBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to permanently delete all received files on the computer and clear history? This action cannot be undone.')) return;
+        if (!confirm('Permanently delete all received files?')) return;
         try {
           const res = await doFetch('/api/history?files=true', { method: 'DELETE' });
           const data = await res.json();
