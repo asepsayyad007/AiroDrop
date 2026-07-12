@@ -7,6 +7,75 @@ const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
 
+function getRawBinaryFilename(req, rawMime, fallbackPrefix) {
+  let originalNameHeader = req.headers['x-filename'] || '';
+  if (!originalNameHeader && req.headers['content-disposition']) {
+    const match = req.headers['content-disposition'].match(/filename\*?=["']?([^"';]+)/i);
+    if (match && match[1]) {
+      try {
+        originalNameHeader = decodeURIComponent(match[1].trim());
+      } catch {
+        originalNameHeader = match[1].trim();
+      }
+    }
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  
+  if (originalNameHeader) {
+    const ext = path.extname(originalNameHeader) || '.bin';
+    const base = path.basename(originalNameHeader, ext);
+    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
+    if (cleanBase.length > 15) {
+      cleanBase = cleanBase.slice(0, 15);
+    }
+    cleanBase = cleanBase.trim();
+    return {
+      filename: `${cleanBase || fallbackPrefix}_${timestamp}${ext}`,
+      originalName: originalNameHeader
+    };
+  } else {
+    const mimeToExt = {
+      'image/jpeg': '.jpg', 'image/jpg': '.jpg',
+      'image/png': '.png', 'image/gif': '.gif',
+      'image/webp': '.webp', 'image/bmp': '.bmp',
+      'image/heic': '.heic', 'image/heif': '.heif',
+      'image/tiff': '.tiff', 'image/avif': '.avif',
+      'image/svg+xml': '.svg',
+      'video/mp4': '.mp4', 'video/quicktime': '.mov',
+      'video/x-msvideo': '.avi', 'video/webm': '.webm',
+      'video/3gpp': '.3gp', 'video/3gpp2': '.3g2',
+      'video/mpeg': '.mpeg', 'video/ogg': '.ogv',
+      'audio/mpeg': '.mp3', 'audio/mp4': '.m4a',
+      'audio/ogg': '.ogg', 'audio/wav': '.wav',
+      'audio/webm': '.weba', 'audio/aac': '.aac',
+      'audio/flac': '.flac', 'audio/x-m4a': '.m4a',
+      'audio/x-wav': '.wav',
+      'application/pdf': '.pdf',
+      'application/msword': '.doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+      'application/vnd.ms-excel': '.xls',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+      'application/vnd.ms-powerpoint': '.ppt',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+      'application/zip': '.zip', 'application/x-zip-compressed': '.zip',
+      'application/x-rar-compressed': '.rar', 'application/x-7z-compressed': '.7z',
+      'application/gzip': '.gz', 'application/x-tar': '.tar',
+      'text/plain': '.txt', 'text/html': '.html',
+      'text/css': '.css', 'application/javascript': '.js',
+      'application/json': '.json', 'text/csv': '.csv',
+      'text/xml': '.xml', 'application/xml': '.xml',
+      'application/octet-stream': '.bin',
+    };
+    const ext = mimeToExt[rawMime] || '.bin';
+    const filename = `${fallbackPrefix}_${timestamp}${ext}`;
+    return {
+      filename,
+      originalName: filename
+    };
+  }
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, state.SAVE_DIR);
@@ -15,8 +84,12 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname) || '.bin';
     const base = path.basename(file.originalname, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const safeBase = base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
-    cb(null, `${safeBase || 'file'}_${timestamp}${ext}`);
+    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
+    if (cleanBase.length > 15) {
+      cleanBase = cleanBase.slice(0, 15);
+    }
+    cleanBase = cleanBase.trim();
+    cb(null, `${cleanBase || 'file'}_${timestamp}${ext}`);
   }
 });
 
@@ -140,18 +213,13 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
       mimeType = fileObj.mimetype;
     } else if (Buffer.isBuffer(req.body) && req.body.length > 0) {
       const contentType = req.headers['content-type'] || 'application/octet-stream';
-      const cleanType = contentType.split(';')[0];
+      const cleanType = contentType.split(';')[0].trim().toLowerCase();
       const detectedMime = utils.isBufferImage(req.body) || cleanType;
       
-      let ext = '.bin';
-      if (detectedMime && detectedMime.includes('/')) {
-        ext = '.' + detectedMime.split('/')[1].replace('jpeg', 'jpg').replace('mpeg', 'mp3');
-      }
-      
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      filename = `${timestamp}_uploaded${ext}`;
+      const fileInfo = getRawBinaryFilename(req, detectedMime, 'uploaded');
+      filename = fileInfo.filename;
+      originalName = fileInfo.originalName;
       savedPath = path.join(state.SAVE_DIR, filename);
-      originalName = filename;
       fileSize = req.body.length;
       mimeType = detectedMime;
 
@@ -722,17 +790,18 @@ router.post('/send', async (req, res) => {
           const isVideo = rawMime.startsWith('video/');
           const isAudio = rawMime.startsWith('audio/');
           const category = isImg ? 'image' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
-
-          const ext = mimeToExt[rawMime] || '.bin';
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
           const prefix = isImg ? 'photo' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
-          const filename = `${timestamp}_${prefix}${ext}`;
+
+          const fileInfo = getRawBinaryFilename(req, rawMime, prefix);
+          const filename = fileInfo.filename;
+          const originalName = fileInfo.originalName;
           const savedPath = path.join(state.SAVE_DIR, filename);
           fs.writeFileSync(savedPath, buf);
 
           const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
           let clipResult = { success: false };
           // Only attempt clipboard copy for images on Windows-supported formats
+          const ext = path.extname(filename).toLowerCase();
           if (isImg && ['.jpg', '.png', '.gif', '.bmp', '.webp'].includes(ext)) {
             const { copyImage } = require('../../clipboard');
             clipResult = await copyImage(savedPath).catch(() => ({ success: false }));
@@ -741,7 +810,7 @@ router.post('/send', async (req, res) => {
           const item = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             type: category,
-            filename, originalName: filename,
+            filename, originalName,
             path: relativePath, size: buf.length, mimetype: rawMime,
             timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
           };
@@ -787,9 +856,9 @@ router.post('/send', async (req, res) => {
       // Last resort: check magic bytes for raw binary that didn't have image/* content-type
       const detectedMime = utils.isBufferImage(req.body);
       if (detectedMime) {
-        const ext = mimeToExt[detectedMime] || '.jpg';
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const filename = `${timestamp}_photo${ext}`;
+        const fileInfo = getRawBinaryFilename(req, detectedMime, 'photo');
+        const filename = fileInfo.filename;
+        const originalName = fileInfo.originalName;
         const savedPath = path.join(state.SAVE_DIR, filename);
         fs.writeFileSync(savedPath, req.body);
         const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
@@ -797,7 +866,7 @@ router.post('/send', async (req, res) => {
         const clipResult = await copyImage(savedPath);
         const item = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          type: 'image', filename, originalName: filename,
+          type: 'image', filename, originalName,
           path: relativePath, size: req.body.length, mimetype: detectedMime,
           timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
         };
