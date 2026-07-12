@@ -435,25 +435,26 @@ router.get('/history', (req, res) => {
   res.json({ items, total: state.history.length });
 });
 
-// DELETE /api/history — Clear all history and files
+// DELETE /api/history — Clear history (and optionally files)
 router.delete('/history', (req, res) => {
   try {
-    for (const item of state.history) {
-      if (item.filename) {
-        const fullPath = item.filename 
-          ? path.join(state.SAVE_DIR, item.filename) 
-          : (path.isAbsolute(item.path) ? item.path : path.resolve(path.join(__dirname, '..', '..'), item.path));
-        try {
-          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-        } catch (e) {
-          console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+    const deleteFiles = req.query.files === 'true';
+    if (deleteFiles) {
+      for (const item of state.history) {
+        if (item.filename) {
+          const fullPath = path.join(state.SAVE_DIR, item.filename);
+          try {
+            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+          } catch (e) {
+            console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+          }
         }
       }
     }
     state.history.length = 0;
     utils.saveHistory();
     utils.broadcastSSE('clear', {});
-    res.json({ success: true, message: 'All history and files cleared' });
+    res.json({ success: true, message: deleteFiles ? 'All history and files cleared' : 'All history cleared' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

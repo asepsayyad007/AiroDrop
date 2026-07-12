@@ -911,17 +911,38 @@
     const clearBtn = $('#clearFeed');
     if (clearBtn) {
       clearBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to delete all transfer history and local files?')) return;
+        if (!confirm('Are you sure you want to clear the dashboard queues? (Your files on the computer will NOT be deleted)')) return;
         try {
-          const res = await doFetch('/api/history', { method: 'DELETE' });
+          const res = await doFetch('/api/history?files=false', { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.success) {
             allItems = [];
             renderFeed();
             updateStats();
-            showToast('All items and files cleared.', 'success');
+            showToast('Dashboard queues cleared.', 'success');
           } else {
             showToast(data.error || 'Failed to clear history', 'error');
+          }
+        } catch {
+          showToast('Failed to connect to server', 'error');
+        }
+      });
+    }
+
+    const deleteAllBtn = $('#deleteAllFiles');
+    if (deleteAllBtn) {
+      deleteAllBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to permanently delete all received files on the computer and clear history? This action cannot be undone.')) return;
+        try {
+          const res = await doFetch('/api/history?files=true', { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            allItems = [];
+            renderFeed();
+            updateStats();
+            showToast('All received files and history deleted.', 'success');
+          } else {
+            showToast(data.error || 'Failed to delete files', 'error');
           }
         } catch {
           showToast('Failed to connect to server', 'error');
