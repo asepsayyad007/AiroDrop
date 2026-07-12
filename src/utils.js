@@ -149,6 +149,61 @@ function isBufferImage(buf) {
   return null;
 }
 
+function extractUrlFromHtml(content) {
+  if (!content) return null;
+  const canonicalMatch = content.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
+                         content.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
+  const ogMatch = content.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
+                  content.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
+  const twitterMatch = content.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
+  
+  let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
+  
+  // If the extracted URL is a root/base URL (e.g. https://app.notion.com or https://github.com),
+  // search for a longer, more specific URL with the same domain in the content.
+  if (extractedUrl) {
+    try {
+      const parsed = new URL(extractedUrl);
+      if (parsed.pathname === '/' || parsed.pathname === '') {
+        const allUrls = content.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
+        if (allUrls) {
+          const domainEscaped = parsed.host.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const domainRegex = new RegExp(`^https?:\\/\\/${domainEscaped}\\/[^\\s"'<>\(\)]+`, 'i');
+          const longerUrls = allUrls.filter(u => domainRegex.test(u) && u.length > extractedUrl.length);
+          if (longerUrls.length > 0) {
+            longerUrls.sort((a, b) => b.length - a.length);
+            extractedUrl = longerUrls[0];
+          }
+        }
+      }
+    } catch {}
+  }
+
+  if (!extractedUrl) {
+    const allUrls = content.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
+    if (allUrls) {
+      const cleanUrl = allUrls.find(u => {
+        const low = u.toLowerCase();
+        return !low.endsWith('.js') && 
+               !low.endsWith('.css') && 
+               !low.endsWith('.png') && 
+               !low.endsWith('.jpg') && 
+               !low.endsWith('.jpeg') && 
+               !low.endsWith('.gif') && 
+               !low.endsWith('.svg') && 
+               !low.endsWith('.woff') && 
+               !low.endsWith('.woff2') &&
+               !low.includes('schema.org') &&
+               !low.includes('w3.org');
+      });
+      if (cleanUrl) {
+        extractedUrl = cleanUrl;
+      }
+    }
+  }
+  return extractedUrl;
+}
+
 async function tryExtractUrlFromHtmlFile(savedPath, mimeType) {
   if (!savedPath || !fs.existsSync(savedPath)) return null;
   try {
@@ -164,37 +219,7 @@ async function tryExtractUrlFromHtmlFile(savedPath, mimeType) {
                           isWebarchive;
 
     if (isHtmlContent || isHtmlExt) {
-      const canonicalMatch = content.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                             content.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-      const ogMatch = content.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                      content.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-      const twitterMatch = content.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-      
-      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-      
-      if (!extractedUrl) {
-        const allUrls = content.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
-        if (allUrls) {
-          const cleanUrl = allUrls.find(u => {
-            const low = u.toLowerCase();
-            return !low.endsWith('.js') && 
-                   !low.endsWith('.css') && 
-                   !low.endsWith('.png') && 
-                   !low.endsWith('.jpg') && 
-                   !low.endsWith('.jpeg') && 
-                   !low.endsWith('.gif') && 
-                   !low.endsWith('.svg') && 
-                   !low.endsWith('.woff') && 
-                   !low.endsWith('.woff2') &&
-                   !low.includes('schema.org') &&
-                   !low.includes('w3.org');
-          });
-          if (cleanUrl) {
-            extractedUrl = cleanUrl;
-          }
-        }
-      }
-
+      const extractedUrl = extractUrlFromHtml(content);
       if (extractedUrl) {
         try { fs.unlinkSync(savedPath); } catch {}
         return extractedUrl;
@@ -312,6 +337,7 @@ module.exports = {
   getAllIPs,
   isBufferImage,
   tryExtractUrlFromHtmlFile,
+  extractUrlFromHtml,
   handleIncomingText,
   updateWindowsContextMenu
 };

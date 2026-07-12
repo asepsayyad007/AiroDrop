@@ -1,6 +1,6 @@
 {
   "name": "airodrop-by-asep",
-  "version": "5.1.7",
+  "version": "5.1.8",
   "description": "Send images and text from iPhone to PC over local network via iOS Shortcuts",
   "main": "main.js",
   "scripts": {

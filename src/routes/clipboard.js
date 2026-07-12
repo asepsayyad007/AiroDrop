@@ -136,35 +136,7 @@ router.post('/text', async (req, res) => {
 
     // HTML Web Page detection & URL extraction
     if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
-      const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                             text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-      const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                      text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-      const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-      
-      let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-      if (!extractedUrl) {
-        const allUrls = text.match(/https?:\/\/[^\s"'<>\(\)]+/gi);
-        if (allUrls) {
-          const cleanUrl = allUrls.find(u => {
-            const low = u.toLowerCase();
-            return !low.endsWith('.js') && 
-                   !low.endsWith('.css') && 
-                   !low.endsWith('.png') && 
-                   !low.endsWith('.jpg') && 
-                   !low.endsWith('.jpeg') && 
-                   !low.endsWith('.gif') && 
-                   !low.endsWith('.svg') && 
-                   !low.endsWith('.woff') && 
-                   !low.endsWith('.woff2') &&
-                   !low.includes('schema.org') &&
-                   !low.includes('w3.org');
-          });
-          if (cleanUrl) {
-            extractedUrl = cleanUrl;
-          }
-        }
-      }
+      const extractedUrl = utils.extractUrlFromHtml(text);
       if (extractedUrl) {
         text = extractedUrl;
       }
@@ -463,25 +435,26 @@ router.get('/history', (req, res) => {
   res.json({ items, total: state.history.length });
 });
 
-// DELETE /api/history — Clear all history and files
+// DELETE /api/history — Clear history (and optionally files)
 router.delete('/history', (req, res) => {
   try {
-    for (const item of state.history) {
-      if (item.filename) {
-        const fullPath = item.filename 
-          ? path.join(state.SAVE_DIR, item.filename) 
-          : (path.isAbsolute(item.path) ? item.path : path.resolve(path.join(__dirname, '..', '..'), item.path));
-        try {
-          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-        } catch (e) {
-          console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+    const deleteFiles = req.query.files === 'true';
+    if (deleteFiles) {
+      for (const item of state.history) {
+        if (item.filename) {
+          const fullPath = path.join(state.SAVE_DIR, item.filename);
+          try {
+            if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+          } catch (e) {
+            console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+          }
         }
       }
     }
     state.history.length = 0;
     utils.saveHistory();
     utils.broadcastSSE('clear', {});
-    res.json({ success: true, message: 'All history and files cleared' });
+    res.json({ success: true, message: deleteFiles ? 'All history and files cleared' : 'All history cleared' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -892,29 +865,10 @@ router.post('/send', async (req, res) => {
 async function handleTextSend(text, res) {
   // HTML / web-page URL extraction
   if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
-    const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i) ||
-                           text.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["']canonical["']/i);
-    const ogMatch = text.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i) ||
-                    text.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']/i);
-    const twitterMatch = text.match(/<meta[^>]+name=["']twitter:url["'][^>]+content=["']([^"']+)["']/i);
-
-    let extractedUrl = (canonicalMatch && canonicalMatch[1]) || (ogMatch && ogMatch[1]) || (twitterMatch && twitterMatch[1]);
-    if (!extractedUrl) {
-      const allUrls = text.match(/https?:\/\/[^\s"'<>()\]]+/gi);
-      if (allUrls) {
-        const cleanUrl = allUrls.find(u => {
-          const low = u.toLowerCase();
-          return !low.endsWith('.js') && !low.endsWith('.css') &&
-                 !low.endsWith('.png') && !low.endsWith('.jpg') &&
-                 !low.endsWith('.jpeg') && !low.endsWith('.gif') &&
-                 !low.endsWith('.svg') && !low.endsWith('.woff') &&
-                 !low.endsWith('.woff2') &&
-                 !low.includes('schema.org') && !low.includes('w3.org');
-        });
-        if (cleanUrl) extractedUrl = cleanUrl;
-      }
+    const extractedUrl = utils.extractUrlFromHtml(text);
+    if (extractedUrl) {
+      text = extractedUrl;
     }
-    if (extractedUrl) text = extractedUrl;
   }
 
   const clipResult = await require('../utils').handleIncomingText(text);
