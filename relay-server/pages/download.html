@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AiroDrop Share — Download File</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0b10;
+      --bg-card: rgba(20, 22, 34, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --accent: #ff5500;
+      --accent-glow: rgba(255, 85, 0, 0.15);
+      --font-outfit: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-outfit);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient gradient backgrounds */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(255, 85, 0, 0.1) 0%, rgba(0,0,0,0) 70%);
+      top: 10%;
+      left: 10%;
+      z-index: 1;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(0, 210, 106, 0.05) 0%, rgba(0,0,0,0) 70%);
+      bottom: 10%;
+      right: 10%;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 460px;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 35px 30px;
+      border-radius: 28px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .file-icon-box {
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 85, 0, 0.06);
+      border: 1px solid rgba(255, 85, 0, 0.15);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-align: center;
+      word-break: break-all;
+      letter-spacing: -0.01em;
+      line-height: 1.4;
+      max-width: 100%;
+    }
+
+    .file-size {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 28px;
+    }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: linear-gradient(135deg, #ff5500 0%, #ff3b30 100%);
+      color: white;
+      border: none;
+      padding: 16px 28px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255, 85, 0, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(255, 85, 0, 0.45);
+    }
+
+    .btn-download:active {
+      transform: translateY(1px);
+    }
+
+    .btn-download svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.3s ease;
+    }
+
+    .btn-download:hover svg {
+      transform: translateY(2px);
+    }
+
+    .p2p-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      color: #00d26a;
+      background: rgba(0, 210, 106, 0.08);
+      border: 1px solid rgba(0, 210, 106, 0.15);
+      padding: 6px 12px;
+      border-radius: 30px;
+      margin-bottom: 24px;
+    }
+
+    .p2p-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #00d26a;
+      animation: pulse-green 2s infinite;
+    }
+
+    .hint-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      opacity: 0.7;
+      margin-top: 20px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      opacity: 0.5;
+      margin-top: 30px;
+      user-select: none;
+    }
+
+    .brand svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+
+    /* Skeleton loader styling */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    .skeleton-text {
+      width: 180px;
+      height: 16px;
+      margin: 10px auto;
+    }
+
+    .skeleton-size {
+      width: 80px;
+      height: 14px;
+      margin: 8px auto 28px;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(0, 210, 106, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="p2p-badge">
+      <span class="dot"></span>
+      Direct P2P Stream
+    </div>
+
+    <div class="file-icon-box" id="fileIcon">📄</div>
+
+    <h1 id="fileName"><div class="skeleton skeleton-text"></div></h1>
+    <div class="file-size" id="fileSize"><div class="skeleton skeleton-size"></div></div>
+
+    <a href="#" class="btn-download" id="downloadBtn" style="pointer-events: none; opacity: 0.6;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Download File
+    </a>
+
+    <p class="hint-text">The file will stream directly from the host PC. Please keep this page open until the download is fully completed.</p>
+
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      AiroDrop
+    </div>
+  </div>
+
+  <script>
+    const token = window.location.pathname.split('/').pop();
+    
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(filename, mimeType) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return '🎵';
+      if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return '🎬';
+      if (['pdf'].includes(ext)) return '📕';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '📦';
+      if (mimeType && mimeType.startsWith('image/')) return '🖼️';
+      return '📄';
+    }
+
+    // Fetch file details dynamically from metadata endpoint
+    fetch(`/d/${token}/info`)
+      .then(res => {
+        if (!res.ok) throw new Error('Expired');
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById('fileName').textContent = data.filename;
+        document.getElementById('fileSize').textContent = formatBytes(data.size);
+        document.getElementById('fileIcon').textContent = getFileIcon(data.filename, data.mimeType);
+        
+        const dlBtn = document.getElementById('downloadBtn');
+        dlBtn.href = `/d/${token}/download`;
+        dlBtn.style.pointerEvents = 'auto';
+        dlBtn.style.opacity = '1';
+      })
+      .catch(() => {
+        // Redirect to expired page if token is invalid or expired
+        window.location.reload();
+      });
+  </script>
+</body>
+</html>

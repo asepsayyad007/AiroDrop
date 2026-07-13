@@ -1,10 +1,10 @@
-# AiroDrop v5.1.8 🚀
+# AiroDrop v6.0.0 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-5.1.8-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.0.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -19,12 +19,12 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v5.1.8
+## 🚀 What's New in v6.0.0
 
-This release brings version 5.1.8, addressing iOS Safari link truncation issues and adding flexible PC dashboard history management features:
+This release brings version 6.0.0, introducing the Send to Friend feature and direct P2P link sharing mechanisms:
 
 ### ✅ New Features & Updates
-1. **🔗 Smart URL Link Extraction** — Fixed the URL truncation bug occurring on Single Page Applications (e.g. Notion, GitHub) when sharing web pages from Safari using iOS Shortcuts. The extractor now automatically detects base/root domains and resolves them to the specific full pathname URLs present inside the HTML document.
+1. **🔗 P2P Share Link (Send to Friend)** — Share files directly from your PC to a friend using an ephemeral link that handles direct streaming without cloud storage.
 2. **🗑️ Separate Clear and Delete Operations** — Restructured PC dashboard management into two actions:
    - **Clear Queue**: Instantly clears dashboard item records from the active history feed without touching physical files.
    - **Delete All Files**: Permanently deletes both the database history records and all matching physical received files from your local storage.
@@ -32,11 +32,11 @@ This release brings version 5.1.8, addressing iOS Safari link truncation issues 
 
 ---
 
-## 📥 Downloads (v5.1.8)
+## 📥 Downloads (v6.0.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v5.1.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.8/AiroDrop.Setup.5.1.8.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v5.1.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v5.1.8/AiroDrop-Portable-5.1.8.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.0.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.0.0/AiroDrop.Setup.6.0.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.0.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.0.0/AiroDrop-Portable-6.0.0.exe)** — Standalone execution without installation.
 
 ---
 

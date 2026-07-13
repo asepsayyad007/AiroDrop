@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AiroDrop Share — Host Offline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0b10;
+      --bg-card: rgba(20, 22, 34, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --warning: #ffaa00;
+      --warning-glow: rgba(255, 170, 0, 0.12);
+      --font-outfit: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-outfit);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient gradient backgrounds */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255, 170, 0, 0.08) 0%, rgba(0,0,0,0) 70%);
+      top: 15%;
+      left: 15%;
+      z-index: 1;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255, 170, 0, 0.05) 0%, rgba(0,0,0,0) 70%);
+      bottom: 15%;
+      right: 15%;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 440px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 40px 30px;
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .icon-container {
+      width: 80px;
+      height: 80px;
+      background: var(--warning-glow);
+      border: 1px solid rgba(255, 170, 0, 0.25);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--warning);
+      animation: pulse 2.5s infinite;
+    }
+
+    .icon-container svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      opacity: 0.6;
+      margin-top: 10px;
+      user-select: none;
+    }
+
+    .brand svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.3); }
+      70% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(255, 170, 0, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 170, 0, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon-container">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h1>Host Offline</h1>
+    <p>The host PC sharing this file is currently offline or sleeping. The download will become available once the host connects back online.</p>
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      AiroDrop
+    </div>
+  </div>
+</body>
+</html>

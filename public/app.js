@@ -55,6 +55,7 @@
     runSetup('InstantQrGenerator', setupInstantQrGenerator);
     runSetup('Scratchpad', setupScratchpad);
     runSetup('ControlCommands', setupControlCommands);
+    runSetup('ShareToFriend', setupShareToFriend);
     
     // Request permission for system notifications
     if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -831,6 +832,8 @@
 
         if (tab.getAttribute('data-tab') === 'send') {
           fetchPending();
+        } else if (tab.getAttribute('data-tab') === 'share') {
+          initRelayWebSocket();
         }
       });
     });
@@ -2443,6 +2446,625 @@
       }
       if (mobileMicActiveBadge) mobileMicActiveBadge.style.display = 'none';
       showToast('Mobile Microphone Disconnected.', 'info');
+    }
+  }
+
+  // ─── Send to Friend (P2P Share Module) ────────────────────
+  let selectedShareFile = null;
+  const activeShares = new Map();
+  let relayWs = null;
+  let relayReconnectTimeout = null;
+  let relayReconnectDelay = 1000;
+  let isConnectingRelay = false;
+  let heartbeatInterval = null;
+
+  let sessionKey = sessionStorage.getItem('airodrop_share_session');
+  if (!sessionKey) {
+    sessionKey = 'pc_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('airodrop_share_session', sessionKey);
+  }
+
+  function initRelayWebSocket() {
+    if (relayWs && (relayWs.readyState === WebSocket.OPEN || relayWs.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+    if (isConnectingRelay) return;
+    isConnectingRelay = true;
+
+    updateRelayStatus('connecting');
+
+    try {
+      relayWs = new WebSocket('wss://airodrop.bootstrapx007.online/ws');
+    } catch (err) {
+      console.error('[RelayWS] Connection error:', err);
+      scheduleRelayReconnect();
+      return;
+    }
+
+    relayWs.onopen = () => {
+      isConnectingRelay = false;
+      relayReconnectDelay = 1000;
+      updateRelayStatus('connected');
+      console.log('[RelayWS] Connected to cloud relay server.');
+
+      // Authenticate connection with session key
+      sendRelayMessage({
+        type: 'auth',
+        sessionKey: sessionKey
+      });
+
+      // Start ping heartbeat
+      startRelayHeartbeat();
+    };
+
+    relayWs.onmessage = async (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      switch (msg.type) {
+        case 'auth-ok': {
+          console.log('[RelayWS] Authenticated with relay server.');
+          break;
+        }
+
+        case 'share-registered': {
+          const share = activeShares.get('_registering');
+          if (share) {
+            activeShares.delete('_registering');
+            share.status = 'waiting';
+            share.token = msg.token;
+            const downloadUrl = `https://airodrop.bootstrapx007.online/d/${msg.token}`;
+            share.url = downloadUrl;
+            activeShares.set(msg.token, share);
+            
+            // Show generated link UI
+            const linkContainer = $('#shareLinkContainer');
+            const linkUrlEl = $('#shareLinkUrl');
+            const createBtn = $('#createShareBtn');
+
+            if (linkUrlEl) linkUrlEl.textContent = downloadUrl;
+            if (linkContainer) linkContainer.style.display = 'block';
+            if (createBtn) {
+              createBtn.disabled = false;
+              createBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Create Share Link
+              `;
+            }
+
+            // Copy to clipboard automatically
+            try {
+              await navigator.clipboard.writeText(downloadUrl);
+              showToast('Link created & copied!', 'success');
+            } catch {
+              showToast('Link created!', 'success');
+            }
+
+            // Render QR Code
+            renderShareQr(downloadUrl);
+            renderActiveShares();
+            resetShareFileSelection(true);
+          }
+          break;
+        }
+
+        case 'request-stream': {
+          // A recipient has requested the download — stream the file!
+          const token = msg.token;
+          const share = activeShares.get(token);
+          if (!share) {
+            sendRelayMessage({ type: 'stream-error', token, message: 'Share not found locally' });
+            return;
+          }
+
+          share.status = 'downloading';
+          share.bytesTransferred = 0;
+          renderActiveShares();
+          console.log(`[RelayWS] Stream request received for file: ${share.file.name}`);
+
+          // Stream the file in chunks
+          try {
+            await streamFileToRelay(token, share.file);
+          } catch (err) {
+            console.error('[RelayWS] Error streaming file:', err);
+            sendRelayMessage({ type: 'stream-error', token, message: err.message });
+            share.status = 'waiting';
+            renderActiveShares();
+          }
+          break;
+        }
+
+        case 'download-progress': {
+          const share = activeShares.get(msg.token);
+          if (share) {
+            share.bytesTransferred = msg.bytesTransferred;
+            share.percent = msg.percent;
+            updateActiveShareProgressUI(msg.token, msg.percent, msg.bytesTransferred);
+          }
+          break;
+        }
+
+        case 'download-complete': {
+          const share = activeShares.get(msg.token);
+          if (share) {
+            share.status = 'completed';
+            share.bytesTransferred = msg.bytesTransferred;
+            share.percent = 100;
+            renderActiveShares();
+            showToast(`Download of "${share.file.name}" completed!`, 'success');
+
+            if (share.expiryMode === 'download') {
+              activeShares.delete(msg.token);
+              // Hide generated link if it was this one
+              const linkUrlEl = $('#shareLinkUrl');
+              if (linkUrlEl && linkUrlEl.textContent === share.url) {
+                const linkContainer = $('#shareLinkContainer');
+                if (linkContainer) linkContainer.style.display = 'none';
+              }
+              setTimeout(renderActiveShares, 2000);
+            }
+          }
+          break;
+        }
+
+        case 'download-aborted': {
+          const share = activeShares.get(msg.token);
+          if (share) {
+            share.status = 'waiting';
+            share.bytesTransferred = 0;
+            share.percent = 0;
+            renderActiveShares();
+            showToast(`Download of "${share.file.name}" was interrupted.`, 'warning');
+          }
+          break;
+        }
+
+        case 'share-cancelled': {
+          activeShares.delete(msg.token);
+          renderActiveShares();
+          break;
+        }
+
+        case 'error': {
+          showToast(msg.message, 'error');
+          // Reset button text on error
+          const createBtn = $('#createShareBtn');
+          if (createBtn) {
+            createBtn.disabled = false;
+            createBtn.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Create Share Link
+            `;
+          }
+          break;
+        }
+      }
+    };
+
+    relayWs.onclose = () => {
+      isConnectingRelay = false;
+      stopRelayHeartbeat();
+      updateRelayStatus('disconnected');
+      console.log('[RelayWS] Connection to cloud relay closed.');
+      scheduleRelayReconnect();
+    };
+
+    relayWs.onerror = () => {
+      isConnectingRelay = false;
+    };
+  }
+
+  function startRelayHeartbeat() {
+    stopRelayHeartbeat();
+    heartbeatInterval = setInterval(() => {
+      if (relayWs && relayWs.readyState === WebSocket.OPEN) {
+        relayWs.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 25000);
+  }
+
+  function stopRelayHeartbeat() {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+  }
+
+  function scheduleRelayReconnect() {
+    if (relayReconnectTimeout) clearTimeout(relayReconnectTimeout);
+    relayReconnectTimeout = setTimeout(() => {
+      console.log(`[RelayWS] Reconnecting to relay server (delay: ${relayReconnectDelay}ms)...`);
+      initRelayWebSocket();
+      relayReconnectDelay = Math.min(relayReconnectDelay * 2, 30000);
+    }, relayReconnectDelay);
+  }
+
+  function sendRelayMessage(msg) {
+    if (relayWs && relayWs.readyState === WebSocket.OPEN) {
+      relayWs.send(JSON.stringify(msg));
+    }
+  }
+
+  function updateRelayStatus(status) {
+    const indicator = $('#relayStatusIndicator');
+    const label = $('#relayStatusText');
+    if (!indicator || !label) return;
+
+    if (status === 'connected') {
+      indicator.style.backgroundColor = '#00d26a';
+      label.textContent = 'Relay Server: Connected';
+    } else if (status === 'connecting') {
+      indicator.style.backgroundColor = '#ffaa00';
+      label.textContent = 'Relay Server: Connecting...';
+    } else {
+      indicator.style.backgroundColor = '#ff3b30';
+      label.textContent = 'Relay Server: Disconnected';
+    }
+  }
+
+  async function streamFileToRelay(token, file) {
+    const CHUNK_SIZE = 64 * 1024;
+    const totalSize = file.size;
+    let offset = 0;
+
+    const isCancelled = () => {
+      const share = activeShares.get(token);
+      return !share || share.status !== 'downloading';
+    };
+
+    while (offset < totalSize) {
+      if (isCancelled()) {
+        console.log(`[RelayWS] Streaming for token ${token} was cancelled.`);
+        return;
+      }
+
+      const slice = file.slice(offset, offset + CHUNK_SIZE);
+      const buffer = await readSliceAsArrayBuffer(slice);
+
+      if (relayWs && relayWs.readyState === WebSocket.OPEN) {
+        relayWs.send(buffer);
+      } else {
+        throw new Error('WebSocket closed during streaming');
+      }
+
+      offset += CHUNK_SIZE;
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+
+    sendRelayMessage({
+      type: 'stream-end',
+      token
+    });
+  }
+
+  function readSliceAsArrayBuffer(slice) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(slice);
+    });
+  }
+
+  function setupShareToFriend() {
+    const fileDrop = $('#shareFileDrop');
+    const fileInput = $('#shareFileInput');
+    const createBtn = $('#createShareBtn');
+
+    if (fileDrop && fileInput) {
+      fileDrop.addEventListener('click', () => fileInput.click());
+
+      fileDrop.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileDrop.classList.add('drag-over');
+      });
+
+      fileDrop.addEventListener('dragleave', () => {
+        fileDrop.classList.remove('drag-over');
+      });
+
+      fileDrop.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileDrop.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) {
+          handleShareFileSelection(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          handleShareFileSelection(fileInput.files[0]);
+        }
+      });
+    }
+
+    if (createBtn) {
+      createBtn.addEventListener('click', () => {
+        if (!selectedShareFile) return;
+        if (!relayWs || relayWs.readyState !== WebSocket.OPEN) {
+          showToast('Not connected to relay server. Reconnecting...', 'error');
+          initRelayWebSocket();
+          return;
+        }
+
+        createBtn.disabled = true;
+        createBtn.innerHTML = `
+          <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
+          Generating Link...
+        `;
+
+        const expiryMode = document.querySelector('input[name="shareExpiry"]:checked').value;
+
+        const newShare = {
+          file: selectedShareFile,
+          status: 'registering',
+          bytesTransferred: 0,
+          percent: 0,
+          expiryMode
+        };
+        activeShares.set('_registering', newShare);
+
+        sendRelayMessage({
+          type: 'register-share',
+          filename: selectedShareFile.name,
+          size: selectedShareFile.size,
+          mimeType: selectedShareFile.type || 'application/octet-stream',
+          expiryMode
+        });
+      });
+    }
+
+    const clearShareFileBtn = $('#clearShareFileBtn');
+    if (clearShareFileBtn) {
+      clearShareFileBtn.addEventListener('click', () => resetShareFileSelection(false));
+    }
+
+    const copyBtn = $('#copyShareLinkBtn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const linkUrl = $('#shareLinkUrl').textContent;
+        if (linkUrl) {
+          navigator.clipboard.writeText(linkUrl);
+          showToast('Copied to clipboard!', 'success');
+        }
+      });
+    }
+
+    const qrBtn = $('#qrShareLinkBtn');
+    if (qrBtn) {
+      qrBtn.addEventListener('click', () => {
+        const qrContainer = $('#shareQrContainer');
+        if (qrContainer) {
+          qrContainer.style.display = qrContainer.style.display === 'none' ? 'flex' : 'none';
+        }
+      });
+    }
+
+    const revokeBtn = $('#revokeShareLinkBtn');
+    if (revokeBtn) {
+      revokeBtn.addEventListener('click', () => {
+        const linkUrl = $('#shareLinkUrl').textContent;
+        if (!linkUrl) return;
+        
+        const parts = linkUrl.split('/');
+        const token = parts[parts.length - 1];
+        
+        if (token) {
+          sendRelayMessage({ type: 'cancel-share', token });
+          activeShares.delete(token);
+          renderActiveShares();
+          showToast('Share link revoked.', 'info');
+          
+          const linkContainer = $('#shareLinkContainer');
+          if (linkContainer) linkContainer.style.display = 'none';
+          
+          const qrContainer = $('#shareQrContainer');
+          if (qrContainer) qrContainer.style.display = 'none';
+        }
+      });
+    }
+
+    const activeList = $('#activeSharesList');
+    if (activeList) {
+      activeList.addEventListener('click', (e) => {
+        const revokeItemBtn = e.target.closest('.active-share-revoke-btn');
+        if (!revokeItemBtn) return;
+        
+        const token = revokeItemBtn.getAttribute('data-token');
+        if (token) {
+          sendRelayMessage({ type: 'cancel-share', token });
+          activeShares.delete(token);
+          renderActiveShares();
+          showToast('Share link revoked.', 'info');
+
+          const linkUrlEl = $('#shareLinkUrl');
+          if (linkUrlEl && linkUrlEl.textContent.endsWith('/' + token)) {
+            const linkContainer = $('#shareLinkContainer');
+            if (linkContainer) linkContainer.style.display = 'none';
+            const qrContainer = $('#shareQrContainer');
+            if (qrContainer) qrContainer.style.display = 'none';
+          }
+        }
+      });
+    }
+  }
+
+  function handleShareFileSelection(file) {
+    selectedShareFile = file;
+    const fileDrop = $('#shareFileDrop');
+    const preview = $('#shareFilePreview');
+    const previewImg = $('#sharePreviewImg');
+    const previewIcon = $('#shareFilePreviewIcon');
+    const fileName = $('#shareFileName');
+    const createBtn = $('#createShareBtn');
+
+    if (!fileDrop || !preview || !previewImg || !previewIcon || !fileName || !createBtn) return;
+
+    fileDrop.style.display = 'none';
+    preview.style.display = 'flex';
+    fileName.textContent = `${file.name} (${formatSize(file.size)})`;
+    createBtn.disabled = false;
+
+    if (file.type.startsWith('image/')) {
+      previewImg.style.display = 'block';
+      previewIcon.style.display = 'none';
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      previewImg.style.display = 'none';
+      previewIcon.style.display = 'block';
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+        previewIcon.textContent = '🎵';
+      } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
+        previewIcon.textContent = '🎬';
+      } else if (['pdf'].includes(ext)) {
+        previewIcon.textContent = '📕';
+      } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+        previewIcon.textContent = '📦';
+      } else {
+        previewIcon.textContent = '📄';
+      }
+    }
+  }
+
+  function resetShareFileSelection(keepLinkContainer = false) {
+    selectedShareFile = null;
+    const fileInput = $('#shareFileInput');
+    if (fileInput) fileInput.value = '';
+
+    const fileDrop = $('#shareFileDrop');
+    const preview = $('#shareFilePreview');
+    const createBtn = $('#createShareBtn');
+    const linkContainer = $('#shareLinkContainer');
+    const qrContainer = $('#shareQrContainer');
+
+    if (fileDrop) fileDrop.style.display = 'flex';
+    if (preview) preview.style.display = 'none';
+    if (createBtn) {
+      createBtn.disabled = true;
+      createBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Create Share Link
+      `;
+    }
+    if (!keepLinkContainer) {
+      if (linkContainer) linkContainer.style.display = 'none';
+      if (qrContainer) qrContainer.style.display = 'none';
+    }
+  }
+
+  function renderActiveShares() {
+    const list = $('#activeSharesList');
+    if (!list) return;
+
+    if (activeShares.size === 0 || (activeShares.size === 1 && activeShares.has('_registering'))) {
+      list.innerHTML = '<div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share links. Select a file above to create one.</div>';
+      return;
+    }
+
+    let html = '';
+    for (const [token, share] of activeShares.entries()) {
+      if (token === '_registering') continue;
+
+      let statusText = 'Waiting';
+      let statusClass = 'waiting';
+      
+      if (share.status === 'downloading') {
+        statusText = `Downloading (${share.percent || 0}%)`;
+        statusClass = 'downloading';
+      } else if (share.status === 'completed') {
+        statusText = 'Completed';
+        statusClass = 'completed';
+      }
+
+      const ext = share.file.name.split('.').pop().toLowerCase();
+      let icon = '📄';
+      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+      else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+      else if (['pdf'].includes(ext)) icon = '📕';
+      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+      else if (share.file.type.startsWith('image/')) icon = '🖼️';
+
+      html += `
+        <div class="active-share-item" id="share-item-${token}">
+          <div class="active-share-info">
+            <span class="active-share-icon">${icon}</span>
+            <div class="active-share-details">
+              <span class="active-share-name" title="${share.file.name}">${share.file.name}</span>
+              <span class="active-share-meta">${formatSize(share.file.size)} • Expiry: ${getFriendlyExpiry(share.expiryMode)}</span>
+            </div>
+          </div>
+          <div class="active-share-status-area">
+            <span class="share-status-tag ${statusClass}">
+              <span class="status-dot"></span>
+              <span class="status-text">${statusText}</span>
+            </span>
+            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Share Link">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    list.innerHTML = html;
+  }
+
+  function getFriendlyExpiry(mode) {
+    switch (mode) {
+      case 'download': return '1-time download';
+      case '1h': return '1 hour';
+      case '6h': return '6 hours';
+      case '24h': return '24 hours';
+      default: return mode;
+    }
+  }
+
+  function updateActiveShareProgressUI(token, percent, bytesTransferred) {
+    const item = $(`#share-item-${token} .status-text`);
+    if (item) {
+      item.textContent = `Downloading (${percent}%)`;
+    }
+  }
+
+  function renderShareQr(url) {
+    const graphicEl = $('#shareQrGraphic');
+    if (!graphicEl) return;
+    graphicEl.innerHTML = '';
+    
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(graphicEl, {
+        text: url,
+        width: 160,
+        height: 160,
+        colorDark: "#ffffff",
+        colorLight: "#000000",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      setTimeout(() => {
+        const qrImg = graphicEl.querySelector('img');
+        const qrCanvas = graphicEl.querySelector('canvas');
+        if (qrImg) {
+          qrImg.style.borderRadius = '8px';
+          qrImg.style.border = '4px solid white';
+          qrImg.style.display = 'block';
+          qrImg.style.margin = '0 auto';
+        }
+        if (qrCanvas) {
+          qrCanvas.style.borderRadius = '8px';
+          qrCanvas.style.border = '4px solid white';
+          qrCanvas.style.display = 'block';
+          qrCanvas.style.margin = '0 auto';
+        }
+      }, 50);
     }
   }
 
