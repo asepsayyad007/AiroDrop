@@ -337,8 +337,35 @@ app.get('/d/:token/info', (req, res) => {
   });
 });
 
-// File download — the core streaming endpoint
+// Serves the beautiful download landing page
 app.get('/d/:token', (req, res) => {
+  const token = req.params.token;
+  const share = shares.get(token);
+
+  // Token not found or already used
+  if (!share || share.status === 'expired' || share.status === 'completed') {
+    return serveStyledPage(res, 'expired.html');
+  }
+
+  // Time-based expiry check
+  if (share.expiresAt && Date.now() > share.expiresAt) {
+    share.status = 'expired';
+    shares.delete(token);
+    return serveStyledPage(res, 'expired.html');
+  }
+
+  // Check if PC is online
+  const pcSocket = sessions.get(share.sessionKey);
+  if (!pcSocket || pcSocket.readyState !== WebSocket.OPEN) {
+    return serveStyledPage(res, 'offline.html', 503);
+  }
+
+  // Serve the beautiful download page
+  serveStyledPage(res, 'download.html', 200);
+});
+
+// File download — the core streaming endpoint
+app.get('/d/:token/download', (req, res) => {
   const token = req.params.token;
   const share = shares.get(token);
 
