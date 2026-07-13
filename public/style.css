@@ -2522,3 +2522,192 @@ input:checked + .slider:before {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 6px rgba(255, 255, 255, 0.8);
 }
 
+/* ─── Send to Friend (Share) styles ──────────────────────── */
+.share-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.share-option-label {
+  display: block;
+  cursor: pointer;
+}
+
+.share-option-label input[type="radio"] {
+  display: none;
+}
+
+.share-option-radio-btn {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.25s ease;
+}
+
+.share-option-radio-btn .title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.share-option-radio-btn .desc {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.share-option-label input[type="radio"]:checked + .share-option-radio-btn {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.share-option-label input[type="radio"]:checked + .share-option-radio-btn .title {
+  color: var(--accent-light);
+}
+
+.active-shares-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.active-share-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+}
+
+.active-share-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.active-share-icon {
+  font-size: 1.1rem;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.active-share-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.active-share-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-share-meta {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.active-share-status-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 10px;
+}
+
+.share-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+}
+
+.share-status-tag .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.share-status-tag.waiting {
+  color: var(--accent-light);
+  border-color: rgba(0, 210, 106, 0.15);
+  background: rgba(0, 210, 106, 0.05);
+}
+
+.share-status-tag.waiting .status-dot {
+  background-color: #00d26a;
+  animation: pulse-green 2s infinite;
+}
+
+.share-status-tag.downloading {
+  color: #ffaa00;
+  border-color: rgba(255, 170, 0, 0.15);
+  background: rgba(255, 170, 0, 0.05);
+}
+
+.share-status-tag.downloading .status-dot {
+  background-color: #ffaa00;
+  animation: pulse-orange 1.5s infinite;
+}
+
+.share-status-tag.completed {
+  color: var(--text-secondary);
+  border-color: var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.share-status-tag.completed .status-dot {
+  background-color: var(--text-secondary);
+}
+
+.active-share-revoke-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.active-share-revoke-btn:hover {
+  color: var(--danger);
+  background: rgba(255, 59, 48, 0.08);
+}
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(0, 210, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0); }
+}
+
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(255, 170, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0); }
+}
+

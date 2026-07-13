@@ -1,0 +1,16 @@
+services:
+  airodrop-relay:
+    build: .
+    container_name: airodrop-relay
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    networks:
+      - nginx_default
+
+networks:
+  nginx_default:
+    external: true

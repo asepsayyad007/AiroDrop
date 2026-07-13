@@ -109,6 +109,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             Send to Phone
           </button>
+          <button class="tab" data-tab="share">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Send to Friend
+          </button>
           <button class="tab" data-tab="scratchpad">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             Scratchpad
@@ -192,6 +196,108 @@
               Send File
             </button>
           </div>
+        </div>
+      </section>
+
+      <!-- Tab 4: Send to Friend (Share Link) -->
+      <section class="tab-content" id="tab-share">
+        <div class="send-split-container">
+          <!-- Select File Card -->
+          <div class="send-card">
+            <h3>Select File</h3>
+            <p class="hint-text">Choose a file to stream directly to your friend</p>
+            <div class="file-drop" id="shareFileDrop">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <p>Click or drop file here</p>
+            </div>
+            <input type="file" id="shareFileInput" hidden>
+            <div id="shareFilePreview" class="send-image-preview" style="display:none; flex-direction:column; align-items:center;">
+              <img id="sharePreviewImg" alt="Preview">
+              <div id="shareFilePreviewIcon" class="file-preview-icon" style="display:none;">📄</div>
+              <span id="shareFileName" style="font-size:0.82rem;color:var(--text-secondary); margin-top:8px; text-align:center; word-break:break-all;"></span>
+            </div>
+          </div>
+
+          <!-- Share Expiry Options -->
+          <div class="send-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3>Expiry Settings</h3>
+              <p class="hint-text" style="margin-bottom: 15px;">Control when the download link becomes invalid</p>
+              
+              <div class="share-options">
+                <label class="share-option-label">
+                  <input type="radio" name="shareExpiry" value="download" checked>
+                  <span class="share-option-radio-btn">
+                    <span class="title">Delete after download</span>
+                    <span class="desc">Link works exactly once, then self-destructs</span>
+                  </span>
+                </label>
+                <label class="share-option-label">
+                  <input type="radio" name="shareExpiry" value="1h">
+                  <span class="share-option-radio-btn">
+                    <span class="title">1 Hour</span>
+                    <span class="desc">Link expires 1 hour from creation</span>
+                  </span>
+                </label>
+                <label class="share-option-label">
+                  <input type="radio" name="shareExpiry" value="6h">
+                  <span class="share-option-radio-btn">
+                    <span class="title">6 Hours</span>
+                    <span class="desc">Link expires 6 hours from creation</span>
+                  </span>
+                </label>
+                <label class="share-option-label">
+                  <input type="radio" name="shareExpiry" value="24h">
+                  <span class="share-option-radio-btn">
+                    <span class="title">24 Hours</span>
+                    <span class="desc">Link expires 24 hours from creation</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="createShareBtn" style="margin-top: 20px;" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Create Share Link
+            </button>
+          </div>
+        </div>
+
+        <!-- Generated Link Card -->
+        <div class="send-card" id="shareLinkContainer" style="display: none; margin-top: 15px; max-width: 100%;">
+          <h3>Generated Share Link</h3>
+          <p class="hint-text">Anyone with this link can download the file directly from your PC</p>
+          <div class="share-link-display-row" style="display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap;">
+            <div class="share-link-box" style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: var(--radius-md); font-family: monospace; font-size: 0.84rem; color: var(--accent-light); overflow-x: auto; white-space: nowrap;" id="shareLinkUrl"></div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" id="copyShareLinkBtn" style="padding: 10px 16px; font-size: 0.8rem; font-weight: 600;">Copy Link</button>
+              <button class="btn btn-secondary" id="qrShareLinkBtn" style="padding: 10px 16px; font-size: 0.8rem; font-weight: 600;">Show QR</button>
+              <button class="btn btn-secondary" id="revokeShareLinkBtn" style="padding: 10px 16px; font-size: 0.8rem; font-weight: 600; color: var(--danger); border-color: rgba(255, 59, 48, 0.25);">Revoke</button>
+            </div>
+          </div>
+          <div id="shareQrContainer" style="display: none; justify-content: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--glass-border); width: fit-content; margin-left: auto; margin-right: auto;">
+            <div id="shareQrGraphic"></div>
+          </div>
+        </div>
+
+        <!-- Active Shares -->
+        <div class="send-card" style="margin-top: 15px; max-width: 100%;">
+          <h3>Active Share Links</h3>
+          <p class="hint-text" style="margin-bottom: 12px;">Active streaming connections. PC must stay turned on to stream.</p>
+          <div id="activeSharesList" class="active-shares-list">
+            <div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share links. Select a file above to create one.</div>
+          </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="relay-status-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); font-size: 0.72rem; color: var(--text-secondary); margin-top: 15px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-indicator" id="relayStatusIndicator" style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--text-secondary);"></span>
+            <span id="relayStatusText">Relay Server: Disconnected</span>
+          </div>
+          <span style="opacity: 0.8;">Cloud P2P Stream Mode</span>
         </div>
       </section>
 
