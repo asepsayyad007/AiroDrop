@@ -317,6 +317,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Inspect headers for debugging
+app.get('/inspect', (req, res) => {
+  res.json({
+    url: req.url,
+    method: req.method,
+    headers: req.headers
+  });
+});
+
 // File metadata preview
 app.get('/d/:token/info', (req, res) => {
   const share = shares.get(req.params.token);
