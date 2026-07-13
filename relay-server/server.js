@@ -317,14 +317,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Inspect headers for debugging
-app.get('/inspect', (req, res) => {
-  res.json({
-    url: req.url,
-    method: req.method,
-    headers: req.headers
-  });
-});
+
 
 // File metadata preview
 app.get('/d/:token/info', (req, res) => {
@@ -439,6 +432,16 @@ app.get('/d/:token', (req, res) => {
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const p = url.pathname;
+  log('info', 'Upgrade request headers received', { headers: request.headers, url: request.url });
+  
+  // Sanitize headers to prevent Nginx duplication issues (e.g. "websocket, websocket")
+  if (request.headers.upgrade) {
+    request.headers.upgrade = request.headers.upgrade.split(',')[0].trim();
+  }
+  if (request.headers.connection) {
+    request.headers.connection = request.headers.connection.split(',')[0].trim();
+  }
+
   if (p === '/ws' || p === '/ws/' || p === '/') {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
