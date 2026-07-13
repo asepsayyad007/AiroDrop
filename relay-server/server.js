@@ -429,7 +429,8 @@ app.get('/d/:token', (req, res) => {
 // ─── WebSocket Upgrade ──────────────────────────────────────
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
-  if (url.pathname === '/ws') {
+  const p = url.pathname;
+  if (p === '/ws' || p === '/ws/' || p === '/') {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
     });

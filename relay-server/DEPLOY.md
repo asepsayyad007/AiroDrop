@@ -57,8 +57,10 @@ Click **Add Location** and enter the following settings:
 - **Forward Port**: `4000`
 - Click the **Gear icon** to open Custom Nginx Configuration, and paste:
   ```nginx
+  proxy_http_version 1.1;
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection "upgrade";
+  proxy_set_header Host $host;
   proxy_read_timeout 86400;
   ```
 
