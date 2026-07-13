@@ -1,19 +1,59 @@
-# Dependencies
+# ─── Dependencies ───────────────────────────────────────────
 node_modules/
 
-# Build outputs
+# ─── Build Outputs ───────────────────────────────────────────
 dist/
 build/
+out/
+*.blockmap
+*.AppImage
 
-# Application Data (User-specific)
+# ─── Electron Installers / Compiled Binaries ─────────────────
+*.exe
+*.dmg
+*.deb
+*.rpm
+*.snap
+*.msi
+*.pkg
+builder-debug.yml
+builder-effective-config.yaml
+latest.yml
+
+# ─── User Application Data (Machine-specific, private) ───────
 config.json
 history.json
 received/
 
-# Logs
+# ─── Environment & Secrets ────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# ─── Development / Test Scratch Files ─────────────────────────
+scratch/
+
+# ─── Logs ─────────────────────────────────────────────────────
 *.log
 npm-debug.log*
+yarn-error.log*
 
-# OS Files
+# ─── OS / Editor Files ────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ─── Temp / Cache ─────────────────────────────────────────────
+.cache/
+.tmp/
+tmp/

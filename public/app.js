@@ -2450,6 +2450,9 @@
   }
 
   // ─── Send to Friend (P2P Share Module) ────────────────────
+  // Relay server base URL — update this if you self-host the relay server
+  const RELAY_BASE_URL = 'https://airodrop.bootstrapx007.online';
+  const RELAY_WS_URL  = 'wss://airodrop.bootstrapx007.online/ws';
   let selectedShareFile = null;
   const activeShares = new Map();
   let relayWs = null;
@@ -2474,7 +2477,7 @@
     updateRelayStatus('connecting');
 
     try {
-      relayWs = new WebSocket('wss://airodrop.bootstrapx007.online/ws');
+      relayWs = new WebSocket(RELAY_WS_URL);
     } catch (err) {
       console.error('[RelayWS] Connection error:', err);
       scheduleRelayReconnect();
@@ -2517,7 +2520,7 @@
             activeShares.delete('_registering');
             share.status = 'waiting';
             share.token = msg.token;
-            const downloadUrl = `https://airodrop.bootstrapx007.online/d/${msg.token}`;
+            const downloadUrl = `${RELAY_BASE_URL}/d/${msg.token}`;
             share.url = downloadUrl;
             activeShares.set(msg.token, share);
             
