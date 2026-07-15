@@ -1316,6 +1316,8 @@
         if (res.ok) {
           const data = await res.json();
           if (saveDirInput && data.saveDir) saveDirInput.value = data.saveDir;
+          const receiveSaveDirLabel = document.getElementById('receiveSaveDirLabel');
+          if (receiveSaveDirLabel && data.saveDir) receiveSaveDirLabel.textContent = data.saveDir;
           if (shareDirInput && data.shareDir) shareDirInput.value = data.shareDir;
           if (tempModeInput) tempModeInput.checked = !!data.temporaryMode;
           if (dashboardTempModeInput) dashboardTempModeInput.checked = !!data.temporaryMode;
@@ -1460,6 +1462,8 @@
           if (res.ok && data.success) {
             showSettingsStatus('Configuration saved successfully!', 'success');
             if (saveDirInput) saveDirInput.value = data.saveDir;
+            const receiveSaveDirLabel2 = document.getElementById('receiveSaveDirLabel');
+            if (receiveSaveDirLabel2 && data.saveDir) receiveSaveDirLabel2.textContent = data.saveDir;
             if (shareDirInput) shareDirInput.value = data.shareDir;
             if (deviceNameInput) deviceNameInput.value = data.deviceName;
             if (tempModeInput) tempModeInput.checked = !!data.temporaryMode;
@@ -2550,8 +2554,9 @@
           const receive = activeShares.get(token);
           if (receive && receive.status === 'receiving') {
             receive.bytesTransferred += chunk.length;
-            receive.percent = receive.size > 0
-              ? Math.min(100, Math.round((receive.bytesTransferred / receive.size) * 100))
+            const fileSize = (receive.file && receive.file.size) || receive.size || 0;
+            receive.percent = fileSize > 0
+              ? Math.min(100, Math.round((receive.bytesTransferred / fileSize) * 100))
               : 0;
             
             updateActiveShareProgressUI(token, receive.percent, receive.bytesTransferred);
@@ -3408,7 +3413,7 @@
   function updateActiveShareProgressUI(token, percent, bytesTransferred) {
     const item = $(`#share-item-${token} .status-text`);
     if (item) {
-      item.textContent = `Downloading (${percent}%)`;
+      item.textContent = `Receiving (${percent}%)`;
     }
   }
 
