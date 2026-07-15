@@ -2660,6 +2660,30 @@
           break;
         }
 
+        case 'incoming-upload': {
+          const token = msg.token;
+          const receive = activeShares.get(token);
+          if (receive) {
+            receive.status = 'pending_accept';
+            receive.file = { name: msg.filename, size: msg.size, mimeType: msg.mimeType };
+            renderActiveShares();
+            showToast(`Incoming file: ${msg.filename}`, 'info');
+          }
+          break;
+        }
+
+        case 'upload-cancelled': {
+          const token = msg.token;
+          const receive = activeShares.get(token);
+          if (receive) {
+            receive.status = 'waiting';
+            receive.file = null;
+            renderActiveShares();
+            showToast('Uploader cancelled the request.', 'info');
+          }
+          break;
+        }
+
         case 'upload-started': {
           const token = msg.token;
           const receive = activeShares.get(token);
@@ -2695,14 +2719,12 @@
             ipcRenderer.send('receive-file-end', { token });
 
             if (receive.expiryMode === 'download') {
-              activeShares.delete(token);
-              // Hide link UI if it matches
+              // Hide link UI if it matches (since it is single-use and now expired)
               const linkUrlEl = $('#shareLinkUrl');
               if (linkUrlEl && linkUrlEl.textContent === receive.url) {
                 const linkContainer = $('#shareLinkContainer');
                 if (linkContainer) linkContainer.style.display = 'none';
               }
-              setTimeout(renderActiveShares, 2000);
             }
           }
           break;
@@ -3097,23 +3119,59 @@
     const activeList = $('#activeSharesList');
     if (activeList) {
       activeList.addEventListener('click', (e) => {
+        // Revoke Link
         const revokeItemBtn = e.target.closest('.active-share-revoke-btn');
-        if (!revokeItemBtn) return;
-        
-        const token = revokeItemBtn.getAttribute('data-token');
-        if (token) {
-          sendRelayMessage({ type: 'cancel-share', token });
-          activeShares.delete(token);
-          renderActiveShares();
-          showToast('Share link revoked.', 'info');
+        if (revokeItemBtn) {
+          const token = revokeItemBtn.getAttribute('data-token');
+          if (token) {
+            sendRelayMessage({ type: 'cancel-share', token });
+            activeShares.delete(token);
+            renderActiveShares();
+            showToast('Share link revoked.', 'info');
 
-          const linkUrlEl = $('#shareLinkUrl');
-          if (linkUrlEl && linkUrlEl.textContent.endsWith('/' + token)) {
-            const linkContainer = $('#shareLinkContainer');
-            if (linkContainer) linkContainer.style.display = 'none';
-            const qrContainer = $('#shareQrContainer');
-            if (qrContainer) qrContainer.style.display = 'none';
+            const linkUrlEl = $('#shareLinkUrl');
+            if (linkUrlEl && linkUrlEl.textContent.endsWith('/' + token)) {
+              const linkContainer = $('#shareLinkContainer');
+              if (linkContainer) linkContainer.style.display = 'none';
+              const qrContainer = $('#shareQrContainer');
+              if (qrContainer) qrContainer.style.display = 'none';
+            }
           }
+          return;
+        }
+
+        // Accept (Download)
+        const acceptBtn = e.target.closest('.active-share-accept-btn');
+        if (acceptBtn) {
+          const token = acceptBtn.getAttribute('data-token');
+          if (token) {
+            acceptUpload(token);
+          }
+          return;
+        }
+
+        // Decline
+        const declineBtn = e.target.closest('.active-share-decline-btn');
+        if (declineBtn) {
+          const token = declineBtn.getAttribute('data-token');
+          if (token) {
+            declineUpload(token);
+          }
+          return;
+        }
+
+        // Reveal in Folder
+        const folderBtn = e.target.closest('.active-share-folder-btn');
+        if (folderBtn) {
+          const filename = folderBtn.getAttribute('data-filename');
+          if (filename) {
+            if (isElectron) {
+              ipcRenderer.send('open-file-folder', filename);
+            } else {
+              showToast('Reveal only supported on desktop app.', 'info');
+            }
+          }
+          return;
         }
       });
     }
@@ -3204,14 +3262,34 @@
 
       let statusText = 'Waiting';
       let statusClass = 'waiting';
+      let actionButtonsHtml = '';
       
       if (share.direction === 'receive') {
-        if (share.status === 'receiving') {
+        if (share.status === 'pending_accept') {
+          statusText = 'Pending Accept';
+          statusClass = 'downloading';
+          actionButtonsHtml = `
+            <button class="active-share-accept-btn" data-token="${token}" title="Accept & Download" style="background: rgba(0, 210, 106, 0.15) !important; color: #00d26a !important; border: 1px solid rgba(0, 210, 106, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Download
+            </button>
+            <button class="active-share-decline-btn" data-token="${token}" title="Decline" style="background: rgba(255, 59, 48, 0.15) !important; color: #ff3b30 !important; border: 1px solid rgba(255, 59, 48, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Decline
+            </button>
+          `;
+        } else if (share.status === 'receiving') {
           statusText = `Receiving (${share.percent || 0}%)`;
           statusClass = 'downloading'; // Reuse download styling (yellow-orange indicator)
         } else if (share.status === 'completed') {
           statusText = 'Completed';
           statusClass = 'completed';
+          actionButtonsHtml = `
+            <button class="active-share-folder-btn" data-filename="${share.file.name}" title="Reveal in Folder" style="background: rgba(0, 136, 204, 0.15) !important; color: #33a3ff !important; border: 1px solid rgba(0, 136, 204, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              Reveal
+            </button>
+          `;
         }
       } else {
         if (share.status === 'downloading') {
@@ -3252,7 +3330,7 @@
         else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
         else if (['pdf'].includes(ext)) icon = '📕';
         else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
-        else if (share.file.type.startsWith('image/')) icon = '🖼️';
+        else if (share.file.type && share.file.type.startsWith('image/')) icon = '🖼️';
       }
 
       html += `
@@ -3264,12 +3342,13 @@
               <span class="active-share-meta">${meta}</span>
             </div>
           </div>
-          <div class="active-share-status-area">
+          <div class="active-share-status-area" style="display: flex; align-items: center;">
+            ${actionButtonsHtml}
             <span class="share-status-tag ${statusClass}">
               <span class="status-dot"></span>
               <span class="status-text">${statusText}</span>
             </span>
-            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Link">
+            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Link" style="margin-left: 8px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -3278,6 +3357,41 @@
     }
 
     list.innerHTML = html;
+  }
+
+  function acceptUpload(token) {
+    const share = activeShares.get(token);
+    if (!share) return;
+
+    sendRelayMessage({
+      type: 'accept-upload',
+      token
+    });
+
+    share.status = 'receiving';
+    share.percent = 0;
+    renderActiveShares();
+    showToast('Download request accepted. Waiting for stream...', 'success');
+  }
+
+  function declineUpload(token) {
+    const share = activeShares.get(token);
+    if (!share) return;
+
+    sendRelayMessage({
+      type: 'decline-upload',
+      token
+    });
+
+    // Reset status back to waiting or delete if download once
+    if (share.expiryMode === 'download') {
+      activeShares.delete(token);
+    } else {
+      share.status = 'waiting';
+      share.file = null;
+    }
+    renderActiveShares();
+    showToast('Upload request declined.', 'info');
   }
 
   function getFriendlyExpiry(mode, isReceive = false) {
