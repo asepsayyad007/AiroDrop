@@ -409,7 +409,7 @@
         const item = JSON.parse(e.data);
         addItemToState(item);
         renderFeed();
-        showToast('New item received from iPhone!', 'info');
+        showToast(`New ${item.type === 'text' ? 'text' : 'file'} received!`, 'success');
         updateStats();
 
         // Browser HTML5 notification for system-wide alerts
@@ -2548,21 +2548,30 @@
           const view = new DataView(buffer);
           const tokenLen = view.getUint8(0);
           const decoder = new TextDecoder('ascii');
-          const token = decoder.decode(new Uint8Array(buffer, 1, tokenLen));
+          const fileId = decoder.decode(new Uint8Array(buffer, 1, tokenLen));
           const chunk = new Uint8Array(buffer, 1 + tokenLen);
           
-          const receive = activeShares.get(token);
-          if (receive && receive.status === 'receiving') {
-            receive.bytesTransferred += chunk.length;
-            const fileSize = (receive.file && receive.file.size) || receive.size || 0;
-            receive.percent = fileSize > 0
-              ? Math.min(100, Math.round((receive.bytesTransferred / fileSize) * 100))
+          let receive = null;
+          let fileItem = null;
+          for (const r of activeShares.values()) {
+            if (r.files && r.files[fileId]) {
+              receive = r;
+              fileItem = r.files[fileId];
+              break;
+            }
+          }
+          
+          if (receive && fileItem && fileItem.status === 'receiving') {
+            fileItem.bytesTransferred += chunk.length;
+            const fileSize = fileItem.size || 0;
+            fileItem.percent = fileSize > 0
+              ? Math.min(100, Math.round((fileItem.bytesTransferred / fileSize) * 100))
               : 0;
             
-            updateActiveShareProgressUI(token, receive.percent, receive.bytesTransferred);
+            updateActiveShareProgressUI(fileId, fileItem.percent, fileItem.bytesTransferred);
             
             // Forward chunk to Electron main process to write to disk
-            ipcRenderer.send('receive-file-chunk', { token, chunk });
+            ipcRenderer.send('receive-file-chunk', { token: fileId, chunk });
           }
         } catch (binErr) {
           console.error('[RelayWS] Error processing binary packet:', binErr);
@@ -2645,7 +2654,7 @@
             if (createBtn) {
               createBtn.disabled = false;
               createBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0 7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 Generate Receive Link
               `;
             }
@@ -2667,22 +2676,47 @@
 
         case 'incoming-upload': {
           const token = msg.token;
+          const fileId = msg.fileId;
           const receive = activeShares.get(token);
           if (receive) {
+            if (!receive.files) receive.files = {};
+            receive.files[fileId] = {
+              id: fileId,
+              name: msg.filename,
+              size: msg.size,
+              mimeType: msg.mimeType,
+              preview: msg.preview, // base64 preview thumbnail
+              status: 'pending_accept',
+              bytesTransferred: 0,
+              percent: 0
+            };
+            
             receive.status = 'pending_accept';
-            receive.file = { name: msg.filename, size: msg.size, mimeType: msg.mimeType };
             renderActiveShares();
-            showToast(`Incoming file: ${msg.filename}`, 'info');
+            showToast(`Incoming file request: ${msg.filename}`, 'info');
+
+            // Trigger system Desktop notification
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              new Notification("Incoming File Request", {
+                body: `Your friend wants to send: ${msg.filename} (${formatSize(msg.size)})`,
+                icon: 'logo.png'
+              });
+            }
           }
           break;
         }
 
         case 'upload-cancelled': {
           const token = msg.token;
+          const fileId = msg.fileId;
           const receive = activeShares.get(token);
-          if (receive) {
-            receive.status = 'waiting';
-            receive.file = null;
+          if (receive && receive.files && receive.files[fileId]) {
+            delete receive.files[fileId];
+            
+            const remainingCount = Object.keys(receive.files).length;
+            if (remainingCount === 0) {
+              receive.status = 'waiting';
+            }
             renderActiveShares();
             showToast('Uploader cancelled the request.', 'info');
           }
@@ -2691,20 +2725,28 @@
 
         case 'upload-started': {
           const token = msg.token;
+          const fileId = msg.fileId;
           const receive = activeShares.get(token);
           if (receive) {
+            if (!receive.files) receive.files = {};
+            if (!receive.files[fileId]) {
+              receive.files[fileId] = { id: fileId, name: msg.filename, size: msg.size, status: 'receiving', bytesTransferred: 0, percent: 0 };
+            }
+            const fileItem = receive.files[fileId];
+            fileItem.status = 'receiving';
+            fileItem.bytesTransferred = 0;
+            fileItem.percent = 0;
+            
             receive.status = 'receiving';
-            receive.file = { name: msg.filename, size: msg.size }; // Mock file object for UI list rendering
-            receive.bytesTransferred = 0;
-            receive.percent = 0;
             renderActiveShares();
-            console.log(`[RelayWS] Upload started: ${msg.filename} (${msg.size} bytes)`);
+            console.log(`[RelayWS] Upload started: ${msg.filename}`);
 
-            // Tell Electron main process to open file stream
+            // Tell Electron main process to open file stream using fileId as token
             ipcRenderer.send('receive-file-start', {
-              token,
+              token: fileId,
               filename: msg.filename,
-              size: msg.size
+              size: msg.size,
+              mimeType: msg.mimeType
             });
           }
           break;
@@ -2712,41 +2754,48 @@
 
         case 'upload-complete': {
           const token = msg.token;
+          const fileId = msg.fileId;
           const receive = activeShares.get(token);
-          if (receive) {
-            receive.status = 'completed';
-            receive.percent = 100;
-            receive.bytesTransferred = msg.bytesTransferred;
+          if (receive && receive.files && receive.files[fileId]) {
+            const fileItem = receive.files[fileId];
+            fileItem.status = 'completed';
+            fileItem.percent = 100;
+            fileItem.bytesTransferred = msg.bytesTransferred;
             renderActiveShares();
-            showToast(`Upload of "${receive.file.name}" completed!`, 'success');
+            showToast(`Received: "${fileItem.name}"`, 'success');
 
             // Tell Electron main process to finalize and save the file
-            ipcRenderer.send('receive-file-end', { token });
+            ipcRenderer.send('receive-file-end', { token: fileId });
 
             if (receive.expiryMode === 'download') {
-              // Hide link UI if it matches (since it is single-use and now expired)
               const linkUrlEl = $('#shareLinkUrl');
               if (linkUrlEl && linkUrlEl.textContent === receive.url) {
                 const linkContainer = $('#shareLinkContainer');
                 if (linkContainer) linkContainer.style.display = 'none';
               }
             }
+            
+            // Process next queued file in sequential mode
+            processSequentialQueue(token);
           }
           break;
         }
 
         case 'upload-error': {
           const token = msg.token;
+          const fileId = msg.fileId;
           const receive = activeShares.get(token);
-          if (receive) {
-            receive.status = 'waiting';
-            receive.percent = 0;
-            receive.bytesTransferred = 0;
+          if (receive && receive.files && receive.files[fileId]) {
+            const fileItem = receive.files[fileId];
+            fileItem.status = 'failed';
             renderActiveShares();
-            showToast(`Upload interrupted: ${msg.message}`, 'error');
+            showToast(`Upload failed for: ${fileItem.name}`, 'error');
 
             // Tell Electron main process to delete the partial temp file
-            ipcRenderer.send('receive-file-error', { token });
+            ipcRenderer.send('receive-file-error', { token: fileId });
+
+            // Process next queued file in sequential mode
+            processSequentialQueue(token);
           }
           break;
         }
@@ -3149,8 +3198,9 @@
         const acceptBtn = e.target.closest('.active-share-accept-btn');
         if (acceptBtn) {
           const token = acceptBtn.getAttribute('data-token');
-          if (token) {
-            acceptUpload(token);
+          const fileId = acceptBtn.getAttribute('data-file-id');
+          if (token && fileId) {
+            acceptUpload(token, fileId);
           }
           return;
         }
@@ -3159,8 +3209,47 @@
         const declineBtn = e.target.closest('.active-share-decline-btn');
         if (declineBtn) {
           const token = declineBtn.getAttribute('data-token');
-          if (token) {
-            declineUpload(token);
+          const fileId = declineBtn.getAttribute('data-file-id');
+          if (token && fileId) {
+            declineUpload(token, fileId);
+          }
+          return;
+        }
+
+        // Bulk Accept (All Parallel or All Sequential)
+        const acceptAllBtn = e.target.closest('.accept-all-btn');
+        if (acceptAllBtn) {
+          const token = acceptAllBtn.getAttribute('data-token');
+          const mode = acceptAllBtn.getAttribute('data-mode') || 'parallel';
+          const share = activeShares.get(token);
+          if (share && share.files) {
+            share.downloadMode = mode;
+            const pendingFiles = Object.values(share.files).filter(f => f.status === 'pending_accept');
+            if (pendingFiles.length > 0) {
+              if (mode === 'parallel') {
+                pendingFiles.forEach(file => {
+                  acceptUpload(token, file.id);
+                });
+              } else {
+                // Sequential: accept the first one, processSequentialQueue takes care of the rest
+                acceptUpload(token, pendingFiles[0].id);
+              }
+            }
+          }
+          return;
+        }
+
+        // Bulk Decline All
+        const declineAllBtn = e.target.closest('.decline-all-btn');
+        if (declineAllBtn) {
+          const token = declineAllBtn.getAttribute('data-token');
+          const share = activeShares.get(token);
+          if (share && share.files) {
+            Object.keys(share.files).forEach(fileId => {
+              if (share.files[fileId].status === 'pending_accept') {
+                declineUpload(token, fileId);
+              }
+            });
           }
           return;
         }
@@ -3205,97 +3294,113 @@
       reader.onload = (e) => {
         previewImg.src = e.target.result;
       };
-      reader.readAsDataURL(file);
-    } else {
-      previewImg.style.display = 'none';
-      previewIcon.style.display = 'block';
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
-        previewIcon.textContent = '🎵';
-      } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
-        previewIcon.textContent = '🎬';
-      } else if (['pdf'].includes(ext)) {
-        previewIcon.textContent = '📕';
-      } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-        previewIcon.textContent = '📦';
-      } else {
-        previewIcon.textContent = '📄';
-      }
-    }
-  }
-
-  function resetShareFileSelection(keepLinkContainer = false) {
-    selectedShareFile = null;
-    const fileInput = $('#shareFileInput');
-    if (fileInput) fileInput.value = '';
-
-    const fileDrop = $('#shareFileDrop');
-    const preview = $('#shareFilePreview');
-    const createBtn = $('#createShareBtn');
-    const linkContainer = $('#shareLinkContainer');
-    const qrContainer = $('#shareQrContainer');
-
-    if (fileDrop) fileDrop.style.display = 'flex';
-    if (preview) preview.style.display = 'none';
-    if (createBtn) {
-      createBtn.disabled = true;
-      createBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Create Share Link
-      `;
-    }
-    if (!keepLinkContainer) {
-      if (linkContainer) linkContainer.style.display = 'none';
-      if (qrContainer) qrContainer.style.display = 'none';
-    }
-  }
-
-  function renderActiveShares() {
-    const list = $('#activeSharesList');
-    if (!list) return;
-
-    if (activeShares.size === 0 || 
-        (activeShares.size === 1 && (activeShares.has('_registering') || activeShares.has('_registering_receive'))) ||
-        (activeShares.size === 2 && activeShares.has('_registering') && activeShares.has('_registering_receive'))) {
-      list.innerHTML = '<div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share or receive links. Select a file or generate a receive link above.</div>';
-      return;
-    }
-
-    let html = '';
+      reader.readAsData    let html = '';
     for (const [token, share] of activeShares.entries()) {
       if (token === '_registering' || token === '_registering_receive') continue;
 
       let statusText = 'Waiting';
       let statusClass = 'waiting';
       let actionButtonsHtml = '';
+      let filesHtml = '';
       
+      let name = '';
+      let meta = '';
+      let icon = '📄';
+
       if (share.direction === 'receive') {
-        if (share.status === 'pending_accept') {
-          statusText = 'Pending Accept';
-          statusClass = 'downloading';
-          actionButtonsHtml = `
-            <button class="active-share-accept-btn" data-token="${token}" title="Accept & Download" style="background: rgba(0, 210, 106, 0.15) !important; color: #00d26a !important; border: 1px solid rgba(0, 210, 106, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Download
-            </button>
-            <button class="active-share-decline-btn" data-token="${token}" title="Decline" style="background: rgba(255, 59, 48, 0.15) !important; color: #ff3b30 !important; border: 1px solid rgba(255, 59, 48, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Decline
-            </button>
-          `;
-        } else if (share.status === 'receiving') {
-          statusText = `Receiving (${share.percent || 0}%)`;
-          statusClass = 'downloading'; // Reuse download styling (yellow-orange indicator)
-        } else if (share.status === 'completed') {
-          statusText = 'Completed';
-          statusClass = 'completed';
-          actionButtonsHtml = `
-            <button class="active-share-folder-btn" data-filename="${share.file.name}" title="Reveal in Folder" style="background: rgba(0, 136, 204, 0.15) !important; color: #33a3ff !important; border: 1px solid rgba(0, 136, 204, 0.25) !important; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; transition: all 0.2s;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-              Reveal
-            </button>
+        const fileList = Object.values(share.files || {});
+        let hasPending = false;
+        
+        if (fileList.length > 0) {
+          hasPending = fileList.some(f => f.status === 'pending_accept');
+          
+          filesHtml = `<div class="receive-files-stack">`;
+          filesHtml += fileList.map(file => {
+            let rowStatusText = file.status;
+            let badgeClass = file.status;
+            let fileActions = '';
+            
+            if (file.status === 'pending_accept') {
+              rowStatusText = 'Pending Accept';
+              badgeClass = 'waiting';
+              fileActions = `
+                <button class="active-share-accept-btn" data-token="${token}" data-file-id="${file.id}" title="Accept & Download" style="background: rgba(0, 210, 106, 0.15) !important; color: #00d26a !important; border: 1px solid rgba(0, 210, 106, 0.25) !important; border-radius: 4px; padding: 2px 6px; font-size: 0.68rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+                <button class="active-share-decline-btn" data-token="${token}" data-file-id="${file.id}" title="Decline" style="background: rgba(255, 59, 48, 0.15) !important; color: #ff3b30 !important; border: 1px solid rgba(255, 59, 48, 0.25) !important; border-radius: 4px; padding: 2px 6px; font-size: 0.68rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              `;
+            } else if (file.status === 'receiving') {
+              rowStatusText = `Receiving ${file.percent || 0}%`;
+              badgeClass = 'downloading';
+            } else if (file.status === 'completed') {
+              rowStatusText = 'Sent';
+              badgeClass = 'completed';
+              fileActions = `
+                <button class="active-share-folder-btn" data-filename="${file.name}" title="Reveal in Folder" style="background: rgba(0, 136, 204, 0.15) !important; color: #33a3ff !important; border: 1px solid rgba(0, 136, 204, 0.25) !important; border-radius: 4px; padding: 2px 6px; font-size: 0.68rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </button>
+              `;
+            } else if (file.status === 'declined') {
+              rowStatusText = 'Declined';
+              badgeClass = 'declined';
+            } else if (file.status === 'failed') {
+              rowStatusText = 'Failed';
+              badgeClass = 'failed';
+            }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            let icon = '📄';
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+            else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+            else if (['pdf'].includes(ext)) icon = '📕';
+            else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+            else if (file.preview) {
+              icon = `<img src="${file.preview}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.05);">`;
+            } else if (file.mimeType && file.mimeType.startsWith('image/')) {
+              icon = '🖼️';
+            }
+
+            return `
+              <div class="receive-file-row ${file.status === 'receiving' ? 'active' : ''}" id="file-item-${file.id}">
+                <div class="receive-file-left">
+                  <span class="active-share-icon" style="font-size:0.9rem;">${icon}</span>
+                  <div class="receive-file-info">
+                    <span class="receive-file-name" title="${file.name}">${file.name}</span>
+                    <span class="receive-file-size">${formatSize(file.size)}</span>
+                  </div>
+                </div>
+                <div class="receive-file-actions">
+                  <span class="share-status-tag ${badgeClass}" style="padding: 2px 6px; font-size: 0.65rem;">
+                    <span class="status-text">${rowStatusText}</span>
+                  </span>
+                  ${fileActions}
+                </div>
+              </div>
+            `;
+          }).join('');
+          filesHtml += `</div>`;
+        }
+
+        let bulkActionsHtml = '';
+        if (hasPending) {
+          bulkActionsHtml = `
+            <div class="receive-bulk-actions">
+              <button class="btn-bulk-action accept-all-btn" data-token="${token}" data-mode="parallel">Download All (At Once)</button>
+              <button class="btn-bulk-action accept-all-btn" data-token="${token}" data-mode="sequential" style="background: rgba(0, 136, 204, 0.12) !important; color: #33a3ff !important; border-color: rgba(0, 136, 204, 0.25) !important;">Download All (Seq)</button>
+              <button class="btn-bulk-action decline-all-btn" data-token="${token}" style="background: rgba(255, 59, 48, 0.1) !important; color: #ff3b30 !important; border-color: rgba(255, 59, 48, 0.2) !important;">Decline All</button>
+            </div>
           `;
         }
+
+        name = `Receive Link (${fileList.length} files)`;
+        meta = `Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
+        icon = '📥';
+
+        actionButtonsHtml = bulkActionsHtml;
+        statusText = share.status === 'pending_accept' ? 'Action Required' : (share.status === 'receiving' ? 'Receiving...' : 'Waiting');
+        statusClass = share.status === 'pending_accept' ? 'downloading' : (share.status === 'receiving' ? 'downloading' : 'waiting');
       } else {
         if (share.status === 'downloading') {
           statusText = `Downloading (${share.percent || 0}%)`;
@@ -3304,29 +3409,7 @@
           statusText = 'Completed';
           statusClass = 'completed';
         }
-      }
-
-      let name = '';
-      let meta = '';
-      let icon = '📄';
-
-      if (share.direction === 'receive') {
-        if (share.status === 'waiting') {
-          name = 'Waiting for upload...';
-          meta = `Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
-          icon = '📥';
-        } else {
-          name = share.file.name;
-          meta = `${formatSize(share.file.size)} • Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
-          
-          const ext = share.file.name.split('.').pop().toLowerCase();
-          if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
-          else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
-          else if (['pdf'].includes(ext)) icon = '📕';
-          else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
-          else icon = '📄';
-        }
-      } else {
+        
         name = share.file.name;
         meta = `${formatSize(share.file.size)} • Send Link • Expiry: ${getFriendlyExpiry(share.expiryMode, false)}`;
         
@@ -3339,24 +3422,27 @@
       }
 
       html += `
-        <div class="active-share-item" id="share-item-${token}">
-          <div class="active-share-info">
-            <span class="active-share-icon">${icon}</span>
-            <div class="active-share-details">
-              <span class="active-share-name" title="${name}">${name}</span>
-              <span class="active-share-meta">${meta}</span>
+        <div class="active-share-item" id="share-item-${token}" style="flex-direction: column; align-items: stretch; gap: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div class="active-share-info">
+              <span class="active-share-icon">${icon}</span>
+              <div class="active-share-details">
+                <span class="active-share-name" title="${name}">${name}</span>
+                <span class="active-share-meta">${meta}</span>
+              </div>
+            </div>
+            <div class="active-share-status-area" style="display: flex; align-items: center; flex-shrink: 0;">
+              <span class="share-status-tag ${statusClass}">
+                <span class="status-dot"></span>
+                <span class="status-text">${statusText}</span>
+              </span>
+              <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Link" style="margin-left: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
           </div>
-          <div class="active-share-status-area" style="display: flex; align-items: center;">
-            ${actionButtonsHtml}
-            <span class="share-status-tag ${statusClass}">
-              <span class="status-dot"></span>
-              <span class="status-text">${statusText}</span>
-            </span>
-            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Link" style="margin-left: 8px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
+          ${filesHtml}
+          ${actionButtonsHtml}
         </div>
       `;
     }
@@ -3364,39 +3450,49 @@
     list.innerHTML = html;
   }
 
-  function acceptUpload(token) {
+  function acceptUpload(token, fileId) {
     const share = activeShares.get(token);
-    if (!share) return;
+    if (!share || !share.files || !share.files[fileId]) return;
 
     sendRelayMessage({
       type: 'accept-upload',
-      token
+      token,
+      fileId
     });
 
+    share.files[fileId].status = 'receiving';
+    share.files[fileId].percent = 0;
     share.status = 'receiving';
-    share.percent = 0;
     renderActiveShares();
-    showToast('Download request accepted. Waiting for stream...', 'success');
+    showToast(`Download started for: ${share.files[fileId].name}`, 'success');
   }
 
-  function declineUpload(token) {
+  function declineUpload(token, fileId) {
     const share = activeShares.get(token);
-    if (!share) return;
+    if (!share || !share.files || !share.files[fileId]) return;
 
     sendRelayMessage({
       type: 'decline-upload',
-      token
+      token,
+      fileId
     });
 
-    // Reset status back to waiting or delete if download once
-    if (share.expiryMode === 'download') {
-      activeShares.delete(token);
+    share.files[fileId].status = 'declined';
+    renderActiveShares();
+    showToast(`Declined: ${share.files[fileId].name}`, 'info');
+  }
+
+  function processSequentialQueue(token) {
+    const share = activeShares.get(token);
+    if (!share || share.downloadMode !== 'sequential') return;
+
+    const nextFile = Object.values(share.files).find(f => f.status === 'pending_accept');
+    if (nextFile) {
+      acceptUpload(token, nextFile.id);
     } else {
       share.status = 'waiting';
-      share.file = null;
+      renderActiveShares();
     }
-    renderActiveShares();
-    showToast('Upload request declined.', 'info');
   }
 
   function getFriendlyExpiry(mode, isReceive = false) {
@@ -3409,9 +3505,8 @@
     }
   }
 
-
-  function updateActiveShareProgressUI(token, percent, bytesTransferred) {
-    const item = $(`#share-item-${token} .status-text`);
+  function updateActiveShareProgressUI(fileId, percent, bytesTransferred) {
+    const item = $(`#file-item-${fileId} .status-text`);
     if (item) {
       item.textContent = `Receiving (${percent}%)`;
     }
