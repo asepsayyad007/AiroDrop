@@ -540,8 +540,16 @@ ipcMain.on('receive-file-start', (event, { token, filename, size, mimeType }) =>
 
 ipcMain.on('receive-file-chunk', (event, { token, chunk }) => {
   const session = activeWriteStreams.get(token);
-  if (session && session.writeStream) {
-    session.writeStream.write(Buffer.from(chunk));
+  if (session && session.writeStream && chunk) {
+    let buffer;
+    if (Buffer.isBuffer(chunk)) {
+      buffer = chunk;
+    } else if (chunk.buffer) {
+      buffer = Buffer.from(chunk.buffer, chunk.byteOffset || 0, chunk.byteLength || chunk.length);
+    } else {
+      buffer = Buffer.from(chunk);
+    }
+    session.writeStream.write(buffer);
   }
 });
 
