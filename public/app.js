@@ -3294,7 +3294,63 @@
       reader.onload = (e) => {
         previewImg.src = e.target.result;
       };
-      reader.readAsData    let html = '';
+      reader.readAsDataURL(file);
+    } else {
+      previewImg.style.display = 'none';
+      previewIcon.style.display = 'block';
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+        previewIcon.textContent = '🎵';
+      } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
+        previewIcon.textContent = '🎬';
+      } else if (['pdf'].includes(ext)) {
+        previewIcon.textContent = '📕';
+      } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+        previewIcon.textContent = '📦';
+      } else {
+        previewIcon.textContent = '📄';
+      }
+    }
+  }
+
+  function resetShareFileSelection(keepLinkContainer = false) {
+    selectedShareFile = null;
+    const fileInput = $('#shareFileInput');
+    if (fileInput) fileInput.value = '';
+
+    const fileDrop = $('#shareFileDrop');
+    const preview = $('#shareFilePreview');
+    const createBtn = $('#createShareBtn');
+    const linkContainer = $('#shareLinkContainer');
+    const qrContainer = $('#shareQrContainer');
+
+    if (fileDrop) fileDrop.style.display = 'flex';
+    if (preview) preview.style.display = 'none';
+    if (createBtn) {
+      createBtn.disabled = true;
+      createBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Create Share Link
+      `;
+    }
+    if (!keepLinkContainer) {
+      if (linkContainer) linkContainer.style.display = 'none';
+      if (qrContainer) qrContainer.style.display = 'none';
+    }
+  }
+
+  function renderActiveShares() {
+    const list = $('#activeSharesList');
+    if (!list) return;
+
+    if (activeShares.size === 0 || 
+        (activeShares.size === 1 && (activeShares.has('_registering') || activeShares.has('_registering_receive'))) ||
+        (activeShares.size === 2 && activeShares.has('_registering') && activeShares.has('_registering_receive'))) {
+      list.innerHTML = '<div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share or receive links. Select a file or generate a receive link above.</div>';
+      return;
+    }
+
+    let html = '';
     for (const [token, share] of activeShares.entries()) {
       if (token === '_registering' || token === '_registering_receive') continue;
 
