@@ -2927,8 +2927,20 @@
     const fileInput = $('#shareFileInput');
     const createBtn = $('#createShareBtn');
 
+    // Register mode toggle button click handlers programmatically
+    const modeSendBtn = $('#modeSendBtn');
+    const modeReceiveBtn = $('#modeReceiveBtn');
+    
+    if (modeSendBtn) {
+      modeSendBtn.addEventListener('click', () => window.switchShareMode('send'));
+    }
+    if (modeReceiveBtn) {
+      modeReceiveBtn.addEventListener('click', () => window.switchShareMode('receive'));
+    }
+
     if (fileDrop && fileInput) {
       fileDrop.addEventListener('click', () => fileInput.click());
+
 
       fileDrop.addEventListener('dragover', (e) => {
         e.preventDefault();

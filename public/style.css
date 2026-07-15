@@ -2711,3 +2711,16 @@ input:checked + .slider:before {
   100% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0); }
 }
 
+/* ─── Share Mode Segmented Selector ─── */
+.share-mode-btn.active {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.share-mode-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+
