@@ -2724,8 +2724,6 @@
           break;
         }
 
-        }
-
         case 'request-stream': {
           // A recipient has requested the download — stream the file!
           const token = msg.token;
