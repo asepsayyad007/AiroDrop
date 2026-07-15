@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AiroDrop — Send File to Friend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0b10;
+      --bg-card: rgba(20, 22, 34, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --accent: #0088cc; /* Teal/Blue to differentiate upload from download's orange */
+      --accent-glow: rgba(0, 136, 204, 0.15);
+      --font-outfit: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-outfit);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient gradient backgrounds */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(0, 136, 204, 0.08) 0%, rgba(0,0,0,0) 70%);
+      top: 10%;
+      left: 10%;
+      z-index: 1;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(0, 210, 106, 0.05) 0%, rgba(0,0,0,0) 70%);
+      bottom: 10%;
+      right: 10%;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 460px;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 35px 30px;
+      border-radius: 28px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .p2p-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      color: #00d26a;
+      background: rgba(0, 210, 106, 0.08);
+      border: 1px solid rgba(0, 210, 106, 0.15);
+      padding: 6px 12px;
+      border-radius: 30px;
+      margin-bottom: 24px;
+    }
+
+    .p2p-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #00d26a;
+      animation: pulse-green 2s infinite;
+    }
+
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(0, 210, 106, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0); }
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      width: 100%;
+      height: 180px;
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.01);
+      margin-bottom: 24px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0, 136, 204, 0.04);
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      transition: transform 0.3s ease;
+    }
+
+    .drop-zone:hover .drop-icon {
+      transform: translateY(-4px);
+    }
+
+    .drop-text {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Selected File View */
+    .file-preview {
+      display: none;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      padding: 16px;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .file-icon {
+      font-size: 2rem;
+    }
+
+    .file-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-size {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #ff3b30;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    .btn-remove:hover {
+      opacity: 1;
+    }
+
+    /* Button and Progress */
+    .btn-upload {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: linear-gradient(135deg, #0088cc 0%, #00d26a 100%);
+      color: white;
+      border: none;
+      padding: 16px 28px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-upload:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0, 136, 204, 0.3);
+    }
+
+    .btn-upload:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .progress-container {
+      display: none;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    .progress-bar-wrapper {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0088cc, #00d26a);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .progress-text-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Brand Logo footer */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 30px;
+      opacity: 0.5;
+    }
+
+    .brand img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .brand span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .hint-text {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      opacity: 0.7;
+      margin-top: 20px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Toast system */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      background: rgba(255, 59, 48, 0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      display: none;
+      z-index: 100;
+      animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="p2p-badge">
+      <span class="dot"></span>
+      <span>Direct P2P Link</span>
+    </div>
+
+    <h1>Send File to PC</h1>
+    <div class="subtitle" id="recipientText">Your friend is waiting for a file...</div>
+
+    <!-- Drop Zone -->
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-icon">📁</span>
+      <span class="drop-text">Click or drop file here</span>
+      <input type="file" id="fileInput" style="display: none;">
+    </div>
+
+    <!-- Selected File Preview -->
+    <div class="file-preview" id="filePreview">
+      <span class="file-icon" id="fileIcon">📄</span>
+      <div class="file-details">
+        <div class="file-name" id="fileName">file.txt</div>
+        <div class="file-size" id="fileSize">0 KB</div>
+      </div>
+      <button class="btn-remove" id="btnRemove" title="Remove file">✕</button>
+    </div>
+
+    <!-- Progress UI -->
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text-row">
+        <span id="progressPercent">0%</span>
+        <span id="progressRate">0 KB/s</span>
+      </div>
+    </div>
+
+    <!-- Upload Button -->
+    <button class="btn-upload" id="btnUpload" disabled>
+      Send File
+    </button>
+
+    <div class="hint-text">
+      The file streams directly in real-time to your friend's PC.<br>It is never stored in the cloud.
+    </div>
+
+    <div class="brand">
+      <img src="https://airodrop.bootstrapx007.online/logo.png" alt="AiroDrop" onerror="this.src='/logo.png'">
+      <span>AiroDrop</span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const token = window.location.pathname.split('/').pop();
+    let selectedFile = null;
+    let isUploading = false;
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileIcon = document.getElementById('fileIcon');
+    const btnRemove = document.getElementById('btnRemove');
+    const btnUpload = document.getElementById('btnUpload');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressRate = document.getElementById('progressRate');
+    const toast = document.getElementById('toast');
+
+    // 1. Check if token is valid and PC host is online
+    async function checkStatus() {
+      try {
+        const res = await fetch(`/u/${token}/info`);
+        if (!res.ok) {
+          window.location.reload(); // Expired page will be served
+          return;
+        }
+        const data = await res.json();
+        if (!data.pcOnline) {
+          showToast("PC is currently offline.", true);
+          btnUpload.disabled = true;
+        }
+      } catch (err) {
+        showToast("Error checking connection status.", true);
+      }
+    }
+
+    setInterval(checkStatus, 15000);
+    checkStatus();
+
+    // 2. Drag & Drop Handlers
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        handleFileSelect(fileInput.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatSize(file.size);
+      
+      // Select icon based on file type
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) fileIcon.textContent = '🎵';
+      else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) fileIcon.textContent = '🎬';
+      else if (['pdf'].includes(ext)) fileIcon.textContent = '📕';
+      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) fileIcon.textContent = '📦';
+      else if (file.type.startsWith('image/')) fileIcon.textContent = '🖼️';
+      else fileIcon.textContent = '📄';
+
+      dropZone.style.display = 'none';
+      filePreview.style.display = 'flex';
+      btnUpload.disabled = false;
+    }
+
+    btnRemove.addEventListener('click', () => {
+      if (isUploading) return;
+      selectedFile = null;
+      fileInput.value = '';
+      dropZone.style.display = 'flex';
+      filePreview.style.display = 'none';
+      btnUpload.disabled = true;
+    });
+
+    // 3. Upload Execution
+    btnUpload.addEventListener('click', async () => {
+      if (!selectedFile || isUploading) return;
+
+      isUploading = true;
+      btnUpload.disabled = true;
+      btnRemove.style.display = 'none';
+      progressContainer.style.display = 'block';
+
+      showToast("Starting real-time pipe stream...", false);
+
+      const startTime = Date.now();
+      let lastUploaded = 0;
+      let lastTime = Date.now();
+
+      try {
+        // Stream body custom implementation using XMLHTTPRequest to track progress
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/u/${token}/upload`, true);
+        
+        // Pass file metadata in request headers
+        xhr.setRequestHeader('x-file-name', encodeURIComponent(selectedFile.name));
+        xhr.setRequestHeader('x-file-size', selectedFile.size);
+        xhr.setRequestHeader('x-file-type', selectedFile.type || 'application/octet-stream');
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+
+            // Calculate transfer speed
+            const now = Date.now();
+            const timeDiff = (now - lastTime) / 1000;
+            if (timeDiff >= 0.5) {
+              const loadedDiff = e.loaded - lastUploaded;
+              const rate = loadedDiff / timeDiff;
+              progressRate.textContent = `${formatSize(rate)}/s`;
+              lastUploaded = e.loaded;
+              lastTime = now;
+            }
+          }
+        };
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(JSON.parse(xhr.responseText));
+            } else {
+              reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Network error.'));
+          xhr.onabort = () => reject(new Error('Upload cancelled.'));
+        });
+
+        xhr.send(selectedFile);
+        await uploadPromise;
+
+        // Success state
+        showToast("File sent successfully!", false);
+        progressBar.style.width = '100%';
+        progressBar.style.background = '#00d26a';
+        progressPercent.textContent = 'Completed';
+        progressRate.textContent = '';
+        btnUpload.textContent = 'File Sent!';
+        btnUpload.style.background = '#00d26a';
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+
+      } catch (err) {
+        showToast(err.message, true);
+        isUploading = false;
+        btnUpload.disabled = false;
+        btnRemove.style.display = 'block';
+        progressContainer.style.display = 'none';
+        btnUpload.textContent = 'Send File';
+      }
+    });
+
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showToast(msg, isError = false) {
+      toast.textContent = msg;
+      toast.style.background = isError ? 'rgba(255, 59, 48, 0.9)' : 'rgba(0, 136, 204, 0.9)';
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

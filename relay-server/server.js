@@ -43,6 +43,9 @@ const shares = new Map();
 const sessions = new Map();
 // Pending download responses waiting for stream data
 const pendingDownloads = new Map();
+// Pending upload requests being piped to active WS sessions
+const pendingUploads = new Map();
+
 
 // ─── Utility Functions ──────────────────────────────────────
 function generateToken() {
@@ -183,6 +186,46 @@ wss.on('connection', (ws, req) => {
         break;
       }
 
+      case 'register-receive': {
+        if (!sessionKey) {
+          safeSend(ws, { type: 'error', message: 'Not authenticated' });
+          return;
+        }
+
+        // Enforce per-session limit
+        let count = 0;
+        for (const s of shares.values()) {
+          if (s.sessionKey === sessionKey && s.status !== 'expired' && s.status !== 'completed') count++;
+        }
+        if (count >= MAX_SHARES_PER_SESSION) {
+          safeSend(ws, { type: 'error', message: `Max ${MAX_SHARES_PER_SESSION} active shares reached` });
+          return;
+        }
+
+        const token = generateToken();
+        const expiryMode = msg.expiryMode || 'download';
+        const share = {
+          token,
+          direction: 'receive',
+          expiryMode,
+          expiresAt: getExpiresAt(expiryMode),
+          deleteAfterDownload: expiryMode === 'download',
+          sessionKey,
+          status: 'waiting',
+          createdAt: Date.now()
+        };
+        shares.set(token, share);
+
+        log('info', 'Receive link registered', { token, expiryMode });
+        safeSend(ws, {
+          type: 'receive-registered',
+          token,
+          expiryMode
+        });
+        break;
+      }
+
+
       case 'cancel-share': {
         const share = shares.get(msg.token);
         if (share && share.sessionKey === sessionKey) {
@@ -283,6 +326,21 @@ wss.on('connection', (ws, req) => {
           pendingDownloads.delete(token);
         }
       }
+
+      // Abort any pending uploads for this session
+      for (const [token, ul] of pendingUploads.entries()) {
+        const share = shares.get(token);
+        if (share && share.sessionKey === sessionKey && ul.active) {
+          ul.active = false;
+          if (!ul.res.headersSent) {
+            ul.res.status(503).send('PC host disconnected.');
+          } else {
+            ul.res.end();
+          }
+          pendingUploads.delete(token);
+        }
+      }
+
 
       // Mark all shares from this session as expired
       for (const [token, share] of shares.entries()) {
@@ -455,6 +513,182 @@ app.get('/d/:token/download', (req, res) => {
   });
 });
 
+// ─── Upload Routes (Receive from Friend) ────────────────────
+
+// Metadata preview for upload link
+app.get('/u/:token/info', (req, res) => {
+  const share = shares.get(req.params.token);
+  if (!share || share.direction !== 'receive' || share.status === 'expired' || share.status === 'completed') {
+    return res.status(404).json({ error: 'Upload link expired or not found' });
+  }
+  if (share.expiresAt && Date.now() > share.expiresAt) {
+    share.status = 'expired';
+    shares.delete(req.params.token);
+    return res.status(404).json({ error: 'Upload link expired' });
+  }
+  
+  const pcSocket = sessions.get(share.sessionKey);
+  const pcOnline = pcSocket && pcSocket.readyState === WebSocket.OPEN;
+
+  res.json({
+    expiryMode: share.expiryMode,
+    pcOnline,
+    status: share.status
+  });
+});
+
+// Serves the beautiful upload page
+app.get('/u/:token', (req, res) => {
+  const token = req.params.token;
+  const share = shares.get(token);
+
+  if (!share || share.direction !== 'receive' || share.status === 'expired' || share.status === 'completed') {
+    return serveStyledPage(res, 'expired.html');
+  }
+
+  if (share.expiresAt && Date.now() > share.expiresAt) {
+    share.status = 'expired';
+    shares.delete(token);
+    return serveStyledPage(res, 'expired.html');
+  }
+
+  const pcSocket = sessions.get(share.sessionKey);
+  if (!pcSocket || pcSocket.readyState !== WebSocket.OPEN) {
+    return serveStyledPage(res, 'offline.html', 503);
+  }
+
+  serveStyledPage(res, 'upload.html', 200);
+});
+
+// File upload — accepts raw binary stream and forwards it via WebSocket to PC
+app.post('/u/:token/upload', (req, res) => {
+  const token = req.params.token;
+  const share = shares.get(token);
+
+  if (!share || share.direction !== 'receive' || share.status === 'expired' || share.status === 'completed') {
+    return res.status(404).send('Upload link expired or not found.');
+  }
+
+  if (share.expiresAt && Date.now() > share.expiresAt) {
+    share.status = 'expired';
+    shares.delete(token);
+    return res.status(404).send('Upload link expired.');
+  }
+
+  const pcSocket = sessions.get(share.sessionKey);
+  if (!pcSocket || pcSocket.readyState !== WebSocket.OPEN) {
+    return res.status(503).send('PC host is currently offline.');
+  }
+
+  if (pendingUploads.has(token)) {
+    return res.status(429).send('An upload is already in progress for this link.');
+  }
+
+  // Extract file metadata from custom headers
+  const filename = decodeURIComponent(req.headers['x-file-name'] || 'uploaded_file');
+  const size = parseInt(req.headers['x-file-size'], 10) || 0;
+  const mimeType = req.headers['x-file-type'] || 'application/octet-stream';
+
+  const upload = {
+    res,
+    active: true,
+    bytesTransferred: 0,
+    startedAt: Date.now()
+  };
+  pendingUploads.set(token, upload);
+  share.status = 'receiving';
+
+  log('info', 'Upload started', { token, filename, size, ip: req.ip });
+
+  // Notify the PC that a streaming upload is starting
+  safeSend(pcSocket, {
+    type: 'upload-started',
+    token,
+    filename,
+    size,
+    mimeType
+  });
+
+  // Handle incoming stream data chunks
+  req.on('data', (chunk) => {
+    if (!upload.active) return;
+
+    // Send binary packet with header prefix over WebSocket to PC:
+    // [1 byte token length (N)] + [N bytes token string] + [raw chunk data]
+    const tokenBuffer = Buffer.from(token, 'ascii');
+    const headerBuffer = Buffer.alloc(1);
+    headerBuffer.writeUInt8(tokenBuffer.length, 0);
+
+    const binaryPacket = Buffer.concat([headerBuffer, tokenBuffer, chunk]);
+    
+    if (pcSocket.readyState === WebSocket.OPEN) {
+      const writable = pcSocket.send(binaryPacket, { binary: true });
+      upload.bytesTransferred += chunk.length;
+
+      // Backpressure handling: if the PC socket is full, pause the incoming request stream
+      if (!writable) {
+        req.pause();
+        pcSocket.once('drain', () => req.resume());
+      }
+    } else {
+      handleUploadError(new Error('PC WebSocket disconnected during upload'));
+    }
+  });
+
+  req.on('end', () => {
+    if (!upload.active) return;
+    
+    upload.active = false;
+    pendingUploads.delete(token);
+    
+    log('info', 'Upload complete', { token, bytes: upload.bytesTransferred });
+    
+    // Notify the PC that the upload has finished streaming
+    safeSend(pcSocket, {
+      type: 'upload-complete',
+      token,
+      bytesTransferred: upload.bytesTransferred
+    });
+
+    if (share.deleteAfterDownload) {
+      share.status = 'completed';
+      shares.delete(token);
+    } else {
+      share.status = 'waiting';
+    }
+
+    res.json({ success: true, bytesTransferred: upload.bytesTransferred });
+  });
+
+  req.on('close', () => {
+    if (upload.active) {
+      handleUploadError(new Error('Connection closed by uploader'));
+    }
+  });
+
+  function handleUploadError(err) {
+    if (!upload.active) return;
+    upload.active = false;
+    pendingUploads.delete(token);
+    share.status = 'waiting';
+
+    log('error', 'Upload failed', { token, error: err.message });
+
+    safeSend(pcSocket, {
+      type: 'upload-error',
+      token,
+      message: err.message
+    });
+
+    if (!res.headersSent) {
+      res.status(500).send(err.message);
+    } else {
+      res.end();
+    }
+  }
+});
+
+
 // ─── WebSocket Upgrade ──────────────────────────────────────
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
@@ -507,6 +741,19 @@ const cleanupInterval = setInterval(() => {
         }
         pendingDownloads.delete(token);
       }
+      
+      // Abort any pending upload
+      const ul = pendingUploads.get(token);
+      if (ul && ul.active) {
+        ul.active = false;
+        if (!ul.res.headersSent) {
+          ul.res.status(410).send('Upload link expired.');
+        } else {
+          ul.res.end();
+        }
+        pendingUploads.delete(token);
+      }
+
       shares.delete(token);
       log('info', 'Expired share cleaned up', { token });
     }
@@ -527,6 +774,16 @@ function shutdown(signal) {
     }
     pendingDownloads.delete(token);
   }
+
+  // Close all pending uploads
+  for (const [token, ul] of pendingUploads.entries()) {
+    if (ul.active) {
+      ul.active = false;
+      ul.res.end();
+    }
+    pendingUploads.delete(token);
+  }
+
 
   // Close all WebSocket connections
   wss.clients.forEach(ws => ws.close(1001, 'Server shutting down'));

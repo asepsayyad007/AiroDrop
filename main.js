@@ -9,6 +9,8 @@ let mainWindow = null;
 let tray = null;
 let isQuitting = false;
 let serverRunning = false;
+const activeWriteStreams = new Map();
+
 let serverPort = null;
 
 // ─── Single Instance Lock ─────────────────────────────────────
@@ -497,6 +499,129 @@ ipcMain.on('open-file-folder', (event, filename) => {
   const filePath = path.join(server.getSaveDir(), filename);
   shell.showItemInFolder(filePath);
 });
+
+
+// ─── Direct Streaming Upload IPC Handlers ──────────────────────
+
+ipcMain.on('receive-file-start', (event, { token, filename, size, mimeType }) => {
+  const state = require('./src/state');
+  
+  try {
+    const originalName = filename;
+    const ext = path.extname(originalName) || '.bin';
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
+    const finalFilename = `${timestamp}_${safeName || 'file'}${ext}`;
+    
+    const saveDir = state.SAVE_DIR || path.join(app.getPath('userData'), 'received');
+    if (!fs.existsSync(saveDir)) {
+      fs.mkdirSync(saveDir, { recursive: true });
+    }
+
+    const tempPath = path.join(saveDir, `${finalFilename}.tmp`);
+    const finalPath = path.join(saveDir, finalFilename);
+    const writeStream = fs.createWriteStream(tempPath);
+
+    activeWriteStreams.set(token, {
+      writeStream,
+      tempPath,
+      finalPath,
+      filename: finalFilename,
+      originalName,
+      size,
+      mimeType: mimeType || 'application/octet-stream'
+    });
+
+    console.log(`[IPC] File streaming start initialized for token ${token}: ${tempPath}`);
+  } catch (err) {
+    console.error('[IPC] Failed to start receive write stream:', err);
+  }
+});
+
+ipcMain.on('receive-file-chunk', (event, { token, chunk }) => {
+  const session = activeWriteStreams.get(token);
+  if (session && session.writeStream) {
+    session.writeStream.write(Buffer.from(chunk));
+  }
+});
+
+ipcMain.on('receive-file-end', (event, { token }) => {
+  const session = activeWriteStreams.get(token);
+  if (session) {
+    session.writeStream.end(() => {
+      try {
+        if (fs.existsSync(session.tempPath)) {
+          fs.renameSync(session.tempPath, session.finalPath);
+          console.log(`[IPC] Received file successfully saved to: ${session.finalPath}`);
+
+          // Register in system history & notify UI via SSE
+          const utils = require('./src/utils');
+          const isImg = session.mimeType.startsWith('image/');
+          
+          let clipboardSuccess = false;
+          if (isImg) {
+            try {
+              const { copyImage } = require('./clipboard');
+              const clipResult = copyImage(session.finalPath);
+              clipboardSuccess = clipResult.success;
+            } catch (clipErr) {
+              console.error('[IPC] Failed to copy image to clipboard:', clipErr);
+            }
+          }
+
+          const relativePath = path.relative(path.join(__dirname), session.finalPath);
+
+          const item = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            type: isImg ? 'image' : 'file',
+            filename: session.filename,
+            originalName: session.originalName,
+            path: relativePath,
+            size: session.size,
+            mimetype: session.mimeType,
+            timestamp: new Date().toISOString(),
+            clipboardSuccess
+          };
+
+          utils.addToHistory(item);
+
+          // Trigger OS notification
+          const notifier = require('node-notifier');
+          notifier.notify({
+            title: 'AiroDrop',
+            message: `Received File: ${session.originalName}`,
+            icon: path.join(__dirname, 'public', 'logo.png')
+          });
+
+          // Open the folder to show the file (optional, matching AiroDrop UX)
+          shell.showItemInFolder(session.finalPath);
+        }
+      } catch (err) {
+        console.error('[IPC] Failed to save/rename file stream:', err);
+      } finally {
+        activeWriteStreams.delete(token);
+      }
+    });
+  }
+});
+
+ipcMain.on('receive-file-error', (event, { token }) => {
+  const session = activeWriteStreams.get(token);
+  if (session) {
+    try {
+      session.writeStream.destroy();
+      if (fs.existsSync(session.tempPath)) {
+        fs.unlinkSync(session.tempPath);
+      }
+      console.log(`[IPC] Cleaned up aborted stream session: ${token}`);
+    } catch (err) {
+      console.error('[IPC] Error cleaning up aborted session:', err);
+    } finally {
+      activeWriteStreams.delete(token);
+    }
+  }
+});
+
 
 ipcMain.on('restore-window', () => {
   if (mainWindow) {

@@ -2461,6 +2461,38 @@
   let isConnectingRelay = false;
   let heartbeatInterval = null;
 
+  window.switchShareMode = (mode) => {
+    const sendBtn = $('#modeSendBtn');
+    const receiveBtn = $('#modeReceiveBtn');
+    const sendContainer = $('#sendModeContainer');
+    const receiveContainer = $('#receiveModeContainer');
+    
+    if (mode === 'send') {
+      if (sendBtn) {
+        sendBtn.classList.add('active');
+        sendBtn.style.color = 'var(--text-primary)';
+      }
+      if (receiveBtn) {
+        receiveBtn.classList.remove('active');
+        receiveBtn.style.color = 'var(--text-secondary)';
+      }
+      if (sendContainer) sendContainer.style.display = 'block';
+      if (receiveContainer) receiveContainer.style.display = 'none';
+    } else {
+      if (receiveBtn) {
+        receiveBtn.classList.add('active');
+        receiveBtn.style.color = 'var(--text-primary)';
+      }
+      if (sendBtn) {
+        sendBtn.classList.remove('active');
+        sendBtn.style.color = 'var(--text-secondary)';
+      }
+      if (sendContainer) sendContainer.style.display = 'none';
+      if (receiveContainer) receiveContainer.style.display = 'block';
+    }
+  };
+
+
   let sessionKey = sessionStorage.getItem('airodrop_share_session');
   if (!sessionKey) {
     sessionKey = 'pc_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -2501,6 +2533,38 @@
     };
 
     relayWs.onmessage = async (event) => {
+      // Handle incoming binary chunks for active receive links
+      if (event.data instanceof Blob || event.data instanceof ArrayBuffer) {
+        let buffer = event.data;
+        if (event.data instanceof Blob) {
+          buffer = await event.data.arrayBuffer();
+        }
+        
+        try {
+          const view = new DataView(buffer);
+          const tokenLen = view.getUint8(0);
+          const decoder = new TextDecoder('ascii');
+          const token = decoder.decode(new Uint8Array(buffer, 1, tokenLen));
+          const chunk = new Uint8Array(buffer, 1 + tokenLen);
+          
+          const receive = activeShares.get(token);
+          if (receive && receive.status === 'receiving') {
+            receive.bytesTransferred += chunk.length;
+            receive.percent = receive.size > 0
+              ? Math.min(100, Math.round((receive.bytesTransferred / receive.size) * 100))
+              : 0;
+            
+            updateActiveShareProgressUI(token, receive.percent, receive.bytesTransferred);
+            
+            // Forward chunk to Electron main process to write to disk
+            ipcRenderer.send('receive-file-chunk', { token, chunk });
+          }
+        } catch (binErr) {
+          console.error('[RelayWS] Error processing binary packet:', binErr);
+        }
+        return;
+      }
+
       let msg;
       try {
         msg = JSON.parse(event.data);
@@ -2509,6 +2573,7 @@
       }
 
       switch (msg.type) {
+
         case 'auth-ok': {
           console.log('[RelayWS] Authenticated with relay server.');
           break;
@@ -2553,6 +2618,112 @@
             resetShareFileSelection(true);
           }
           break;
+        }
+
+        case 'receive-registered': {
+          const receive = activeShares.get('_registering_receive');
+          if (receive) {
+            activeShares.delete('_registering_receive');
+            receive.status = 'waiting';
+            receive.token = msg.token;
+            const uploadUrl = `${RELAY_BASE_URL}/u/${msg.token}`;
+            receive.url = uploadUrl;
+            activeShares.set(msg.token, receive);
+            
+            // Show generated link UI
+            const linkContainer = $('#shareLinkContainer');
+            const linkUrlEl = $('#shareLinkUrl');
+            const createBtn = $('#createReceiveBtn');
+
+            if (linkUrlEl) linkUrlEl.textContent = uploadUrl;
+            if (linkContainer) linkContainer.style.display = 'block';
+            if (createBtn) {
+              createBtn.disabled = false;
+              createBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Generate Receive Link
+              `;
+            }
+
+            // Copy to clipboard automatically
+            try {
+              await navigator.clipboard.writeText(uploadUrl);
+              showToast('Upload link created & copied!', 'success');
+            } catch (e) {
+              showToast('Upload link created!', 'success');
+            }
+
+            // Render QR Code
+            renderShareQr(uploadUrl);
+            renderActiveShares();
+          }
+          break;
+        }
+
+        case 'upload-started': {
+          const token = msg.token;
+          const receive = activeShares.get(token);
+          if (receive) {
+            receive.status = 'receiving';
+            receive.file = { name: msg.filename, size: msg.size }; // Mock file object for UI list rendering
+            receive.bytesTransferred = 0;
+            receive.percent = 0;
+            renderActiveShares();
+            console.log(`[RelayWS] Upload started: ${msg.filename} (${msg.size} bytes)`);
+
+            // Tell Electron main process to open file stream
+            ipcRenderer.send('receive-file-start', {
+              token,
+              filename: msg.filename,
+              size: msg.size
+            });
+          }
+          break;
+        }
+
+        case 'upload-complete': {
+          const token = msg.token;
+          const receive = activeShares.get(token);
+          if (receive) {
+            receive.status = 'completed';
+            receive.percent = 100;
+            receive.bytesTransferred = msg.bytesTransferred;
+            renderActiveShares();
+            showToast(`Upload of "${receive.file.name}" completed!`, 'success');
+
+            // Tell Electron main process to finalize and save the file
+            ipcRenderer.send('receive-file-end', { token });
+
+            if (receive.expiryMode === 'download') {
+              activeShares.delete(token);
+              // Hide link UI if it matches
+              const linkUrlEl = $('#shareLinkUrl');
+              if (linkUrlEl && linkUrlEl.textContent === receive.url) {
+                const linkContainer = $('#shareLinkContainer');
+                if (linkContainer) linkContainer.style.display = 'none';
+              }
+              setTimeout(renderActiveShares, 2000);
+            }
+          }
+          break;
+        }
+
+        case 'upload-error': {
+          const token = msg.token;
+          const receive = activeShares.get(token);
+          if (receive) {
+            receive.status = 'waiting';
+            receive.percent = 0;
+            receive.bytesTransferred = 0;
+            renderActiveShares();
+            showToast(`Upload interrupted: ${msg.message}`, 'error');
+
+            // Tell Electron main process to delete the partial temp file
+            ipcRenderer.send('receive-file-error', { token });
+          }
+          break;
+        }
+
         }
 
         case 'request-stream': {
@@ -2821,7 +2992,41 @@
       });
     }
 
+    const createReceiveBtn = $('#createReceiveBtn');
+    if (createReceiveBtn) {
+      createReceiveBtn.addEventListener('click', () => {
+        if (!relayWs || relayWs.readyState !== WebSocket.OPEN) {
+          showToast('Not connected to relay server. Reconnecting...', 'error');
+          initRelayWebSocket();
+          return;
+        }
+
+        createReceiveBtn.disabled = true;
+        createReceiveBtn.innerHTML = `
+          <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
+          Generating Link...
+        `;
+
+        const expiryMode = document.querySelector('input[name="receiveExpiry"]:checked').value;
+
+        const newReceive = {
+          direction: 'receive',
+          status: 'registering',
+          bytesTransferred: 0,
+          percent: 0,
+          expiryMode
+        };
+        activeShares.set('_registering_receive', newReceive);
+
+        sendRelayMessage({
+          type: 'register-receive',
+          expiryMode
+        });
+      });
+    }
+
     const clearShareFileBtn = $('#clearShareFileBtn');
+
     if (clearShareFileBtn) {
       clearShareFileBtn.addEventListener('click', () => resetShareFileSelection(false));
     }
@@ -2968,41 +3173,77 @@
     const list = $('#activeSharesList');
     if (!list) return;
 
-    if (activeShares.size === 0 || (activeShares.size === 1 && activeShares.has('_registering'))) {
-      list.innerHTML = '<div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share links. Select a file above to create one.</div>';
+    if (activeShares.size === 0 || 
+        (activeShares.size === 1 && (activeShares.has('_registering') || activeShares.has('_registering_receive'))) ||
+        (activeShares.size === 2 && activeShares.has('_registering') && activeShares.has('_registering_receive'))) {
+      list.innerHTML = '<div class="empty-shares-text" style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 20px 0;">No active share or receive links. Select a file or generate a receive link above.</div>';
       return;
     }
 
     let html = '';
     for (const [token, share] of activeShares.entries()) {
-      if (token === '_registering') continue;
+      if (token === '_registering' || token === '_registering_receive') continue;
 
       let statusText = 'Waiting';
       let statusClass = 'waiting';
       
-      if (share.status === 'downloading') {
-        statusText = `Downloading (${share.percent || 0}%)`;
-        statusClass = 'downloading';
-      } else if (share.status === 'completed') {
-        statusText = 'Completed';
-        statusClass = 'completed';
+      if (share.direction === 'receive') {
+        if (share.status === 'receiving') {
+          statusText = `Receiving (${share.percent || 0}%)`;
+          statusClass = 'downloading'; // Reuse download styling (yellow-orange indicator)
+        } else if (share.status === 'completed') {
+          statusText = 'Completed';
+          statusClass = 'completed';
+        }
+      } else {
+        if (share.status === 'downloading') {
+          statusText = `Downloading (${share.percent || 0}%)`;
+          statusClass = 'downloading';
+        } else if (share.status === 'completed') {
+          statusText = 'Completed';
+          statusClass = 'completed';
+        }
       }
 
-      const ext = share.file.name.split('.').pop().toLowerCase();
+      let name = '';
+      let meta = '';
       let icon = '📄';
-      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
-      else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
-      else if (['pdf'].includes(ext)) icon = '📕';
-      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
-      else if (share.file.type.startsWith('image/')) icon = '🖼️';
+
+      if (share.direction === 'receive') {
+        if (share.status === 'waiting') {
+          name = 'Waiting for upload...';
+          meta = `Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
+          icon = '📥';
+        } else {
+          name = share.file.name;
+          meta = `${formatSize(share.file.size)} • Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
+          
+          const ext = share.file.name.split('.').pop().toLowerCase();
+          if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+          else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+          else if (['pdf'].includes(ext)) icon = '📕';
+          else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+          else icon = '📄';
+        }
+      } else {
+        name = share.file.name;
+        meta = `${formatSize(share.file.size)} • Send Link • Expiry: ${getFriendlyExpiry(share.expiryMode, false)}`;
+        
+        const ext = share.file.name.split('.').pop().toLowerCase();
+        if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+        else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+        else if (['pdf'].includes(ext)) icon = '📕';
+        else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+        else if (share.file.type.startsWith('image/')) icon = '🖼️';
+      }
 
       html += `
         <div class="active-share-item" id="share-item-${token}">
           <div class="active-share-info">
             <span class="active-share-icon">${icon}</span>
             <div class="active-share-details">
-              <span class="active-share-name" title="${share.file.name}">${share.file.name}</span>
-              <span class="active-share-meta">${formatSize(share.file.size)} • Expiry: ${getFriendlyExpiry(share.expiryMode)}</span>
+              <span class="active-share-name" title="${name}">${name}</span>
+              <span class="active-share-meta">${meta}</span>
             </div>
           </div>
           <div class="active-share-status-area">
@@ -3010,7 +3251,7 @@
               <span class="status-dot"></span>
               <span class="status-text">${statusText}</span>
             </span>
-            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Share Link">
+            <button class="active-share-revoke-btn" data-token="${token}" title="Revoke Link">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -3021,15 +3262,16 @@
     list.innerHTML = html;
   }
 
-  function getFriendlyExpiry(mode) {
+  function getFriendlyExpiry(mode, isReceive = false) {
     switch (mode) {
-      case 'download': return '1-time download';
+      case 'download': return isReceive ? '1-time upload' : '1-time download';
       case '1h': return '1 hour';
       case '6h': return '6 hours';
       case '24h': return '24 hours';
       default: return mode;
     }
   }
+
 
   function updateActiveShareProgressUI(token, percent, bytesTransferred) {
     const item = $(`#share-item-${token} .status-text`);

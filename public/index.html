@@ -201,73 +201,143 @@
 
       <!-- Tab 4: Send to Friend (Share Link) -->
       <section class="tab-content" id="tab-share">
-        <div class="send-split-container">
-          <!-- Select File Card -->
-          <div class="send-card">
-            <h3>Select File</h3>
-            <p class="hint-text">Choose a file to stream directly to your friend</p>
-            <div class="file-drop" id="shareFileDrop">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <p>Click or drop file here</p>
-            </div>
-            <input type="file" id="shareFileInput" hidden>
-            <div id="shareFilePreview" class="send-image-preview" style="display:none; flex-direction:column; align-items:center;">
-              <img id="sharePreviewImg" alt="Preview">
-              <div id="shareFilePreviewIcon" class="file-preview-icon" style="display:none;">📄</div>
-              <span id="shareFileName" style="font-size:0.82rem;color:var(--text-secondary); margin-top:8px; text-align:center; word-break:break-all;"></span>
-              <button id="clearShareFileBtn" style="margin-top:12px; font-size:0.75rem; padding:6px 12px; background:rgba(255, 59, 48, 0.1); color:#ff3b30; border:1px solid rgba(255, 59, 48, 0.2); border-radius:8px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:4px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                Remove File
-              </button>
-            </div>
-          </div>
+        <!-- Mode Selector -->
+        <div class="share-mode-selector" style="display: flex; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: 12px; margin-bottom: 20px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;">
+          <button class="share-mode-btn active" id="modeSendBtn" style="flex: 1; padding: 10px; border: none; background: none; color: var(--text-primary); border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;" onclick="switchShareMode('send')">Send Files</button>
+          <button class="share-mode-btn" id="modeReceiveBtn" style="flex: 1; padding: 10px; border: none; background: none; color: var(--text-secondary); border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;" onclick="switchShareMode('receive')">Receive Files</button>
+        </div>
 
-          <!-- Share Expiry Options -->
-          <div class="send-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-              <h3>Expiry Settings</h3>
-              <p class="hint-text" style="margin-bottom: 15px;">Control when the download link becomes invalid</p>
-              
-              <div class="share-options">
-                <label class="share-option-label">
-                  <input type="radio" name="shareExpiry" value="download" checked>
-                  <span class="share-option-radio-btn">
-                    <span class="title">Delete after download</span>
-                    <span class="desc">Link works exactly once, then self-destructs</span>
-                  </span>
-                </label>
-                <label class="share-option-label">
-                  <input type="radio" name="shareExpiry" value="1h">
-                  <span class="share-option-radio-btn">
-                    <span class="title">1 Hour</span>
-                    <span class="desc">Link expires 1 hour from creation</span>
-                  </span>
-                </label>
-                <label class="share-option-label">
-                  <input type="radio" name="shareExpiry" value="6h">
-                  <span class="share-option-radio-btn">
-                    <span class="title">6 Hours</span>
-                    <span class="desc">Link expires 6 hours from creation</span>
-                  </span>
-                </label>
-                <label class="share-option-label">
-                  <input type="radio" name="shareExpiry" value="24h">
-                  <span class="share-option-radio-btn">
-                    <span class="title">24 Hours</span>
-                    <span class="desc">Link expires 24 hours from creation</span>
-                  </span>
-                </label>
+        <!-- SEND MODE CONTAINER -->
+        <div id="sendModeContainer">
+          <div class="send-split-container">
+            <!-- Select File Card -->
+            <div class="send-card">
+              <h3>Select File</h3>
+              <p class="hint-text">Choose a file to stream directly to your friend</p>
+              <div class="file-drop" id="shareFileDrop">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p>Click or drop file here</p>
+              </div>
+              <input type="file" id="shareFileInput" hidden>
+              <div id="shareFilePreview" class="send-image-preview" style="display:none; flex-direction:column; align-items:center;">
+                <img id="sharePreviewImg" alt="Preview">
+                <div id="shareFilePreviewIcon" class="file-preview-icon" style="display:none;">📄</div>
+                <span id="shareFileName" style="font-size:0.82rem;color:var(--text-secondary); margin-top:8px; text-align:center; word-break:break-all;"></span>
+                <button id="clearShareFileBtn" style="margin-top:12px; font-size:0.75rem; padding:6px 12px; background:rgba(255, 59, 48, 0.1); color:#ff3b30; border:1px solid rgba(255, 59, 48, 0.2); border-radius:8px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:4px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  Remove File
+                </button>
               </div>
             </div>
 
-            <button class="btn btn-primary" id="createShareBtn" style="margin-top: 20px;" disabled>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              Create Share Link
-            </button>
+            <!-- Share Expiry Options -->
+            <div class="send-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3>Expiry Settings</h3>
+                <p class="hint-text" style="margin-bottom: 15px;">Control when the download link becomes invalid</p>
+                
+                <div class="share-options">
+                  <label class="share-option-label">
+                    <input type="radio" name="shareExpiry" value="download" checked>
+                    <span class="share-option-radio-btn">
+                      <span class="title">Delete after download</span>
+                      <span class="desc">Link works exactly once, then self-destructs</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="shareExpiry" value="1h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">1 Hour</span>
+                      <span class="desc">Link expires 1 hour from creation</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="shareExpiry" value="6h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">6 Hours</span>
+                      <span class="desc">Link expires 6 hours from creation</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="shareExpiry" value="24h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">24 Hours</span>
+                      <span class="desc">Link expires 24 hours from creation</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" id="createShareBtn" style="margin-top: 20px;" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Create Share Link
+              </button>
+            </div>
           </div>
         </div>
+
+        <!-- RECEIVE MODE CONTAINER -->
+        <div id="receiveModeContainer" style="display: none;">
+          <div class="send-split-container">
+            <!-- Receive Settings Info Card -->
+            <div class="send-card">
+              <h3>Receive Request Settings</h3>
+              <p class="hint-text" style="margin-bottom: 20px;">Your friend can upload files directly to your PC.</p>
+              <div style="display: flex; align-items: center; justify-content: center; height: 120px; border-radius: var(--radius-md); background: rgba(255,255,255,0.01); border: 1px solid var(--glass-border); text-align: center; padding: 20px; flex-direction: column;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00d26a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Direct Stream to: <code style="color: var(--accent-light);">/received</code> directory</span>
+              </div>
+            </div>
+
+            <!-- Receive Expiry Settings Card -->
+            <div class="send-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <h3>Link Lifetime</h3>
+                <p class="hint-text" style="margin-bottom: 15px;">Configure the link expiration model</p>
+                <div class="share-options">
+                  <label class="share-option-label">
+                    <input type="radio" name="receiveExpiry" value="download" checked>
+                    <span class="share-option-radio-btn">
+                      <span class="title">1-time upload</span>
+                      <span class="desc">Link expires immediately after friend sends one file</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="receiveExpiry" value="1h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">1 Hour</span>
+                      <span class="desc">Link remains active for 1 hour</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="receiveExpiry" value="6h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">6 Hours</span>
+                      <span class="desc">Link remains active for 6 hours</span>
+                    </span>
+                  </label>
+                  <label class="share-option-label">
+                    <input type="radio" name="receiveExpiry" value="24h">
+                    <span class="share-option-radio-btn">
+                      <span class="title">24 Hours</span>
+                      <span class="desc">Link remains active for 24 hours</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" id="createReceiveBtn" style="margin-top: 20px; border-color: rgba(0, 210, 106, 0.35);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Generate Receive Link
+              </button>
+            </div>
+          </div>
+        </div>
+
 
         <!-- Generated Link Card -->
         <div class="send-card" id="shareLinkContainer" style="display: none; margin-top: 15px; max-width: 100%;">
