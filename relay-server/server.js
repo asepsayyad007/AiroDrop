@@ -776,14 +776,15 @@ app.post('/u/:token/upload', (req, res) => {
   function handleUploadError(err) {
     if (!upload.active) return;
     upload.active = false;
-    pendingUploads.delete(token);
+    pendingUploads.delete(fileId);
     share.status = 'waiting';
 
-    log('error', 'Upload failed', { token, error: err.message });
+    log('error', 'Upload failed', { token, fileId, error: err.message });
 
     safeSend(pcSocket, {
       type: 'upload-error',
       token,
+      fileId,
       message: err.message
     });
 
