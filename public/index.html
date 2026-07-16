@@ -452,6 +452,9 @@
           <button class="setup-tab-btn" data-target="setup-manual">
             <span class="icon">🛠️</span> Manual Setup
           </button>
+          <button class="setup-tab-btn" data-target="setup-security">
+            <span class="icon">🛡️</span> Device Security
+          </button>
         </div>
 
         <!-- Detail Tab Contents -->
@@ -513,6 +516,49 @@
                 <a href="https://www.icloud.com/shortcuts/c35825d9722d48158b88e192ee0ced2d" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
               </div>
 
+            </div>
+          </div>
+
+          <!-- Tab 4: Device Security & Access Control -->
+          <div id="setup-security" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Device Security &amp; Access Control
+            </h3>
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+              Control who can access AiroDrop on your network. Unknown devices will see a PIN lock screen.
+            </p>
+
+            <!-- Security Mode -->
+            <div style="margin-top: 4px;">
+              <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Security Mode</label>
+              <select id="securityModeInput" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); font-size: 0.82rem; cursor: pointer; outline: none;">
+                <option value="protected">🛡️ Protected — Require PIN or Host Approval</option>
+                <option value="secret">🔑 Secret Token — iOS Shortcut header only</option>
+                <option value="open">🌐 Open — No authentication (legacy)</option>
+              </select>
+            </div>
+
+            <!-- PIN Display -->
+            <div style="margin-top: 4px; padding: 12px 14px; background: rgba(255,85,0,0.06); border: 1px solid rgba(255,85,0,0.18); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px;">Current PIN Code</div>
+                <div id="pinDisplayCode" style="font-size: 1.5rem; font-weight: 800; color: var(--accent); letter-spacing: 8px;">----</div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Share this with trusted family to pair their device</div>
+              </div>
+              <button class="settings-browse-btn" id="btnRegeneratePin" style="flex-shrink: 0; padding: 6px 12px; font-size: 0.75rem; white-space: nowrap;">&#8635; Regenerate</button>
+            </div>
+
+            <!-- Shortcut Secret -->
+            <div style="margin-top: 4px;">
+              <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">iOS Shortcut Secret <span style="font-weight: 400; text-transform: none; letter-spacing: 0;">(optional)</span></label>
+              <input type="text" id="shortcutSecretInput" placeholder="e.g. my_secret — sent as X-AiroDrop-Token header" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; outline: none; box-sizing: border-box;">
+            </div>
+
+            <!-- Paired Devices Footer -->
+            <div style="margin-top: 6px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <span id="pairedDevicesStatusText" style="font-size: 0.76rem; color: var(--text-secondary);">0 device(s) currently paired</span>
+              <button class="settings-browse-btn" id="btnRevokeAllPaired" style="padding: 5px 12px; font-size: 0.74rem; border-color: rgba(255,80,80,0.35); color: #ff6b6b;">Revoke All</button>
             </div>
           </div>
 
@@ -784,48 +830,7 @@
               </div>
             </div>
 
-            <!-- Device Security & Access Control Card -->
-            <div class="settings-card">
-              <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Device Security &amp; Access Control
-              </h3>
-              <p class="settings-desc">Control who can access AiroDrop on your network. Unknown devices will see a PIN lock screen.</p>
-
-              <!-- Security Mode -->
-              <div style="margin-top: 14px;">
-                <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Security Mode</label>
-                <select id="securityModeInput" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-primary); font-size: 0.82rem; cursor: pointer; outline: none; -webkit-appearance: none;">
-                  <option value="protected">🛡️ Protected — Require PIN or Host Approval</option>
-                  <option value="secret">🔑 Secret Token — iOS Shortcut header only</option>
-                  <option value="open">🌐 Open — No authentication (legacy)</option>
-                </select>
-              </div>
-
-              <!-- PIN Display -->
-              <div style="margin-top: 12px; padding: 12px 14px; background: rgba(255,85,0,0.06); border: 1px solid rgba(255,85,0,0.18); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                <div>
-                  <div style="font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px;">Current PIN Code</div>
-                  <div id="pinDisplayCode" style="font-size: 1.5rem; font-weight: 800; color: var(--accent); letter-spacing: 8px;">----</div>
-                  <div style="font-size: 0.68rem; color: var(--text-secondary); margin-top: 3px;">Share this with trusted family to pair their device</div>
-                </div>
-                <button class="settings-browse-btn" id="btnRegeneratePin" style="flex-shrink: 0; padding: 6px 12px; font-size: 0.75rem; white-space: nowrap;">&#8635; Regenerate</button>
-              </div>
-
-              <!-- Shortcut Secret -->
-              <div style="margin-top: 12px;">
-                <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">iOS Shortcut Secret <span style="font-weight: 400; text-transform: none; letter-spacing: 0;">(optional)</span></label>
-                <input type="text" id="shortcutSecretInput" placeholder="e.g. my_secret — sent as X-AiroDrop-Token header" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; outline: none; box-sizing: border-box;">
-              </div>
-
-              <!-- Paired Devices Footer -->
-              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                <span id="pairedDevicesStatusText" style="font-size: 0.76rem; color: var(--text-secondary);">0 device(s) currently paired</span>
-                <button class="settings-browse-btn" id="btnRevokeAllPaired" style="padding: 5px 12px; font-size: 0.74rem; border-color: rgba(255,80,80,0.35); color: #ff6b6b;">Revoke All</button>
-              </div>
-            </div>
-
-            <!-- Application Updates Card -->
+<!-- Application Updates Card -->
             <div class="settings-card" style="margin-bottom: 0;">
               <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Application Updates</h3>
               <div class="settings-switch-row" style="padding: 4px 0;">
