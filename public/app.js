@@ -1389,6 +1389,54 @@
       }
     }
 
+    async function fetchPairedDevicesCount() {
+      try {
+        const res = await doFetch('/api/auth/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (pinDisplayCode && data.pin) pinDisplayCode.textContent = data.pin;
+          if (pairedDevicesStatusText) {
+            pairedDevicesStatusText.textContent = `${data.pairedCount || 0} device(s) currently paired`;
+          }
+        }
+      } catch (err) {}
+    }
+
+    if (btnRegeneratePin) {
+      btnRegeneratePin.addEventListener('click', async () => {
+        try {
+          btnRegeneratePin.textContent = '...';
+          btnRegeneratePin.disabled = true;
+          const res = await doFetch('/api/auth/regenerate-pin', { method: 'POST' });
+          const data = await res.json();
+          if (data.success && data.pin) {
+            if (pinDisplayCode) pinDisplayCode.textContent = data.pin;
+            showToast('New PIN code generated!', 'success');
+          }
+        } catch (e) {
+          showToast('Failed to regenerate PIN', 'error');
+        } finally {
+          btnRegeneratePin.textContent = 'Regenerate';
+          btnRegeneratePin.disabled = false;
+        }
+      });
+    }
+
+    if (btnRevokeAllPaired) {
+      btnRevokeAllPaired.addEventListener('click', async () => {
+        if (!confirm('Revoke all paired devices? They will need to re-enter the PIN to reconnect.')) return;
+        try {
+          const res = await doFetch('/api/auth/unpair-all', { method: 'POST' });
+          if (res.ok) {
+            fetchPairedDevicesCount();
+            showToast('All paired devices revoked', 'info');
+          }
+        } catch (e) {
+          showToast('Failed to revoke devices', 'error');
+        }
+      });
+    }
+
     function setupWebUpdater() {
       const btnWebCheckUpdates = $('#btnWebCheckUpdates');
       const webUpdateStatusMessage = $('#webUpdateStatusMessage');

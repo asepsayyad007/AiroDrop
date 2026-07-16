@@ -49,7 +49,7 @@ router.post('/verify-pin', (req, res) => {
 // Request direct approval popup on PC host
 router.post('/request-approval', (req, res) => {
   const { deviceName } = req.body || {};
-  const serverEvents = require('../server').serverEvents;
+  const serverEvents = require('../../server').serverEvents;
 
   if (serverEvents) {
     let handled = false;
@@ -93,11 +93,20 @@ router.post('/request-approval', (req, res) => {
 // Regenerate 4-digit PIN code (PC Settings action)
 router.post('/regenerate-pin', (req, res) => {
   state.PIN_CODE = auth.generatePin();
-  
-  // Update config.json
-  const server = require('../../server');
-  if (server.saveConfigToDisk) {
-    server.saveConfigToDisk();
+
+  // Persist to config.json
+  const fs = require('fs');
+  try {
+    if (state.CONFIG_FILE) {
+      let data = {};
+      if (fs.existsSync(state.CONFIG_FILE)) {
+        data = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
+      }
+      data.pinCode = state.PIN_CODE;
+      fs.writeFileSync(state.CONFIG_FILE, JSON.stringify(data, null, 2));
+    }
+  } catch (err) {
+    console.error('[AUTH] Failed to persist PIN to config:', err.message);
   }
 
   utils.writeLog(`Regenerated local PIN code: ${state.PIN_CODE}`);
