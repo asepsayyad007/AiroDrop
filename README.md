@@ -1,10 +1,10 @@
-# AiroDrop v6.1.0 🚀
+# AiroDrop v6.1.2 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.2-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -19,23 +19,26 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v6.1.0
+## 🚀 What's New in v6.1.2
 
-This release brings version 6.1.0, introducing major feature upgrades to P2P Link Sharing and a comprehensive projectwide security hardening:
+This release brings version 6.1.2, introducing major feature upgrades to Live Screencast UX, P2P Link Sharing, and a comprehensive project-wide security hardening:
 
 ### ✅ New Features & Updates
-1. **🔗 Advanced P2P Link Share** — Directly stream multiple files concurrently over the internet using a zero-storage tunnel! Supports batched downloads and real-time interactive host acceptance.
-2. **🛡️ Comprehensive Security Hardening** — Full elimination of Path Traversal, PowerShell shell injection (now uses native FFI), Stored XSS mitigations, strict loopback API guarding, and Electron IPC whitelisting. 
-3. **🗑️ Advanced Queue Controls** — "Clear Finished" items from view without deleting files from disk. Reveal downloaded files directly in your native file explorer.
-4. **💬 Debounced Notifications** — Cleanly groups multi-file transfer notifications into a single desktop alert.
+1. **🔍 Pinch-to-Zoom & Panning** — High-performance 2-finger pinch-to-zoom (up to 5×) and drag-to-pan on the Live PC Screencast. A floating "Reset Zoom" button appears whenever zoom is active.
+2. **📐 Landscape Orientation Layout Fix** — Completely resolves the broken layout when rotating your phone sideways during screencast. The bottom navigation tabs and main UI are now properly hidden behind the full-screen overlay, with no bleed-through.
+3. **⌨️ Smart Landscape Keyboard** — In landscape mode, the custom virtual keyboard rows auto-hide so the screencast video stays fully visible above the typing input. Only the text-entry bar is shown, keeping the screen clean.
+4. **📱 Visual Viewport Keyboard Fitting** — The screencast overlay now tracks the browser's Visual Viewport API (scroll + resize) and additionally listens to `orientationchange` and `resize` events, so the screen always fits perfectly regardless of rotation or keyboard state.
+5. **🔗 Advanced P2P Link Share** — Directly stream multiple files concurrently over the internet using a zero-storage tunnel! Supports batched downloads and real-time interactive host acceptance.
+6. **🛡️ Comprehensive Security Hardening** — Full elimination of Path Traversal, PowerShell shell injection (now uses native FFI), Stored XSS mitigations, strict loopback API guarding, and Electron IPC whitelisting.
+7. **🐛 Service Worker Stability Fix** — Removed an infinite page-reload loop caused by a faulty SW `updatefound` handler. The PWA now loads reliably every time.
 
 ---
 
-## 📥 Downloads (v6.1.0)
+## 📥 Downloads (v6.1.2)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.0/AiroDrop.Setup.6.1.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.0/AiroDrop-Portable-6.1.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.2/AiroDrop.Setup.6.1.2.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.2/AiroDrop-Portable-6.1.2.exe)** — Standalone execution without installation.
 
 ---
 
@@ -113,10 +116,13 @@ To run or modify the app locally:
 
 ## 🖥️ Using Live Screencast
 
-1. On your phone, open the mobile portal &rarr; scroll to **PC Live Screen** &rarr; tap **"📺 Open Live Screen"**.
+1. On your phone, open the mobile portal → scroll to **PC Live Screen** → tap **"📺 Open Live Screen"**.
 2. If PC services are not connected, the page will auto-connect for you in the background.
 3. The fullscreen overlay opens with a live ~15fps stream of your PC desktop.
-4. Toggle **"👁️ View Only"** &rarr; **"🖱️ Interactive"** to enable tap-to-click and drag-to-move-mouse control.
+4. Toggle **"👁️ View Only"** → **"🖱️ Interactive"** to enable tap-to-click and drag-to-move-mouse control.
+5. **Pinch to zoom** with 2 fingers (up to 5×). Drag with 1 finger to pan when zoomed in. Tap "Reset Zoom" button to restore.
+6. **Landscape mode:** Rotate your phone for a wider view — the screencast fills the full screen with no UI bleed-through.
+7. **Typing on your PC:** Tap the ⌨️ keyboard icon to open the text sync panel. In landscape mode, the QWERTY rows auto-hide so the video stays visible while you type.
 
 ---
 
