@@ -95,6 +95,13 @@ function extractToken(req) {
 }
 
 function authMiddleware(req, res, next) {
+  // Always exempt localhost / loopback connections from authentication
+  const remoteIp = (req.ip || req.connection.remoteAddress || '').replace(/^.*:/, '');
+  const isLoopback = remoteIp === '127.0.0.1' || remoteIp === 'localhost' || remoteIp === '1' || req.isLocalhost;
+  if (isLoopback) {
+    return next();
+  }
+
   // Mode = open: disable authentication checks
   if (state.SECURITY_MODE === 'open') {
     return next();

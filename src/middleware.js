@@ -93,13 +93,12 @@ function registerMiddleware(app) {
     req.device = { name: 'Mobile Device', ipAddress: req.ip || req.connection.remoteAddress };
 
     // Protect administrative paths against unauthorized LAN remote requests
-    const adminPaths = [
-      '/api/control',
+    const hostOnlyPaths = [
       '/api/settings/browse',
       '/api/screencast/pause'
     ];
 
-    if (!isLoopback && adminPaths.includes(req.path.toLowerCase())) {
+    if (!isLoopback && hostOnlyPaths.includes(req.path.toLowerCase())) {
       return res.status(403).json({ error: 'Access denied: Administrative path restricted to host machine loopback' });
     }
 
