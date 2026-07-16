@@ -1323,6 +1323,13 @@
     const contextMenuInput = $('#contextMenuInput');
     const contextMenuSettingRow = $('#contextMenuSettingRow');
 
+    const securityModeInput = $('#securityModeInput');
+    const pinDisplayCode = $('#pinDisplayCode');
+    const shortcutSecretInput = $('#shortcutSecretInput');
+    const pairedDevicesStatusText = $('#pairedDevicesStatusText');
+    const btnRegeneratePin = $('#btnRegeneratePin');
+    const btnRevokeAllPaired = $('#btnRevokeAllPaired');
+
     loadSettingsData();
 
     async function loadSettingsData() {
@@ -1348,7 +1355,10 @@
           if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
           if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
           if (contextMenuInput) contextMenuInput.checked = !!data.contextMenuEnabled;
-           if (isElectron && data.platform === 'win32' && contextMenuSettingRow) {
+          if (securityModeInput && data.securityMode) securityModeInput.value = data.securityMode;
+          if (pinDisplayCode && data.pinCode) pinDisplayCode.textContent = data.pinCode;
+          if (shortcutSecretInput && data.shortcutSecret) shortcutSecretInput.value = data.shortcutSecret;
+          if (isElectron && data.platform === 'win32' && contextMenuSettingRow) {
             contextMenuSettingRow.style.display = 'flex';
           }
           if (data.version) {
@@ -1356,6 +1366,7 @@
             if (versionEl) versionEl.textContent = `v${data.version}`;
           }
           updateTemporaryModeBadge(data.temporaryMode);
+          fetchPairedDevicesCount();
 
         }
       } catch (err) {
@@ -1447,6 +1458,8 @@
         const autoUpdate = autoUpdaterInput ? autoUpdaterInput.checked : true;
         const httpsEnabled = httpsEnabledInput ? httpsEnabledInput.checked : false;
         const contextMenuEnabled = contextMenuInput ? contextMenuInput.checked : false;
+        const securityMode = securityModeInput ? securityModeInput.value : 'protected';
+        const shortcutSecret = shortcutSecretInput ? shortcutSecretInput.value.trim() : '';
 
         saveDirBtn.disabled = true;
         saveDirBtn.textContent = 'Saving...';
@@ -1469,7 +1482,9 @@
               launchOnStartup,
               autoUpdate,
               httpsEnabled,
-              contextMenuEnabled
+              contextMenuEnabled,
+              securityMode,
+              shortcutSecret
             })
           });
           const data = await res.json();
@@ -1493,6 +1508,8 @@
             if (autoUpdaterInput) autoUpdaterInput.checked = !!data.autoUpdate;
             if (httpsEnabledInput) httpsEnabledInput.checked = !!data.httpsEnabled;
             if (contextMenuInput) contextMenuInput.checked = !!data.contextMenuEnabled;
+            if (securityModeInput && data.securityMode) securityModeInput.value = data.securityMode;
+            if (shortcutSecretInput && data.shortcutSecret) shortcutSecretInput.value = data.shortcutSecret;
             updateTemporaryModeBadge(data.temporaryMode);
             
             fetchServerInfo();

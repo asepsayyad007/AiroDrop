@@ -813,6 +813,26 @@ server.serverEvents.on('mic_stop', (ws) => {
   }
 });
 
+// Host Device Pairing Approval Event (Device -> PC Host Modal)
+server.serverEvents.on('request-host-approval', ({ deviceName, ip, respond }) => {
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
+  dialog.showMessageBox(mainWindow || null, {
+    type: 'question',
+    title: 'AiroDrop Device Pairing Request',
+    message: `A device is requesting access to your AiroDrop PC host:\n\n📱 Device Name: ${deviceName}\n🌐 IP Address: ${ip}\n\nDo you want to allow this device to connect and control AiroDrop?`,
+    buttons: ['Approve & Pair Device', 'Deny Connection'],
+    defaultId: 0,
+    cancelId: 1
+  }).then(result => {
+    respond(result.response === 0);
+  }).catch(() => {
+    respond(false);
+  });
+});
+
 // Outbound Microphone Signaling IPC Triggers (PC -> Phone)
 ipcMain.on('send-mic-answer', (event, answer) => {
   if (activePhoneWs && activePhoneWs.readyState === 1) {

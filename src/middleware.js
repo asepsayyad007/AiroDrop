@@ -105,6 +105,10 @@ function registerMiddleware(app) {
 
     next();
   });
+
+  // 5. Device Authentication Middleware
+  const { authMiddleware } = require('./auth');
+  app.use(authMiddleware);
 }
 
 module.exports = { registerMiddleware };

@@ -7,6 +7,7 @@ const state = {
   SCRATCHPAD_FILE: '',
   KEY_FILE: '',
   CERT_FILE: '',
+  PAIRED_DEVICES_FILE: '',
 
   // Server Settings
   PORT: 3478,
@@ -23,6 +24,11 @@ const state = {
   HTTPS_ENABLED: false,
   CONTEXT_MENU_ENABLED: false,
 
+  // Security & Authentication Settings
+  SECURITY_MODE: 'protected', // 'open' | 'protected' | 'secret'
+  PIN_CODE: '',
+  SHORTCUT_SECRET: '',
+
   // Screencast Security Settings
   privacyPause: false,
 
@@ -31,6 +37,7 @@ const state = {
   scratchpadText: '',
   bookmarks: [],
   pendingForPhone: [],
+  pairedDevices: new Map(),
   sseClients: new Set(),
   logHistory: [],
   rateLimitMap: new Map(),

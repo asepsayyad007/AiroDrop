@@ -17,6 +17,8 @@ const { setupWebSocket } = require('./src/trackpad');
 const filesRouter = require('./src/routes/files');
 const clipboardRouter = require('./src/routes/clipboard');
 const settingsRouter = require('./src/routes/settings');
+const authRouter = require('./src/routes/auth');
+const auth = require('./src/auth');
 
 const serverEvents = new EventEmitter();
 const app = express();
@@ -28,6 +30,12 @@ registerMiddleware(app);
 app.use('/files', filesRouter);
 app.use('/api', clipboardRouter);
 app.use('/api', settingsRouter);
+app.use('/api/auth', authRouter);
+
+// GET /auth-pin — Mobile/Web PIN Lock Screen
+app.get('/auth-pin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'auth-pin.html'));
+});
 
 // Serve local client-side qrcode library
 app.get('/vendor/qrcode.min.js', (req, res) => {
@@ -109,6 +117,9 @@ function init(userDataPath) {
       if (data.autoUpdate !== undefined) state.AUTO_UPDATE = !!data.autoUpdate;
       if (data.httpsEnabled !== undefined) state.HTTPS_ENABLED = !!data.httpsEnabled;
       if (data.contextMenuEnabled !== undefined) state.CONTEXT_MENU_ENABLED = !!data.contextMenuEnabled;
+      if (data.securityMode) state.SECURITY_MODE = data.securityMode;
+      if (data.pinCode) state.PIN_CODE = data.pinCode;
+      if (data.shortcutSecret) state.SHORTCUT_SECRET = data.shortcutSecret;
       if (data.saveDir) {
         state.SAVE_DIR = path.isAbsolute(data.saveDir) ? data.saveDir : path.resolve(__dirname, data.saveDir);
       }
@@ -121,6 +132,9 @@ function init(userDataPath) {
   } catch (err) {
     console.error('[CONFIG] Failed to load config.json:', err.message);
   }
+
+  state.PAIRED_DEVICES_FILE = path.join(userDataPath, 'paired_devices.json');
+  auth.initAuth();
 
   // Ensure Save and Share directories exist
   try {

@@ -185,6 +185,9 @@ router.get('/settings', (req, res) => {
     autoUpdate: state.AUTO_UPDATE,
     httpsEnabled: state.HTTPS_ENABLED,
     contextMenuEnabled: state.CONTEXT_MENU_ENABLED,
+    securityMode: state.SECURITY_MODE,
+    pinCode: state.PIN_CODE,
+    shortcutSecret: state.SHORTCUT_SECRET,
     platform: process.platform,
     version: appVersion
   });
@@ -285,6 +288,11 @@ router.post('/settings', async (req, res) => {
       }
     }
 
+    const { securityMode, pinCode, shortcutSecret } = req.body;
+    if (securityMode !== undefined) state.SECURITY_MODE = securityMode;
+    if (pinCode !== undefined) state.PIN_CODE = String(pinCode).trim();
+    if (shortcutSecret !== undefined) state.SHORTCUT_SECRET = String(shortcutSecret).trim();
+
     const oldTempMode = state.TEMPORARY_MODE;
     if (temporaryMode !== undefined) {
       state.TEMPORARY_MODE = !!temporaryMode;
@@ -310,7 +318,10 @@ router.post('/settings', async (req, res) => {
       launchOnStartup: state.LAUNCH_ON_STARTUP,
       autoUpdate: state.AUTO_UPDATE,
       httpsEnabled: state.HTTPS_ENABLED,
-      contextMenuEnabled: state.CONTEXT_MENU_ENABLED
+      contextMenuEnabled: state.CONTEXT_MENU_ENABLED,
+      securityMode: state.SECURITY_MODE,
+      pinCode: state.PIN_CODE,
+      shortcutSecret: state.SHORTCUT_SECRET
     }, null, 2));
 
     utils.writeLog(`Configurations updated: SaveFolder="${state.SAVE_DIR}", Port=${state.PORT}, DeviceName="${state.DEVICE_NAME}"`);
@@ -328,7 +339,10 @@ router.post('/settings', async (req, res) => {
       launchOnStartup: state.LAUNCH_ON_STARTUP,
       autoUpdate: state.AUTO_UPDATE,
       httpsEnabled: state.HTTPS_ENABLED,
-      contextMenuEnabled: state.CONTEXT_MENU_ENABLED
+      contextMenuEnabled: state.CONTEXT_MENU_ENABLED,
+      securityMode: state.SECURITY_MODE,
+      pinCode: state.PIN_CODE,
+      shortcutSecret: state.SHORTCUT_SECRET
     });
   } catch (err) {
     console.error('[CONFIG] Failed to update settings:', err.message);
