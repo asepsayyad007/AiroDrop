@@ -2719,12 +2719,7 @@
           const receive = activeShares.get(token);
           if (receive && receive.files && receive.files[fileId]) {
             delete receive.files[fileId];
-            
-            const remainingCount = Object.keys(receive.files).length;
-            if (remainingCount === 0) {
-              receive.status = 'waiting';
-            }
-            renderActiveShares();
+            updateOverallShareStatus(token);
             showToast('Uploader cancelled the request.', 'info');
           }
           break;
@@ -3667,6 +3662,25 @@
           share.status = 'pending_accept';
         } else {
           share.status = 'completed';
+          
+          // Auto-cleanup 1-time receive links when all files in the batch are complete/failed/declined
+          if (share.expiryMode === 'download') {
+            setTimeout(() => {
+              const currentShare = activeShares.get(token);
+              if (currentShare && currentShare.status === 'completed') {
+                sendRelayMessage({ type: 'cancel-share', token });
+                activeShares.delete(token);
+                renderActiveShares();
+                showToast('1-time receive link completed and expired.', 'info');
+                
+                const receiveUrlEl = $('#receiveShareLinkUrl');
+                if (receiveUrlEl && receiveUrlEl.textContent.endsWith('/' + token)) {
+                  const receiveContainer = $('#receiveShareLinkContainer');
+                  if (receiveContainer) receiveContainer.style.display = 'none';
+                }
+              }
+            }, 1500);
+          }
         }
       }
     }

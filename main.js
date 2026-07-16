@@ -205,6 +205,21 @@ ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
 });
 
+function getReleaseNotesText(releaseNotes) {
+  if (!releaseNotes) return 'No release notes provided.';
+  if (typeof releaseNotes === 'string') {
+    return releaseNotes.replace(/<[^>]*>/g, '').trim();
+  }
+  if (Array.isArray(releaseNotes)) {
+    return releaseNotes.map(note => {
+      if (typeof note === 'string') return note;
+      if (note && typeof note.note === 'string') return note.note;
+      return JSON.stringify(note);
+    }).join('\n').replace(/<[^>]*>/g, '').trim();
+  }
+  return typeof releaseNotes === 'object' ? JSON.stringify(releaseNotes) : String(releaseNotes);
+}
+
 function setupAutoUpdater() {
   autoUpdater.logger = console;
   autoUpdater.autoDownload = false; // Disable auto-downloading updates
@@ -216,23 +231,60 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     server.writeLog(`New update available: v${info.version}`);
+
+    // Check if user has skipped this version (only skip on automatic checks)
+    let skippedVersion = '';
+    const state = require('./src/state');
+    try {
+      if (fs.existsSync(state.CONFIG_FILE)) {
+        const configData = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
+        skippedVersion = configData.skippedVersion || '';
+      }
+    } catch (e) {
+      console.error('[AutoUpdater] Failed to read skippedVersion from config:', e.message);
+    }
+
+    if (info.version === skippedVersion && !isManualCheck) {
+      server.writeLog(`Skipping update v${info.version} (user previously skipped this version)`);
+      if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
+      return;
+    }
+
     if (mainWindow) mainWindow.webContents.send('update-status', 'available', info);
-    
-    // Prompt the user for consent before downloading the update
+
+    const notes = getReleaseNotesText(info.releaseNotes);
+    const changelogDisplay = notes.length > 500 ? notes.slice(0, 497) + '...' : notes;
+
     dialog.showMessageBox(mainWindow || null, {
       type: 'question',
       title: 'Update Available',
-      message: `A new version (v${info.version}) of AiroDrop is available. Would you like to download it now?`,
-      buttons: ['Download', 'Cancel'],
+      message: `A new version (v${info.version}) of AiroDrop is available!\n\nChangelog / What's New:\n${changelogDisplay}\n\nWould you like to download and install this update now?`,
+      buttons: ['Download Now', 'Skip This Update', 'Later'],
       defaultId: 0,
-      cancelId: 1
+      cancelId: 2
     }).then((result) => {
       if (result.response === 0) {
         autoUpdater.downloadUpdate();
         server.writeLog(`Downloading update v${info.version}...`);
         if (mainWindow) mainWindow.webContents.send('update-status', 'downloading');
+      } else if (result.response === 1) {
+        // Skip this update - save to config.json
+        try {
+          let configData = {};
+          if (fs.existsSync(state.CONFIG_FILE)) {
+            configData = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
+          }
+          configData.skippedVersion = info.version;
+          fs.writeFileSync(state.CONFIG_FILE, JSON.stringify(configData, null, 2));
+          server.writeLog(`User chose to skip update v${info.version}`);
+        } catch (err) {
+          console.error('[AutoUpdater] Failed to save skippedVersion:', err.message);
+        }
+        isManualCheck = false;
+        if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
       } else {
         isManualCheck = false;
+        if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
       }
     });
   });
@@ -507,6 +559,35 @@ ipcMain.on('open-save-directory', () => {
 
 // ─── Direct Streaming Upload IPC Handlers ──────────────────────
 
+let pendingCompletedFiles = [];
+let completedNotificationTimeout = null;
+
+function triggerCompletedNotification(filename) {
+  pendingCompletedFiles.push(filename);
+  if (completedNotificationTimeout) {
+    clearTimeout(completedNotificationTimeout);
+  }
+  completedNotificationTimeout = setTimeout(() => {
+    const count = pendingCompletedFiles.length;
+    const notifier = require('node-notifier');
+    let message = '';
+    if (count === 1) {
+      message = `Received File: ${pendingCompletedFiles[0]}`;
+    } else {
+      const listText = pendingCompletedFiles.join(', ');
+      const truncated = listText.length > 60 ? listText.slice(0, 57) + '...' : listText;
+      message = `Received ${count} Files: ${truncated}`;
+    }
+    notifier.notify({
+      title: 'AiroDrop',
+      message: message,
+      icon: path.join(__dirname, 'public', 'logo.png')
+    });
+    pendingCompletedFiles = [];
+    completedNotificationTimeout = null;
+  }, 1000);
+}
+
 ipcMain.on('receive-file-start', (event, { token, filename, size, mimeType }) => {
   const state = require('./src/state');
   
@@ -605,12 +686,7 @@ ipcMain.on('receive-file-end', (event, { token }) => {
           utils.addToHistory(item);
 
           // Trigger OS notification
-          const notifier = require('node-notifier');
-          notifier.notify({
-            title: 'AiroDrop',
-            message: `Received File: ${session.originalName}`,
-            icon: path.join(__dirname, 'public', 'logo.png')
-          });
+          triggerCompletedNotification(session.originalName);
         }
       } catch (err) {
         console.error('[IPC] Failed to save/rename file stream:', err);

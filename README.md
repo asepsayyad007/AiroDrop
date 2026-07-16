@@ -1,10 +1,10 @@
-# AiroDrop v6.1.2 🚀
+# AiroDrop v6.1.3 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.2-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.3-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,19 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.3
+
+This release brings version 6.1.3, focusing on bulk transaction stability, mobile custom keyboard viewport positioning, notification aggregation, and updater user controls:
+
+### ✅ New Features & Updates
+1. **📦 Multi-File Bulk Transaction Reliability** — Fixed a bug where "Download All" would fail for subsequent files in a 1-time upload queue due to premature token deletion.
+2. **🔔 Aggregated Completed Notifications** — Added system notification debouncing. Downloading multiple files at once now shows a single consolidated desktop notification rather than spamming multiple alert cards.
+3. **⌨️ Adaptive Portrait Custom Keyboard** — Automatically collapses the custom virtual key grid and bottom padding when the native virtual keyboard gains focus on mobile in portrait mode. This maximizes screencast video viewport space.
+4. **🔍 Prevention of Mobile Input Focus Zooming** — Standardized mobile keyboard input elements to `16px` font-size to prevent iOS Safari auto-zooming and layout shifting.
+5. **⚙️ Interactive User Auto-Updater Dialogue** — The auto-updater now prompts the user with a detailed three-option dialogue box ("Download Now", "Skip This Update", "Later") complete with formatted markdown release notes fetched directly from GitHub. Skipping an update persists to local settings.
 
 ---
 
@@ -34,11 +47,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.2)
+## 📥 Downloads (v6.1.3)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.2/AiroDrop.Setup.6.1.2.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.2/AiroDrop-Portable-6.1.2.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.3/AiroDrop.Setup.6.1.3.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.3/AiroDrop-Portable-6.1.3.exe)** — Standalone execution without installation.
 
 ---
 

@@ -760,12 +760,9 @@ app.post('/u/:token/upload', (req, res) => {
       bytesTransferred: upload.bytesTransferred
     });
 
-    if (share.deleteAfterDownload) {
-      share.status = 'completed';
-      shares.delete(token);
-    } else {
-      share.status = 'waiting';
-    }
+    // For receive links (uploads), do not delete the token on a single file completion.
+    // The PC client will send 'cancel-share' to clean it up when the entire batch is done.
+    share.status = 'waiting';
 
     res.json({ success: true, bytesTransferred: upload.bytesTransferred });
   });

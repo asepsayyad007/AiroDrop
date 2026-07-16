@@ -1720,6 +1720,15 @@
           }
           scLastInputValue = val;
         });
+        
+        scKeyboardInput.addEventListener('focus', () => {
+          document.getElementById('scKeyboardPanel')?.classList.add('native-focus');
+          setTimeout(updateScreencastViewport, 150);
+        });
+        scKeyboardInput.addEventListener('blur', () => {
+          document.getElementById('scKeyboardPanel')?.classList.remove('native-focus');
+          setTimeout(updateScreencastViewport, 150);
+        });
       }
 
       if (btnScKeyboardClear && scKeyboardInput) {
