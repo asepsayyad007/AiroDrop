@@ -1403,6 +1403,60 @@
             pairedDevicesStatusText.textContent = `${data.pairedCount || 0} device(s) currently paired`;
           }
         }
+
+        const resList = await doFetch('/api/auth/paired-devices');
+        const listContainer = document.getElementById('pairedDevicesListContainer');
+        if (resList.ok && listContainer) {
+          const listData = await resList.json();
+          listContainer.innerHTML = '';
+          if (listData.devices && listData.devices.length > 0) {
+            listData.devices.forEach(dev => {
+              const devEl = document.createElement('div');
+              devEl.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.78rem;';
+              
+              const infoEl = document.createElement('div');
+              infoEl.style.cssText = 'display: flex; flex-direction: column; gap: 2px;';
+              
+              const nameEl = document.createElement('span');
+              nameEl.style.cssText = 'font-weight: 600; color: var(--text-primary);';
+              nameEl.textContent = dev.deviceName;
+              
+              const ipEl = document.createElement('span');
+              ipEl.style.cssText = 'font-size: 0.68rem; color: var(--text-secondary);';
+              ipEl.textContent = `${dev.ip} • Paired: ${new Date(dev.pairedAt).toLocaleDateString()}`;
+              
+              infoEl.appendChild(nameEl);
+              infoEl.appendChild(ipEl);
+              
+              const revokeBtn = document.createElement('button');
+              revokeBtn.className = 'settings-browse-btn';
+              revokeBtn.style.cssText = 'padding: 4px 8px; font-size: 0.7rem; border-color: rgba(255,75,75,0.3); color: #ff6b6b; cursor: pointer;';
+              revokeBtn.textContent = 'Revoke';
+              revokeBtn.addEventListener('click', async () => {
+                if (!confirm(`Revoke access for ${dev.deviceName}?`)) return;
+                try {
+                  const revokeRes = await doFetch('/api/auth/unpair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: dev.token })
+                  });
+                  if (revokeRes.ok) {
+                    fetchPairedDevicesCount();
+                    showToast('Device revoked successfully', 'info');
+                  }
+                } catch (e) {
+                  showToast('Failed to revoke device', 'error');
+                }
+              });
+              
+              devEl.appendChild(infoEl);
+              devEl.appendChild(revokeBtn);
+              listContainer.appendChild(devEl);
+            });
+          } else {
+            listContainer.innerHTML = '<div style="font-size: 0.74rem; color: var(--text-secondary); text-align: center; padding: 10px 0; font-style: italic;">No paired devices found</div>';
+          }
+        }
       } catch (err) {}
     }
 
@@ -1805,13 +1859,14 @@
           }
         }
         
-        // Reset tabs to default (Manage Devices) on modal open
+        // Reset tabs to default (Device Security) on modal open
         tabBtns.forEach(b => b.classList.remove('active'));
         tabContents.forEach(c => c.style.display = 'none');
-        const defaultBtn = $('.setup-tab-btn[data-target="setup-devices"]');
+        const defaultBtn = $('.setup-tab-btn[data-target="setup-security"]');
         if (defaultBtn) defaultBtn.classList.add('active');
-        const defaultContent = $('#setup-devices');
+        const defaultContent = $('#setup-security');
         if (defaultContent) defaultContent.style.display = 'flex';
+        fetchPairedDevicesCount();
 
 
         shortcutsModal.style.display = 'flex';
