@@ -38,6 +38,7 @@ router.post('/verify-pin', (req, res) => {
   });
 
   utils.writeLog(`Device successfully paired via PIN: ${device.deviceName} (${req.ip})`);
+  utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
 
   res.json({
     success: true,
@@ -78,6 +79,7 @@ router.post('/request-approval', (req, res) => {
             sameSite: 'lax'
           });
           utils.writeLog(`Device paired via Host Approval: ${device.deviceName} (${req.ip})`);
+          utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
           res.json({ success: true, approved: true, deviceToken: device.token });
         } else {
           utils.writeLog(`Host denied pairing request from: ${deviceName} (${req.ip})`);
@@ -132,6 +134,7 @@ router.post('/unpair', (req, res) => {
   const ok = auth.unpairDevice(token);
   if (ok) {
     utils.writeLog(`Unpaired device token: ${token.slice(0, 8)}...`);
+    utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Device not found' });
@@ -142,6 +145,7 @@ router.post('/unpair', (req, res) => {
 router.post('/unpair-all', (req, res) => {
   auth.clearAllPairedDevices();
   utils.writeLog('Revoked all paired devices');
+  utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
   res.json({ success: true });
 });
 

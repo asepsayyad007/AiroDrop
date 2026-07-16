@@ -504,6 +504,10 @@
 
 
 
+    sseSource.addEventListener('device-change', () => {
+      fetchPairedDevicesCount();
+    });
+
     sseSource.addEventListener('log', (e) => {
       try {
         const data = JSON.parse(e.data);
