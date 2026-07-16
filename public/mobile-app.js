@@ -1368,6 +1368,79 @@
       let virtualY = 0.5;
       let cursorSpeed = 1.5;
 
+      // ── Pinch to Zoom & Visual Viewport variables ──
+      let zoomScale = 1.0;
+      let zoomTranslateX = 0;
+      let zoomTranslateY = 0;
+      let isPinching = false;
+      let startTouchDistance = 0;
+      let startTouchScale = 1.0;
+      let startTouchMidpoint = { x: 0, y: 0 };
+      let startTranslateX = 0;
+      let startTranslateY = 0;
+
+      const btnResetZoom = document.getElementById('btnResetZoom');
+
+      function applyZoomTransform() {
+        if (frame) {
+          if (zoomScale < 1.0) zoomScale = 1.0;
+          if (zoomScale > 5.0) zoomScale = 5.0;
+
+          const maxTx = (zoomScale - 1) * window.innerWidth / 2;
+          const maxTy = (zoomScale - 1) * window.innerHeight / 2;
+          zoomTranslateX = Math.max(-maxTx, Math.min(maxTx, zoomTranslateX));
+          zoomTranslateY = Math.max(-maxTy, Math.min(maxTy, zoomTranslateY));
+
+          frame.style.transform = `translate(${zoomTranslateX}px, ${zoomTranslateY}px) scale(${zoomScale})`;
+          
+          if (btnResetZoom) {
+            btnResetZoom.style.display = zoomScale > 1.05 ? 'block' : 'none';
+          }
+        }
+      }
+
+      if (btnResetZoom) {
+        btnResetZoom.addEventListener('click', (e) => {
+          e.stopPropagation();
+          zoomScale = 1.0;
+          zoomTranslateX = 0;
+          zoomTranslateY = 0;
+          applyZoomTransform();
+        });
+      }
+
+      function updateScreencastViewport() {
+        if (!overlay || overlay.style.display === 'none') return;
+        if (window.visualViewport) {
+          const vv = window.visualViewport;
+          overlay.style.position = 'absolute';
+          overlay.style.top = `${vv.offsetTop}px`;
+          overlay.style.left = `${vv.offsetLeft}px`;
+          overlay.style.width = `${vv.width}px`;
+          overlay.style.height = `${vv.height}px`;
+
+          if (frame) {
+            if (keyboardPanel && keyboardPanel.style.display !== 'none') {
+              const kbdHeight = keyboardPanel.offsetHeight || 0;
+              frame.style.bottom = `${kbdHeight}px`;
+              frame.style.height = `calc(100% - ${kbdHeight}px)`;
+            } else {
+              frame.style.bottom = '0';
+              frame.style.height = '100%';
+            }
+          }
+        }
+      }
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateScreencastViewport);
+        window.visualViewport.addEventListener('scroll', updateScreencastViewport);
+      }
+      window.addEventListener('resize', updateScreencastViewport);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(updateScreencastViewport, 200);
+      });
+
       // ── Open button ──
       btnOpen.addEventListener('click', () => {
         if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
@@ -1380,9 +1453,23 @@
         }
         overlay.style.display = 'flex';
         streamActive = true;
+        
+        // Hide main layout tabs and bottom navigation
+        const mainApp = document.getElementById('mainAppContainer');
+        const bottomNav = document.getElementById('bottomNavContainer');
+        if (mainApp) mainApp.style.display = 'none';
+        if (bottomNav) bottomNav.style.display = 'none';
+        
+        // Reset zoom on open
+        zoomScale = 1.0;
+        zoomTranslateX = 0;
+        zoomTranslateY = 0;
+        applyZoomTransform();
+
         // Restore keyboard button visibility (may have been hidden on previous close)
         if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
         updateWakeLockStatus();
+        setTimeout(updateScreencastViewport, 100);
 
         const isStreamActive = !!(frame && frame.srcObject);
         if (!isStreamActive) {
@@ -1397,15 +1484,31 @@
         }
       });
 
-      // ── Close button ──
       btnClose.addEventListener('click', () => {
         overlay.style.display = 'none';
+        
+        // Restore main layout tabs and bottom navigation
+        const mainApp = document.getElementById('mainAppContainer');
+        const bottomNav = document.getElementById('bottomNavContainer');
+        if (mainApp) mainApp.style.display = 'block';
+        if (bottomNav) bottomNav.style.display = 'flex';
+
+        // Reset overlay visual styling on close
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+
         streamActive = false;
         interactiveMode = true;
         audioOnlyStreamMode = false;
         if (dropdownMenu) dropdownMenu.style.display = 'none';
         if (toolsArrow) toolsArrow.style.transform = '';
-        if (keyboardPanel) keyboardPanel.style.display = 'none';
+        if (keyboardPanel) {
+          keyboardPanel.style.display = 'none';
+          updateScreencastViewport();
+        }
         if (btnKeyboard) btnKeyboard.style.display = 'none';
         cursorSpeed = 1.5;
         if (btnSpeed) btnSpeed.textContent = 'Speed: 1.5x';
@@ -1416,11 +1519,14 @@
         if (frame) {
           frame.srcObject = null;
           frame.muted = true;
+          frame.style.bottom = '0';
+          frame.style.height = '100%';
         }
         syncAudioStates();
         if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
           sendWS({ type: 'screencast_stop' });
         }
+        updateWakeLockStatus();
       });
 
       // ── Tools Dropdown Toggle ──
@@ -1550,7 +1656,10 @@
         frame.style.cursor = interactiveMode ? 'none' : 'default';
         if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
         if (viewHint) viewHint.style.display = interactiveMode ? 'none' : 'block';
-        if (!interactiveMode && keyboardPanel) keyboardPanel.style.display = 'none';
+        if (!interactiveMode && keyboardPanel) {
+          keyboardPanel.style.display = 'none';
+          updateScreencastViewport();
+        }
         
         if (interactiveMode) {
           virtualX = 0.5;
@@ -1579,6 +1688,7 @@
           if (!keyboardPanel) return;
           const isVisible = keyboardPanel.style.display !== 'none';
           keyboardPanel.style.display = isVisible ? 'none' : 'block';
+          updateScreencastViewport();
           if (!isVisible && scKeyboardInput) {
             setTimeout(() => scKeyboardInput.focus(), 100);
           }
@@ -1588,7 +1698,10 @@
       // ── Close keyboard panel ──
       if (btnScKeyboardClose) {
         btnScKeyboardClose.addEventListener('click', () => {
-          if (keyboardPanel) keyboardPanel.style.display = 'none';
+          if (keyboardPanel) {
+            keyboardPanel.style.display = 'none';
+            updateScreencastViewport();
+          }
         });
       }
 
@@ -1659,90 +1772,128 @@
 
 
       frame.addEventListener('touchstart', (e) => {
-        if (!interactiveMode) return;
-        
         const touches = e.touches;
-        if (touches.length === 1) {
+        if (touches.length === 2) {
+          isPinching = true;
+          const p1 = touches[0];
+          const p2 = touches[1];
+          startTouchDistance = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+          startTouchScale = zoomScale;
+          
+          const mid = getTouchMidpoint(e);
+          scLastScrollY = mid.y;
+          scAccumulatedScrollY = 0;
+          scStartTime = Date.now();
+          scHasMoved = false;
+
+          startTouchMidpoint = mid;
+          startTranslateX = zoomTranslateX;
+          startTranslateY = zoomTranslateY;
+        } else if (touches.length === 1) {
           scMaxTouches = 1;
           scIsTwoFinger = false;
           scHasMoved = false;
           scStartTime = Date.now();
           scLastTouchX = touches[0].clientX;
           scLastTouchY = touches[0].clientY;
-        } else if (touches.length === 2) {
-          scMaxTouches = 2;
-          scIsTwoFinger = true;
-          const mid = getTouchMidpoint(e);
-          scLastScrollY = mid.y;
-          scAccumulatedScrollY = 0;
-          scStartTime = Date.now();
-          scHasMoved = false;
+          
+          if (!interactiveMode || zoomScale > 1.05) {
+            startTranslateX = zoomTranslateX;
+            startTranslateY = zoomTranslateY;
+          }
         }
-      }, { passive: true });
+      }, { passive: false });
 
       frame.addEventListener('touchmove', (e) => {
-        if (!interactiveMode) return;
-
         const touches = e.touches;
         if (touches.length === 2) {
           e.preventDefault();
+          const currentDistance = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
           const mid = getTouchMidpoint(e);
-          const cy = mid.y;
-          // Auto-initialize if touchstart was missed or flags were reset
-          if (!scIsTwoFinger || !scLastScrollY) {
-            scIsTwoFinger = true;
-            scLastScrollY = cy;
-            scAccumulatedScrollY = 0;
-          }
-          const dy = cy - scLastScrollY;
-          scAccumulatedScrollY += dy;
-          scLastScrollY = cy;
 
-          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
-          while (scAccumulatedScrollY > 3) {
-            scHasMoved = true;
-            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
-            scAccumulatedScrollY -= 3;
-          }
-          while (scAccumulatedScrollY < -3) {
-            scHasMoved = true;
-            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
-            scAccumulatedScrollY += 3;
+          if (isPinching) {
+            if (startTouchDistance > 0) {
+              const scaleFactor = currentDistance / startTouchDistance;
+              zoomScale = startTouchScale * scaleFactor;
+            }
+
+            zoomTranslateX = startTranslateX + (mid.x - startTouchMidpoint.x);
+            zoomTranslateY = startTranslateY + (mid.y - startTouchMidpoint.y);
+
+            applyZoomTransform();
+          } else {
+            if (Math.abs(currentDistance - startTouchDistance) > 15) {
+              isPinching = true;
+              startTouchDistance = currentDistance;
+              startTouchScale = zoomScale;
+              startTouchMidpoint = mid;
+              startTranslateX = zoomTranslateX;
+              startTranslateY = zoomTranslateY;
+            } else if (interactiveMode) {
+              const cy = mid.y;
+              if (!scIsTwoFinger || !scLastScrollY) {
+                scIsTwoFinger = true;
+                scLastScrollY = cy;
+                scAccumulatedScrollY = 0;
+              }
+              const dy = cy - scLastScrollY;
+              scAccumulatedScrollY += dy;
+              scLastScrollY = cy;
+
+              while (scAccumulatedScrollY > 3) {
+                scHasMoved = true;
+                sendWS({ type: 'scroll', amount: -30 });
+                scAccumulatedScrollY -= 3;
+              }
+              while (scAccumulatedScrollY < -3) {
+                scHasMoved = true;
+                sendWS({ type: 'scroll', amount: 30 });
+                scAccumulatedScrollY += 3;
+              }
+            }
           }
         } else if (touches.length === 1 && !scIsTwoFinger) {
-          e.preventDefault();
           const tx = touches[0].clientX;
           const ty = touches[0].clientY;
-          
           const dx = tx - scLastTouchX;
           const dy = ty - scLastTouchY;
+          
           if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
             scHasMoved = true;
           }
-          const rect = frame.getBoundingClientRect();
-          // Scale movement speed for precise trackpad feel
-          const speed = cursorSpeed;
-          const aspect = (frame.videoHeight && frame.videoWidth) ? (frame.videoHeight / frame.videoWidth) : (9 / 16);
-          const scaleX = rect.width;
-          const scaleY = rect.width * aspect;
-          virtualX = Math.max(0, Math.min(1, virtualX + (dx / scaleX) * speed));
-          virtualY = Math.max(0, Math.min(1, virtualY + (dy / scaleY) * speed));
-          
-          sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
-          
-          scLastTouchX = tx;
-          scLastTouchY = ty;
+
+          if (interactiveMode && zoomScale <= 1.05) {
+            e.preventDefault();
+            const rect = frame.getBoundingClientRect();
+            const speed = cursorSpeed;
+            const aspect = (frame.videoHeight && frame.videoWidth) ? (frame.videoHeight / frame.videoWidth) : (9 / 16);
+            const scaleX = rect.width;
+            const scaleY = rect.width * aspect;
+            virtualX = Math.max(0, Math.min(1, virtualX + (dx / scaleX) * speed));
+            virtualY = Math.max(0, Math.min(1, virtualY + (dy / scaleY) * speed));
+            
+            sendWS({ type: 'move_abs', xRatio: virtualX, yRatio: virtualY });
+            
+            scLastTouchX = tx;
+            scLastTouchY = ty;
+          } else if (!interactiveMode || zoomScale > 1.05) {
+            e.preventDefault();
+            zoomTranslateX += dx;
+            zoomTranslateY += dy;
+            applyZoomTransform();
+            scLastTouchX = tx;
+            scLastTouchY = ty;
+          }
         }
       }, { passive: false });
 
       frame.addEventListener('touchend', (e) => {
+        isPinching = false;
+        if (e.touches.length > 0) return;
+        
         if (!interactiveMode || !trackpadSocket) return;
 
-        if (e.touches.length > 0) return; // Wait until all fingers are lifted
-
         const duration = Date.now() - scStartTime;
-
-        // Determine click coordinates ratio
         let clickX = virtualX;
         let clickY = virtualY;
 
@@ -1759,7 +1910,6 @@
           const now = Date.now();
           if (now - scLastTapTime < 300) {
             if (scTapTimeout) clearTimeout(scTapTimeout);
-            // Mouse mode acts as standard double click at accumulated virtual coords
             sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
             setTimeout(() => {
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
@@ -1769,7 +1919,6 @@
           } else {
             scLastTapTime = now;
             scTapTimeout = setTimeout(() => {
-              // Mouse mode click at accumulated virtual coords
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
               showToast('Left Click', 600);
               scTapTimeout = null;

@@ -8,14 +8,14 @@ const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
 
-let appVersion = '6.1.0';
+let appVersion = '6.1.2';
 try {
   const pkg = require('../../package.json');
-  appVersion = pkg.version || '6.1.0';
+  appVersion = pkg.version || '6.1.2';
 } catch (e) {
   try {
     const pkg = require('../package.json');
-    appVersion = pkg.version || '6.1.0';
+    appVersion = pkg.version || '6.1.2';
   } catch {}
 }
 
