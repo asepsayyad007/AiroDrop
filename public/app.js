@@ -32,6 +32,7 @@
   let currentFilter = 'all';
   let sseSource = null;
   let isConnected = false;
+  let fetchPairedDevicesCount = null;
 
   // ─── DOM Helper ────────────────────────────────────────────
   const $ = (sel) => document.querySelector(sel);
@@ -1393,7 +1394,7 @@
       }
     }
 
-    async function fetchPairedDevicesCount() {
+    fetchPairedDevicesCount = async function() {
       try {
         const res = await doFetch('/api/auth/status');
         if (res.ok) {
