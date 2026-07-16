@@ -1,10 +1,10 @@
-# AiroDrop v6.1.3 🚀
+# AiroDrop v6.1.4 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.3-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.4-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,16 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.4
+
+This release brings version 6.1.4, fixing a critical stream failure and client UI freeze during parallel upload exceptions:
+
+### ✅ New Features & Updates
+1. **🛡️ Robust Upload Exception Handling** — Resolved a key mapping mismatch in `relay-server/server.js`'s `handleUploadError` where failed streams were cleared by `token` instead of `fileId`. This ensures interrupted transfers are properly pruned from memory, avoiding persistent `429` (Upload already in progress) errors.
+2. **🔄 Sync File Failure Propagation** — Enhanced the WebSocket error payload to propagate `fileId` to the PC client on upload failures. This prevents the client UI from freezing in a perpetual `'receiving'` state when a stream errors out or is aborted.
 
 ---
 
@@ -47,11 +57,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.3)
+## 📥 Downloads (v6.1.4)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.3/AiroDrop.Setup.6.1.3.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.3/AiroDrop-Portable-6.1.3.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.4/AiroDrop.Setup.6.1.4.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.4/AiroDrop-Portable-6.1.4.exe)** — Standalone execution without installation.
 
 ---
 
