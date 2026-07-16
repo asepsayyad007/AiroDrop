@@ -83,11 +83,26 @@ function registerMiddleware(app) {
     next();
   });
 
-  // 4. Authentication Middleware
+  // 4. Authentication Middleware & Loopback Verification
   app.use((req, res, next) => {
-    req.isLocalhost = true;
+    const remoteIp = (req.ip || req.connection.remoteAddress || '').replace(/^.*:/, '');
+    const isLoopback = remoteIp === '127.0.0.1' || remoteIp === 'localhost' || remoteIp === '1';
+
+    req.isLocalhost = isLoopback;
     req.deviceToken = 'public-device';
     req.device = { name: 'Mobile Device', ipAddress: req.ip || req.connection.remoteAddress };
+
+    // Protect administrative paths against unauthorized LAN remote requests
+    const adminPaths = [
+      '/api/control',
+      '/api/settings/browse',
+      '/api/screencast/pause'
+    ];
+
+    if (!isLoopback && adminPaths.includes(req.path.toLowerCase())) {
+      return res.status(403).json({ error: 'Access denied: Administrative path restricted to host machine loopback' });
+    }
+
     next();
   });
 }

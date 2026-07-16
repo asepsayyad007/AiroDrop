@@ -2819,8 +2819,97 @@ input:checked + .slider:before {
   border-color: rgba(0, 210, 106, 0.25);
 }
 
+
 .btn-bulk-action.accept-all-btn:hover {
   background: rgba(0, 210, 106, 0.2);
+}
+
+/* Expiry segmented control */
+.expiry-segment-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  text-align: center;
+}
+.expiry-segment-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.03);
+}
+.expiry-segment-btn.active {
+  background: var(--accent) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(255, 85, 0, 0.3);
+}
+
+/* Pulsing Status Dot indicator */
+.status-indicator-pulse {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+.status-indicator-pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.8;
+  animation: status-pulsing 1.8s ease-in-out infinite;
+}
+@keyframes status-pulsing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* Offline state layout cards */
+.relay-offline-disabled {
+  position: relative;
+  pointer-events: none !important;
+}
+
+.relay-offline-disabled > * {
+  filter: blur(1.5px) grayscale(40%) opacity(0.5);
+  transition: filter 0.3s ease;
+}
+
+.relay-offline-disabled::after {
+  content: "⚠️ Relay Server Offline";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff5500;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 85, 0, 0.2);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 8px rgba(255, 85, 0, 0.5);
 }
 
 

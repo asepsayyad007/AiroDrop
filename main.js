@@ -500,6 +500,10 @@ ipcMain.on('open-file-folder', (event, filename) => {
   shell.showItemInFolder(filePath);
 });
 
+ipcMain.on('open-save-directory', () => {
+  shell.openPath(server.getSaveDir());
+});
+
 
 // ─── Direct Streaming Upload IPC Handlers ──────────────────────
 
@@ -508,9 +512,11 @@ ipcMain.on('receive-file-start', (event, { token, filename, size, mimeType }) =>
   
   try {
     const originalName = filename;
-    const ext = path.extname(originalName) || '.bin';
+    const baseNameOnly = path.basename(originalName);
+    const rawExt = path.extname(baseNameOnly) || '.bin';
+    const ext = rawExt.replace(/[^a-zA-Z0-9.-]/g, '_');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
+    const safeName = baseNameOnly.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 50);
     const finalFilename = `${timestamp}_${safeName || 'file'}${ext}`;
     
     const saveDir = state.SAVE_DIR || path.join(app.getPath('userData'), 'received');
@@ -545,7 +551,9 @@ ipcMain.on('receive-file-chunk', (event, { token, chunk }) => {
     if (Buffer.isBuffer(chunk)) {
       buffer = chunk;
     } else if (chunk.buffer) {
-      buffer = Buffer.from(chunk.buffer, chunk.byteOffset || 0, chunk.byteLength || chunk.length);
+      const offset = typeof chunk.byteOffset === 'number' ? chunk.byteOffset : 0;
+      const length = typeof chunk.byteLength === 'number' ? chunk.byteLength : chunk.length;
+      buffer = Buffer.from(chunk.buffer, offset, length);
     } else {
       buffer = Buffer.from(chunk);
     }
@@ -561,6 +569,9 @@ ipcMain.on('receive-file-end', (event, { token }) => {
         if (fs.existsSync(session.tempPath)) {
           fs.renameSync(session.tempPath, session.finalPath);
           console.log(`[IPC] Received file successfully saved to: ${session.finalPath}`);
+          
+          // Notify renderer of the final unique filename on disk
+          event.reply('receive-file-completed', { token, filename: session.filename });
 
           // Register in system history & notify UI via SSE
           const utils = require('./src/utils');
@@ -600,9 +611,6 @@ ipcMain.on('receive-file-end', (event, { token }) => {
             message: `Received File: ${session.originalName}`,
             icon: path.join(__dirname, 'public', 'logo.png')
           });
-
-          // Open the folder to show the file (optional, matching AiroDrop UX)
-          shell.showItemInFolder(session.finalPath);
         }
       } catch (err) {
         console.error('[IPC] Failed to save/rename file stream:', err);

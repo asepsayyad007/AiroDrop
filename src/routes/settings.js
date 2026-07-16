@@ -8,14 +8,14 @@ const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
 
-let appVersion = '5.1.0';
+let appVersion = '6.1.0';
 try {
   const pkg = require('../../package.json');
-  appVersion = pkg.version || '5.1.0';
+  appVersion = pkg.version || '6.1.0';
 } catch (e) {
   try {
     const pkg = require('../package.json');
-    appVersion = pkg.version || '5.1.0';
+    appVersion = pkg.version || '6.1.0';
   } catch {}
 }
 
@@ -583,8 +583,8 @@ router.post('/open-url', express.json(), async (req, res) => {
       const { shell } = require('electron');
       await shell.openExternal(trimmed);
     } catch {
-      const { exec } = require('child_process');
-      exec(`start "" "${trimmed.replace(/"/g, '')}"`);
+      const { execFile } = require('child_process');
+      execFile('cmd.exe', ['/c', 'start', '', trimmed]);
     }
     utils.writeLog(`Opened URL in browser: ${trimmed}`);
     res.json({ success: true });

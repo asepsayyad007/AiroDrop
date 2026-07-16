@@ -1,10 +1,10 @@
-# AiroDrop v6.0.0 🚀
+# AiroDrop v6.1.0 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.0.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.0-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -19,24 +19,23 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 ---
 
-## 🚀 What's New in v6.0.0
+## 🚀 What's New in v6.1.0
 
-This release brings version 6.0.0, introducing the Send to Friend feature and direct P2P link sharing mechanisms:
+This release brings version 6.1.0, introducing major feature upgrades to P2P Link Sharing and a comprehensive projectwide security hardening:
 
 ### ✅ New Features & Updates
-1. **🔗 P2P Share Link (Send to Friend)** — Share files directly from your PC to a friend using an ephemeral link that handles direct streaming without cloud storage.
-2. **🗑️ Separate Clear and Delete Operations** — Restructured PC dashboard management into two actions:
-   - **Clear Queue**: Instantly clears dashboard item records from the active history feed without touching physical files.
-   - **Delete All Files**: Permanently deletes both the database history records and all matching physical received files from your local storage.
-3. **💬 Simplified User Confirmations** — Shortened confirmation pop-up window prompts into cleaner, highly readable phrasing.
+1. **🔗 Advanced P2P Link Share** — Directly stream multiple files concurrently over the internet using a zero-storage tunnel! Supports batched downloads and real-time interactive host acceptance.
+2. **🛡️ Comprehensive Security Hardening** — Full elimination of Path Traversal, PowerShell shell injection (now uses native FFI), Stored XSS mitigations, strict loopback API guarding, and Electron IPC whitelisting. 
+3. **🗑️ Advanced Queue Controls** — "Clear Finished" items from view without deleting files from disk. Reveal downloaded files directly in your native file explorer.
+4. **💬 Debounced Notifications** — Cleanly groups multi-file transfer notifications into a single desktop alert.
 
 ---
 
-## 📥 Downloads (v6.0.0)
+## 📥 Downloads (v6.1.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.0.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.0.0/AiroDrop.Setup.6.0.0.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.0.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.0.0/AiroDrop-Portable-6.0.0.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.0/AiroDrop.Setup.6.1.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.0/AiroDrop-Portable-6.1.0.exe)** — Standalone execution without installation.
 
 ---
 

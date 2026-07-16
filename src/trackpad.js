@@ -64,9 +64,9 @@ function sendKeystroke(charOrCode) {
         }
       }
     } else {
-      const { exec } = require('child_process');
-      const escaped = charOrCode.replace(/'/g, "''").replace(/([{}()+^%~[\]])/g, '{$1}');
-      exec(`powershell -NoProfile -Command "[System.Windows.Forms.SendKeys]::SendWait('${escaped}')"`);
+      for (let i = 0; i < charOrCode.length; i++) {
+        sendKeystroke(charOrCode[i]);
+      }
     }
   }
 }

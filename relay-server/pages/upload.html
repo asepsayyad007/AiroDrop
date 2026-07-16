@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AiroDrop — Send File to Friend</title>
+  <title>AiroDrop — Send Files to Friend</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -31,8 +31,9 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow: hidden;
+      overflow-y: auto;
       position: relative;
+      padding: 20px 0;
     }
 
     /* Ambient gradient backgrounds */
@@ -155,30 +156,48 @@
       font-weight: 500;
     }
 
-    /* Selected File View */
-    .file-preview {
-      display: none;
+    /* Queue container and items */
+    .queue-container {
       width: 100%;
+      max-height: 260px;
+      overflow-y: auto;
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--glass-border);
       border-radius: 18px;
-      padding: 16px;
-      align-items: center;
-      gap: 14px;
+      padding: 12px;
       margin-bottom: 24px;
+      display: none;
     }
 
-    .file-icon {
-      font-size: 2rem;
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      margin-bottom: 8px;
+      transition: all 0.2s ease;
     }
 
-    .file-details {
+    .queue-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .queue-item.active {
+      background: rgba(0, 136, 204, 0.06);
+      border-color: rgba(0, 136, 204, 0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .queue-item-details {
       flex: 1;
       min-width: 0;
     }
 
-    .file-name {
-      font-size: 0.9rem;
+    .queue-item-name {
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-primary);
       overflow: hidden;
@@ -186,10 +205,62 @@
       white-space: nowrap;
     }
 
-    .file-size {
-      font-size: 0.78rem;
+    .queue-item-meta {
+      font-size: 0.74rem;
       color: var(--text-secondary);
       margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .file-icon {
+      font-size: 1.8rem;
+    }
+
+    .status-badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .status-badge.pending {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+    }
+
+    .status-badge.waiting {
+      background: rgba(0, 136, 204, 0.12);
+      color: #33a3ff;
+      animation: pulse-blue 1.5s infinite;
+    }
+
+    .status-badge.uploading {
+      background: rgba(255, 170, 0, 0.12);
+      color: #ffaa00;
+    }
+
+    .status-badge.completed {
+      background: rgba(0, 210, 106, 0.12);
+      color: #00d26a;
+    }
+
+    .status-badge.declined {
+      background: rgba(255, 59, 48, 0.12);
+      color: #ff3b30;
+    }
+
+    .status-badge.failed {
+      background: rgba(255, 59, 48, 0.12);
+      color: #ff3b30;
+    }
+
+    @keyframes pulse-blue {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
     }
 
     .btn-remove {
@@ -197,9 +268,9 @@
       border: none;
       color: #ff3b30;
       cursor: pointer;
-      font-size: 1.2rem;
+      font-size: 1rem;
       padding: 4px;
-      opacity: 0.8;
+      opacity: 0.7;
       transition: opacity 0.2s;
     }
 
@@ -277,9 +348,9 @@
       opacity: 0.5;
     }
 
-    .brand img {
-      width: 20px;
-      height: 20px;
+    .brand svg {
+      width: 22px;
+      height: 22px;
     }
 
     .brand span {
@@ -329,25 +400,21 @@
       <span>Direct P2P Link</span>
     </div>
 
-    <h1>Send File to PC</h1>
-    <div class="subtitle" id="recipientText">Your friend is waiting for a file...</div>
+    <h1>Send Files to PC</h1>
+    <div class="subtitle" id="recipientText">Your friend is waiting for files...</div>
+    <div class="upload-warning" style="background: rgba(255,165,0,0.08); border: 1px solid rgba(255,165,0,0.25); padding: 8px 12px; border-radius: 8px; font-size: 0.76rem; color: #ffb74d; margin-top: 10px; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;">
+      ⚠️ Limit: Max 10 files per batch. Keep files within standard sizes for fast Direct P2P transfer.
+    </div>
 
     <!-- Drop Zone -->
     <div class="drop-zone" id="dropZone">
       <span class="drop-icon">📁</span>
-      <span class="drop-text">Click or drop file here</span>
-      <input type="file" id="fileInput" style="display: none;">
+      <span class="drop-text">Click or drop files here</span>
+      <input type="file" id="fileInput" style="display: none;" multiple>
     </div>
 
-    <!-- Selected File Preview -->
-    <div class="file-preview" id="filePreview">
-      <span class="file-icon" id="fileIcon">📄</span>
-      <div class="file-details">
-        <div class="file-name" id="fileName">file.txt</div>
-        <div class="file-size" id="fileSize">0 KB</div>
-      </div>
-      <button class="btn-remove" id="btnRemove" title="Remove file">✕</button>
-    </div>
+    <!-- Queue List View -->
+    <div class="queue-container" id="queueContainer"></div>
 
     <!-- Progress UI -->
     <div class="progress-container" id="progressContainer">
@@ -362,15 +429,29 @@
 
     <!-- Upload Button -->
     <button class="btn-upload" id="btnUpload" disabled>
-      Send File
+      Send Files
     </button>
 
     <div class="hint-text">
-      The file streams directly in real-time to your friend's PC.<br>It is never stored in the cloud.
+      Files stream directly in real-time to your friend's PC.<br>Nothing is ever stored in the cloud.
     </div>
 
     <div class="brand">
-      <img src="https://airodrop.bootstrapx007.online/logo.png" alt="AiroDrop" onerror="this.src='/logo.png'">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+        <defs>
+          <linearGradient id="ug" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ff0000"/>
+            <stop offset="50%" stop-color="#ff5500"/>
+            <stop offset="100%" stop-color="#ffcc00"/>
+          </linearGradient>
+        </defs>
+        <path d="M 300,50 C 425,195 460,290 460,380 A 160,160 0 0,1 140,380 C 140,290 175,195 300,50 Z" fill="url(#ug)"/>
+        <g fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round">
+          <circle cx="300" cy="420" r="18" fill="#fff" stroke="none"/>
+          <path d="M 262,385 A 52,52 0 0,1 338,385"/>
+          <path d="M 224,348 A 106,106 0 0,1 376,348"/>
+        </g>
+      </svg>
       <span>AiroDrop</span>
     </div>
   </div>
@@ -379,16 +460,13 @@
 
   <script>
     const token = window.location.pathname.split('/').pop();
-    let selectedFile = null;
+    let queue = [];
     let isUploading = false;
+    let currentQueueIndex = -1;
 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-    const filePreview = document.getElementById('filePreview');
-    const fileName = document.getElementById('fileName');
-    const fileSize = document.getElementById('fileSize');
-    const fileIcon = document.getElementById('fileIcon');
-    const btnRemove = document.getElementById('btnRemove');
+    const queueContainer = document.getElementById('queueContainer');
     const btnUpload = document.getElementById('btnUpload');
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
@@ -408,6 +486,8 @@
         if (!data.pcOnline) {
           showToast("PC is currently offline.", true);
           btnUpload.disabled = true;
+        } else if (queue.length > 0 && !isUploading) {
+          btnUpload.disabled = false;
         }
       } catch (err) {
         showToast("Error checking connection status.", true);
@@ -430,124 +510,294 @@
       e.preventDefault();
       dropZone.classList.remove('dragover');
       if (e.dataTransfer.files.length > 0) {
-        handleFileSelect(e.dataTransfer.files[0]);
+        handleFilesSelect(e.dataTransfer.files);
       }
     });
 
     fileInput.addEventListener('change', () => {
       if (fileInput.files.length > 0) {
-        handleFileSelect(fileInput.files[0]);
+        handleFilesSelect(fileInput.files);
       }
     });
 
-    function handleFileSelect(file) {
-      selectedFile = file;
-      fileName.textContent = file.name;
-      fileSize.textContent = formatSize(file.size);
-      
-      // Select icon based on file type
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) fileIcon.textContent = '🎵';
-      else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) fileIcon.textContent = '🎬';
-      else if (['pdf'].includes(ext)) fileIcon.textContent = '📕';
-      else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) fileIcon.textContent = '📦';
-      else if (file.type.startsWith('image/')) fileIcon.textContent = '🖼️';
-      else fileIcon.textContent = '📄';
-
-      dropZone.style.display = 'none';
-      filePreview.style.display = 'flex';
-      btnUpload.disabled = false;
+    async function generatePreview(file) {
+      if (!file.type.startsWith('image/')) return '';
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 60;
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => resolve('');
+        img.src = URL.createObjectURL(file);
+      });
     }
 
-    btnRemove.addEventListener('click', () => {
+    function handleFilesSelect(filesList) {
       if (isUploading) return;
-      selectedFile = null;
-      fileInput.value = '';
-      dropZone.style.display = 'flex';
-      filePreview.style.display = 'none';
-      btnUpload.disabled = true;
-    });
 
-    // 3. Upload Execution
+      const totalCount = queue.length + filesList.length;
+      if (totalCount > 10) {
+        showToast("Maximum 10 files allowed for upload.", true);
+        return;
+      }
+      
+      for (let i = 0; i < filesList.length; i++) {
+        const file = filesList[i];
+        // Prevent duplicate files in the list
+        if (queue.some(item => item.file.name === file.name && item.file.size === file.size)) {
+          continue;
+        }
+
+        let objectUrl = '';
+        if (file.type.startsWith('image/')) {
+          objectUrl = URL.createObjectURL(file);
+        }
+
+        queue.push({
+          id: 'q_' + Math.random().toString(36).substring(2, 9),
+          file: file,
+          status: 'pending',
+          percent: 0,
+          rate: '',
+          objectUrl: objectUrl
+        });
+      }
+
+      renderQueue();
+      if (queue.length > 0) {
+        btnUpload.disabled = false;
+        btnUpload.textContent = `Send ${queue.length} File${queue.length > 1 ? 's' : ''}`;
+      }
+    }
+
+    function renderQueue() {
+      if (queue.length === 0) {
+        queueContainer.style.display = 'none';
+        dropZone.style.display = 'flex';
+        btnUpload.disabled = true;
+        btnUpload.textContent = 'Send Files';
+        return;
+      }
+
+      dropZone.style.display = 'none';
+      queueContainer.style.display = 'block';
+
+      queueContainer.innerHTML = queue.map((item, index) => {
+        let statusText = item.status;
+        let badgeClass = item.status;
+        if (item.status === 'pending') {
+          statusText = 'Pending';
+        } else if (item.status === 'waiting') {
+          statusText = 'Waiting Accept';
+        } else if (item.status === 'uploading') {
+          statusText = `Sending ${item.percent}%`;
+        } else if (item.status === 'completed') {
+          statusText = 'Sent';
+        } else if (item.status === 'declined') {
+          statusText = 'Declined';
+        } else if (item.status === 'failed') {
+          statusText = 'Failed';
+        }
+
+        const ext = item.file.name.split('.').pop().toLowerCase();
+        let icon = '📄';
+        if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+        else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+        else if (['pdf'].includes(ext)) icon = '📕';
+        else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+        else if (item.file.type.startsWith('image/') && item.objectUrl) {
+          icon = `<img src="${item.objectUrl}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; display: block; border: 1px solid rgba(255,255,255,0.1);">`;
+        } else if (item.file.type.startsWith('image/')) {
+          icon = '🖼️';
+        }
+
+        const isCurrent = index === currentQueueIndex;
+        const removeButton = (!isUploading) 
+          ? `<button class="btn-remove" onclick="removeQueueItem('${item.id}')" title="Remove">✕</button>` 
+          : '';
+
+        return `
+          <div class="queue-item ${isCurrent ? 'active' : ''}" id="${item.id}">
+            <span class="file-icon">${icon}</span>
+            <div class="queue-item-details">
+              <div class="queue-item-name" title="${item.file.name}">${item.file.name}</div>
+              <div class="queue-item-meta">
+                <span>${formatSize(item.file.size)}</span>
+                <span>${item.rate}</span>
+              </div>
+            </div>
+            <span class="status-badge ${badgeClass}">${statusText}</span>
+            ${removeButton}
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.removeQueueItem = (id) => {
+      if (isUploading) return;
+      queue = queue.filter(item => item.id !== id);
+      renderQueue();
+    };
+
+    // 3. Parallel Upload Handshake & Streaming Execution
     btnUpload.addEventListener('click', async () => {
-      if (!selectedFile || isUploading) return;
+      if (queue.length === 0 || isUploading) return;
 
       isUploading = true;
       btnUpload.disabled = true;
-      btnRemove.style.display = 'none';
       progressContainer.style.display = 'block';
 
-      showToast("Starting real-time pipe stream...", false);
+      // Hide all remove buttons
+      renderQueue();
 
-      const startTime = Date.now();
-      let lastUploaded = 0;
-      let lastTime = Date.now();
+      const uploadPromises = queue.map(async (item) => {
+        if (item.status === 'completed' || item.status === 'declined') return;
 
-      try {
-        // Stream body custom implementation using XMLHTTPRequest to track progress
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/u/${token}/upload`, true);
-        
-        // Pass file metadata in request headers
-        xhr.setRequestHeader('x-file-name', encodeURIComponent(selectedFile.name));
-        xhr.setRequestHeader('x-file-size', selectedFile.size);
-        xhr.setRequestHeader('x-file-type', selectedFile.type || 'application/octet-stream');
+        item.status = 'waiting';
+        renderQueue();
 
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            progressBar.style.width = `${percent}%`;
-            progressPercent.textContent = `${percent}%`;
-
-            // Calculate transfer speed
-            const now = Date.now();
-            const timeDiff = (now - lastTime) / 1000;
-            if (timeDiff >= 0.5) {
-              const loadedDiff = e.loaded - lastUploaded;
-              const rate = loadedDiff / timeDiff;
-              progressRate.textContent = `${formatSize(rate)}/s`;
-              lastUploaded = e.loaded;
-              lastTime = now;
+        try {
+          const preview = await generatePreview(item.file);
+          showToast(`Waiting for recipient to accept: ${item.file.name}...`, false);
+          
+          // Step 1: Handshake (/ready) with unique fileId and preview
+          const handshakeRes = await fetch(`/u/${token}/ready`, {
+            method: 'POST',
+            headers: {
+              'x-file-name': encodeURIComponent(item.file.name),
+              'x-file-size': item.file.size,
+              'x-file-type': item.file.type || 'application/octet-stream',
+              'x-file-id': item.id,
+              'x-file-preview': preview
             }
-          }
-        };
+          });
 
-        const uploadPromise = new Promise((resolve, reject) => {
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(JSON.parse(xhr.responseText));
-            } else {
-              reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`));
+          if (!handshakeRes.ok) {
+            const errData = await handshakeRes.json();
+            throw new Error(errData.error || 'Recipient offline or link expired.');
+          }
+
+          const handshake = await handshakeRes.json();
+          if (handshake.action === 'decline') {
+            item.status = 'declined';
+            showToast(`Declined by recipient: ${item.file.name}`, true);
+            renderQueue();
+            return;
+          }
+
+          if (handshake.action !== 'start') {
+            throw new Error('Invalid handshake response.');
+          }
+
+          // Step 2: Streaming Upload (/upload) with unique fileId
+          item.status = 'uploading';
+          renderQueue();
+          showToast(`Sending: ${item.file.name}...`, false);
+
+          let lastUploaded = 0;
+          let lastTime = Date.now();
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `/u/${token}/upload`, true);
+          
+          xhr.setRequestHeader('x-file-name', encodeURIComponent(item.file.name));
+          xhr.setRequestHeader('x-file-size', item.file.size);
+          xhr.setRequestHeader('x-file-type', item.file.type || 'application/octet-stream');
+          xhr.setRequestHeader('x-file-id', item.id);
+
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              item.percent = percent;
+
+              // Update primary progress bar and text dynamically
+              progressBar.style.width = `${percent}%`;
+              progressPercent.textContent = `Streaming queue...`;
+
+              const now = Date.now();
+              const timeDiff = (now - lastTime) / 1000;
+              if (timeDiff >= 0.5) {
+                const loadedDiff = e.loaded - lastUploaded;
+                const rate = loadedDiff / timeDiff;
+                item.rate = `${formatSize(rate)}/s`;
+                progressRate.textContent = `${item.file.name}: ${item.rate}`;
+                lastUploaded = e.loaded;
+                lastTime = now;
+                renderQueue();
+              }
             }
           };
-          xhr.onerror = () => reject(new Error('Network error.'));
-          xhr.onabort = () => reject(new Error('Upload cancelled.'));
-        });
 
-        xhr.send(selectedFile);
-        await uploadPromise;
+          const uploadPromise = new Promise((resolve, reject) => {
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(JSON.parse(xhr.responseText));
+              } else {
+                reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`));
+              }
+            };
+            xhr.onerror = () => reject(new Error('Network error.'));
+            xhr.onabort = () => reject(new Error('Upload cancelled.'));
+          });
 
-        // Success state
-        showToast("File sent successfully!", false);
-        progressBar.style.width = '100%';
-        progressBar.style.background = '#00d26a';
-        progressPercent.textContent = 'Completed';
-        progressRate.textContent = '';
-        btnUpload.textContent = 'File Sent!';
-        btnUpload.style.background = '#00d26a';
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
+          xhr.send(item.file);
+          await uploadPromise;
 
-      } catch (err) {
-        showToast(err.message, true);
-        isUploading = false;
-        btnUpload.disabled = false;
-        btnRemove.style.display = 'block';
+          // File complete
+          item.status = 'completed';
+          item.rate = '';
+          renderQueue();
+          showToast(`Sent successfully: ${item.file.name}`, false);
+
+        } catch (err) {
+          item.status = 'failed';
+          item.rate = '';
+          renderQueue();
+          showToast(`Failed: ${item.file.name}: ${err.message}`, true);
+        }
+      });
+
+      await Promise.all(uploadPromises);
+
+      // All files complete
+      currentQueueIndex = -1;
+      isUploading = false;
+      progressBar.style.width = '100%';
+      progressBar.style.background = '#00d26a';
+      progressPercent.textContent = 'Queue Finished!';
+      progressRate.textContent = '';
+      
+      btnUpload.disabled = false;
+      btnUpload.textContent = 'Reset Queue';
+      btnUpload.style.background = '#00d26a';
+      
+      const resetHandler = () => {
+        queue = [];
+        renderQueue();
         progressContainer.style.display = 'none';
-        btnUpload.textContent = 'Send File';
-      }
+        progressBar.style.background = '';
+        btnUpload.style.background = '';
+        btnUpload.textContent = 'Send Files';
+        btnUpload.disabled = true;
+        btnUpload.removeEventListener('click', resetHandler);
+      };
+      
+      btnUpload.addEventListener('click', resetHandler);
     });
 
     function formatSize(bytes) {

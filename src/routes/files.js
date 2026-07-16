@@ -6,9 +6,16 @@ const multer = require('multer');
 const state = require('../state');
 
 function safePath(relPath) {
-  const resolved = path.resolve(state.SHARE_DIR, relPath || '');
-  if (!resolved.startsWith(path.resolve(state.SHARE_DIR))) {
-    return null;
+  const baseDir = path.resolve(state.SHARE_DIR);
+  const resolved = path.resolve(baseDir, relPath || '');
+  if (process.platform === 'win32') {
+    if (!resolved.toLowerCase().startsWith(baseDir.toLowerCase())) {
+      return null;
+    }
+  } else {
+    if (!resolved.startsWith(baseDir)) {
+      return null;
+    }
   }
   return resolved;
 }

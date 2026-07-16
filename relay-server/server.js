@@ -45,6 +45,8 @@ const sessions = new Map();
 const pendingDownloads = new Map();
 // Pending upload requests being piped to active WS sessions
 const pendingUploads = new Map();
+// Pending upload handshakes waiting for PC acceptance
+const pendingHandshakes = new Map();
 
 
 // ─── Utility Functions ──────────────────────────────────────
@@ -222,6 +224,28 @@ wss.on('connection', (ws, req) => {
           token,
           expiryMode
         });
+        break;
+      }
+
+      case 'accept-upload': {
+        const targetId = msg.fileId || msg.token;
+        const ph = pendingHandshakes.get(targetId);
+        if (ph) {
+          log('info', 'P2P Handshake accepted by PC', { token: msg.token, fileId: msg.fileId });
+          ph.res.json({ action: 'start' });
+          pendingHandshakes.delete(targetId);
+        }
+        break;
+      }
+
+      case 'decline-upload': {
+        const targetId = msg.fileId || msg.token;
+        const ph = pendingHandshakes.get(targetId);
+        if (ph) {
+          log('info', 'P2P Handshake declined by PC', { token: msg.token, fileId: msg.fileId });
+          ph.res.json({ action: 'decline' });
+          pendingHandshakes.delete(targetId);
+        }
         break;
       }
 
@@ -560,6 +584,79 @@ app.get('/u/:token', (req, res) => {
   serveStyledPage(res, 'upload.html', 200);
 });
 
+// Register upload intent (handshake) — uploader registers details and waits for PC approval
+app.post('/u/:token/ready', (req, res) => {
+  const token = req.params.token;
+  const share = shares.get(token);
+
+  if (!share || share.direction !== 'receive' || share.status === 'expired' || share.status === 'completed') {
+    return res.status(404).json({ error: 'Upload link expired or not found' });
+  }
+
+  if (share.expiresAt && Date.now() > share.expiresAt) {
+    share.status = 'expired';
+    shares.delete(token);
+    return res.status(404).json({ error: 'Upload link expired' });
+  }
+
+  const pcSocket = sessions.get(share.sessionKey);
+  if (!pcSocket || pcSocket.readyState !== WebSocket.OPEN) {
+    return res.status(503).json({ error: 'PC host is currently offline' });
+  }
+
+  const fileId = req.headers['x-file-id'] || token;
+  const preview = req.headers['x-file-preview'] || ''; // optional base64 image thumbnail
+
+  // Clear any existing pending handshake for this fileId to avoid conflicts
+  const existing = pendingHandshakes.get(fileId);
+  if (existing) {
+    try {
+      existing.res.status(409).json({ error: 'Superseded by a new upload request' });
+    } catch (e) {}
+    pendingHandshakes.delete(fileId);
+  }
+
+  // Extract file metadata from custom headers
+  const filename = decodeURIComponent(req.headers['x-file-name'] || 'uploaded_file');
+  const size = parseInt(req.headers['x-file-size'], 10) || 0;
+  const mimeType = req.headers['x-file-type'] || 'application/octet-stream';
+
+  pendingHandshakes.set(fileId, {
+    res,
+    token,
+    filename,
+    size,
+    mimeType
+  });
+
+  log('info', 'Incoming upload handshake registered', { token, fileId, filename, size });
+
+  // Notify PC client of the incoming upload
+  safeSend(pcSocket, {
+    type: 'incoming-upload',
+    token,
+    fileId,
+    filename,
+    size,
+    mimeType,
+    preview
+  });
+
+  // Handle client disconnect/abort
+  req.on('close', () => {
+    const ph = pendingHandshakes.get(fileId);
+    if (ph && ph.res === res) {
+      pendingHandshakes.delete(fileId);
+      log('info', 'Uploader cancelled handshake', { token, fileId });
+      safeSend(pcSocket, {
+        type: 'upload-cancelled',
+        token,
+        fileId
+      });
+    }
+  });
+});
+
 // File upload — accepts raw binary stream and forwards it via WebSocket to PC
 app.post('/u/:token/upload', (req, res) => {
   const token = req.params.token;
@@ -580,8 +677,10 @@ app.post('/u/:token/upload', (req, res) => {
     return res.status(503).send('PC host is currently offline.');
   }
 
-  if (pendingUploads.has(token)) {
-    return res.status(429).send('An upload is already in progress for this link.');
+  const fileId = req.headers['x-file-id'] || token;
+
+  if (pendingUploads.has(fileId)) {
+    return res.status(429).send('An upload is already in progress for this file.');
   }
 
   // Extract file metadata from custom headers
@@ -595,15 +694,16 @@ app.post('/u/:token/upload', (req, res) => {
     bytesTransferred: 0,
     startedAt: Date.now()
   };
-  pendingUploads.set(token, upload);
+  pendingUploads.set(fileId, upload);
   share.status = 'receiving';
 
-  log('info', 'Upload started', { token, filename, size, ip: req.ip });
+  log('info', 'Upload started', { token, fileId, filename, size, ip: req.ip });
 
   // Notify the PC that a streaming upload is starting
   safeSend(pcSocket, {
     type: 'upload-started',
     token,
+    fileId,
     filename,
     size,
     mimeType
@@ -614,21 +714,30 @@ app.post('/u/:token/upload', (req, res) => {
     if (!upload.active) return;
 
     // Send binary packet with header prefix over WebSocket to PC:
-    // [1 byte token length (N)] + [N bytes token string] + [raw chunk data]
-    const tokenBuffer = Buffer.from(token, 'ascii');
+    // [1 byte fileId length (N)] + [N bytes fileId string] + [raw chunk data]
+    const fileIdBuffer = Buffer.from(fileId, 'ascii');
     const headerBuffer = Buffer.alloc(1);
-    headerBuffer.writeUInt8(tokenBuffer.length, 0);
+    headerBuffer.writeUInt8(fileIdBuffer.length, 0);
 
-    const binaryPacket = Buffer.concat([headerBuffer, tokenBuffer, chunk]);
+    const binaryPacket = Buffer.concat([headerBuffer, fileIdBuffer, chunk]);
     
     if (pcSocket.readyState === WebSocket.OPEN) {
-      const writable = pcSocket.send(binaryPacket, { binary: true });
+      pcSocket.send(binaryPacket, { binary: true });
       upload.bytesTransferred += chunk.length;
 
-      // Backpressure handling: if the PC socket is full, pause the incoming request stream
-      if (!writable) {
+      // Backpressure handling: pause if WebSocket outbound buffer exceeds 1MB
+      if (pcSocket.bufferedAmount > 1024 * 1024) {
         req.pause();
-        pcSocket.once('drain', () => req.resume());
+        const checkInterval = setInterval(() => {
+          if (pcSocket.readyState !== WebSocket.OPEN) {
+            clearInterval(checkInterval);
+            return;
+          }
+          if (pcSocket.bufferedAmount < 512 * 1024) {
+            clearInterval(checkInterval);
+            req.resume();
+          }
+        }, 30);
       }
     } else {
       handleUploadError(new Error('PC WebSocket disconnected during upload'));
@@ -639,14 +748,15 @@ app.post('/u/:token/upload', (req, res) => {
     if (!upload.active) return;
     
     upload.active = false;
-    pendingUploads.delete(token);
+    pendingUploads.delete(fileId);
     
-    log('info', 'Upload complete', { token, bytes: upload.bytesTransferred });
+    log('info', 'Upload complete', { token, fileId, bytes: upload.bytesTransferred });
     
     // Notify the PC that the upload has finished streaming
     safeSend(pcSocket, {
       type: 'upload-complete',
       token,
+      fileId,
       bytesTransferred: upload.bytesTransferred
     });
 
