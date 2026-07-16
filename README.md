@@ -1,10 +1,10 @@
-# AiroDrop v6.1.4 🚀
+# AiroDrop v6.1.5 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.4-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.5-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,19 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.5
+
+This release brings version 6.1.5, introducing full Device Security, Access Control, and pairing validation directly from the PC Dashboard:
+
+### ✅ New Features & Updates
+1. **🛡️ Device Security & Access Control** — Complete security framework supporting customizable modes: *Protected* (requires a PIN or host screen approval), *Secret Token* (iOS Shortcut header matching), and *Open* (unauthenticated).
+2. **📱 iPhone Setup Modal Integration** — Moved the security configurations (PIN generation, shortcut token definition) directly into the onboarding modal, making it the default top setup tab.
+3. **👥 Dynamic Paired Devices List** — Renders all currently paired mobile devices with their names, IP addresses, and pairing dates, alongside instant individual **Revoke** action buttons.
+4. **⚡ Real-Time SSE Updates** — Integrates device state changes with the dashboard's Server-Sent Events stream, ensuring the active devices list updates instantly as remote devices pair or get revoked.
+5. **🔄 Localhost Auth Bypass** — Restores seamless local administration by exempting loopback connections (`localhost` / `127.0.0.1`) from remote authentication blocks.
 
 ---
 
@@ -57,11 +70,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.4)
+## 📥 Downloads (v6.1.5)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.4/AiroDrop.Setup.6.1.4.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.4)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.4/AiroDrop-Portable-6.1.4.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.5/AiroDrop.Setup.6.1.5.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.5/AiroDrop-Portable-6.1.5.exe)** — Standalone execution without installation.
 
 ---
 
