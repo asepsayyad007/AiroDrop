@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AiroDrop Legal Information</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090a0f;
+      --card-bg: rgba(22, 27, 34, 0.7);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 32px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    h1 { font-size: 2rem; color: #fff; margin-bottom: 8px; font-weight: 700; }
+    h2 { font-size: 1.4rem; color: var(--accent-light); margin-top: 36px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+    h3 { font-size: 1.1rem; color: #fff; margin-top: 20px; }
+    p, li { font-size: 0.95rem; color: var(--text-sub); }
+    strong { color: var(--text-main); }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-light);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    th { background: rgba(255,255,255,0.05); color: #fff; }
+    .divider { height: 2px; background: rgba(255,255,255,0.08); margin: 40px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <span class="badge">Proprietary Software</span>
+      <span class="badge">Last Updated: July 17, 2026</span>
+    </div>
+
+    <h1>AiroDrop Legal Information</h1>
+    <p>Consolidated document containing the Privacy Policy, Terms of Service, and Data Compliance Statement.</p>
+
+    <div class="divider"></div>
+
+    <h2>Part 1: Privacy Policy &amp; Data Compliance</h2>
+    
+    <h3>1. Core Privacy Guarantee</h3>
+    <p>AiroDrop is engineered with a strict <strong>Local-First, Zero-Data Retention</strong> architecture. Transfers performed over your local Wi-Fi network stay entirely within your Local Area Network (LAN) and are never routed through or stored on external servers.</p>
+
+    <h3>2. Data Handling &amp; Processing Architecture</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Data Type</th>
+          <th>Processed Locally (LAN)?</th>
+          <th>Sent to Cloud Relay?</th>
+          <th>Stored on Server?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Files &amp; Media</strong></td>
+          <td>Yes</td>
+          <td>Only when using Share-to-Friend links</td>
+          <td>❌ <strong>No (Streamed in-memory)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Clipboard Content</strong></td>
+          <td>Yes</td>
+          <td>❌ No</td>
+          <td>❌ <strong>No</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Auth Tokens &amp; Keys</strong></td>
+          <td>Yes (Browser LocalStorage)</td>
+          <td>❌ No</td>
+          <td>❌ <strong>No</strong></td>
+        </tr>
+        <tr>
+          <td><strong>IP Addresses</strong></td>
+          <td>Yes (LAN Pairing)</td>
+          <td>Temporary network socket connection</td>
+          <td>❌ <strong>No logs retained</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>3. Cloud Relay Sharing (`airodrop-relay`)</h3>
+    <p>When you create a Share-to-Friend link (`/d/:token`):</p>
+    <ul>
+      <li><strong>Ephemeral Memory Streaming:</strong> Data streams directly from memory buffer to recipient browser chunks. No file content is written to disk storage on our servers.</li>
+      <li><strong>Automatic Expiration:</strong> Once a share link expires (1h, 6h, or single download completion), memory references are immediately cleared.</li>
+    </ul>
+
+    <h3>4. GDPR &amp; CCPA Compliance</h3>
+    <ul>
+      <li><strong>GDPR (EU):</strong> We adhere to Data Minimization (Art. 5(1)(c)) and Storage Limitation (Art. 5(1)(e)). No user accounts or personal profiling are required.</li>
+      <li><strong>CCPA (USA):</strong> AiroDrop does not sell, rent, or trade personal information to third parties.</li>
+    </ul>
+
+    <div class="divider"></div>
+
+    <h2>Part 2: Terms of Service &amp; Usage Conditions</h2>
+
+    <h3>1. Acceptance of Terms</h3>
+    <p>By downloading, accessing, or using AiroDrop (desktop software, PWA mobile web app, or cloud relay services), you agree to be bound by these Terms of Service.</p>
+
+    <h3>2. Proprietary Status &amp; Intellectual Property</h3>
+    <p><strong>Ownership:</strong> AiroDrop (including all source code, design assets, and logos) is proprietary software. All rights are reserved by the original creator, Asep Sayyad.</p>
+    <p><strong>Usage Rights:</strong> You are granted a personal, non-exclusive, non-transferable license to run AiroDrop on your personal devices. You may not decompile, reverse-engineer, redistribute, or sell the software without express written consent.</p>
+
+    <h3>3. Permitted Use &amp; Conduct</h3>
+    <p>You agree NOT to:</p>
+    <ul>
+      <li>Use the cloud relay network to transmit illegal, malicious, or infringing content.</li>
+      <li>Attempt to exploit, tamper with, or brute-force device pairing PINs or secret key headers.</li>
+      <li>Distribute malware or execute denial-of-service (DoS) attacks against relay endpoints.</li>
+    </ul>
+
+    <h3>4. Disclaimer of Warranties</h3>
+    <p>AiroDrop is provided <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> without warranties of any kind, express or implied. We do not guarantee uninterrupted transfer speeds or zero packet loss on third-party Wi-Fi networks.</p>
+
+    <h3>5. Limitation of Liability</h3>
+    <p>In no event shall the developer or maintainers be liable for any indirect, incidental, or consequential damages arising out of your use or inability to use the software.</p>
+  </div>
+</body>
+</html>
