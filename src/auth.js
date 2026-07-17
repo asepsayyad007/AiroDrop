@@ -61,6 +61,18 @@ function unpairDevice(token) {
   if (state.pairedDevices.has(token)) {
     state.pairedDevices.delete(token);
     savePairedDevices();
+
+    // Revoke open WebSocket connections matching this token
+    if (state.wss) {
+      for (const client of state.wss.clients) {
+        if (client.deviceToken === token) {
+          try {
+            client.send(JSON.stringify({ type: 'revoked' }));
+            setTimeout(() => { client.terminate(); }, 100);
+          } catch (e) {}
+        }
+      }
+    }
     return true;
   }
   return false;
@@ -69,6 +81,18 @@ function unpairDevice(token) {
 function clearAllPairedDevices() {
   state.pairedDevices.clear();
   savePairedDevices();
+
+  // Revoke all open remote WebSocket connections
+  if (state.wss) {
+    for (const client of state.wss.clients) {
+      if (client.deviceToken && client.deviceToken !== 'localhost') {
+        try {
+          client.send(JSON.stringify({ type: 'revoked' }));
+          setTimeout(() => { client.terminate(); }, 100);
+        } catch (e) {}
+      }
+    }
+  }
 }
 
 function extractToken(req) {

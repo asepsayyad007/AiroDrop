@@ -97,6 +97,15 @@ function setupWebSocket(serverInstance, serverEvents) {
         const urlParams = new URLSearchParams(request.url.split('?')[1] || '');
         const token = urlParams.get('token');
         
+        // Reject WebSocket upgrade if security mode is not open and token is invalid/unpaired
+        if (state.SECURITY_MODE !== 'open' && token !== 'localhost') {
+          if (!token || !state.pairedDevices.has(token)) {
+            socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+        }
+        
         state.wss.handleUpgrade(request, socket, head, (ws) => {
           ws.deviceToken = token || 'localhost';
           state.wss.emit('connection', ws, request);

@@ -1,10 +1,10 @@
-# AiroDrop v6.1.5 🚀
+# AiroDrop v6.1.6 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.5-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.6-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,18 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.6
+
+This release brings version 6.1.6, introducing session revocation synchronization, tab layout refinement, and select element contrast visibility fixes:
+
+### ✅ New Features & Updates
+1. **📱 Unified Quick Connect & Security Tab** — Renamed the Device Security tab to **Quick Connect & Device Security** and integrated the Quick Connect QR code directly within it.
+2. **👁️ Dropdown Option Text Visibility** — Explicitly styled option tags within the Security Mode dropdown to guarantee high-contrast readability, resolving the transparent/invisible text bug in Chromium/Electron dark overlays.
+3. **🔒 Instant Active Session Revocation** — Configured unpairing actions on the PC dashboard to immediately broadcast a `revoked` WebSocket command, terminating remote clients' active WebRTC screencasts and forcing an immediate logout to the PIN entry screen.
+4. **🛡️ Secure WebSocket Upgrade Guards** — Secured the WebSocket server upgrades to reject connection attempts from unauthorized/unpaired devices when security is active.
 
 ---
 
@@ -70,11 +82,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.5)
+## 📥 Downloads (v6.1.6)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.5/AiroDrop.Setup.6.1.5.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.5)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.5/AiroDrop-Portable-6.1.5.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.6/AiroDrop.Setup.6.1.6.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.6/AiroDrop-Portable-6.1.6.exe)** — Standalone execution without installation.
 
 ---
 
