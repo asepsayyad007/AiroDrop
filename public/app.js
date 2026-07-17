@@ -1633,6 +1633,33 @@
       });
     }
 
+    async function autoSaveSecuritySettings() {
+      const securityMode = securityModeInput ? securityModeInput.value : 'protected';
+      const shortcutSecret = shortcutSecretInput ? shortcutSecretInput.value.trim() : '';
+      
+      try {
+        const res = await doFetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ securityMode, shortcutSecret })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log('[AUTO-SAVE] Security settings saved:', data);
+          showToast('Security settings updated', 'success');
+        }
+      } catch (err) {
+        console.error('[AUTO-SAVE] Failed to save security settings:', err);
+      }
+    }
+
+    if (securityModeInput) {
+      securityModeInput.addEventListener('change', autoSaveSecuritySettings);
+    }
+    if (shortcutSecretInput) {
+      shortcutSecretInput.addEventListener('change', autoSaveSecuritySettings);
+    }
+
     const browseDirBtn = $('#browseDirBtn');
     if (browseDirBtn && saveDirBtn) {
       browseDirBtn.addEventListener('click', async () => {
