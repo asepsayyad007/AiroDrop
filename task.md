@@ -1,6 +1,0 @@
-- [x] Implement P2P handshake endpoints in `relay-server/server.js` (`POST /u/:token/ready`, `accept-upload`, `decline-upload`, cleanup)
-- [x] Implement multi-file sequential queue in browser uploader `relay-server/pages/upload.html`
-- [x] Update PC client HTML UI (`public/index.html`) with styling for Accept/Decline state and Reveal in Folder buttons
-- [x] Update PC client Javascript renderer (`public/app.js`) to handle handshake states, accept/decline actions, and folder reveal IPC
-- [x] Copy changes to VPS and rebuild the Docker container
-- [x] Verify everything locally and remotely
