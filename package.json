@@ -3,6 +3,7 @@
   "version": "6.1.11",
   "description": "Send images and text from iPhone to PC over local network via iOS Shortcuts",
   "main": "main.js",
+  "license": "UNLICENSED",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder build --win"

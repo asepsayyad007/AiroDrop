@@ -9,7 +9,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
-![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)
+![License](https://img.shields.io/badge/license-Proprietary-red.svg?style=flat-square)
 
 ---
 
@@ -278,4 +278,4 @@ AiroDrop is created and maintained by **[Asep Sayyad](https://bootstrapx007.onli
 
 ## License
 
-This project is licensed under the MIT License.
+This project is proprietary and confidential. All rights reserved.
