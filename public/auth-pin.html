@@ -334,7 +334,7 @@
         const data = await res.json();
         if (data.success && data.deviceToken) {
           showToast('Device Paired Successfully!', 'success');
-          localStorage.setItem('airodrop_device_token', data.deviceToken);
+          localStorage.setItem('deviceToken', data.deviceToken);
           setTimeout(() => {
             window.location.href = '/m';
           }, 600);
@@ -370,7 +370,7 @@
         const data = await res.json();
         if (data.success && data.deviceToken) {
           showToast('Approved by Host! Unlocking...', 'success');
-          localStorage.setItem('airodrop_device_token', data.deviceToken);
+          localStorage.setItem('deviceToken', data.deviceToken);
           setTimeout(() => {
             window.location.href = '/m';
           }, 600);

@@ -34,7 +34,7 @@
       }
     }
     
-    function doFetch(url, options = {}) {
+    async function doFetch(url, options = {}) {
       const token = localStorage.getItem('deviceToken');
       if (token) {
         options.headers = options.headers || {};
@@ -44,7 +44,20 @@
           options.headers['Authorization'] = `Bearer ${token}`;
         }
       }
-      return fetch(url, options);
+      try {
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+          localStorage.removeItem('deviceToken');
+          document.cookie = "airodrop_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          showToast('Session expired or revoked. Re-authenticating...', 'error');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1200);
+        }
+        return res;
+      } catch (err) {
+        throw err;
+      }
     }
     // (photo vars removed — not used in this page)
 
@@ -64,11 +77,14 @@
 
     // ─── Init ─────────────────────────────────────
     async function init() {
-      const sessionCookie = getCookie('airodrop_session');
-      if (sessionCookie) {
-        localStorage.setItem('deviceToken', sessionCookie);
-      } else {
-        localStorage.setItem('deviceToken', 'public-device');
+      let token = localStorage.getItem('deviceToken');
+      if (!token || token === 'public-device') {
+        const sessionCookie = getCookie('airodrop_session');
+        if (sessionCookie) {
+          localStorage.setItem('deviceToken', sessionCookie);
+        } else {
+          localStorage.setItem('deviceToken', 'public-device');
+        }
       }
       initAppComponents();
     }
