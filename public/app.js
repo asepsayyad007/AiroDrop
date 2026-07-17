@@ -251,13 +251,13 @@
     const imgGetPCClipboard = $('#imgGetPCClipboard');
 
     if (imgShareToPC && imgShareToPC.src) {
-      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
+      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f');
     }
     if (imgClipboardToPC && imgClipboardToPC.src) {
-      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
+      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492');
     }
     if (imgGetPCClipboard && imgGetPCClipboard.src) {
-      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/c35825d9722d48158b88e192ee0ced2d');
+      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed');
     }
     // Update File Browser and SMB URL displays
     const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
@@ -1660,6 +1660,17 @@
       shortcutSecretInput.addEventListener('change', autoSaveSecuritySettings);
     }
 
+    const btnSaveShortcutSecret = $('#btnSaveShortcutSecret');
+    if (btnSaveShortcutSecret) {
+      btnSaveShortcutSecret.addEventListener('click', async () => {
+        btnSaveShortcutSecret.disabled = true;
+        btnSaveShortcutSecret.textContent = 'Saving...';
+        await autoSaveSecuritySettings();
+        btnSaveShortcutSecret.disabled = false;
+        btnSaveShortcutSecret.textContent = 'Save Secret';
+      });
+    }
+
     const browseDirBtn = $('#browseDirBtn');
     if (browseDirBtn && saveDirBtn) {
       browseDirBtn.addEventListener('click', async () => {
@@ -1856,13 +1867,13 @@
     if (btnHeaderSetup && shortcutsModal) {
       btnHeaderSetup.addEventListener('click', () => {
         if (imgShareToPC) {
-          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d');
+          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f');
         }
         if (imgClipboardToPC) {
-          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b');
+          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492');
         }
         if (imgGetPCClipboard) {
-          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/c35825d9722d48158b88e192ee0ced2d');
+          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed');
         }
         if (serverInfo) {
           const infoIPSetup = $('#infoIPSetup');

@@ -211,15 +211,18 @@ To run or modify the app locally:
 Easily share content directly from any iOS App Share Sheet or Home Screen widget.
 
 ### Shortcut 1: "Send to PC" (Share Sheet)
-**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d)
+**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f)
 
 ### Shortcut 2: "Send Clipboard" (Home Screen Widget)
-**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b)
+**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492)
+
+### Shortcut 3: "Get From PC"
+**Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed)
 
 ### 📲 Quick Install QR Codes
-| 1. Share to PC | 2. Send Clipboard |
-| :-: | :-: |
-| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/efd4af984d884e0eb8e8ba3ba319ce4d) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1f341cd7a57041958a87ce92f8acaa8b) |
+| 1. Share to PC | 2. Send Clipboard | 3. Get From PC |
+| :-: | :-: | :-: |
+| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed) |
 
 ---
 
