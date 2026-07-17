@@ -251,13 +251,13 @@
     const imgGetPCClipboard = $('#imgGetPCClipboard');
 
     if (imgShareToPC && imgShareToPC.src) {
-      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f');
+      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8');
     }
     if (imgClipboardToPC && imgClipboardToPC.src) {
-      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492');
+      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6');
     }
     if (imgGetPCClipboard && imgGetPCClipboard.src) {
-      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed');
+      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
     }
     // Update File Browser and SMB URL displays
     const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
@@ -1867,13 +1867,13 @@
     if (btnHeaderSetup && shortcutsModal) {
       btnHeaderSetup.addEventListener('click', () => {
         if (imgShareToPC) {
-          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f');
+          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8');
         }
         if (imgClipboardToPC) {
-          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492');
+          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6');
         }
         if (imgGetPCClipboard) {
-          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed');
+          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
         }
         if (serverInfo) {
           const infoIPSetup = $('#infoIPSetup');

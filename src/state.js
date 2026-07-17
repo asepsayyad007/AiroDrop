@@ -27,7 +27,7 @@ const state = {
   // Security & Authentication Settings
   SECURITY_MODE: 'protected', // 'open' | 'protected' | 'secret'
   PIN_CODE: '',
-  SHORTCUT_SECRET: '',
+  SHORTCUT_SECRET: 'airodrop',
 
   // Screencast Security Settings
   privacyPause: false,

@@ -122,7 +122,7 @@ function init(userDataPath) {
       if (data.contextMenuEnabled !== undefined) state.CONTEXT_MENU_ENABLED = !!data.contextMenuEnabled;
       if (data.securityMode) state.SECURITY_MODE = data.securityMode;
       if (data.pinCode) state.PIN_CODE = data.pinCode;
-      if (data.shortcutSecret) state.SHORTCUT_SECRET = data.shortcutSecret;
+      if (data.shortcutSecret !== undefined) state.SHORTCUT_SECRET = data.shortcutSecret;
       if (data.saveDir) {
         state.SAVE_DIR = path.isAbsolute(data.saveDir) ? data.saveDir : path.resolve(__dirname, data.saveDir);
       }

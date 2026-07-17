@@ -1,10 +1,10 @@
-# AiroDrop v6.1.9 🚀
+# AiroDrop v6.1.10 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.9-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.10-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,17 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.10
+
+This release brings version 6.1.10, updating iOS Shortcuts, pairing setup flow, and pairing request behavior:
+
+### ✅ New Features & Updates
+1. **📲 Updated iOS Shortcuts** — Updated all pre-made iOS Shortcut iCloud links and QR codes across PC Setup, Mobile WebApp, and documentation.
+2. **🔄 Setup Tab Workflow** — Reordered Setup Modal tabs to highlight iOS Shortcuts installation as Step 1 ("Step 1: Install iOS Shortcuts").
+3. **🤝 Automatic Pairing Auto-Approval** — When Security Mode is set to **Open Network (Auto-Approve)**, pairing requests from new devices are automatically approved with zero manual confirmation needed.
 
 ---
 
@@ -114,11 +125,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.9)
+## 📥 Downloads (v6.1.10)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.9/AiroDrop.Setup.6.1.9.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.9)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.9/AiroDrop-Portable-6.1.9.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.10)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.10/AiroDrop.Setup.6.1.10.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.10)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.10/AiroDrop-Portable-6.1.10.exe)** — Standalone execution without installation.
 
 ---
 
@@ -214,18 +225,18 @@ Easily share content directly from any iOS App Share Sheet or Home Screen widget
 > If Security Mode is enabled or an **iOS Shortcut Secret** is configured on PC, pass your secret in every HTTP request as a header: `X-AiroDrop-Token: <your_secret>` or append `?token=<your_secret>` to the URL. Use port `3479` (HTTP fallback port) for iOS Shortcuts to bypass self-signed SSL warnings.
 
 ### Shortcut 1: "Send to PC" (Share Sheet)
-**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f)
+**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8)
 
 ### Shortcut 2: "Send Clipboard" (Home Screen Widget)
-**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492)
+**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6)
 
 ### Shortcut 3: "Get From PC" (Receive Text & Files)
-**Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed)
+**Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac)
 
 ### 📲 Quick Install QR Codes
 | 1. Share to PC | 2. Send Clipboard | 3. Get From PC |
 | :-: | :-: | :-: |
-| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed) |
+| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac) |
 
 ### ⚡ REST API Endpoints
 * **`POST /api/send`**: Send form text (`content=hello`) or raw binary file body. Header: `X-AiroDrop-Token`.

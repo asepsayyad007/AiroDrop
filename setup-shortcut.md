@@ -14,9 +14,9 @@ This guide walks you through setting up or manually creating the three iOS Short
 
 ## Pre-made One-Tap Install Links
 
-* **Shortcut 1: "Send to PC" (Share Sheet)** — [Download Shortcut 1](https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f)
-* **Shortcut 2: "Send Clipboard" (Home Widget)** — [Download Shortcut 2](https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492)
-* **Shortcut 3: "Get From PC" (Receive Text & Files)** — [Download Shortcut 3](https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed)
+* **Shortcut 1: "Send to PC" (Share Sheet)** — [Download Shortcut 1](https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8)
+* **Shortcut 2: "Send Clipboard" (Home Widget)** — [Download Shortcut 2](https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6)
+* **Shortcut 3: "Get From PC" (Receive Text & Files)** — [Download Shortcut 3](https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac)
 
 *When setting up installed shortcuts, enter your PC IP address (e.g., `192.168.1.50`) and your iOS Shortcut Secret (if configured).*
 

@@ -473,7 +473,7 @@
                 <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
                   <img id="imgShareToPC" alt="Share to PC QR" width="110" height="110" style="display: block;">
                 </div>
-                <a href="https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
+                <a href="https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
               </div>
 
               <!-- Shortcut Card 2 -->
@@ -483,17 +483,17 @@
                 <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
                   <img id="imgClipboardToPC" alt="Clipboard to PC QR" width="110" height="110" style="display: block;">
                 </div>
-                <a href="https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
+                <a href="https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
               </div>
 
               <!-- Shortcut Card 3 -->
               <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
-                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">3. Get PC Text & Files</h4>
+                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">3. Get PC Text &amp; Files</h4>
                 <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">Separate widgets to instantly get copied text/links or download queued files from your PC onto your iPhone.</p>
                 <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
                   <img id="imgGetPCClipboard" alt="Get PC Clipboard QR" width="110" height="110" style="display: block;">
                 </div>
-                <a href="https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
+                <a href="https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
               </div>
 
             </div>
@@ -529,7 +529,7 @@
             <div style="margin-top: 4px;">
               <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Security Mode</label>
               <select id="securityModeInput" style="width: 100%; padding: 9px 12px; background: #1a1a24; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #ffffff; font-size: 0.82rem; cursor: pointer; outline: none;">
-                <option value="protected" style="background: #1a1a24; color: #ffffff;">🛡️ Protected — Require PIN or Host Approval</option>
+                <option value="protected" style="background: #1a1a24; color: #ffffff;" selected>🛡️ Protected — Require PIN or Host Approval (Default)</option>
                 <option value="secret" style="background: #1a1a24; color: #ffffff;">🔑 Secret Token — iOS Shortcut header only</option>
                 <option value="open" style="background: #1a1a24; color: #ffffff;">🌐 Open — No authentication (legacy)</option>
               </select>
@@ -547,7 +547,7 @@
             <!-- Shortcut Secret -->
             <div style="margin-top: 4px;">
               <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">iOS Shortcut Secret Key <span style="font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-secondary);">(Security Access Key for iOS Shortcuts)</span></label>
-              <input type="text" id="shortcutSecretInput" placeholder="e.g. my_secret — sent as X-AiroDrop-Token header" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; outline: none; box-sizing: border-box;">
+              <input type="text" id="shortcutSecretInput" placeholder="Default: airodrop — sent as X-AiroDrop-Token header" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; outline: none; box-sizing: border-box;">
               <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
                 <button class="btn btn-primary" id="btnSaveShortcutSecret" style="padding: 5px 14px; font-size: 0.72rem; font-weight: 600; border-radius: 6px; cursor: pointer;">Save Secret</button>
               </div>
