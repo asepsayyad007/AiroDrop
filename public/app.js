@@ -2645,7 +2645,7 @@
   // Relay server base URL — update this if you self-host the relay server
   const RELAY_BASE_URL = 'https://airodrop.bootstrapx007.online';
   const RELAY_WS_URL  = 'wss://airodrop.bootstrapx007.online/ws';
-  let selectedShareFile = null;
+  let selectedShareFiles = [];
   const activeShares = new Map();
   let relayWs = null;
   let relayReconnectTimeout = null;
@@ -2788,28 +2788,32 @@
             share.url = downloadUrl;
             activeShares.set(msg.token, share);
             
-            // Show generated link UI
-            const els = getShareLinkElements();
-            const createBtn = $('#createShareBtn');
+            if (typeof share.onRegistered === 'function') {
+              share.onRegistered(msg.token, downloadUrl);
+            } else {
+              // Show generated link UI (single link fallback)
+              const els = getShareLinkElements();
+              const createBtn = $('#createShareBtn');
 
-            if (els.urlEl) els.urlEl.textContent = downloadUrl;
-            if (els.container) els.container.style.display = 'block';
-            if (createBtn) {
-              createBtn.disabled = false;
-              createBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                Create Share Link
-              `;
+              if (els.urlEl) els.urlEl.textContent = downloadUrl;
+              if (els.container) els.container.style.display = 'block';
+              if (createBtn) {
+                createBtn.disabled = false;
+                createBtn.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  Create Share Link
+                `;
+              }
+
+              // Copy to clipboard automatically
+              navigator.clipboard.writeText(downloadUrl)
+                .then(() => showToast('Link created & copied!', 'success'))
+                .catch(() => showToast('Link created!', 'success'));
+
+              // Render Active Shares
+              renderActiveShares();
+              resetShareFileSelection(true);
             }
-
-            // Copy to clipboard automatically
-            navigator.clipboard.writeText(downloadUrl)
-              .then(() => showToast('Link created & copied!', 'success'))
-              .catch(() => showToast('Link created!', 'success'));
-
-            // Render Active Shares
-            renderActiveShares();
-            resetShareFileSelection(true);
           }
           break;
         }
@@ -3267,20 +3271,20 @@
         e.preventDefault();
         fileDrop.classList.remove('drag-over');
         if (e.dataTransfer.files.length > 0) {
-          handleShareFileSelection(e.dataTransfer.files[0]);
+          handleShareFileSelection(e.dataTransfer.files);
         }
       });
 
       fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-          handleShareFileSelection(fileInput.files[0]);
+          handleShareFileSelection(fileInput.files);
         }
       });
     }
 
     if (createBtn) {
       createBtn.addEventListener('click', () => {
-        if (!selectedShareFile) return;
+        if (!selectedShareFiles || selectedShareFiles.length === 0) return;
         if (!relayWs || relayWs.readyState !== WebSocket.OPEN) {
           showToast('Not connected to relay server. Reconnecting...', 'error');
           initRelayWebSocket();
@@ -3290,27 +3294,61 @@
         createBtn.disabled = true;
         createBtn.innerHTML = `
           <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
-          Generating Link...
+          Generating ${selectedShareFiles.length > 1 ? selectedShareFiles.length + ' Links...' : 'Link...'}
         `;
 
         const expiryMode = document.querySelector('input[name="shareExpiry"]:checked').value;
+        const fileQueue = [...selectedShareFiles];
+        const generatedUrls = [];
 
-        const newShare = {
-          file: selectedShareFile,
-          status: 'registering',
-          bytesTransferred: 0,
-          percent: 0,
-          expiryMode
-        };
-        activeShares.set('_registering', newShare);
+        function registerNextInQueue() {
+          if (fileQueue.length === 0) {
+            const els = getShareLinkElements();
+            if (createBtn) {
+              createBtn.disabled = false;
+              createBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                Create Share Link
+              `;
+            }
 
-        sendRelayMessage({
-          type: 'register-share',
-          filename: selectedShareFile.name,
-          size: selectedShareFile.size,
-          mimeType: selectedShareFile.type || 'application/octet-stream',
-          expiryMode
-        });
+            const allLinksText = generatedUrls.join('\n');
+            if (els.urlEl) els.urlEl.textContent = allLinksText;
+            if (els.container) els.container.style.display = 'block';
+
+            navigator.clipboard.writeText(allLinksText)
+              .then(() => showToast(generatedUrls.length > 1 ? `${generatedUrls.length} links created & copied!` : 'Link created & copied!', 'success'))
+              .catch(() => showToast(generatedUrls.length > 1 ? `${generatedUrls.length} links created!` : 'Link created!', 'success'));
+
+            renderActiveShares();
+            resetShareFileSelection(true);
+            return;
+          }
+
+          const currentFile = fileQueue.shift();
+          const newShare = {
+            file: currentFile,
+            status: 'registering',
+            bytesTransferred: 0,
+            percent: 0,
+            expiryMode,
+            onRegistered: (token, downloadUrl) => {
+              generatedUrls.push(downloadUrl);
+              registerNextInQueue();
+            }
+          };
+          activeShares.set('_registering', newShare);
+
+          sendRelayMessage({
+            type: 'register-share',
+            filename: currentFile.name,
+            size: currentFile.size,
+            mimeType: currentFile.type || 'application/octet-stream',
+            expiryMode
+          });
+        }
+
+        registerNextInQueue();
       });
     }
 
@@ -3555,60 +3593,142 @@
     }
   }
 
-  function handleShareFileSelection(file) {
-    selectedShareFile = file;
+  function handleShareFileSelection(input) {
+    let files = [];
+    if (input instanceof FileList || Array.isArray(input)) {
+      files = Array.from(input);
+    } else if (input instanceof File) {
+      files = [input];
+    }
+    if (files.length === 0) return;
+
+    selectedShareFiles = files;
+
     const fileDrop = $('#shareFileDrop');
     const preview = $('#shareFilePreview');
     const previewImg = $('#sharePreviewImg');
     const previewIcon = $('#shareFilePreviewIcon');
     const fileName = $('#shareFileName');
+    const multiList = $('#shareMultiFileList');
+    const clearBtn = $('#clearShareFileBtn');
     const createBtn = $('#createShareBtn');
 
     if (!fileDrop || !preview || !previewImg || !previewIcon || !fileName || !createBtn) return;
 
     fileDrop.style.display = 'none';
     preview.style.display = 'flex';
-    fileName.textContent = `${file.name} (${formatSize(file.size)})`;
     createBtn.disabled = false;
 
-    if (file.type.startsWith('image/')) {
-      previewImg.style.display = 'block';
-      previewIcon.style.display = 'none';
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        previewImg.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    if (files.length === 1) {
+      const file = files[0];
+      if (multiList) multiList.style.display = 'none';
+      fileName.style.display = 'block';
+      fileName.textContent = `${file.name} (${formatSize(file.size)})`;
+      if (clearBtn) clearBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Remove File
+      `;
+
+      if (file.type.startsWith('image/')) {
+        previewImg.style.display = 'block';
+        previewIcon.style.display = 'none';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewImg.style.display = 'none';
+        previewIcon.style.display = 'block';
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+          previewIcon.textContent = '🎵';
+        } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
+          previewIcon.textContent = '🎬';
+        } else if (['pdf'].includes(ext)) {
+          previewIcon.textContent = '📕';
+        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+          previewIcon.textContent = '📦';
+        } else {
+          previewIcon.textContent = '📄';
+        }
+      }
     } else {
+      // Multiple files mode
       previewImg.style.display = 'none';
       previewIcon.style.display = 'block';
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
-        previewIcon.textContent = '🎵';
-      } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
-        previewIcon.textContent = '🎬';
-      } else if (['pdf'].includes(ext)) {
-        previewIcon.textContent = '📕';
-      } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-        previewIcon.textContent = '📦';
-      } else {
-        previewIcon.textContent = '📄';
+      previewIcon.textContent = '📦';
+
+      const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+      fileName.style.display = 'block';
+      fileName.textContent = `${files.length} Files Selected (Total: ${formatSize(totalSize)})`;
+
+      if (clearBtn) clearBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Remove All (${files.length} files)
+      `;
+
+      if (multiList) {
+        multiList.style.display = 'flex';
+        multiList.innerHTML = '';
+        files.forEach((f, idx) => {
+          const item = document.createElement('div');
+          item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:0.75rem; width:100%; box-sizing:border-box;';
+
+          const ext = f.name.split('.').pop().toLowerCase();
+          let icon = '📄';
+          if (f.type.startsWith('image/')) icon = '🖼️';
+          else if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
+          else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
+          else if (['pdf'].includes(ext)) icon = '📕';
+          else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+
+          item.innerHTML = `
+            <span style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;">
+              <span>${icon}</span>
+              <span style="overflow:hidden; text-overflow:ellipsis; color:var(--text-primary);">${f.name}</span>
+              <span style="color:var(--text-secondary); font-size:0.68rem;">(${formatSize(f.size)})</span>
+            </span>
+          `;
+
+          const removeSingleBtn = document.createElement('button');
+          removeSingleBtn.style.cssText = 'background:none; border:none; color:#ff6b6b; cursor:pointer; padding:2px 4px; font-size:0.8rem; line-height:1; border-radius:4px;';
+          removeSingleBtn.textContent = '✕';
+          removeSingleBtn.title = 'Remove file';
+          removeSingleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedShareFiles.splice(idx, 1);
+            if (selectedShareFiles.length === 0) {
+              resetShareFileSelection(false);
+            } else {
+              handleShareFileSelection(selectedShareFiles);
+            }
+          });
+
+          item.appendChild(removeSingleBtn);
+          multiList.appendChild(item);
+        });
       }
     }
   }
 
   function resetShareFileSelection(keepLinkContainer = false) {
-    selectedShareFile = null;
+    selectedShareFiles = [];
     const fileInput = $('#shareFileInput');
     if (fileInput) fileInput.value = '';
 
     const fileDrop = $('#shareFileDrop');
     const preview = $('#shareFilePreview');
+    const multiList = $('#shareMultiFileList');
     const createBtn = $('#createShareBtn');
     const linkContainer = $('#sendShareLinkContainer');
 
     if (fileDrop) fileDrop.style.display = 'flex';
     if (preview) preview.style.display = 'none';
+    if (multiList) {
+      multiList.style.display = 'none';
+      multiList.innerHTML = '';
+    }
     if (createBtn) {
       createBtn.disabled = true;
       createBtn.innerHTML = `
