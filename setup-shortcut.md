@@ -1,280 +1,141 @@
-# iOS Shortcut Setup Guide — Complete Instructions
+# iOS Shortcut Setup Guide — Complete Instructions & REST API
 
-This guide walks you through creating two iOS Shortcuts that let you send images and text from your iPhone to your PC with a single tap, using the native Share Sheet.
+This guide walks you through setting up or manually creating the three iOS Shortcuts to send images, files, and text between your iPhone and PC, as well as accessing the REST API endpoints.
 
 > **Prerequisites:**
 > - Your PC must be running the AirDrop-to-PC server (`npm start`)
 > - Both your iPhone and PC must be on the **same Wi-Fi network**
 > - You need your PC's local IP address (shown in the dashboard and server terminal)
 > - Replace `<PC-IP>` below with your actual IP (e.g., `192.168.1.42`)
+> - **Port Note:** Use port `3479` (HTTP fallback port) for iOS Shortcuts to bypass iOS self-signed SSL warnings.
+> - **Security Secret Note:** If Security Mode is enabled or an iOS Shortcut Secret is configured on PC, pass the header `X-AiroDrop-Token: <your_secret>` or append `?token=<your_secret>` to all request URLs.
 
 ---
 
-## Shortcut 1: "Send to PC" (Share Sheet Shortcut)
+## Pre-made One-Tap Install Links
 
-This shortcut appears in the Share Sheet of **any app** — Photos, Safari, Notes, Files, etc. It automatically detects whether you're sharing an image or text and sends it to the correct endpoint.
+* **Shortcut 1: "Send to PC" (Share Sheet)** — [Download Shortcut 1](https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f)
+* **Shortcut 2: "Send Clipboard" (Home Widget)** — [Download Shortcut 2](https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492)
+* **Shortcut 3: "Get From PC" (Receive Text & Files)** — [Download Shortcut 3](https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed)
 
-### Step 1: Open the Shortcuts App
-
-1. Find the **Shortcuts** app on your iPhone (it has a red/pink icon with overlapping colored squares)
-2. If you can't find it, swipe down on your Home Screen and search for "Shortcuts"
-3. The Shortcuts app is **built into iOS** — no download needed
-
-### Step 2: Create a New Shortcut
-
-1. Tap the **+** (plus) button in the top-right corner of the Shortcuts app
-2. This creates a new blank shortcut with the default name "New Shortcut"
-3. Tap on the shortcut name at the top to rename it to **"Send to PC"**
-
-### Step 3: Configure as a Share Sheet Shortcut
-
-This is the critical step that makes the shortcut appear when you tap the Share button in any app:
-
-1. Tap the **down-arrow (ⓘ)** at the top of the shortcut editor, just below the shortcut name
-2. In the shortcut details panel that slides up, find **"Show in Share Sheet"**
-3. Toggle it **ON** (it should turn green/blue)
-4. Tap on **"Share Sheet Types"** below it
-5. Select the following types:
-   - **Images** (for photos, screenshots, downloaded images)
-   - **Text** (for copied text, notes, URLs)
-   - **URLs** (for web links)
-6. Tap **Done** in the top-right corner to close the details panel
-
-> **What this does:** Your shortcut will now appear as an option whenever you tap the Share button (the square with an arrow pointing up) in any app that shares images, text, or URLs.
-
-### Step 4: Add "Receive Any Input" Action
-
-1. At the top of your shortcut, you should see **"Shortcut Input"** in a gray bubble
-2. Tap on it
-3. In the action picker that appears, the **"Receive Any input"** action should already be selected (since you configured Share Sheet types)
-4. If you see options like "Images", "Text", "URLs" — select **"Any"** to accept all input types
-5. This means the shortcut can handle anything thrown at it
-
-### Step 5: Add the "If" Conditional Block
-
-Now we need to tell the shortcut to branch depending on whether the input is a file (Image, PDF, MP3, ZIP, etc.) or plain text:
-
-1. Tap anywhere below the "Shortcut Input" action to add a new action.
-2. Search for **"If"** in the action search bar and select it.
-3. Configure the condition:
-   *   **Input:** Tap the first parameter and choose **"Shortcut Input"**
-   *   **Modify Attribute:** Tap the **"Shortcut Input"** block *again* inside the action ➜ scroll down and select **"File Extension"**.
-   *   **Condition:** Change the condition parameter to **"has any value"** (or **"is not empty"** in older iOS versions).
-
-> **The If block should read:** `If File Extension has any value` (representing any file like PDF, MP3, PNG, ZIP, etc.)
-
-### Step 6: Add the File Upload Action (Then Block)
-
-Inside the **"Then"** section of the If block (runs when the input is a file):
-
-1. Tap inside the **"Then"** section to add an action.
-2. Search for **"Get Contents of URL"** and select it.
-3. Configure it as follows:
-   - **URL:** `http://<PC-IP>:3478/api/send` (replace `<PC-IP>` with your PC's actual local IP)
-   - **Method:** Tap "GET" and change it to **"POST"**
-   - **Request Body:** Tap "None" and change it to **"File"**
-   - **File:** Tap "File" and select the **"Shortcut Input"** variable.
-
-### Step 7: Add the Text Upload Action (Else Block)
-
-Inside the **"Else"** section of the If block (runs when the input is NOT an image, i.e., text or link):
-
-1. Tap inside the **"Else"** section to add an action.
-2. Search for **"Get Contents of URL"** and select it.
-3. Configure it as follows:
-   - **URL:** `http://<PC-IP>:3478/api/send`
-   - **Method:** Tap "GET" and change it to **"POST"**
-   - **Request Body:** Tap "None" and change it to **"Form"**
-   - **Form Values:** Tap **Add new field** ➜ choose **Text** field:
-     - **Key:** `content`
-     - **Value:** Select the **"Shortcut Input"** variable.
-
-> **What this does:** When you share an image, link, or text from any app, the shortcut automatically branches: images are sent as a raw binary file, and text/links are sent as a form text field. The server processes both formats dynamically, writing text directly to your PC clipboard and saving images directly to your PC Desktop.
-
-### Step 6: Add a Confirmation Notification
-
-1. Tap below the action to add a new action.
-2. Search for **"Show Notification"** and select it.
-3. Configure it:
-   - **Title:** "Send to PC"
-   - **Message:** "Sent to PC ✓"
-   - **Play Sound:** Toggle ON (optional)
-
-### Step 7: Test the Shortcut
-
-1. **Test with text:** Select text in any app (Notes, Safari, etc.) ➜ tap **Share** ➜ tap **"Send to PC"** ➜ verify the text is instantly copied to your PC clipboard.
-2. **Test with an image:** Open Photos ➜ select a photo ➜ tap **Share** ➜ tap **"Send to PC"** ➜ check your PC Desktop's `AirDrop-Received/` folder and clipboard.
+*When setting up installed shortcuts, enter your PC IP address (e.g., `192.168.1.50`) and your iOS Shortcut Secret (if configured).*
 
 ---
 
-## Shortcut 2: "Send Clipboard" (Home Screen Widget)
+## Manual Configuration Instructions
 
-This shortcut sends whatever is currently on your iPhone's clipboard to your PC. You can add it as a Home Screen widget for one-tap access — no need to open any app first.
+### Shortcut 1: "Send to PC" (Share Sheet Shortcut)
 
-### Step 1: Create a New Shortcut
+This shortcut appears in the Share Sheet of **any app** — Photos, Safari, Notes, Files, etc. It automatically detects whether you're sharing an image/file or text and sends it to your PC.
 
-1. Open the **Shortcuts** app
-2. Tap **+** to create a new shortcut
-3. Name it **"Send Clipboard"**
-
-### Step 2: Get Clipboard Content
-
-1. Tap to add your first action
-2. Search for **"Get Clipboard"**
-3. Select it
-
-> **What this does:** This action reads whatever text is currently stored in your iPhone's clipboard (whatever you last copied).
-
-### Step 3: Add the "If" Conditional Block
-
-1. Tap below the Get Clipboard action.
-2. Search for **"If"** in the action search bar and select it.
-3. Configure the condition:
-   *   **Input:** Tap and choose **"Clipboard"**
-   *   **Modify Attribute:** Tap the **"Clipboard"** block *again* inside the action ➜ scroll down and select **"File Extension"**.
-   *   **Condition:** Change to **"has any value"** (or **"is not empty"**).
-
-### Step 4: Add the File Upload Action (Then Block)
-
-Inside the **"Then"** section of the If block:
-
-1. Tap inside **"Then"** ➜ add **"Get Contents of URL"**.
-2. Configure it:
-   - **URL:** `http://<PC-IP>:3478/api/send`
-   - **Method:** **"POST"**
-   - **Request Body:** **"File"**
-   - **File:** Select the **"Clipboard"** variable.
-
-### Step 5: Add the Text Upload Action (Else Block)
-
-Inside the **"Else"** section of the If block:
-
-1. Tap inside **"Else"** ➜ add **"Get Contents of URL"**.
-2. Configure it:
-   - **URL:** `http://<PC-IP>:3478/api/send`
-   - **Method:** **"POST"**
-   - **Request Body:** **"Form"**
-   - **Form Values:** Tap **Add new field** ➜ choose **Text** field:
-     - **Key:** `content`
-     - **Value:** Select the **"Clipboard"** variable.
-
-### Step 4: Add Confirmation Notification
-
-1. Add a **"Show Notification"** action.
-2. Set the message to **"Clipboard sent ✓"**.
-
-### Step 5: Add to Home Screen as Widget
-
-Now make it accessible from your Home Screen with one tap:
-
-#### Option A: Add as Home Screen Icon (simple)
-
-1. In the Shortcuts app, tap the **down-arrow (ⓘ)** on your "Send Clipboard" shortcut
-2. Tap **"Add to Home Screen"**
-3. You can customize the icon and name:
-   - **Name:** "Send Clipboard" (or "→ PC" for brevity)
-   - **Icon:** Tap the icon to choose a color/glyph (e.g., an arrow, a clipboard icon)
-   - **Color:** Pick a distinctive color so it's easy to find
-4. Tap **"Add"** in the top-right
-5. The shortcut now appears on your Home Screen — tap it anytime to send your clipboard
-
-#### Option B: Add as a Widget (more prominent)
-
-1. Long-press on an empty space on your Home Screen
-2. Tap the **+** (plus) button in the top-left corner
-3. Scroll down to find **"Shortcuts"** and tap it
-4. Choose a widget size:
-   - **Small:** Shows one shortcut as a single tap button
-   - **Medium:** Shows up to 4 shortcuts
-5. Tap **"Add Widget"**
-6. After placing the widget, tap it to configure which shortcut it runs
-7. Select **"Send Clipboard"**
-
-> **Usage:** Copy any text on your iPhone (e.g., a phone number, address, link, snippet from an article), then tap the Home Screen widget. The text instantly appears on your PC's clipboard.
+1. Open **Shortcuts** app ➜ tap **+** ➜ rename to **"Send to PC"**
+2. Tap **ⓘ (Details)** ➜ enable **"Show in Share Sheet"** ➜ set Share Sheet Types to **Any**
+3. Add action: **"If"** ➜ set Input: **Shortcut Input** ➜ Modify attribute to **File Extension** ➜ Condition: **"has any value"**
+4. Under **Then** (Files / Images):
+   - Add **"Get Contents of URL"**
+   - **URL:** `http://<PC-IP>:3479/api/send` (or `http://<PC-IP>:3479/api/send?token=<your_secret>`)
+   - **Method:** **POST**
+   - **Request Body:** **File** ➜ File: **Shortcut Input**
+   - **Headers:** Key: `X-AiroDrop-Token`, Value: `<Your iOS Shortcut Secret>`
+5. Under **Else** (Text / Links):
+   - Add **"Get Contents of URL"**
+   - **URL:** `http://<PC-IP>:3479/api/send`
+   - **Method:** **POST**
+   - **Request Body:** **Form** ➜ Field `content`: **Shortcut Input**
+   - **Headers:** Key: `X-AiroDrop-Token`, Value: `<Your iOS Shortcut Secret>`
+6. Add **"Show Notification"** ➜ Message: `"Sent to PC ✓"`
 
 ---
 
-## Creating a "Receive from PC" Shortcut (Unified, Handles Text & Files)
+### Shortcut 2: "Send Clipboard" (Home Screen Widget)
 
-Since the dashboard supports sending content and files from PC to iPhone, you can create a shortcut that checks the unified clipboard and pending items:
-
-### Step 1: Create "Receive from PC" Shortcut
-
-1. Create a new shortcut named **"Receive from PC"**
-2. Add **"Get Contents of URL"**:
-   - **URL:** `http://<PC-IP>:3479/api/clipboard` (using the fallback port `3479` to bypass self-signed SSL errors)
-   - **Method:** **"GET"**
-3. Add **"Get Dictionary from Input"** (set input to the returned **Contents of URL**)
-4. Add **"Get Dictionary Value"** → set key to `"success"`
-5. Add an **"If"** block → set condition to `"is true"`:
-   * **Then (Valid Clipboard content):**
-     1. Add **"Get Dictionary Value"** → set key to `"type"` and dictionary to the top-level **Dictionary**
-     2. Add an **"If"** block → set condition to `"is text"`:
-        * **If Text:**
-          - Add **"Get Dictionary Value"** → set key to `"text"`
-          - Add **"Copy to Clipboard"** → set input to **Dictionary Value**
-          - Add **"Get Dictionary Value"** → set key to `"id"`
-          - Add **"Get Contents of URL"** → URL: `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST** (notifies the PC dashboard that the item was received and clears it from the queue)
-          - Add **"Show Notification"** → Message: `"Text copied to clipboard"`
-        * **Otherwise (If File):**
-          - Add **"Choose from Menu"** → Prompt: `"Download File?"` → Options: **Download**, **Cancel**
-          - Under **Download**:
-            - Add **"Get Dictionary Value"** → set key to `"url"`
-            - Add **"Get Contents of URL"** → set target to the `"url"` **Dictionary Value** (downloads the file)
-            - Add **"Get Dictionary Value"** → set key to `"mimeType"`
-            - Add an **"If"** block → set condition to `"starts with image/ or video/"`:
-              * **If Image/Video:** Add **"Save to Photo Album"** → set input to the downloaded **Contents of URL**
-              * **Otherwise:** Add **"Save File"** → set input to the downloaded **Contents of URL** (saves to AiroDrop folder)
-            - Add **"Get Dictionary Value"** → set key to `"id"`
-            - Add **"Get Contents of URL"** → URL: `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST**
-            - Add **"Show Notification"** → Message: `"File downloaded successfully"`
-   * **Otherwise (Empty/Failed state):**
-     - Add **"Show Notification"** → Message: `"Clipboard is empty"`
-
-### Step 2: Add to Home Screen
-
-Add this shortcut to your Home Screen as a widget. Whenever you tap it, it will fetch whatever text or files are ready on the PC.
+1. Open **Shortcuts** app ➜ tap **+** ➜ rename to **"Send Clipboard"**
+2. Add action: **"Get Clipboard"**
+3. Add action: **"If"** ➜ Input: **Clipboard** ➜ Modify attribute to **File Extension** ➜ Condition: **"has any value"**
+4. Under **Then** (Files / Images):
+   - Add **"Get Contents of URL"**
+   - **URL:** `http://<PC-IP>:3479/api/send`
+   - **Method:** **POST**
+   - **Request Body:** **File** ➜ File: **Clipboard**
+   - **Headers:** Key: `X-AiroDrop-Token`, Value: `<Your iOS Shortcut Secret>`
+5. Under **Else** (Text / Links):
+   - Add **"Get Contents of URL"**
+   - **URL:** `http://<PC-IP>:3479/api/send`
+   - **Method:** **POST**
+   - **Request Body:** **Form** ➜ Field `content`: **Clipboard**
+   - **Headers:** Key: `X-AiroDrop-Token`, Value: `<Your iOS Shortcut Secret>`
+6. Add **"Show Notification"** ➜ Message: `"Clipboard sent ✓"`
 
 ---
 
-## Troubleshooting
+### Shortcut 3: "Get From PC" (Receive Text & Download Files)
 
-### "Shortcut Input" or "Clipboard" not appearing as a variable
-When setting the File parameter in the URL actions, make sure to tap the variable suggestion that appears above the keyboard (e.g., "Shortcut Input" or "Clipboard"). If you don't see it:
-- Make sure you configured "Show in Share Sheet" correctly in Step 3
-- Try deleting the "Get Contents of URL" action and re-adding it
+Fetches active text or files sent from PC dashboard to your iPhone.
 
-### Connection refused / request failed
-- Ensure your PC server is running (`npm start`)
-- Both devices must be on the **same Wi-Fi network** (not cellular data)
-- Double-check the IP address matches what's shown in the server terminal
-- If your router uses AP isolation, disable it in your router settings
-
-### Image not saving
-- Check that `~/Desktop/AirDrop-Received/` folder exists (the server creates it automatically)
-- Ensure the image format is supported (JPG, PNG, GIF, WebP, HEIC, BMP, SVG)
-- Maximum file size is 50 MB
-
-### Shortcut not appearing in Share Sheet
-- Go to Settings → Shortcuts → ensure "Allow Untrusted Shortcuts" is ON
-- Make sure "Show in Share Sheet" is toggled ON in the shortcut details
-- Try sharing from a different app (Photos, Safari, Notes)
-- Restart your iPhone if the shortcut still doesn't appear
-
-### Widget not working
-- Make sure the shortcut runs correctly when tapped from inside the Shortcuts app first
-- iOS widgets sometimes have a slight delay on first use
-- Remove and re-add the widget if it's unresponsive
+1. Open **Shortcuts** app ➜ tap **+** ➜ rename to **"Get From PC"**
+2. Add action: **"Get Contents of URL"**:
+   - **URL:** `http://<PC-IP>:3479/api/clipboard`
+   - **Method:** **GET**
+   - **Headers:** Key: `X-AiroDrop-Token`, Value: `<Your iOS Shortcut Secret>`
+3. Add **"Get Dictionary from Input"** ➜ Input: **Contents of URL**
+4. Add **"Get Dictionary Value"** ➜ Key: `"success"`
+5. Add **"If"** ➜ Condition: `"is true"`:
+   - **Then (Valid Content):**
+     - Add **"Get Dictionary Value"** ➜ Key: `"type"`
+     - Add **"If"** ➜ Condition: `"is text"`:
+       - **If Text:**
+         - Add **"Get Dictionary Value"** ➜ Key: `"text"`
+         - Add **"Copy to Clipboard"** ➜ Input: **Dictionary Value**
+         - Add **"Get Dictionary Value"** ➜ Key: `"id"`
+         - Add **"Get Contents of URL"** ➜ `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST** ➜ Headers: `X-AiroDrop-Token: <your_secret>`
+         - Add **"Show Notification"** ➜ `"Text copied to clipboard"`
+       - **Otherwise (If File):**
+         - Add **"Choose from Menu"** ➜ Prompt: `"Download File?"` ➜ Options: **Download**, **Cancel**
+         - Under **Download**:
+           - Add **"Get Dictionary Value"** ➜ Key: `"url"`
+           - Add **"Get Contents of URL"** ➜ Input: `"url"` **Dictionary Value**
+           - Add **"Get Dictionary Value"** ➜ Key: `"mimeType"`
+           - Add **"If"** ➜ Condition: `"starts with image/ or video/"`:
+             - **If Image/Video:** **"Save to Photo Album"** ➜ Input: downloaded **Contents of URL**
+             - **Otherwise:** **"Save File"** ➜ Input: downloaded **Contents of URL**
+           - Add **"Get Dictionary Value"** ➜ Key: `"id"`
+           - Add **"Get Contents of URL"** ➜ `http://<PC-IP>:3479/api/pending/<id>/ack` ➜ Method: **POST** ➜ Headers: `X-AiroDrop-Token: <your_secret>`
+           - Add **"Show Notification"** ➜ `"File downloaded successfully"`
+   - **Otherwise (Empty state):**
+     - Add **"Show Notification"** ➜ `"Clipboard is empty"`
 
 ---
 
-## Quick Reference Card
+## REST API Reference
 
-| What | How |
-|------|-----|
-| Send photo to PC | Open Photos → Select → Share → "Send to PC" |
-| Send text to PC | Select text in any app → Share → "Send to PC" |
-| Send URL to PC | In Safari/any browser → Share → "Send to PC" |
-| Send clipboard to PC | Copy anything → Tap "Send Clipboard" widget |
-| Check for PC messages | Tap "Check PC" shortcut |
-| Open dashboard | In Safari, go to `http://<PC-IP>:3478` |
+You can call the server directly via cURL, Python, JS, or any HTTP client:
+
+### 1. Send Text or File (`POST /api/send`)
+- **URL:** `http://<PC-IP>:3479/api/send` (or port `3478`)
+- **Headers:** `X-AiroDrop-Token: <your_secret>` (if secret is enabled)
+- **Send Text (Form):**
+  ```bash
+  curl -X POST "http://<PC-IP>:3479/api/send" \
+    -H "X-AiroDrop-Token: <your_secret>" \
+    -d "content=Hello from cURL"
+  ```
+- **Send File (Raw Binary):**
+  ```bash
+  curl -X POST "http://<PC-IP>:3479/api/send" \
+    -H "X-AiroDrop-Token: <your_secret>" \
+    --data-binary "@photo.jpg"
+  ```
+
+### 2. Fetch Clipboard / Pending Item (`GET /api/clipboard`)
+- **URL:** `http://<PC-IP>:3479/api/clipboard`
+- **Headers:** `X-AiroDrop-Token: <your_secret>`
+  ```bash
+  curl "http://<PC-IP>:3479/api/clipboard" -H "X-AiroDrop-Token: <your_secret>"
+  ```
+
+### 3. Acknowledge Queue Item (`POST /api/pending/:id/ack`)
+- **URL:** `http://<PC-IP>:3479/api/pending/<item_id>/ack`
+- **Headers:** `X-AiroDrop-Token: <your_secret>`
+  ```bash
+  curl -X POST "http://<PC-IP>:3479/api/pending/<item_id>/ack" -H "X-AiroDrop-Token: <your_secret>"
+  ```

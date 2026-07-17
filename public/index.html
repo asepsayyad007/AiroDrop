@@ -549,7 +549,9 @@
             <div style="margin-top: 4px;">
               <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">iOS Shortcut Secret <span style="font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--accent);">(Most important for shortcuts to work)</span></label>
               <input type="text" id="shortcutSecretInput" placeholder="e.g. my_secret — sent as X-AiroDrop-Token header" style="width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; outline: none; box-sizing: border-box;">
-              <button class="btn btn-primary" id="btnSaveShortcutSecret" style="margin-top: 8px; padding: 8px 12px; font-size: 0.76rem; font-weight: 700; border-radius: 8px; width: 100%; cursor: pointer;">Save Secret</button>
+              <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+                <button class="btn btn-primary" id="btnSaveShortcutSecret" style="padding: 5px 14px; font-size: 0.72rem; font-weight: 600; border-radius: 6px; cursor: pointer;">Save Secret</button>
+              </div>
             </div>
 
             <!-- Paired Devices Footer -->
@@ -564,17 +566,30 @@
             </div>
           </div>
 
-          <!-- Tab 3: Manual Instructions -->
+          <!-- Tab 3: Manual Instructions & REST API -->
           <div id="setup-manual" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
             <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Manual Configuration & REST API</h3>
             <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-              If Apple Shortcuts don't download, you can design them manually inside the Apple <strong>Shortcuts</strong> App:
+              If Apple Shortcuts don't download, you can design them manually inside the Apple <strong>Shortcuts</strong> App or call the REST API endpoints directly:
             </p>
             
+            <!-- Auth Token Alert Banner -->
+            <div style="background: rgba(var(--accent-rgb, 99, 102, 241), 0.1); border: 1px solid var(--accent); border-radius: var(--radius-md); padding: 10px 14px;">
+              <strong style="color: var(--accent-light); font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Authentication &amp; Secret Key Header (Required if Secret is Set)
+              </strong>
+              <p style="margin: 4px 0 0 0; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.45;">
+                When Security Mode is enabled or an iOS Shortcut Secret is saved, pass your secret in every HTTP request:<br>
+                • <strong>Header:</strong> Key: <code style="color: var(--accent);">X-AiroDrop-Token</code> &nbsp;|&nbsp; Value: <code style="color: var(--accent);">&lt;Your Secret Key&gt;</code><br>
+                • <strong>Or URL Query Parameter:</strong> <code style="color: var(--accent);">http://&lt;PC-IP&gt;:3479/api/send?token=&lt;Your Secret Key&gt;</code>
+              </p>
+            </div>
+
             <div style="display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; padding-right: 6px;">
               <!-- Shortcut 1 Manual Instructions -->
               <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut A: "Send to PC" (Share Sheet)</h4>
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut 1: "Send to PC" (Share Sheet)</h4>
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
                   <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
                   <li>Open shortcut settings ➜ turn on <strong>"Show in Share Sheet"</strong> ➜ set input type to <strong>Any</strong></li>
@@ -584,6 +599,7 @@
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
                       <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Shortcut Input</strong></li>
+                      <li>Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                     </ul>
                   </li>
                   <li>Under <strong>Else</strong> (Text/URL path):
@@ -591,6 +607,7 @@
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
                       <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Shortcut Input</strong></li>
+                      <li>Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                     </ul>
                   </li>
                 </ol>
@@ -598,7 +615,7 @@
 
               <!-- Shortcut 2 Manual Instructions -->
               <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut B: "Send Clipboard" (Home Widget)</h4>
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut 2: "Send Clipboard" (Home Widget)</h4>
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
                   <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
                   <li>Add: <strong>"Get Clipboard"</strong></li>
@@ -608,6 +625,7 @@
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
                       <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>File</strong> &rarr; File: <strong>Clipboard</strong></li>
+                      <li>Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                     </ul>
                   </li>
                   <li>Under <strong>Else</strong> (Text/URL path):
@@ -615,6 +633,7 @@
                       <li>Add: <strong>"Get Contents of URL"</strong></li>
                       <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Request Body: <strong>Form</strong> &rarr; Text Field: Key: <code>content</code>, Value: <strong>Clipboard</strong></li>
+                      <li>Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                     </ul>
                   </li>
                 </ol>
@@ -622,21 +641,21 @@
 
               <!-- Shortcut 3 Manual Instructions -->
               <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut C: "Receive from PC" (Unified, Handles Text &amp; Files)</h4>
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">Shortcut 3: "Get From PC" (Text &amp; File Download)</h4>
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0; display: flex; flex-direction: column; gap: 4px;">
                   <li>Open <strong>Shortcuts</strong> App &rarr; tap <strong>+</strong></li>
-                  <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong></li>
+                  <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong> ➜ Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                   <li>Add: <strong>"Get Dictionary from Input"</strong> ➜ set input to <strong>Contents of URL</strong></li>
                   <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>success</code></li>
                   <li>Add: <strong>"If"</strong> ➜ set condition to <code>is true</code>:
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>type</code> and dictionary to the top-level <strong>Dictionary</strong></li>
+                      <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>type</code> and dictionary to top-level <strong>Dictionary</strong></li>
                       <li>Add: <strong>"If"</strong> ➜ set condition to <code>is text</code>:
                         <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
                           <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>text</code></li>
                           <li>Add: <strong>"Copy to Clipboard"</strong> ➜ set target to <strong>Dictionary Value</strong></li>
                           <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>id</code></li>
-                          <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
+                          <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong> ➜ Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                           <li>Add: <strong>"Show Notification"</strong> ➜ Message: <em>Text copied to clipboard</em></li>
                         </ul>
                       </li>
@@ -646,7 +665,7 @@
                           <li>Under <strong>Download</strong>:
                             <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                               <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>url</code></li>
-                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ set target to the <strong>Dictionary Value</strong> (downloads file)</li>
+                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ set target to <strong>Dictionary Value</strong> (downloads file)</li>
                               <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>mimeType</code></li>
                               <li>Add: <strong>"If"</strong> ➜ set condition to <code>starts with image/ or video/</code>:
                                 <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
@@ -659,7 +678,7 @@
                                 </ul>
                               </li>
                               <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>id</code></li>
-                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
+                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong> ➜ Headers: Key: <code>X-AiroDrop-Token</code>, Value: <strong>Your iOS Shortcut Secret</strong></li>
                               <li>Add: <strong>"Show Notification"</strong> ➜ Message: <em>File downloaded successfully</em></li>
                             </ul>
                           </li>
@@ -674,6 +693,26 @@
                   </li>
                 </ol>
               </div>
+
+              <!-- REST API Reference Card -->
+              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
+                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">⚡ REST API Endpoint Reference</h4>
+                <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
+                  <div>
+                    <code style="color: var(--accent); font-weight: bold;">POST /api/send</code>
+                    <div>Send text or files to PC. For form text: <code>content=hello</code>. For raw binary file: send file stream in body. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+                  </div>
+                  <div>
+                    <code style="color: var(--accent); font-weight: bold;">GET /api/clipboard</code>
+                    <div>Fetch current active text or pending transfer item queued from PC to mobile. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+                  </div>
+                  <div>
+                    <code style="color: var(--accent); font-weight: bold;">POST /api/pending/:id/ack</code>
+                    <div>Acknowledge receipt of a queued item from PC to clear it from queue. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 

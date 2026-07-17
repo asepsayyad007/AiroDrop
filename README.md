@@ -206,9 +206,12 @@ To run or modify the app locally:
 
 ---
 
-## iOS Shortcuts Configuration
+## iOS Shortcuts & REST API Configuration
 
-Easily share content directly from any iOS App Share Sheet or Home Screen widget.
+Easily share content directly from any iOS App Share Sheet or Home Screen widget, or integrate via REST API.
+
+> **🔒 Authentication & Secret Key:**
+> If Security Mode is enabled or an **iOS Shortcut Secret** is configured on PC, pass your secret in every HTTP request as a header: `X-AiroDrop-Token: <your_secret>` or append `?token=<your_secret>` to the URL. Use port `3479` (HTTP fallback port) for iOS Shortcuts to bypass self-signed SSL warnings.
 
 ### Shortcut 1: "Send to PC" (Share Sheet)
 **Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f)
@@ -216,13 +219,18 @@ Easily share content directly from any iOS App Share Sheet or Home Screen widget
 ### Shortcut 2: "Send Clipboard" (Home Screen Widget)
 **Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492)
 
-### Shortcut 3: "Get From PC"
+### Shortcut 3: "Get From PC" (Receive Text & Files)
 **Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed)
 
 ### 📲 Quick Install QR Codes
 | 1. Share to PC | 2. Send Clipboard | 3. Get From PC |
 | :-: | :-: | :-: |
 | ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/4b1c46abb1bd46bb8540ee5a1fa5a56f) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/18239e8c6962480290c249a28f242492) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/15ab7ff4352e4bc49c013e6a7fc471ed) |
+
+### ⚡ REST API Endpoints
+* **`POST /api/send`**: Send form text (`content=hello`) or raw binary file body. Header: `X-AiroDrop-Token`.
+* **`GET /api/clipboard`**: Fetch current active text or pending transfer item. Header: `X-AiroDrop-Token`.
+* **`POST /api/pending/:id/ack`**: Acknowledge receipt of a queued transfer item. Header: `X-AiroDrop-Token`.
 
 ---
 
