@@ -1333,7 +1333,7 @@
     const shortcutSecretInput = $('#shortcutSecretInput');
     const pairedDevicesStatusText = $('#pairedDevicesStatusText');
     const btnRegeneratePin = $('#btnRegeneratePin');
-    const btnRevokeAllPaired = $('#btnRevokeAllPaired');
+    const btnRevokeAllPaired = $('#btnRevokeAllPaired') || $('#btnUnpairAllDevices');
 
     loadSettingsData();
 
