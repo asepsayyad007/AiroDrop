@@ -56,8 +56,11 @@ app.use('/received', (req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
+    const basename = path.basename(filePath).toLowerCase();
     const cacheable = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
-    if (cacheable.includes(ext)) {
+    if (basename === 'sw.js' || basename === 'mobile-app.js') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    } else if (cacheable.includes(ext)) {
       res.setHeader('Cache-Control', 'public, max-age=3600');
     } else {
       res.setHeader('Cache-Control', 'no-cache');

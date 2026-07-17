@@ -1,10 +1,10 @@
-# AiroDrop v6.1.7 🚀
+# AiroDrop v6.1.8 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.7-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.8-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,17 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.8
+
+This release brings version 6.1.8, introducing cache-busting, service worker bypass rules, and HTTP header adjustments to resolve client-side cache lockups:
+
+### ✅ New Features & Updates
+1. **🧹 Force Client PWA Cache-Busting** — Added cache-busting URL parameter query strings (`mobile-app.js?v=6.1.8`) to the script tag in [public/mobile.html](file:///C:/Users/aseps/Downloads/AiroDrop/public/mobile.html) to invalidate and bypass cached javascript client scripts.
+2. **🔄 Service Worker Bypass Rules** — Configured [public/sw.js](file:///C:/Users/aseps/Downloads/AiroDrop/public/sw.js) to bypass cache matching for core mobile application requests (`/mobile-app.js`, `/mobile.html`, `/m`), forcing the mobile browser to fetch these directly from the local server.
+3. **⚡ Static HTTP Header Adjustments** — Configured [server.js](file:///C:/Users/aseps/Downloads/AiroDrop/server.js) to serve `sw.js` and `mobile-app.js` with `no-store` and `max-age=0` directives, preventing standard browser HTTP cache storage.
 
 ---
 
@@ -94,11 +105,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.7)
+## 📥 Downloads (v6.1.8)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.7/AiroDrop.Setup.6.1.7.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.7/AiroDrop-Portable-6.1.7.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.8/AiroDrop.Setup.6.1.8.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.8)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.8/AiroDrop-Portable-6.1.8.exe)** — Standalone execution without installation.
 
 ---
 
