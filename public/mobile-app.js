@@ -158,6 +158,7 @@
 
       setupFileBrowserOverlay();
       setupMicStream();
+      initMobileSetupModal();
 
       // Setup Bottom Navigation
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
@@ -264,8 +265,13 @@
         _isReconnecting = false;
         if (_reconnectTimer) { clearInterval(_reconnectTimer); _reconnectTimer = null; }
 
-        // Set fallback URL
+        // Set fallback URL and setup modal status info
         document.querySelectorAll('.fallbackUrlText').forEach(el => el.textContent = `${info.url}/api/send`);
+        const ipEl = document.getElementById('mobileInfoIp');
+        if (ipEl) ipEl.textContent = info.ip || '...';
+        const nameEl = document.getElementById('mobileInfoDeviceName');
+        if (nameEl) nameEl.textContent = info.deviceName || 'PC';
+        document.querySelectorAll('.mobileSetupIpCode').forEach(el => el.textContent = info.ip || '...');
       } catch {
         dot.className = 'dot err';
         if (!_isReconnecting) {
@@ -280,6 +286,67 @@
             }
           }, 1000);
         }
+      }
+    }
+
+    function initMobileSetupModal() {
+      const btnMenu = document.getElementById('btnMobileMenu');
+      const modal = document.getElementById('mobileSetupOverlay');
+      const btnClose = document.getElementById('btnCloseMobileSetup');
+      const btnRefresh = document.getElementById('btnModalRefresh');
+      const btnCopyUrl = document.getElementById('btnModalCopyUrl');
+      const btnLogout = document.getElementById('btnModalLogout');
+
+      if (btnMenu && modal) {
+        btnMenu.addEventListener('click', () => {
+          triggerHaptic(20);
+          modal.style.display = 'flex';
+        });
+      }
+
+      if (btnClose && modal) {
+        btnClose.addEventListener('click', () => {
+          triggerHaptic(15);
+          modal.style.display = 'none';
+        });
+      }
+
+      if (btnRefresh) {
+        btnRefresh.addEventListener('click', async () => {
+          triggerHaptic(30);
+          btnRefresh.disabled = true;
+          btnRefresh.textContent = '🔄 Refreshing...';
+          await checkConnection();
+          await fetchPending();
+          btnRefresh.disabled = false;
+          btnRefresh.textContent = '🔄 Refresh Connection & Data';
+          showToast('Connection refreshed!', 'success');
+        });
+      }
+
+      if (btnCopyUrl) {
+        btnCopyUrl.addEventListener('click', () => {
+          triggerHaptic(20);
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            showToast('Mobile Dashboard URL copied!', 'success');
+          }).catch(() => {
+            showToast('Unable to copy URL automatically', 'error');
+          });
+        });
+      }
+
+      if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+          triggerHaptic([30, 50, 30]);
+          if (confirm('Re-authenticate or log out from PC? This will wipe your session token.')) {
+            localStorage.removeItem('deviceToken');
+            document.cookie = "airodrop_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            showToast('Session logged out. Reloading...', 'info');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        });
       }
     }
 
