@@ -298,9 +298,19 @@
       const btnCopyUrl = document.getElementById('btnModalCopyUrl');
       const btnLogout = document.getElementById('btnModalLogout');
 
+      // If user has already opened setup or dismissed the help badge, hide badge
+      if (localStorage.getItem('airodrop_setup_badge_dismissed') === 'true') {
+        if (btnHelpBadge) btnHelpBadge.style.display = 'none';
+      }
+
       const openModal = () => {
         triggerHaptic(20);
         if (modal) modal.style.display = 'flex';
+        // Mark badge as dismissed so it only shows for new users before first setup view
+        try {
+          localStorage.setItem('airodrop_setup_badge_dismissed', 'true');
+        } catch (e) {}
+        if (btnHelpBadge) btnHelpBadge.style.display = 'none';
       };
 
       if (btnMenu) btnMenu.addEventListener('click', openModal);
