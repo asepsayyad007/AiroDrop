@@ -5,6 +5,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
 ![Version](https://img.shields.io/badge/version-6.1.11-orange.svg?style=flat-square)
+![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)

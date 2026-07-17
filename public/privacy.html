@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy & Data Compliance — AiroDrop</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090a0f;
+      --card-bg: rgba(22, 27, 34, 0.7);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+    }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 32px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    h1 { font-size: 2rem; color: #fff; margin-bottom: 8px; font-weight: 700; }
+    h2 { font-size: 1.3rem; color: var(--accent-light); margin-top: 28px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+    p, li { font-size: 0.95rem; color: var(--text-sub); }
+    strong { color: var(--text-main); }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-light);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    th { background: rgba(255,255,255,0.05); color: #fff; }
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .btn-back { font-size: 0.85rem; color: var(--accent-light); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav-header">
+      <a href="/" class="btn-back">← Back to AiroDrop</a>
+      <span class="badge">Zero Data Retention</span>
+    </div>
+
+    <h1>Privacy Policy &amp; Data Compliance</h1>
+    <p><strong>Effective Date:</strong> July 17, 2026</p>
+
+    <h2>1. Core Privacy Guarantee</h2>
+    <p>AiroDrop is engineered with a strict <strong>Local-First, Zero-Data Retention</strong> architecture. Your privacy is paramount: transfers performed over your local Wi-Fi network remain entirely within your Local Area Network (LAN) and are never routed through or stored on external servers.</p>
+
+    <h2>2. Data Handling &amp; Processing Architecture</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data Type</th>
+          <th>Processed Locally (LAN)?</th>
+          <th>Sent to Cloud Relay?</th>
+          <th>Stored on Server?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Files &amp; Media</strong></td>
+          <td>Yes</td>
+          <td>Only when using Share-to-Friend links</td>
+          <td>❌ <strong>No (Streamed in-memory)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Clipboard Content</strong></td>
+          <td>Yes</td>
+          <td>❌ No</td>
+          <td>❌ <strong>No</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Auth Tokens &amp; Keys</strong></td>
+          <td>Yes (Browser LocalStorage)</td>
+          <td>❌ No</td>
+          <td>❌ <strong>No</strong></td>
+        </tr>
+        <tr>
+          <td><strong>IP Addresses</strong></td>
+          <td>Yes (LAN Pairing)</td>
+          <td>Temporary network socket connection</td>
+          <td>❌ <strong>No logs retained</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Cloud Relay Sharing (`airodrop-relay`)</h2>
+    <p>When you create a Share-to-Friend link (`/d/:token`):</p>
+    <ul>
+      <li><strong>Ephemeral Memory Streaming:</strong> Data streams directly from memory buffer to recipient browser chunks. No file content is written to disk storage on our servers.</li>
+      <li><strong>Automatic Expiration:</strong> Once a share link expires (1h, 6h, or single download completion), memory references are immediately cleared.</li>
+    </ul>
+
+    <h2>4. GDPR &amp; CCPA Compliance</h2>
+    <ul>
+      <li><strong>GDPR (EU):</strong> We adhere to Data Minimization (Art. 5(1)(c)) and Storage Limitation (Art. 5(1)(e)). No user accounts or personal profiling are required.</li>
+      <li><strong>CCPA (USA):</strong> AiroDrop does not sell, rent, or trade personal information to third parties.</li>
+    </ul>
+
+    <h2>5. Contact Information</h2>
+    <p>If you have questions regarding data privacy or security, visit <a href="https://bootstrapx007.online/" target="_blank">Creator Portfolio</a> or review the project source documentation.</p>
+  </div>
+</body>
+</html>
