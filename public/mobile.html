@@ -603,10 +603,17 @@
   <div class="app" id="mainAppContainer" style="display: none;">
     <!-- Header -->
     <div class="header" style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <!-- 3-Dots Options Menu Button -->
-      <button id="btnMobileMenu" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: background 0.2s;" title="Setup Shortcuts &amp; Options">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-      </button>
+      <!-- 3-Dots Options Menu Button with Help Badge -->
+      <div style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; z-index: 10;">
+        <button id="btnMobileHelpBadge" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.35)); border: 1px solid rgba(99, 102, 241, 0.5); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; box-shadow: 0 0 12px rgba(99, 102, 241, 0.4); cursor: pointer; display: flex; align-items: center; gap: 4px; outline: none; transition: transform 0.15s, background 0.2s; animation: pulseHelp 2.5s infinite ease-in-out;" title="Click for iOS Shortcuts Setup &amp; Help">
+          <span style="font-size: 0.75rem;">⚡</span>
+          <span>Setup / Help</span>
+        </button>
+        <button id="btnMobileMenu" style="position: relative; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: var(--text); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: background 0.2s;" title="Setup Shortcuts &amp; Options">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          <span style="position: absolute; top: 0px; right: 0px; width: 8px; height: 8px; background: #10b981; border: 2px solid #0f0f19; border-radius: 50%; box-shadow: 0 0 6px #10b981;"></span>
+        </button>
+      </div>
       <img src="logo.svg" alt="AiroDrop Logo" style="width: 64px; height: 64px; margin-bottom: 12px; filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));">
       <h1>Send <span>to PC</span></h1>
       <div class="conn" style="display: inline-flex; align-items: center; gap: 8px;">
@@ -1378,6 +1385,7 @@
 
   <style>
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes pulseHelp { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.85; } }
   </style>
 
 </body>

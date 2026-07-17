@@ -291,18 +291,20 @@
 
     function initMobileSetupModal() {
       const btnMenu = document.getElementById('btnMobileMenu');
+      const btnHelpBadge = document.getElementById('btnMobileHelpBadge');
       const modal = document.getElementById('mobileSetupOverlay');
       const btnClose = document.getElementById('btnCloseMobileSetup');
       const btnRefresh = document.getElementById('btnModalRefresh');
       const btnCopyUrl = document.getElementById('btnModalCopyUrl');
       const btnLogout = document.getElementById('btnModalLogout');
 
-      if (btnMenu && modal) {
-        btnMenu.addEventListener('click', () => {
-          triggerHaptic(20);
-          modal.style.display = 'flex';
-        });
-      }
+      const openModal = () => {
+        triggerHaptic(20);
+        if (modal) modal.style.display = 'flex';
+      };
+
+      if (btnMenu) btnMenu.addEventListener('click', openModal);
+      if (btnHelpBadge) btnHelpBadge.addEventListener('click', openModal);
 
       if (btnClose && modal) {
         btnClose.addEventListener('click', () => {
