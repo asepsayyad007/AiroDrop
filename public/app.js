@@ -3283,7 +3283,7 @@
     }
 
     if (createBtn) {
-      createBtn.addEventListener('click', () => {
+      createBtn.addEventListener('click', async () => {
         if (!selectedShareFiles || selectedShareFiles.length === 0) return;
         if (!relayWs || relayWs.readyState !== WebSocket.OPEN) {
           showToast('Not connected to relay server. Reconnecting...', 'error');
@@ -3292,63 +3292,59 @@
         }
 
         createBtn.disabled = true;
-        createBtn.innerHTML = `
-          <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
-          Generating ${selectedShareFiles.length > 1 ? selectedShareFiles.length + ' Links...' : 'Link...'}
-        `;
 
-        const expiryMode = document.querySelector('input[name="shareExpiry"]:checked').value;
-        const fileQueue = [...selectedShareFiles];
-        const generatedUrls = [];
+        let fileToShare;
+        if (selectedShareFiles.length === 1) {
+          fileToShare = selectedShareFiles[0];
+          createBtn.innerHTML = `
+            <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
+            Generating Link...
+          `;
+        } else {
+          createBtn.innerHTML = `
+            <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
+            Zipping ${selectedShareFiles.length} files...
+          `;
 
-        function registerNextInQueue() {
-          if (fileQueue.length === 0) {
-            const els = getShareLinkElements();
-            if (createBtn) {
-              createBtn.disabled = false;
-              createBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                Create Share Link
-              `;
+          if (typeof JSZip !== 'undefined') {
+            try {
+              const zip = new JSZip();
+              selectedShareFiles.forEach(f => zip.file(f.name, f));
+              const blob = await zip.generateAsync({ type: 'blob' });
+              const dateStr = new Date().toISOString().slice(0, 10);
+              fileToShare = new File([blob], `airodrop-archive-${dateStr}.zip`, { type: 'application/zip' });
+            } catch (err) {
+              console.error('[Share] JSZip error:', err);
+              fileToShare = selectedShareFiles[0]; // fallback
             }
-
-            const allLinksText = generatedUrls.join('\n');
-            if (els.urlEl) els.urlEl.textContent = allLinksText;
-            if (els.container) els.container.style.display = 'block';
-
-            navigator.clipboard.writeText(allLinksText)
-              .then(() => showToast(generatedUrls.length > 1 ? `${generatedUrls.length} links created & copied!` : 'Link created & copied!', 'success'))
-              .catch(() => showToast(generatedUrls.length > 1 ? `${generatedUrls.length} links created!` : 'Link created!', 'success'));
-
-            renderActiveShares();
-            resetShareFileSelection(true);
-            return;
+          } else {
+            fileToShare = selectedShareFiles[0];
           }
 
-          const currentFile = fileQueue.shift();
-          const newShare = {
-            file: currentFile,
-            status: 'registering',
-            bytesTransferred: 0,
-            percent: 0,
-            expiryMode,
-            onRegistered: (token, downloadUrl) => {
-              generatedUrls.push(downloadUrl);
-              registerNextInQueue();
-            }
-          };
-          activeShares.set('_registering', newShare);
-
-          sendRelayMessage({
-            type: 'register-share',
-            filename: currentFile.name,
-            size: currentFile.size,
-            mimeType: currentFile.type || 'application/octet-stream',
-            expiryMode
-          });
+          createBtn.innerHTML = `
+            <svg class="spinner" viewBox="0 0 50 50" style="width:16px;height:16px;margin-right:8px;animation:rotate 2s linear infinite;display:inline-block;vertical-align:middle;"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5" stroke="var(--text-primary)" style="stroke-linecap:round;animation:dash 1.5s ease-in-out infinite;"></circle></svg>
+            Generating Link...
+          `;
         }
 
-        registerNextInQueue();
+        const expiryMode = document.querySelector('input[name="shareExpiry"]:checked').value;
+
+        const newShare = {
+          file: fileToShare,
+          status: 'registering',
+          bytesTransferred: 0,
+          percent: 0,
+          expiryMode
+        };
+        activeShares.set('_registering', newShare);
+
+        sendRelayMessage({
+          type: 'register-share',
+          filename: fileToShare.name,
+          size: fileToShare.size,
+          mimeType: fileToShare.type || 'application/octet-stream',
+          expiryMode
+        });
       });
     }
 
