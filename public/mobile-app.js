@@ -71,7 +71,16 @@
     function getCookie(name) {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
+      if (parts.length === 2) {
+        let val = parts.pop().split(';').shift();
+        if (val) {
+          val = val.trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.slice(1, -1);
+          }
+        }
+        return val;
+      }
       return null;
     }
 
@@ -873,7 +882,16 @@
 
       const token = localStorage.getItem('deviceToken') || '';
       const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${proto}//${window.location.host}/trackpad?token=${token}`);
+      
+      let ws;
+      try {
+        ws = new WebSocket(`${proto}//${window.location.host}/trackpad?token=${token}`);
+      } catch (err) {
+        console.error('[WS] WebSocket constructor failed:', err);
+        wsConnecting = false;
+        updateUniversalConnectButton('failed');
+        return;
+      }
 
       ws.onopen = () => {
         wsConnecting = false;

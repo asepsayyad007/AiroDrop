@@ -1,5 +1,5 @@
 // Progressive Web App Service Worker for AiroDrop
-const CACHE_NAME = 'airodrop-cache-v5';
+const CACHE_NAME = 'airodrop-cache-v6';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to pre-cache on service worker installation

@@ -1,10 +1,10 @@
-# AiroDrop v6.1.6 🚀
+# AiroDrop v6.1.7 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨‍💻 **[Creator Portfolio](https://bootstrapx007.online/)**
+🌍 **[Official Website](https://airodrop.bootstrapx007.online/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.6-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.7-orange.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -16,6 +16,18 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.7
+
+This release brings version 6.1.7, introducing WebSocket setup optimization, upgrade error-handling guards, cookie-quote stripping, and service worker cache invalidation:
+
+### ✅ New Features & Updates
+1. **🔒 WebSocket Server Instance De-duplication** — Prevented double instantiation of `state.wss` and duplicate listener registrations of the trackpad `'connection'` events when binding to fallback port upgrades.
+2. **🛡️ Upgrade Path Normalization & Rejection Guards** — Handled errors inside the upgrade handler to cleanly reject sockets instead of leaving them hanging, and added trailing slash support (e.g. `/trackpad/`).
+3. **🔄 Cookie Quote-Stripping & Try-Catch constructor** — Stripped single/double quote delimiters when fetching the session token from client cookies, and wrapped client-side `new WebSocket()` creation inside `try...catch` blocks to prevent page execution hangs.
+4. **🧹 PWA Cache Version Invalidation** — Bumped the PWA service worker cache name to `airodrop-cache-v6` to guarantee browsers instantly load the updated mobile client assets.
 
 ---
 
@@ -82,11 +94,11 @@ This release brings version 6.1.2, introducing major feature upgrades to Live Sc
 
 ---
 
-## 📥 Downloads (v6.1.6)
+## 📥 Downloads (v6.1.7)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.6/AiroDrop.Setup.6.1.6.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.1.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.6/AiroDrop-Portable-6.1.6.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.1.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.7/AiroDrop.Setup.6.1.7.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.1.7)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.1.7/AiroDrop-Portable-6.1.7.exe)** — Standalone execution without installation.
 
 ---
 

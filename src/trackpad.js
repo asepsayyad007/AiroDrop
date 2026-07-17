@@ -72,34 +72,187 @@ function sendKeystroke(charOrCode) {
 }
 
 function setupWebSocket(serverInstance, serverEvents) {
-  state.wss = new WebSocket.Server({ noServer: true });
-  
-  // ─── Keepalive: ping every 15s, terminate unresponsive clients ───
-  const WS_PING_INTERVAL = 15000;
-  if (!state._wsPingTimer) {
-    state._wsPingTimer = setInterval(() => {
-      if (!state.wss) return;
-      for (const ws of state.wss.clients) {
-        if (ws._isAlive === false) {
-          ws.terminate();
-          continue;
+  // Only instantiate the WebSocket.Server once
+  if (!state.wss) {
+    state.wss = new WebSocket.Server({ noServer: true });
+    
+    // ─── Keepalive: ping every 15s, terminate unresponsive clients ───
+    const WS_PING_INTERVAL = 15000;
+    if (!state._wsPingTimer) {
+      state._wsPingTimer = setInterval(() => {
+        if (!state.wss) return;
+        for (const ws of state.wss.clients) {
+          if (ws._isAlive === false) {
+            ws.terminate();
+            continue;
+          }
+          ws._isAlive = false;
+          ws.ping();
         }
-        ws._isAlive = false;
-        ws.ping();
-      }
-    }, WS_PING_INTERVAL);
+      }, WS_PING_INTERVAL);
+    }
+
+    state.wss.on('connection', (ws) => {
+      console.log('[TRACKPAD] Phone connected via WebSocket');
+      ws._isAlive = true;
+      ws.on('pong', () => { ws._isAlive = true; });
+      serverEvents.emit('phone_connected', ws);
+      let accumX = 0;
+      let accumY = 0;
+      
+      ws.on('message', (message) => {
+        try {
+          let messageStr;
+          if (typeof message === 'string') {
+            messageStr = message;
+          } else {
+            messageStr = Buffer.from(message).toString('utf8');
+          }
+          const data = JSON.parse(messageStr);
+          
+          switch (data.type) {
+            case 'move':
+              try {
+                accumX += data.dx;
+                accumY += data.dy;
+                const moveX = Math.trunc(accumX);
+                const moveY = Math.trunc(accumY);
+                if (moveX !== 0 || moveY !== 0) {
+                  accumX -= moveX;
+                  accumY -= moveY;
+                  if (mouse_event) {
+                    mouse_event(0x0001, moveX, moveY, 0, 0);
+                  }
+                }
+              } catch (moveErr) {
+                const moveX = Math.round(data.dx);
+                const moveY = Math.round(data.dy);
+                if (mouse_event) {
+                  mouse_event(0x0001, moveX, moveY, 0, 0);
+                }
+              }
+              break;
+            case 'click':
+              if (mouse_event) {
+                const button = data.button || 'left';
+                const downFlag = button === 'left' ? 0x0002 : 0x0008; // LEFTDOWN : RIGHTDOWN
+                const upFlag = button === 'left' ? 0x0004 : 0x0010;   // LEFTUP : RIGHTUP
+                mouse_event(downFlag, 0, 0, 0, 0);
+                mouse_event(upFlag, 0, 0, 0, 0);
+              }
+              break;
+            case 'scroll':
+              if (mouse_event) {
+                const amount = Math.round(data.amount);
+                mouse_event(0x0800, 0, 0, amount, 0); // MOUSEEVENTF_WHEEL
+              }
+              break;
+            case 'keyboard':
+              try {
+                const key = data.key;
+                const isSpecial = data.isSpecial;
+                const activeModifiers = data.modifiers || [];
+                
+                // key mapping ...
+                if (isSpecial) {
+                  const keyMap = {
+                    'backspace': 0x08, 'tab': 0x09, 'enter': 0x0D, 'escape': 0x1B, 'space': 0x20,
+                    'arrowup': 0x26, 'arrowdown': 0x28, 'arrowleft': 0x25, 'arrowright': 0x27, 'delete': 0x2E
+                  };
+                  const vk = keyMap[key.toLowerCase()];
+                  if (vk) {
+                    keybd_event(vk, 0, 0, 0);
+                    keybd_event(vk, 0, 2, 0);
+                  }
+                } else if (key) {
+                  // Standard character typing
+                  const vkMap = {
+                    'a':0x41,'b':0x42,'c':0x43,'d':0x44,'e':0x45,'f':0x46,'g':0x47,'h':0x48,'i':0x49,'j':0x4A,
+                    'k':0x4B,'l':0x4C,'m':0x4D,'n':0x4E,'o':0x4F,'p':0x50,'q':0x51,'r':0x52,'s':0x53,'t':0x54,
+                    'u':0x55,'v':0x56,'w':0x57,'x':0x58,'y':0x59,'z':0x5A,'0':0x30,'1':0x31,'2':0x32,'3':0x33,
+                    '4':0x34,'5':0x35,'6':0x36,'7':0x37,'8':0x38,'9':0x39
+                  };
+                  const lower = key.toLowerCase();
+                  if (vkMap[lower]) {
+                    const vk = vkMap[lower];
+                    const needsShift = key !== lower;
+                    if (needsShift) keybd_event(0x10, 0, 0, 0);
+                    keybd_event(vk, 0, 0, 0);
+                    keybd_event(vk, 0, 2, 0);
+                    if (needsShift) keybd_event(0x10, 0, 2, 0);
+                  }
+                }
+              } catch (e) {}
+              break;
+            case 'identify':
+              ws.deviceName = data.deviceName || 'Mobile Device';
+              console.log('[TRACKPAD] Device identified:', ws.deviceName);
+              utils.broadcastSSE('trackpad_status', { connected: true, deviceName: data.deviceName });
+              break;
+            case 'screencast_start':
+              serverEvents.emit('screencast_start', ws, data.audioOnly);
+              break;
+            case 'screencast_stop':
+              serverEvents.emit('screencast_stop', ws);
+              break;
+            case 'webrtc_answer':
+              serverEvents.emit('webrtc_answer', ws, data.answer);
+              break;
+            case 'webrtc_ice_candidate':
+              serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
+              break;
+            case 'mic_offer':
+              serverEvents.emit('mic_offer', ws, data.offer);
+              break;
+            case 'mic_ice_candidate':
+              serverEvents.emit('mic_ice_candidate', ws, data.candidate);
+              break;
+            case 'mic_stop':
+              serverEvents.emit('mic_stop', ws);
+              break;
+            case 'ping_pc':
+              utils.broadcastSSE('ping-pc', { device: ws.deviceToken || 'mobile' });
+              serverEvents.emit('ping_pc', ws);
+              break;
+          }
+        } catch (err) {
+          console.error('[TRACKPAD] WS Message parsing failed:', err.message);
+        }
+      });
+      
+      ws.on('close', () => {
+        console.log('[TRACKPAD] Phone disconnected');
+        serverEvents.emit('phone_disconnected', ws);
+        if (state.screencastStopTimeout) clearTimeout(state.screencastStopTimeout);
+        state.screencastStopTimeout = setTimeout(() => {
+          console.log('[TRACKPAD] screencastStopTimeout triggered; stopping screencast');
+          serverEvents.emit('screencast_stop', ws);
+        }, 30000);
+        utils.broadcastSSE('trackpad_status', { connected: false });
+      });
+    });
   }
 
+  // Register the upgrade listener for this serverInstance
   serverInstance.on('upgrade', (request, socket, head) => {
     try {
-      const pathname = request.url.split('?')[0];
+      let pathname = request.url.split('?')[0];
+      // Normalize pathname (ignore trailing slashes)
+      if (pathname.endsWith('/') && pathname.length > 1) {
+        pathname = pathname.slice(0, -1);
+      }
+      
       if (pathname === '/trackpad') {
         const urlParams = new URLSearchParams(request.url.split('?')[1] || '');
         const token = urlParams.get('token');
         
+        console.log('[WS-UPGRADE] Upgrading /trackpad connection. Security Mode:', state.SECURITY_MODE, 'Token:', token);
+        console.log('[WS-UPGRADE] Currently paired device tokens:', Array.from(state.pairedDevices.keys()));
+
         // Reject WebSocket upgrade if security mode is not open and token is invalid/unpaired
         if (state.SECURITY_MODE !== 'open' && token !== 'localhost') {
           if (!token || !state.pairedDevices.has(token)) {
+            console.warn('[WS-UPGRADE] Rejecting WebSocket connection. Token not paired or invalid:', token);
             socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
             socket.destroy();
             return;
@@ -113,166 +266,11 @@ function setupWebSocket(serverInstance, serverEvents) {
       }
     } catch (err) {
       console.error('[WS-UPGRADE] Upgrade failed:', err.message);
-    }
-  });
-
-  state.wss.on('connection', (ws) => {
-    console.log('[TRACKPAD] Phone connected via WebSocket');
-    ws._isAlive = true;
-    ws.on('pong', () => { ws._isAlive = true; });
-    serverEvents.emit('phone_connected', ws);
-    let accumX = 0;
-    let accumY = 0;
-    
-    ws.on('message', (message) => {
       try {
-        let messageStr;
-        if (typeof message === 'string') {
-          messageStr = message;
-        } else {
-          messageStr = Buffer.from(message).toString('utf8');
-        }
-        const data = JSON.parse(messageStr);
-        
-        switch (data.type) {
-          case 'move':
-            try {
-              accumX += data.dx;
-              accumY += data.dy;
-              const moveX = Math.trunc(accumX);
-              const moveY = Math.trunc(accumY);
-              if (moveX !== 0 || moveY !== 0) {
-                accumX -= moveX;
-                accumY -= moveY;
-                if (mouse_event) {
-                  mouse_event(0x0001, moveX, moveY, 0, 0);
-                }
-              }
-            } catch (moveErr) {
-              const moveX = Math.round(data.dx);
-              const moveY = Math.round(data.dy);
-              if (mouse_event) {
-                mouse_event(0x0001, moveX, moveY, 0, 0);
-              }
-            }
-            break;
-          case 'click':
-            if (mouse_event) {
-              const button = data.button || 'left';
-              const downFlag = button === 'left' ? 0x0002 : 0x0008; // LEFTDOWN : RIGHTDOWN
-              const upFlag = button === 'left' ? 0x0004 : 0x0010;   // LEFTUP : RIGHTUP
-              mouse_event(downFlag, 0, 0, 0, 0);
-              mouse_event(upFlag, 0, 0, 0, 0);
-            }
-            break;
-          case 'scroll':
-            if (mouse_event) {
-              const amount = Math.round(data.amount);
-              mouse_event(0x0800, 0, 0, amount, 0); // MOUSEEVENTF_WHEEL
-            }
-            break;
-          case 'keyboard':
-            try {
-              const key = data.key;
-              const type = data.action || 'press';
-              if (type === 'press') {
-                if (key.length === 1) {
-                  // Text typing
-                  const ks = require('node-key-sender');
-                  ks.sendText(key);
-                } else {
-                  // Special key
-                  const ks = require('node-key-sender');
-                  ks.sendKey(key.toLowerCase());
-                }
-              }
-            } catch (keyErr) {
-              console.error('[TRACKPAD] Key event processing failed:', keyErr.message);
-            }
-            break;
-          case 'identify':
-            if (data.deviceName) {
-              console.log(`[TRACKPAD] Device identified: ${data.deviceName}`);
-              utils.broadcastSSE('trackpad_status', { connected: true, deviceName: data.deviceName });
-            }
-            break;
-          case 'type':
-            sendKeystroke(data.text);
-            break;
-          case 'key':
-            sendKeystroke(data.code);
-            break;
-          case 'move_abs':
-            if (SetCursorPos && GetSystemMetrics) {
-              const screenW = GetSystemMetrics(0); // SM_CXSCREEN
-              const screenH = GetSystemMetrics(1); // SM_CYSCREEN
-              const absX = Math.round((data.xRatio || 0) * screenW);
-              const absY = Math.round((data.yRatio || 0) * screenH);
-              SetCursorPos(absX, absY);
-            }
-            break;
-          case 'click_abs':
-            if (SetCursorPos && mouse_event && GetSystemMetrics) {
-              const screenW = GetSystemMetrics(0); // SM_CXSCREEN
-              const screenH = GetSystemMetrics(1); // SM_CYSCREEN
-              const absX = Math.round((data.xRatio || 0) * screenW);
-              const absY = Math.round((data.yRatio || 0) * screenH);
-              SetCursorPos(absX, absY);
-              if (data.button === 'right') {
-                mouse_event(0x0008, 0, 0, 0, 0); // MOUSEEVENTF_RIGHTDOWN
-                mouse_event(0x0010, 0, 0, 0, 0); // MOUSEEVENTF_RIGHTUP
-              } else {
-                mouse_event(0x0002, 0, 0, 0, 0); // MOUSEEVENTF_LEFTDOWN
-                mouse_event(0x0004, 0, 0, 0, 0); // MOUSEEVENTF_LEFTUP
-              }
-            }
-            break;
-          case 'screencast_start':
-            if (state.screencastStopTimeout) {
-              clearTimeout(state.screencastStopTimeout);
-              state.screencastStopTimeout = null;
-              console.log('[TRACKPAD] screencastStopTimeout cleared on reconnection');
-            }
-            serverEvents.emit('screencast_start', ws);
-            break;
-          case 'screencast_stop':
-            serverEvents.emit('screencast_stop', ws);
-            break;
-          case 'webrtc_answer':
-            serverEvents.emit('webrtc_answer', ws, data.answer);
-            break;
-          case 'webrtc_ice_candidate':
-            serverEvents.emit('webrtc_ice_candidate', ws, data.candidate);
-            break;
-          case 'mic_offer':
-            serverEvents.emit('mic_offer', ws, data.offer);
-            break;
-          case 'mic_ice_candidate':
-            serverEvents.emit('mic_ice_candidate', ws, data.candidate);
-            break;
-          case 'mic_stop':
-            serverEvents.emit('mic_stop', ws);
-            break;
-          case 'ping_pc':
-            utils.broadcastSSE('ping-pc', { device: ws.deviceToken || 'mobile' });
-            serverEvents.emit('ping_pc', ws);
-            break;
-        }
-      } catch (err) {
-        console.error('[TRACKPAD] WS Message parsing failed:', err.message);
-      }
-    });
-    
-    ws.on('close', () => {
-      console.log('[TRACKPAD] Phone disconnected');
-      serverEvents.emit('phone_disconnected', ws);
-      if (state.screencastStopTimeout) clearTimeout(state.screencastStopTimeout);
-      state.screencastStopTimeout = setTimeout(() => {
-        console.log('[TRACKPAD] screencastStopTimeout triggered; stopping screencast');
-        serverEvents.emit('screencast_stop', ws);
-      }, 30000);
-      utils.broadcastSSE('trackpad_status', { connected: false });
-    });
+        socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
+        socket.destroy();
+      } catch (e) {}
+    }
   });
 }
 
