@@ -55,9 +55,21 @@
     let _reconnectTimer = null;
     let _reconnectCountdown = 15;
 
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
+
     // ─── Init ─────────────────────────────────────
     async function init() {
-      localStorage.setItem('deviceToken', 'public-device');
+      const sessionCookie = getCookie('airodrop_session');
+      if (sessionCookie) {
+        localStorage.setItem('deviceToken', sessionCookie);
+      } else {
+        localStorage.setItem('deviceToken', 'public-device');
+      }
       initAppComponents();
     }
 
@@ -906,6 +918,7 @@
           const data = JSON.parse(event.data);
           if (data.type === 'revoked') {
             localStorage.removeItem('deviceToken');
+            document.cookie = "airodrop_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             showToast('Device revoked by PC!', 'error');
             setTimeout(() => {
               window.location.reload();
