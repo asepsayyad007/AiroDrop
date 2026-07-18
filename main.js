@@ -129,7 +129,7 @@ app.whenReady().then(() => {
       session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
         desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
           if (sources && sources.length > 0) {
-            callback({ video: sources[0] });
+            callback({ video: sources[0], audio: 'loopback' });
           } else {
             callback({});
           }

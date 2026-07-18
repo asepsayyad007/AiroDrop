@@ -38,8 +38,10 @@ function getVKCode(char) {
   
   const map = {
     '\n': 0x0D, '\r': 0x0D, '\t': 0x09,
-    ';': 0xBA, '=': 0xBB, ',': 0xBC, '-': 0xBD, '.': 0xBE, '/': 0xBF, '`': 0xC0,
-    '[': 0xDB, '\\': 0xDC, ']': 0xDD, "'": 0xDE
+    ';': 0xBA, ':': 0xBA, '=': 0xBB, '+': 0xBB, ',': 0xBC, '<': 0xBC, '-': 0xBD, '_': 0xBD,
+    '.': 0xBE, '>': 0xBE, '/': 0xBF, '?': 0xBF, '`': 0xC0, '~': 0xC0, '[': 0xDB, '{': 0xDB,
+    '\\': 0xDC, '|': 0xDC, ']': 0xDD, '}': 0xDD, "'": 0xDE, '"': 0xDE,
+    '!': 0x31, '@': 0x32, '#': 0x33, '$': 0x34, '%': 0x35, '^': 0x36, '&': 0x37, '*': 0x38, '(': 0x39, ')': 0x30
   };
   return map[char] || null;
 }
@@ -175,6 +177,20 @@ function setupWebSocket(serverInstance, serverEvents) {
                 mouse_event(0x0800, 0, 0, amount, 0); // MOUSEEVENTF_WHEEL
               }
               break;
+            case 'key':
+              try {
+                if (data.code) {
+                  sendKeystroke(data.code);
+                }
+              } catch (e) {}
+              break;
+            case 'type':
+              try {
+                if (data.text) {
+                  sendKeystroke(data.text);
+                }
+              } catch (e) {}
+              break;
             case 'keyboard':
               try {
                 const key = data.key;
@@ -189,26 +205,10 @@ function setupWebSocket(serverInstance, serverEvents) {
                   };
                   const vk = keyMap[key.toLowerCase()];
                   if (vk) {
-                    keybd_event(vk, 0, 0, 0);
-                    keybd_event(vk, 0, 2, 0);
+                    sendKeystroke(vk);
                   }
                 } else if (key) {
-                  // Standard character typing
-                  const vkMap = {
-                    'a':0x41,'b':0x42,'c':0x43,'d':0x44,'e':0x45,'f':0x46,'g':0x47,'h':0x48,'i':0x49,'j':0x4A,
-                    'k':0x4B,'l':0x4C,'m':0x4D,'n':0x4E,'o':0x4F,'p':0x50,'q':0x51,'r':0x52,'s':0x53,'t':0x54,
-                    'u':0x55,'v':0x56,'w':0x57,'x':0x58,'y':0x59,'z':0x5A,'0':0x30,'1':0x31,'2':0x32,'3':0x33,
-                    '4':0x34,'5':0x35,'6':0x36,'7':0x37,'8':0x38,'9':0x39
-                  };
-                  const lower = key.toLowerCase();
-                  if (vkMap[lower]) {
-                    const vk = vkMap[lower];
-                    const needsShift = key !== lower;
-                    if (needsShift) keybd_event(0x10, 0, 0, 0);
-                    keybd_event(vk, 0, 0, 0);
-                    keybd_event(vk, 0, 2, 0);
-                    if (needsShift) keybd_event(0x10, 0, 2, 0);
-                  }
+                  sendKeystroke(key);
                 }
               } catch (e) {}
               break;

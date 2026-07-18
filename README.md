@@ -1,10 +1,10 @@
-# AiroDrop v6.1.13 🚀
+# AiroDrop v6.1.14 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.site/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.13-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.14-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
@@ -17,6 +17,18 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.14
+
+This release brings version 6.1.14, resolving critical live desktop screencast connection, audio streaming, and keyboard input bugs:
+
+### ✅ New Features & Updates
+1. 🖥️ **WebRTC Connection & mDNS Resolution Fix** — Implemented STUN servers to resolve local network WebRTC connectivity issues caused by masked mobile mDNS `.local` hostnames. Added incoming ICE candidate queuing on mobile/PC to prevent race condition crashes before SDP descriptions resolve.
+2. ⌨️ **Screencast & Trackpad Keyboard Input Fix** — Fixed WS key events so typing on the virtual keyboard inside Screencast and Trackpad overlays now translates to keystrokes on the host PC. Expanded Win32 FFI key mapping to fully support punctuation and shift-key symbols.
+3. 🔊 **PC System Audio Streaming Support** — Configured system audio loopback capture in Electron's `setDisplayMediaRequestHandler` to stream remote PC sound to mobile screenshare sessions in real-time.
+4. ⚡ **Resource Leak & Disconnect Fix** — Added stream/connection cleanup on reconnects and cleared the 30-second disconnect timeout when a device successfully connects.
 
 ---
 
