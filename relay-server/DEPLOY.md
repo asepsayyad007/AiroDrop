@@ -42,7 +42,7 @@ Go to your Nginx Proxy Manager Admin panel (usually at port `81` on your VPS).
 
 ### Step 2: Edit your Existing Host
 1. Go to **Hosts** &rarr; **Proxy Hosts**.
-2. Find the row for `airodrop.bootstrapx007.online`.
+2. Find the row for `airodrop.site`.
 3. Click the **Triple Dots (•••)** on the right and select **Edit**.
 
 ### Step 3: Configure Advanced Custom Locations
@@ -94,7 +94,7 @@ Click **Save**. The proxy will restart in less than a second.
 1. **Test HTTP Health Check**:
    Open a browser or run:
    ```bash
-   curl https://airodrop.bootstrapx007.online/health
+   curl https://airodrop.site/health
    ```
    It should return:
    ```json
@@ -102,5 +102,5 @@ Click **Save**. The proxy will restart in less than a second.
    ```
 
 2. **Test Styled Expired Page**:
-   Go to: `https://airodrop.bootstrapx007.online/d/nonexistent_token`
+   Go to: `https://airodrop.site/d/nonexistent_token`
    It should serve a beautiful, dark-themed **Link Expired** page.

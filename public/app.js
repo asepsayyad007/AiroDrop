@@ -2643,8 +2643,8 @@
 
   // ─── Send to Friend (P2P Share Module) ────────────────────
   // Relay server base URL — update this if you self-host the relay server
-  const RELAY_BASE_URL = 'https://airodrop.bootstrapx007.online';
-  const RELAY_WS_URL  = 'wss://airodrop.bootstrapx007.online/ws';
+  const RELAY_BASE_URL = 'https://airodrop.site';
+  const RELAY_WS_URL  = 'wss://airodrop.site/ws';
   let selectedShareFiles = [];
   const activeShares = new Map();
   let relayWs = null;
