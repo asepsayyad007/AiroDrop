@@ -2449,61 +2449,111 @@
 
     let pc = null;
     let localStream = null;
+    let pcIceQueue = [];
+
+    const defaultIceServers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ];
 
     ipcRenderer.on('screencast-start', async () => {
       console.log('[WebRTC] Screencast start request received. Capturing desktop...');
+      
+      // Cleanup previous capture session if active
+      if (localStream) {
+        try { localStream.getTracks().forEach(track => track.stop()); } catch (e) {}
+        localStream = null;
+      }
+      if (pc) {
+        try { pc.close(); } catch (e) {}
+        pc = null;
+      }
+      pcIceQueue = [];
+
       try {
-        // 1. Get desktop source ID from main process
-        const sourceId = await ipcRenderer.invoke('get-screen-source');
-        if (!sourceId) {
-          console.error('[WebRTC] No desktop source ID found.');
-          return;
+        // Try getDisplayMedia first (handled by setDisplayMediaRequestHandler in main.js)
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            localStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: true
+            });
+          }
+        } catch (gdmErr) {
+          console.warn('[WebRTC] getDisplayMedia failed, falling back to getUserMedia desktop source:', gdmErr);
         }
 
-        // 2. Capture desktop media stream
-        try {
-          localStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId
+        if (!localStream) {
+          // 1. Get desktop source ID from main process
+          const sourceId = await ipcRenderer.invoke('get-screen-source');
+          if (!sourceId) {
+            console.error('[WebRTC] No desktop source ID found.');
+            return;
+          }
+
+          // 2. Capture desktop media stream via getUserMedia
+          try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                mandatory: {
+                  chromeMediaSource: 'desktop',
+                  chromeMediaSourceId: sourceId
+                }
+              },
+              video: {
+                mandatory: {
+                  chromeMediaSource: 'desktop',
+                  chromeMediaSourceId: sourceId,
+                  minWidth: 1280,
+                  maxWidth: 1920,
+                  minHeight: 720,
+                  maxHeight: 1080,
+                  minFrameRate: 30,
+                  maxFrameRate: 60
+                }
               }
-            },
-            video: {
-              mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId,
-                minWidth: 1280,
-                maxWidth: 1920,
-                minHeight: 720,
-                maxHeight: 1080,
-                minFrameRate: 30,
-                maxFrameRate: 60
-              }
+            });
+          } catch (audioErr) {
+            console.warn('[WebRTC] Failed to capture audio, falling back to video-only capture:', audioErr);
+            try {
+              localStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                  mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: sourceId,
+                    minWidth: 1280,
+                    maxWidth: 1920,
+                    minHeight: 720,
+                    maxHeight: 1080,
+                    minFrameRate: 30,
+                    maxFrameRate: 60
+                  }
+                }
+              });
+            } catch (videoErr) {
+              console.warn('[WebRTC] Failed to capture video with constraints, falling back to video-only with NO constraints:', videoErr);
+              localStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                  mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: sourceId
+                  }
+                }
+              });
             }
-          });
-        } catch (audioErr) {
-          console.warn('[WebRTC] Failed to capture audio, falling back to video-only capture:', audioErr);
-          localStream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-              mandatory: {
-                chromeMediaSource: 'desktop',
-                chromeMediaSourceId: sourceId,
-                minWidth: 1280,
-                maxWidth: 1920,
-                minHeight: 720,
-                maxHeight: 1080,
-                minFrameRate: 30,
-                maxFrameRate: 60
-              }
-            }
-          });
+          }
+        }
+
+        if (!localStream) {
+          console.error('[WebRTC] Failed to acquire any desktop stream.');
+          return;
         }
 
         // 3. Create peer connection
         pc = new RTCPeerConnection({
-          iceServers: []
+          iceServers: defaultIceServers
         });
 
         // Add tracks
@@ -2514,6 +2564,10 @@
           if (event.candidate) {
             ipcRenderer.send('send-webrtc-candidate', event.candidate);
           }
+        };
+
+        pc.onconnectionstatechange = () => {
+          console.log('[WebRTC] Connection state changed:', pc ? pc.connectionState : 'closed');
         };
 
         // Create and send SDP Offer
@@ -2532,6 +2586,14 @@
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
           console.log('[WebRTC] Remote description (Answer) set successfully.');
+          while (pcIceQueue.length > 0) {
+            const candidate = pcIceQueue.shift();
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+              console.error('[WebRTC] Failed to add queued ICE candidate:', e);
+            }
+          }
         } catch (err) {
           console.error('[WebRTC] Failed to set remote description (Answer):', err);
         }
@@ -2540,10 +2602,14 @@
 
     ipcRenderer.on('webrtc-ice-candidate', async (event, candidate) => {
       if (pc) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (err) {
-          console.error('[WebRTC] Failed to add ICE candidate:', err);
+        if (pc.remoteDescription) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error('[WebRTC] Failed to add ICE candidate:', err);
+          }
+        } else {
+          pcIceQueue.push(candidate);
         }
       }
     });
@@ -2551,17 +2617,19 @@
     ipcRenderer.on('screencast-stop', () => {
       console.log('[WebRTC] Stopping local screen capture and peer connection...');
       if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
+        try { localStream.getTracks().forEach(track => track.stop()); } catch(e) {}
         localStream = null;
       }
       if (pc) {
-        pc.close();
+        try { pc.close(); } catch(e) {}
         pc = null;
       }
+      pcIceQueue = [];
     });
 
     // ─── WebRTC Microphone Streaming Receiver ──────────────────────
     let micPC = null;
+    let micIceQueue = [];
     const mobileMicActiveBadge = $('#mobileMicActiveBadge');
 
     ipcRenderer.on('mic-offer', async (event, offer) => {
@@ -2569,9 +2637,10 @@
       if (micPC) {
         try { micPC.close(); } catch (e) {}
       }
+      micIceQueue = [];
 
       micPC = new RTCPeerConnection({
-        iceServers: []
+        iceServers: defaultIceServers
       });
 
       micPC.onicecandidate = (e) => {
@@ -2606,6 +2675,14 @@
         const answer = await micPC.createAnswer();
         await micPC.setLocalDescription(answer);
         ipcRenderer.send('send-mic-answer', answer);
+        while (micIceQueue.length > 0) {
+          const cand = micIceQueue.shift();
+          try {
+            await micPC.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (e) {
+            console.error('[MicWebRTC] Failed to add queued ICE candidate:', e);
+          }
+        }
       } catch (err) {
         console.error('[MicWebRTC] Failed to handle mobile mic offer:', err);
       }
@@ -2613,10 +2690,14 @@
 
     ipcRenderer.on('mic-ice-candidate', async (event, candidate) => {
       if (micPC && candidate) {
-        try {
-          await micPC.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (err) {
-          console.error('[MicWebRTC] Failed to add ICE candidate:', err);
+        if (micPC.remoteDescription) {
+          try {
+            await micPC.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error('[MicWebRTC] Failed to add ICE candidate:', err);
+          }
+        } else {
+          micIceQueue.push(candidate);
         }
       }
     });

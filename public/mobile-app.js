@@ -998,12 +998,19 @@
         }
       };
 
+      let phoneIceQueue = [];
+      let micIceQueue = [];
+
       function createPhonePeerConnection() {
         if (phonePC) {
           try { phonePC.close(); } catch(e) {}
         }
+        phoneIceQueue = [];
         phonePC = new RTCPeerConnection({
-          iceServers: []
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
         });
         phonePC.onicecandidate = (event) => {
           if (event.candidate) {
@@ -1013,14 +1020,25 @@
             });
           }
         };
+        phonePC.onconnectionstatechange = () => {
+          console.log('[WebRTC Phone] Peer connection state:', phonePC ? phonePC.connectionState : 'closed');
+          if (phonePC && phonePC.connectionState === 'failed') {
+            showToast('Screencast WebRTC connection failed. Retrying...', 'warning');
+          }
+        };
         phonePC.ontrack = (event) => {
           console.log('[WebRTC] Track received:', event.streams);
           const liveFrame = document.getElementById('liveScreenFrame');
           if (liveFrame && event.streams && event.streams[0]) {
             liveFrame.srcObject = event.streams[0];
+            liveFrame.autoplay = true;
+            liveFrame.playsInline = true;
             if (audioOnlyStreamMode) {
               liveFrame.muted = false;
             }
+            liveFrame.play().catch(err => {
+              console.warn('[WebRTC] Video element play() failed/deferred:', err);
+            });
             syncAudioStates();
           }
         };
@@ -1067,18 +1085,50 @@
               type: 'webrtc_answer',
               answer: answer
             });
+            while (phoneIceQueue.length > 0) {
+              const cand = phoneIceQueue.shift();
+              try {
+                await phonePC.addIceCandidate(new RTCIceCandidate(cand));
+              } catch (e) {
+                console.error('[WebRTC] Failed adding queued ICE candidate on phone:', e);
+              }
+            }
           } else if (data.type === 'webrtc_ice_candidate') {
             if (phonePC && data.candidate) {
-              await phonePC.addIceCandidate(new RTCIceCandidate(data.candidate));
+              if (phonePC.remoteDescription) {
+                try {
+                  await phonePC.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } catch (e) {
+                  console.error('[WebRTC] Failed adding ICE candidate on phone:', e);
+                }
+              } else {
+                phoneIceQueue.push(data.candidate);
+              }
             }
           } else if (data.type === 'mic_answer') {
             console.log('[MicWebRTC] Received SDP Answer from PC.');
             if (micPC) {
               await micPC.setRemoteDescription(new RTCSessionDescription(data.answer));
+              while (micIceQueue.length > 0) {
+                const cand = micIceQueue.shift();
+                try {
+                  await micPC.addIceCandidate(new RTCIceCandidate(cand));
+                } catch (e) {
+                  console.error('[MicWebRTC] Failed adding queued ICE candidate on mic:', e);
+                }
+              }
             }
           } else if (data.type === 'mic_ice_candidate') {
             if (micPC && data.candidate) {
-              await micPC.addIceCandidate(new RTCIceCandidate(data.candidate));
+              if (micPC.remoteDescription) {
+                try {
+                  await micPC.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } catch (e) {
+                  console.error('[MicWebRTC] Failed adding ICE candidate on mic:', e);
+                }
+              } else {
+                micIceQueue.push(data.candidate);
+              }
             }
           } else if (data.type === 'mic_stop') {
             console.log('[MicWebRTC] Received mic stop trigger from PC.');
@@ -2158,9 +2208,13 @@
         if (micPC) {
           try { micPC.close(); } catch(e) {}
         }
+        micIceQueue = [];
 
         micPC = new RTCPeerConnection({
-          iceServers: []
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
         });
 
         micStream.getTracks().forEach(track => micPC.addTrack(track, micStream));

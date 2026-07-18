@@ -94,6 +94,10 @@ function setupWebSocket(serverInstance, serverEvents) {
 
     state.wss.on('connection', (ws) => {
       console.log('[TRACKPAD] Phone connected via WebSocket');
+      if (state.screencastStopTimeout) {
+        clearTimeout(state.screencastStopTimeout);
+        state.screencastStopTimeout = null;
+      }
       ws._isAlive = true;
       ws.on('pong', () => { ws._isAlive = true; });
       serverEvents.emit('phone_connected', ws);
@@ -214,6 +218,10 @@ function setupWebSocket(serverInstance, serverEvents) {
               utils.broadcastSSE('trackpad_status', { connected: true, deviceName: data.deviceName });
               break;
             case 'screencast_start':
+              if (state.screencastStopTimeout) {
+                clearTimeout(state.screencastStopTimeout);
+                state.screencastStopTimeout = null;
+              }
               serverEvents.emit('screencast_start', ws, data.audioOnly);
               break;
             case 'screencast_stop':
@@ -268,7 +276,7 @@ function setupWebSocket(serverInstance, serverEvents) {
       
       if (pathname === '/trackpad') {
         const urlParams = new URLSearchParams(request.url.split('?')[1] || '');
-        const token = urlParams.get('token');
+        const token = urlParams.get('token') || urlParams.get('device_token');
         
         console.log('[WS-UPGRADE] Upgrading /trackpad connection. Security Mode:', state.SECURITY_MODE, 'Token:', token);
         console.log('[WS-UPGRADE] Currently paired device tokens:', Array.from(state.pairedDevices.keys()));

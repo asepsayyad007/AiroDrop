@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog, desktopCapturer } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog, desktopCapturer, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const os = require('os');
@@ -122,6 +122,26 @@ app.commandLine.appendSwitch('ignore-certificate-errors'); // Belt-and-suspender
 // ─── Main Initialization ──────────────────────────────────────
 app.whenReady().then(() => {
   app.setAppUserModelId('com.asep-ios-integration.airodrop');
+
+  // Register display media request handler for WebRTC screencast capture
+  try {
+    if (session.defaultSession && session.defaultSession.setDisplayMediaRequestHandler) {
+      session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+        desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+          if (sources && sources.length > 0) {
+            callback({ video: sources[0] });
+          } else {
+            callback({});
+          }
+        }).catch((err) => {
+          console.error('[SCREENCAST] Failed to get display media sources:', err);
+          callback({});
+        });
+      });
+    }
+  } catch (err) {
+    console.error('[SCREENCAST] Failed to set display media request handler:', err);
+  }
   
   // Initialize server with userData path for persistent data
   const userDataPath = app.getPath('userData');

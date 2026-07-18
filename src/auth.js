@@ -73,6 +73,19 @@ function unpairDevice(token) {
         }
       }
     }
+
+    // Revoke open SSE connections matching this token
+    if (state.sseClients) {
+      for (const client of state.sseClients) {
+        if (client.deviceToken === token) {
+          try {
+            client.write(`event: revoked\ndata: ${JSON.stringify({ error: 'Device revoked' })}\n\n`);
+            setTimeout(() => { client.end(); }, 100);
+          } catch (e) {}
+          state.sseClients.delete(client);
+        }
+      }
+    }
     return true;
   }
   return false;
@@ -90,6 +103,19 @@ function clearAllPairedDevices() {
           client.send(JSON.stringify({ type: 'revoked' }));
           setTimeout(() => { client.terminate(); }, 100);
         } catch (e) {}
+      }
+    }
+  }
+
+  // Revoke all open remote SSE connections
+  if (state.sseClients) {
+    for (const client of state.sseClients) {
+      if (client.deviceToken && client.deviceToken !== 'localhost') {
+        try {
+          client.write(`event: revoked\ndata: ${JSON.stringify({ error: 'Device revoked' })}\n\n`);
+          setTimeout(() => { client.end(); }, 100);
+        } catch (e) {}
+        state.sseClients.delete(client);
       }
     }
   }
@@ -112,8 +138,9 @@ function extractToken(req) {
     return authHeader.substring(7).trim();
   }
   // 3. Check Query parameter
-  if (req.query && req.query.device_token) {
-    return req.query.device_token;
+  if (req.query) {
+    if (req.query.device_token) return req.query.device_token;
+    if (req.query.token) return req.query.token;
   }
   return null;
 }
@@ -178,5 +205,6 @@ module.exports = {
   pairDevice,
   unpairDevice,
   clearAllPairedDevices,
-  authMiddleware
+  authMiddleware,
+  extractToken
 };

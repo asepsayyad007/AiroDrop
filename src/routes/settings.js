@@ -7,6 +7,7 @@ const QRCode = require('qrcode');
 const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
+const auth = require('../auth');
 
 let appVersion = '6.1.4';
 try {
@@ -552,6 +553,7 @@ router.get('/events', (req, res) => {
     try { res.write(`:heartbeat\n\n`); } catch { clearInterval(heartbeat); }
   }, 20000);
 
+  res.deviceToken = auth.extractToken(req) || 'localhost';
   state.sseClients.add(res);
   utils.writeLog("Dashboard client connected.");
 
