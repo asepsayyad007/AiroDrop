@@ -1,10 +1,10 @@
-# AiroDrop v6.1.11 🚀
+# AiroDrop v6.1.12 🚀
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
 🌍 **[Official Website](https://airodrop.site/)** | 👨 Carver Portfolio **[Creator Portfolio](https://bootstrapx007.online/)**
 
-![Version](https://img.shields.io/badge/version-6.1.11-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.1.12-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
@@ -17,6 +17,16 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.1.12
+
+This release brings version 6.1.12, establishing migration to our official domain:
+
+### ✅ New Features & Updates
+1. 🌐 **Official Domain Migration** — Migrated the production cloud relay tunnel and all endpoint integrations from `airodrop.bootstrapx007.online` to the dedicated project domain **`airodrop.site`**.
+2. ⚡ **WebSocket Proxy Tuning** — Optimised proxy location routing parameters on the Nginx proxy servers for improved tunnel connectivity.
 
 ---
 
