@@ -141,6 +141,30 @@ function setupWebSocket(serverInstance, serverEvents) {
                 mouse_event(upFlag, 0, 0, 0, 0);
               }
               break;
+            case 'move_abs':
+              if (SetCursorPos && GetSystemMetrics) {
+                const screenWidth = GetSystemMetrics(0);
+                const screenHeight = GetSystemMetrics(1);
+                const targetX = Math.round(data.xRatio * screenWidth);
+                const targetY = Math.round(data.yRatio * screenHeight);
+                SetCursorPos(targetX, targetY);
+              }
+              break;
+            case 'click_abs':
+              if (SetCursorPos && GetSystemMetrics && mouse_event) {
+                const screenWidth = GetSystemMetrics(0);
+                const screenHeight = GetSystemMetrics(1);
+                const targetX = Math.round(data.xRatio * screenWidth);
+                const targetY = Math.round(data.yRatio * screenHeight);
+                SetCursorPos(targetX, targetY);
+                
+                const button = data.button || 'left';
+                const downFlag = button === 'left' ? 0x0002 : 0x0008; // LEFTDOWN : RIGHTDOWN
+                const upFlag = button === 'left' ? 0x0004 : 0x0010;   // LEFTUP : RIGHTUP
+                mouse_event(downFlag, 0, 0, 0, 0);
+                mouse_event(upFlag, 0, 0, 0, 0);
+              }
+              break;
             case 'scroll':
               if (mouse_event) {
                 const amount = Math.round(data.amount);
