@@ -4,12 +4,12 @@
 
 A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
 
-🌍 **[Official Website](https://airodrop.site/)** | 👨 Carver Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
+🌍 **[Official Website](https://airodrop.site/)** | 👨 Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
 ![Version](https://img.shields.io/badge/version-6.1.14-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
-![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey.svg?style=flat-square)
+![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
 ![License](https://img.shields.io/badge/license-Proprietary-red.svg?style=flat-square)
 
