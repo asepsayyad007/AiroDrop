@@ -21,9 +21,56 @@
     }
   }
 
-  function doFetch(url, options = {}) {
+  // ─── Enhanced Fetch with Retry & Error Handling ─────────────
+  const MAX_RETRIES = 2;
+  const RETRY_DELAY_MS = 1000;
+
+  async function doFetch(url, options = {}) {
     const targetUrl = isElectron ? `${apiBase}${url}` : url;
-    return fetch(targetUrl, options);
+    const retries = options._retries !== undefined ? options._retries : MAX_RETRIES;
+    const silent = options._silent || false;
+    
+    // Remove internal options before passing to fetch
+    const fetchOpts = { ...options };
+    delete fetchOpts._retries;
+    delete fetchOpts._silent;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(targetUrl, fetchOpts);
+
+        // Auth failure — don't retry
+        if (res.status === 401) {
+          if (!silent) showToast('Session expired. Please re-authenticate.', 'error');
+          return res;
+        }
+
+        // Rate limited — don't retry, inform user
+        if (res.status === 429) {
+          if (!silent) showToast('Too many requests. Please slow down.', 'error');
+          return res;
+        }
+
+        // Server error — retry if attempts remain
+        if (res.status >= 500 && attempt < retries) {
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+
+        return res;
+      } catch (err) {
+        // Network error (offline, refused, etc.)
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+        // Final failure
+        if (!silent) {
+          showToast('Network error. Check your connection.', 'error');
+        }
+        throw err;
+      }
+    }
   }
 
   // ─── State ─────────────────────────────────────────────────
@@ -407,6 +454,9 @@
   }
 
   // ─── SSE Real-Time Stream ──────────────────────────────────
+  let sseReconnectDelay = 1000;
+  const SSE_MAX_RECONNECT_DELAY = 30000;
+
   function connectSSE() {
     if (sseSource) sseSource.close();
 
@@ -414,6 +464,7 @@
 
     sseSource.onopen = () => {
       setConnectionStatus(true);
+      sseReconnectDelay = 1000; // Reset backoff on successful connection
     };
 
     sseSource.addEventListener('connected', () => {
@@ -563,7 +614,9 @@
     sseSource.onerror = () => {
       setConnectionStatus(false);
       sseSource.close();
-      setTimeout(connectSSE, 1000);
+      // Exponential backoff with cap
+      setTimeout(connectSSE, sseReconnectDelay);
+      sseReconnectDelay = Math.min(sseReconnectDelay * 1.5, SSE_MAX_RECONNECT_DELAY);
     };
   }
 
@@ -577,22 +630,38 @@
         text.textContent = 'Connected';
       } else {
         dot.className = 'status-dot disconnected';
-        text.textContent = 'Reconnecting...';
+        const delaySec = Math.round(sseReconnectDelay / 1000);
+        text.textContent = delaySec > 2 ? `Reconnecting in ${delaySec}s...` : 'Reconnecting...';
       }
     }
   }
 
   // ─── Received History ──────────────────────────────────────
   async function fetchHistory() {
+    const feedEl = $('#feed');
+    const emptyStateEl = $('#emptyState');
+    
+    // Show loading skeleton if feed is empty
+    if (feedEl && allItems.length === 0) {
+      feedEl.innerHTML = `<div class="feed-loading" aria-busy="true" aria-label="Loading history">
+        <div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div>
+      </div>`;
+      if (emptyStateEl) emptyStateEl.style.display = 'none';
+    }
+
     try {
-      const res = await doFetch('/api/history');
-      if (res.ok) {
+      const res = await doFetch('/api/history', { _silent: true });
+      if (res && res.ok) {
         const data = await res.json();
         allItems = data.items || [];
         renderFeed();
       }
     } catch (err) {
-      console.error('Failed to load history:', err);
+      // Silently fail — SSE will populate if connection recovers
+      if (feedEl && allItems.length === 0) {
+        feedEl.innerHTML = '';
+        if (emptyStateEl) emptyStateEl.style.display = 'block';
+      }
     }
   }
 
@@ -650,7 +719,7 @@
               <span class="item-type-badge ${isUrl ? 'url' : 'text'}">${isUrl ? '🔗 Link' : 'Text'}</span>
               <div style="display:flex;align-items:center;gap:10px;">
                 <span class="item-time">${timeStr}</span>
-                <button class="delete-btn" data-id="${item.id}" title="Delete">
+                <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -681,7 +750,7 @@
               <span class="item-type-badge image">Image</span>
               <div style="display:flex;align-items:center;gap:10px;">
                 <span class="item-time">${timeStr}</span>
-                <button class="delete-btn" data-id="${item.id}" title="Delete">
+                <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
               </div>
@@ -745,7 +814,7 @@
                 <span class="item-type-badge file">${badgeLabel}</span>
                 <span class="item-time">${timeStr}</span>
               </div>
-              <button class="delete-btn" data-id="${item.id}" title="Delete">
+              <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
               </button>
             </div>
@@ -1953,13 +2022,19 @@
       btnHeaderSettings.addEventListener('click', () => {
         btnHeaderSettings.classList.add('glow');
         settingsModal.style.display = 'flex';
+        // Focus first focusable element in modal
+        const firstFocusable = settingsModal.querySelector('button, input, select, [tabindex]');
+        if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
       });
     }
 
     if (btnCloseSettings && settingsModal) {
       btnCloseSettings.addEventListener('click', () => {
         settingsModal.style.display = 'none';
-        if (btnHeaderSettings) btnHeaderSettings.classList.remove('glow');
+        if (btnHeaderSettings) {
+          btnHeaderSettings.classList.remove('glow');
+          btnHeaderSettings.focus();
+        }
       });
     }
 
@@ -4142,5 +4217,44 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => { init(); });
+  // ─── Accessibility: Modal Focus Trap & Keyboard Handling ────
+  function setupModalAccessibility(modalEl, openTriggerEl) {
+    if (!modalEl) return;
+
+    // Close on Escape key
+    modalEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        modalEl.style.display = 'none';
+        if (openTriggerEl) {
+          openTriggerEl.classList.remove('glow');
+          openTriggerEl.focus();
+        }
+      }
+    });
+
+    // Set role and aria attributes
+    modalEl.setAttribute('role', 'dialog');
+    modalEl.setAttribute('aria-modal', 'true');
+  }
+
+  // Apply modal accessibility to known modals after DOM ready
+  function applyAccessibility() {
+    // Modals
+    setupModalAccessibility($('#settingsModal'), $('#btnHeaderSettings'));
+    setupModalAccessibility($('#logsModal'), $('#btnHeaderLogs'));
+    setupModalAccessibility($('#shortcutsModal'), $('#btnHeaderShortcuts'));
+
+    // Add aria-labels to icon-only buttons
+    $$('.delete-btn').forEach(btn => {
+      if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', 'Delete item');
+    });
+
+    // Add role=main to main content area
+    const mainContent = $('#mainContent') || $('main') || $('.dashboard-container');
+    if (mainContent && !mainContent.getAttribute('role')) {
+      mainContent.setAttribute('role', 'main');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { init(); applyAccessibility(); });
 })();

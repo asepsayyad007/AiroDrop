@@ -8,6 +8,11 @@ const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
 const auth = require('../auth');
+const { sanitizeFilename, sanitizeDeviceName, validatePort, validatePin, validateSecurityMode, sanitizeSecret, toBoolean, validatePositiveFloat } = require('../sanitize');
+const { getLogger } = require('../logger');
+const asyncHandler = require('../asyncHandler');
+
+const logger = getLogger();
 
 let appVersion = '6.1.4';
 try {
@@ -25,15 +30,12 @@ const storage = multer.diskStorage({
     cb(null, state.SAVE_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.bin';
-    const base = path.basename(file.originalname, ext);
+    const sanitized = sanitizeFilename(file.originalname, 'file');
+    const ext = path.extname(sanitized) || '.bin';
+    const base = path.basename(sanitized, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
-    if (cleanBase.length > 15) {
-      cleanBase = cleanBase.slice(0, 15);
-    }
-    cleanBase = cleanBase.trim();
-    cb(null, `${cleanBase || 'file'}_${timestamp}${ext}`);
+    const cleanBase = base.slice(0, 15).trim() || 'file';
+    cb(null, `${cleanBase}_${timestamp}${ext}`);
   }
 });
 
@@ -136,7 +138,7 @@ router.get('/qr.png', async (req, res) => {
       color: { dark: '#000000', light: '#ffffff' }
     });
   } catch (err) {
-    console.error('[QR] Failed to generate QR image stream:', err.message);
+    logger.error('QR image stream generation failed', { error: err.message });
     res.status(500).send('Failed to generate QR code');
   }
 });
@@ -165,7 +167,7 @@ router.get('/qr-gen.png', async (req, res) => {
       color: { dark: darkColor, light: lightColor }
     });
   } catch (err) {
-    console.error('[QR-GEN] Failed to generate custom QR stream:', err.message);
+    logger.error('Custom QR generation failed', { error: err.message });
     res.status(500).send('Failed to generate QR code');
   }
 });
@@ -234,34 +236,34 @@ router.post('/settings', async (req, res) => {
     }
 
     if (deviceName !== undefined) {
-      state.DEVICE_NAME = deviceName.trim() || os.hostname();
+      state.DEVICE_NAME = sanitizeDeviceName(deviceName) || os.hostname();
     }
 
     if (port !== undefined) {
-      const parsedPort = parseInt(port, 10);
-      if (parsedPort > 0 && parsedPort < 65536) {
-        state.PORT = parsedPort;
+      const portResult = validatePort(port);
+      if (portResult.valid) {
+        state.PORT = portResult.value;
       }
     }
 
     if (rateLimitEnabled !== undefined) {
-      state.RATE_LIMIT_ENABLED = !!rateLimitEnabled;
+      state.RATE_LIMIT_ENABLED = toBoolean(rateLimitEnabled);
     }
 
     if (autoOpenLinks !== undefined) {
-      state.AUTO_OPEN_LINKS = !!autoOpenLinks;
+      state.AUTO_OPEN_LINKS = toBoolean(autoOpenLinks);
     }
 
     if (notificationsEnabled !== undefined) {
-      state.NOTIFICATIONS_ENABLED = !!notificationsEnabled;
+      state.NOTIFICATIONS_ENABLED = toBoolean(notificationsEnabled);
     }
 
     if (temporaryModeHours !== undefined) {
-      state.TEMPORARY_MODE_HOURS = parseFloat(temporaryModeHours) || 2;
+      state.TEMPORARY_MODE_HOURS = validatePositiveFloat(temporaryModeHours, 0.1, 720, 2);
     }
 
     if (launchOnStartup !== undefined) {
-      state.LAUNCH_ON_STARTUP = !!launchOnStartup;
+      state.LAUNCH_ON_STARTUP = toBoolean(launchOnStartup);
       try {
         const electron = require('electron');
         if (electron && electron.app) {
@@ -274,29 +276,41 @@ router.post('/settings', async (req, res) => {
     }
 
     if (autoUpdate !== undefined) {
-      state.AUTO_UPDATE = !!autoUpdate;
+      state.AUTO_UPDATE = toBoolean(autoUpdate);
     }
 
     if (httpsEnabled !== undefined) {
-      state.HTTPS_ENABLED = !!httpsEnabled;
+      state.HTTPS_ENABLED = toBoolean(httpsEnabled);
     }
 
     if (contextMenuEnabled !== undefined) {
       const oldVal = state.CONTEXT_MENU_ENABLED;
-      state.CONTEXT_MENU_ENABLED = !!contextMenuEnabled;
+      state.CONTEXT_MENU_ENABLED = toBoolean(contextMenuEnabled);
       if (state.CONTEXT_MENU_ENABLED !== oldVal) {
         utils.updateWindowsContextMenu(state.CONTEXT_MENU_ENABLED);
       }
     }
 
     const { securityMode, pinCode, shortcutSecret } = req.body;
-    if (securityMode !== undefined) state.SECURITY_MODE = securityMode;
-    if (pinCode !== undefined) state.PIN_CODE = String(pinCode).trim();
-    if (shortcutSecret !== undefined) state.SHORTCUT_SECRET = String(shortcutSecret).trim();
+    if (securityMode !== undefined) {
+      const modeResult = validateSecurityMode(securityMode);
+      if (modeResult.valid) {
+        state.SECURITY_MODE = modeResult.value;
+      }
+    }
+    if (pinCode !== undefined) {
+      const pinResult = validatePin(pinCode);
+      if (pinResult.valid) {
+        state.PIN_CODE = pinResult.value;
+      }
+    }
+    if (shortcutSecret !== undefined) {
+      state.SHORTCUT_SECRET = sanitizeSecret(shortcutSecret);
+    }
 
     const oldTempMode = state.TEMPORARY_MODE;
     if (temporaryMode !== undefined) {
-      state.TEMPORARY_MODE = !!temporaryMode;
+      state.TEMPORARY_MODE = toBoolean(temporaryMode);
       if (state.TEMPORARY_MODE !== oldTempMode) {
         if (state.TEMPORARY_MODE) {
           try { if (fs.existsSync(state.HISTORY_FILE)) fs.unlinkSync(state.HISTORY_FILE); } catch {}
@@ -346,7 +360,7 @@ router.post('/settings', async (req, res) => {
       shortcutSecret: state.SHORTCUT_SECRET
     });
   } catch (err) {
-    console.error('[CONFIG] Failed to update settings:', err.message);
+    logger.error('Settings update failed', { error: err.message });
     res.status(400).json({ error: `Failed to save settings: ${err.message}` });
   }
 });
@@ -370,7 +384,7 @@ router.post('/settings/browse', async (req, res) => {
     const { exec } = require('child_process');
     exec(cmd, (error, stdout, stderr) => {
       if (error) {
-        console.log('[BROWSE] Picker closed or canceled:', error.message || stderr);
+        logger.debug('Folder picker closed or canceled', { error: error.message });
         return res.json({ success: false, message: 'Canceled' });
       }
       const selectedPath = stdout.trim();
@@ -380,7 +394,7 @@ router.post('/settings/browse', async (req, res) => {
       res.json({ success: true, path: selectedPath });
     });
   } catch (err) {
-    console.error('[BROWSE] Error:', err.message);
+    logger.error('Browse folder picker error', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -422,7 +436,7 @@ router.post('/send-to-phone', upload.single('file'), async (req, res) => {
         const { copyText } = require('../../clipboard');
         await copyText(text);
       } catch (err) {
-        console.error('Failed to copy sent text to PC clipboard:', err.message);
+        logger.warn('Failed to copy sent text to PC clipboard', { error: err.message });
       }
 
       return res.json({ success: true, id: item.id, message: 'Text queued for iPhone' });
@@ -620,7 +634,7 @@ setInterval(() => {
     if (now - itemTime > PENDING_TTL_MS) {
       const [removed] = state.pendingForPhone.splice(i, 1);
       utils.broadcastSSE('phone-ack', removed);
-      console.log(`[PENDING-TTL] Expired pending item: ${removed.id} (${removed.type})`);
+      logger.debug('Expired pending item', { id: removed.id, type: removed.type });
       changed = true;
     }
   }

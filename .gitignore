@@ -57,3 +57,11 @@ desktop.ini
 .cache/
 .tmp/
 tmp/
+
+# ─── Environment Configuration ────────────────────────────────
+.env
+.env.local
+
+# ─── Log Files ────────────────────────────────────────────────
+logs/
+*.log

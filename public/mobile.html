@@ -83,7 +83,6 @@
 
     /* Bottom Navigation */
     .bottom-nav {
-      display: none; /* Hidden by default */
       position: fixed;
       bottom: 0;
       left: 0;
@@ -93,7 +92,6 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--card-border);
-      display: flex;
       align-items: center;
       justify-content: space-around;
       padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -590,6 +588,77 @@
     .touchpad-area:active .touchpad-help-text {
       opacity: 0.15;
     }
+
+    /* ─── Visual Polish: Extracted Component Classes ─────────── */
+
+    /* Tab transition animations */
+    .mobile-tab-content {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .mobile-tab-content.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      animation: tabFadeIn 0.3s ease forwards;
+    }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Button loading state */
+    .btn.is-loading {
+      pointer-events: none;
+      opacity: 0.7;
+      position: relative;
+    }
+    .btn.is-loading::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      right: 14px;
+      margin-top: -8px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: btnSpin 0.6s linear infinite;
+    }
+    @keyframes btnSpin { to { transform: rotate(360deg); } }
+
+    /* Empty state CTA */
+    .empty-receive {
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 0.82rem;
+      color: var(--text3);
+    }
+    .empty-receive .empty-cta {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 0.74rem;
+      color: var(--accent);
+      opacity: 0.8;
+    }
+
+    /* Minimum 44px touch targets */
+    .btn, .btn-control-cmd, .bottom-nav-item, .photo-btn {
+      min-height: 44px;
+    }
+    .bottom-nav-item {
+      min-width: 44px;
+    }
+
+    /* Section subtitle helper */
+    .section-subtitle {
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin: -6px 0 12px;
+    }
   </style>
 </head>
 <body>
@@ -598,6 +667,19 @@
     <input type="checkbox" switch id="iosHapticSwitch">
     <label for="iosHapticSwitch" id="iosHapticLabel"></label>
   </div>
+
+  <!-- No-JS Fallback & Loading State -->
+  <div id="appLoadingFallback" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px; text-align: center; color: #a0a0b8;">
+    <img src="logo.svg" alt="AiroDrop" style="width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.8;">
+    <p style="font-size: 1rem; font-weight: 600; color: #f8f8fc; margin-bottom: 8px;">Loading AiroDrop...</p>
+    <p style="font-size: 0.8rem; color: #666680;">Connecting to your PC</p>
+    <div style="margin-top: 20px; width: 32px; height: 32px; border: 3px solid rgba(255,85,0,0.2); border-top-color: #ff5500; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+    <noscript>
+      <p style="margin-top: 24px; color: #ef4444; font-weight: 600;">JavaScript is required</p>
+      <p style="font-size: 0.78rem; margin-top: 8px;">Please enable JavaScript in your browser to use AiroDrop.</p>
+    </noscript>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
   <!-- MAIN APP UI -->
   <div class="app" id="mainAppContainer" style="display: none;">
@@ -611,7 +693,7 @@
         </button>
         <button id="btnMobileMenu" style="position: relative; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: var(--text); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: background 0.2s;" title="Setup Shortcuts &amp; Options">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-          <span style="position: absolute; top: 0px; right: 0px; width: 8px; height: 8px; background: #10b981; border: 2px solid #0f0f19; border-radius: 50%; box-shadow: 0 0 6px #10b981;"></span>
+          <span style="position: absolute; top: 0px; right: 0px; width: 8px; height: 8px; background: var(--success); border: 2px solid var(--bg); border-radius: 50%; box-shadow: 0 0 6px var(--success);"></span>
         </button>
       </div>
       <img src="logo.svg" alt="AiroDrop Logo" style="width: 64px; height: 64px; margin-bottom: 12px; filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));">
@@ -624,46 +706,18 @@
         </button>
       </div>
       <!-- Universal Connection Button -->
-      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connect PC Services</button>
+      <button id="btnUniversalConnect" class="btn" style="margin-top: 14px; background: rgba(255,255,255,0.08); font-size: 0.84rem; padding: 10px 18px; width: auto; border: 1px solid var(--card-border); border-radius: 100px; box-shadow: 0 0 10px rgba(255,255,255,0.02); display: inline-flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Connect Remote Control</button>
       
-      <!-- PC System Controls Quick Icons Toolbar -->
-      <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-        <button class="btn-control-cmd" data-cmd="poweroff" title="Power Off PC" style="background: rgba(255,59,48,0.12); border: 1px solid rgba(255,59,48,0.3); color: #ff453a; cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="sleep" title="Sleep PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="lock" title="Lock PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause Media" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-        </button>
-        <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-        </button>
-      </div>
     </div>
 
     <!-- RECEIVE FROM PC -->
-    <div class="section-title">From PC → iPhone</div>
     
     <div id="tabHome" class="mobile-tab-content active">
       <!-- Text Inbox Box -->
     <div class="sender-card" style="margin-bottom: 12px;">
       <h3>Text Inbox</h3>
       <div class="receive-list" id="textInboxList">
-        <div class="empty-receive">No texts received yet</div>
+        <div class="empty-receive">No texts received yet<span class="empty-cta">Send text from PC dashboard to see it here</span></div>
       </div>
     </div>
 
@@ -671,7 +725,7 @@
     <div class="sender-card" style="margin-bottom: 16px;">
       <h3>File Inbox</h3>
       <div class="receive-list" id="fileInboxList">
-        <div class="empty-receive">No files received yet</div>
+        <div class="empty-receive">No files received yet<span class="empty-cta">Send files from PC or use iOS Shortcuts</span></div>
       </div>
     </div>
 
@@ -685,6 +739,7 @@
 
     <!-- SEND TO PC -->
     <div class="section-title">Send to PC</div>
+    <p class="section-subtitle">Share text, links, or files directly to your PC clipboard</p>
     <div class="sender-cards">
       <!-- Send Text -->
       <div class="sender-card" style="margin-bottom: 12px;">
@@ -712,7 +767,40 @@
     </div> <!-- Close tabHome -->
 
     <div id="tabTools" class="mobile-tab-content">
-      
+
+      <!-- PC System Controls -->
+      <div class="section-title">PC Remote Control</div>
+      <div class="sender-card" style="margin-bottom: 16px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>System Controls</h3>
+        <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 12px;">Control your PC power, media, and volume remotely.</p>
+        <div id="quickSystemControls" style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 12px;">
+          <button class="btn-control-cmd" data-cmd="lock" title="Lock PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="sleep" title="Sleep PC" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+          <button class="btn-control-cmd" data-cmd="poweroff" title="Power Off PC" style="background: rgba(255,59,48,0.12); border: 1px solid rgba(255,59,48,0.3); color: #ff453a; cursor: pointer; padding: 8px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- PC LIVE SCREENCAST (Screenshare) -->
       <div class="section-title">Screenshare</div>
       <div class="sender-card" style="margin-bottom: 16px;">
@@ -746,7 +834,7 @@
       <div class="sender-card" style="margin-bottom: 16px;">
         <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>File Manager</h3>
         <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 10px;">Browse, upload &amp; download files in your PC's shared folder directly from this page.</p>
-        <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, #ff5500, #ff8800); font-size: 0.84rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Open File Manager</button>
+        <button class="btn" id="btnOpenFileBrowser" style="margin: 0; background: linear-gradient(135deg, var(--accent), var(--accent-light)); font-size: 0.84rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Open File Manager</button>
       </div>
 
       <!-- PC REMOTE TRACKPAD -->
@@ -852,7 +940,19 @@
 
 
 
-  <script src="mobile-app.js?v=6.1.14"></script>
+  <script src="mobile-app.js?v=6.2.11"></script>
+  <script>
+    // Timeout fallback: if app doesn't initialize within 8s, show error state
+    setTimeout(function() {
+      var fallback = document.getElementById('appLoadingFallback');
+      if (fallback && fallback.style.display !== 'none') {
+        fallback.innerHTML = '<img src="logo.svg" alt="AiroDrop" style="width:64px;height:64px;margin-bottom:16px;opacity:0.6;">' +
+          '<p style="font-size:1rem;font-weight:600;color:#f8f8fc;margin-bottom:8px;">Unable to connect</p>' +
+          '<p style="font-size:0.8rem;color:#a0a0b8;margin-bottom:16px;">Make sure your PC is running AiroDrop and you\'re on the same Wi-Fi network.</p>' +
+          '<button onclick="window.location.reload()" style="padding:10px 24px;background:linear-gradient(135deg,#ff5500,#ff8800);color:#fff;border:none;border-radius:100px;font-size:0.88rem;font-weight:600;cursor:pointer;">Retry</button>';
+      }
+    }, 8000);
+  </script>
   </div>
 
   <!-- Fullscreen Trackpad Overlay -->
@@ -1239,8 +1339,12 @@
       <h3 style="font-size: 1.02rem; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px;">📁 PC Shared Folder</h3>
       <button id="btnCloseFileBrowser" style="background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: var(--text); padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">✕ Close</button>
     </div>
-    <!-- Iframe Container -->
-    <iframe id="fileBrowserIframe" src="about:blank" style="flex: 1; border: none; width: 100%; height: 100%; background: #09090f; z-index: 601;"></iframe>
+    <!-- Iframe Container with Loading State -->
+    <div id="fileBrowserLoading" style="position: absolute; inset: 0; top: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 603; background: #09090f;">
+      <div style="width: 32px; height: 32px; border: 3px solid rgba(255,85,0,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+      <p style="font-size: 0.82rem; color: var(--text2);">Loading file browser...</p>
+    </div>
+    <iframe id="fileBrowserIframe" src="about:blank" style="flex: 1; border: none; width: 100%; height: 100%; background: #09090f; z-index: 601;" onload="var l=document.getElementById('fileBrowserLoading');if(l&&this.src!=='about:blank')l.style.display='none';"></iframe>
   </div>
 
   <!-- Video Player Overlay (For Instant Stream playback outside iframe) -->

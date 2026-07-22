@@ -4,20 +4,14 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const state = require('../state');
+const { sanitizeFilename, validatePath } = require('../sanitize');
+const { getLogger } = require('../logger');
+
+const logger = getLogger();
 
 function safePath(relPath) {
-  const baseDir = path.resolve(state.SHARE_DIR);
-  const resolved = path.resolve(baseDir, relPath || '');
-  if (process.platform === 'win32') {
-    if (!resolved.toLowerCase().startsWith(baseDir.toLowerCase())) {
-      return null;
-    }
-  } else {
-    if (!resolved.startsWith(baseDir)) {
-      return null;
-    }
-  }
-  return resolved;
+  const result = validatePath(relPath || '', state.SHARE_DIR);
+  return result.valid ? result.resolved : null;
 }
 
 // Serve file browser html
@@ -115,11 +109,11 @@ router.get('/download', (req, res) => {
 // Upload chunk for pause/resume/cancel support
 router.post('/upload-chunk', (req, res) => {
   const relPath = req.query.path || '';
-  const fileName = path.basename(req.query.name || '');
+  const fileName = sanitizeFilename(req.query.name || '', 'upload');
   const chunkIndex = parseInt(req.query.index, 10);
   const totalChunks = parseInt(req.query.total, 10);
   
-  if (!fileName) return res.status(400).json({ error: 'Missing file name' });
+  if (!fileName || fileName === 'upload') return res.status(400).json({ error: 'Missing file name' });
   
   const targetDir = safePath(relPath);
   if (!targetDir) return res.status(403).json({ error: 'Access denied' });
@@ -167,7 +161,7 @@ router.post('/upload-chunk', (req, res) => {
             
             return res.json({ success: true, completed: true, filename: fileName });
           } catch (mergeErr) {
-            console.error('[UPLOAD] Merge error:', mergeErr.message);
+            logger.error('File chunk merge failed', { filename: fileName, error: mergeErr.message });
             try {
               const files = fs.readdirSync(targetDir);
               for (const file of files) {
@@ -184,7 +178,7 @@ router.post('/upload-chunk', (req, res) => {
           return res.json({ success: true, completed: false });
         }
       } catch (err) {
-        console.error('[UPLOAD] Error finalizing chunk upload:', err.message);
+        logger.error('Chunk upload finalization error', { error: err.message });
         if (!res.headersSent) {
           res.status(500).json({ error: err.message });
         }
@@ -192,7 +186,7 @@ router.post('/upload-chunk', (req, res) => {
     });
     
     writeStream.on('error', (err) => {
-      console.error('[UPLOAD] Chunk write stream error:', err.message);
+      logger.error('Chunk write stream error', { filename: fileName, error: err.message });
       if (!res.headersSent) {
         res.status(500).json({ error: err.message });
       }
@@ -205,7 +199,7 @@ router.post('/upload-chunk', (req, res) => {
 // Cancel chunk upload
 router.post('/upload-cancel', (req, res) => {
   const relPath = req.body.path || '';
-  const fileName = path.basename(req.body.name || '');
+  const fileName = sanitizeFilename(req.body.name || '', '');
   if (!fileName) return res.status(400).json({ error: 'Missing file name' });
   
   const targetDir = safePath(relPath);
@@ -278,7 +272,7 @@ router.delete('/delete', (req, res) => {
 // Rename
 router.patch('/rename', (req, res) => {
   const rel = req.body.path || '';
-  const newName = req.body.newName || '';
+  const newName = sanitizeFilename(req.body.newName || '', '');
   const target = safePath(rel);
   if (!target || !newName) return res.status(400).json({ error: 'Invalid request' });
   const dir = path.dirname(target);

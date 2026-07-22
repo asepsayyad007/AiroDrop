@@ -13,6 +13,11 @@ const state = require('./src/state');
 const utils = require('./src/utils');
 const { registerMiddleware } = require('./src/middleware');
 const { setupWebSocket } = require('./src/trackpad');
+const { getLogger, setLogDir } = require('./src/logger');
+const { errorHandler } = require('./src/errors');
+const { registerProcessHandlers } = require('./src/processHandlers');
+const { validateConfig } = require('./src/configValidator');
+const C = require('./src/constants');
 
 const filesRouter = require('./src/routes/files');
 const clipboardRouter = require('./src/routes/clipboard');
@@ -73,6 +78,47 @@ app.get('/m', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
 });
 
+// GET /api/health — Production health check endpoint
+app.get('/api/health', (req, res) => {
+  const memUsage = process.memoryUsage();
+  const uptime = process.uptime();
+
+  // Check disk space for save directory
+  let diskOk = true;
+  try {
+    const testFile = path.join(state.SAVE_DIR, '.health-check-' + Date.now());
+    fs.writeFileSync(testFile, 'ok');
+    fs.unlinkSync(testFile);
+  } catch {
+    diskOk = false;
+  }
+
+  const healthy = diskOk && state.serverInstance !== null;
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'healthy' : 'degraded',
+    version: require('./package.json').version,
+    uptime: Math.floor(uptime),
+    uptimeHuman: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`,
+    memory: {
+      rss: Math.round(memUsage.rss / 1024 / 1024),
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+      unit: 'MB'
+    },
+    connections: {
+      sse: state.sseClients ? state.sseClients.size : 0,
+      websocket: state.wss ? state.wss.clients.size : 0
+    },
+    storage: {
+      saveDir: state.SAVE_DIR,
+      diskWritable: diskOk
+    },
+    historyCount: state.history.length,
+    pairedDevices: state.pairedDevices ? state.pairedDevices.size : 0
+  });
+});
+
 // SPA fallback — serve index.html for any unmatched route (except /m and /files)
 app.get('*', (req, res, next) => {
   if (req.path === '/files' || req.path.startsWith('/files/')) {
@@ -81,22 +127,23 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Multer error handler
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ error: 'File too large. Maximum size is 50 MB.' });
-    }
-    return res.status(400).json({ error: err.message });
-  }
-  if (err) {
-    return res.status(500).json({ error: err.message });
-  }
-  next();
-});
+// Centralized error handler (handles Multer errors, parse errors, AppErrors, and generic errors)
+app.use(errorHandler);
 
 // Initialize server configurations
 function init(userDataPath) {
+  // Load .env file if present (environment variables override config.json)
+  try {
+    require('dotenv').config({ path: path.join(__dirname, '.env') });
+  } catch (_) {}
+
+  // Initialize structured logging
+  setLogDir(userDataPath);
+  const logger = getLogger();
+
+  // Register process-level error handlers
+  registerProcessHandlers();
+
   state.CONFIG_FILE = path.join(userDataPath, 'config.json');
   state.HISTORY_FILE = path.join(userDataPath, 'history.json');
   state.SCRATCHPAD_FILE = path.join(userDataPath, 'scratchpad.txt');
@@ -105,36 +152,49 @@ function init(userDataPath) {
   state.KEY_FILE = path.join(userDataPath, 'key.pem');
   state.CERT_FILE = path.join(userDataPath, 'cert.pem');
 
-  // Load Settings from config.json
+  // Load and validate config.json
+  let rawConfig = {};
   try {
     if (fs.existsSync(state.CONFIG_FILE)) {
-      const data = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
-      if (data.port) state.PORT = parseInt(data.port, 10) || 3478;
-      state.TEMPORARY_MODE = !!data.temporaryMode;
-      if (data.deviceName) state.DEVICE_NAME = data.deviceName;
-      if (data.rateLimitEnabled !== undefined) state.RATE_LIMIT_ENABLED = !!data.rateLimitEnabled;
-      if (data.notificationsEnabled !== undefined) state.NOTIFICATIONS_ENABLED = !!data.notificationsEnabled;
-      if (data.temporaryModeHours !== undefined) state.TEMPORARY_MODE_HOURS = parseFloat(data.temporaryModeHours) || 2;
-      if (data.autoOpenLinks !== undefined) state.AUTO_OPEN_LINKS = !!data.autoOpenLinks;
-      if (data.launchOnStartup !== undefined) state.LAUNCH_ON_STARTUP = !!data.launchOnStartup;
-      if (data.autoUpdate !== undefined) state.AUTO_UPDATE = !!data.autoUpdate;
-      if (data.httpsEnabled !== undefined) state.HTTPS_ENABLED = !!data.httpsEnabled;
-      if (data.contextMenuEnabled !== undefined) state.CONTEXT_MENU_ENABLED = !!data.contextMenuEnabled;
-      if (data.securityMode) state.SECURITY_MODE = data.securityMode;
-      if (data.pinCode) state.PIN_CODE = data.pinCode;
-      if (data.shortcutSecret !== undefined) state.SHORTCUT_SECRET = data.shortcutSecret;
-      if (data.saveDir) {
-        state.SAVE_DIR = path.isAbsolute(data.saveDir) ? data.saveDir : path.resolve(__dirname, data.saveDir);
-      }
-      if (data.shareDir) {
-        state.SHARE_DIR = path.isAbsolute(data.shareDir) ? data.shareDir : path.resolve(__dirname, data.shareDir);
-      } else {
-        state.SHARE_DIR = state.SAVE_DIR;
-      }
+      rawConfig = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
     }
   } catch (err) {
-    console.error('[CONFIG] Failed to load config.json:', err.message);
+    logger.error('Failed to parse config.json', { error: err.message });
   }
+
+  const config = validateConfig(rawConfig, userDataPath);
+
+  // Apply validated config to state
+  state.PORT = config.port;
+  state.DEVICE_NAME = config.deviceName;
+  state.SAVE_DIR = config.saveDir;
+  state.SHARE_DIR = config.shareDir;
+  state.TEMPORARY_MODE = config.temporaryMode;
+  state.RATE_LIMIT_ENABLED = config.rateLimitEnabled;
+  state.NOTIFICATIONS_ENABLED = config.notificationsEnabled;
+  state.TEMPORARY_MODE_HOURS = config.temporaryModeHours;
+  state.AUTO_OPEN_LINKS = config.autoOpenLinks;
+  state.LAUNCH_ON_STARTUP = config.launchOnStartup;
+  state.AUTO_UPDATE = config.autoUpdate;
+  state.HTTPS_ENABLED = config.httpsEnabled;
+  state.CONTEXT_MENU_ENABLED = config.contextMenuEnabled;
+  state.SECURITY_MODE = config.securityMode;
+  state.PIN_CODE = config.pinCode;
+  state.SHORTCUT_SECRET = config.shortcutSecret;
+
+  // Environment variable overrides (highest priority)
+  if (process.env.PORT) state.PORT = parseInt(process.env.PORT, 10) || state.PORT;
+  if (process.env.DEVICE_NAME) state.DEVICE_NAME = process.env.DEVICE_NAME;
+  if (process.env.SAVE_DIR) state.SAVE_DIR = process.env.SAVE_DIR;
+  if (process.env.SHARE_DIR) state.SHARE_DIR = process.env.SHARE_DIR;
+  if (process.env.SECURITY_MODE) state.SECURITY_MODE = process.env.SECURITY_MODE;
+  if (process.env.PIN_CODE) state.PIN_CODE = process.env.PIN_CODE;
+  if (process.env.SHORTCUT_SECRET) state.SHORTCUT_SECRET = process.env.SHORTCUT_SECRET;
+  if (process.env.HTTPS_ENABLED) state.HTTPS_ENABLED = process.env.HTTPS_ENABLED === 'true';
+  if (process.env.RATE_LIMIT_ENABLED) state.RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false';
+  if (process.env.NOTIFICATIONS_ENABLED) state.NOTIFICATIONS_ENABLED = process.env.NOTIFICATIONS_ENABLED !== 'false';
+  if (process.env.TEMPORARY_MODE) state.TEMPORARY_MODE = process.env.TEMPORARY_MODE === 'true';
+  if (process.env.TEMPORARY_MODE_HOURS) state.TEMPORARY_MODE_HOURS = parseFloat(process.env.TEMPORARY_MODE_HOURS) || state.TEMPORARY_MODE_HOURS;
 
   state.PAIRED_DEVICES_FILE = path.join(userDataPath, 'paired_devices.json');
   auth.initAuth();
@@ -145,7 +205,7 @@ function init(userDataPath) {
       fs.mkdirSync(state.SAVE_DIR, { recursive: true });
     }
   } catch (err) {
-    console.error('[CONFIG] Failed to create save directory:', err.message);
+    logger.error('Failed to create save directory', { error: err.message });
     state.SAVE_DIR = path.join(__dirname, 'received');
     if (!fs.existsSync(state.SAVE_DIR)) {
       fs.mkdirSync(state.SAVE_DIR, { recursive: true });
@@ -157,7 +217,7 @@ function init(userDataPath) {
       fs.mkdirSync(state.SHARE_DIR, { recursive: true });
     }
   } catch (err) {
-    console.error('[CONFIG] Failed to create share directory:', err.message);
+    logger.error('Failed to create share directory', { error: err.message });
     state.SHARE_DIR = state.SAVE_DIR;
   }
 
@@ -181,7 +241,7 @@ function init(userDataPath) {
         state.history.push(...(Array.isArray(data) ? data : []));
       }
     } catch (err) {
-      console.error('[HISTORY] Failed to load history:', err.message);
+      logger.error('Failed to load history', { error: err.message });
     }
   }
 
@@ -191,7 +251,7 @@ function init(userDataPath) {
       state.scratchpadText = fs.readFileSync(state.SCRATCHPAD_FILE, 'utf8');
     }
   } catch (err) {
-    console.error('[SCRATCHPAD] Failed to load scratchpad:', err.message);
+    logger.error('Failed to load scratchpad', { error: err.message });
   }
 }
 
@@ -199,6 +259,7 @@ function init(userDataPath) {
 function startServer(portCallback) {
   if (state.serverInstance) return;
 
+  const logger = getLogger();
   const ip = utils.getLocalIP();
 
   const listenAndSetup = () => {
@@ -224,7 +285,27 @@ function startServer(portCallback) {
     setupWebSocket(state.serverInstance, serverEvents);
 
     state.serverInstance.on('error', (err) => {
-      console.error('Server error:', err);
+      if (err.code === 'EADDRINUSE') {
+        const nextPort = state.PORT + 2; // +1 is reserved for HTTP fallback
+        logger.warn(`Port ${state.PORT} in use, trying ${nextPort}`, { port: state.PORT, nextPort });
+        state.serverInstance = null;
+        state.PORT = nextPort;
+        // Retry with new port (limit to 3 attempts)
+        if (!state._portRetries) state._portRetries = 0;
+        state._portRetries++;
+        if (state._portRetries <= 3) {
+          if (state.HTTPS_ENABLED) {
+            startHttps();
+          } else {
+            startHttp();
+          }
+        } else {
+          logger.error('Failed to find available port after 3 attempts');
+          if (portCallback) portCallback(null, err);
+        }
+        return;
+      }
+      logger.error('Server error', { error: err.message });
       if (portCallback) portCallback(null, err);
     });
 
@@ -238,7 +319,7 @@ function startServer(portCallback) {
       });
       setupWebSocket(state.httpFallbackInstance, serverEvents);
     } catch (fallbackErr) {
-      console.error('[HTTP] Failed to start HTTP fallback server:', fallbackErr.message);
+      logger.error('Failed to start HTTP fallback server', { error: fallbackErr.message });
     }
   };
 
@@ -252,7 +333,7 @@ function startServer(portCallback) {
       state.serverInstance = https.createServer(options, app);
       listenAndSetup();
     } catch (err) {
-      console.error('[HTTPS] Failed to start HTTPS server, falling back to HTTP:', err.message);
+      logger.error('HTTPS server start failed, falling back to HTTP', { error: err.message });
       state.HTTPS_ENABLED = false;
       startHttp();
     }
@@ -274,16 +355,16 @@ function startServer(portCallback) {
           .then((pems) => {
             fs.writeFileSync(state.KEY_FILE, pems.private, 'utf8');
             fs.writeFileSync(state.CERT_FILE, pems.cert, 'utf8');
-            console.log('[HTTPS] Certificates generated successfully.');
+            logger.info('HTTPS certificates generated successfully');
             startHttps();
           })
           .catch((certErr) => {
-            console.error('[HTTPS] Failed to generate self-signed certificates:', certErr.message);
+            logger.error('Failed to generate self-signed certificates', { error: certErr.message });
             state.HTTPS_ENABLED = false;
             startHttp();
           });
       } catch (requireErr) {
-        console.error('[HTTPS] selfsigned module failed to load:', requireErr.message);
+        logger.error('selfsigned module failed to load', { error: requireErr.message });
         state.HTTPS_ENABLED = false;
         startHttp();
       }
@@ -295,35 +376,101 @@ function startServer(portCallback) {
   }
 }
 
-// Stop servers
-function stopServer() {
-  if (state.serverInstance) {
-    utils.writeLog("AiroDrop Server stopped.");
-    if (state.wss) {
-      state.wss.close();
-      state.wss = null;
-    }
-    state.serverInstance.close();
-    state.serverInstance = null;
-    console.log('Server stopped.');
+// Stop servers — graceful shutdown with connection draining
+function stopServer(callback) {
+  const logger = getLogger();
+  
+  if (!state.serverInstance && !state.httpFallbackInstance) {
+    if (callback) callback();
+    return;
   }
+
+  logger.info('Graceful shutdown initiated...');
+
+  // 1. Close WebSocket connections gracefully
+  if (state.wss) {
+    for (const client of state.wss.clients) {
+      try {
+        client.send(JSON.stringify({ type: 'server-shutdown' }));
+        client.close(1001, 'Server shutting down');
+      } catch (_) {}
+    }
+    state.wss.close();
+    state.wss = null;
+  }
+
+  // 2. Close SSE connections
+  if (state.sseClients) {
+    for (const client of state.sseClients) {
+      try {
+        client.write(`event: shutdown\ndata: ${JSON.stringify({ message: 'Server shutting down' })}\n\n`);
+        client.end();
+      } catch (_) {}
+    }
+    state.sseClients.clear();
+  }
+
+  // 3. Save persistent state
+  try {
+    if (state.HISTORY_FILE && !state.TEMPORARY_MODE && state.history.length > 0) {
+      fs.writeFileSync(state.HISTORY_FILE, JSON.stringify(state.history, null, 2), 'utf8');
+    }
+    if (state.SCRATCHPAD_FILE && state.scratchpadText) {
+      fs.writeFileSync(state.SCRATCHPAD_FILE, state.scratchpadText, 'utf8');
+    }
+  } catch (err) {
+    logger.error('Failed to save state during shutdown', { error: err.message });
+  }
+
+  // 4. Close HTTP servers with connection draining timeout
+  let closed = 0;
+  const totalServers = (state.serverInstance ? 1 : 0) + (state.httpFallbackInstance ? 1 : 0);
+  
+  const onClosed = () => {
+    closed++;
+    if (closed >= totalServers) {
+      logger.info('All servers stopped');
+      utils.writeLog('AiroDrop Server stopped.');
+      if (callback) callback();
+    }
+  };
+
+  // Force-close after 5 seconds if connections won't drain
+  const forceTimer = setTimeout(() => {
+    logger.warn('Force-closing servers after timeout');
+    if (state.serverInstance) { try { state.serverInstance.close(); } catch(_) {} state.serverInstance = null; }
+    if (state.httpFallbackInstance) { try { state.httpFallbackInstance.close(); } catch(_) {} state.httpFallbackInstance = null; }
+    if (callback) callback();
+  }, 5000);
+
+  if (state.serverInstance) {
+    state.serverInstance.close(() => {
+      state.serverInstance = null;
+      onClosed();
+    });
+  }
+
   if (state.httpFallbackInstance) {
-    try {
-      state.httpFallbackInstance.close();
-    } catch (e) {}
-    state.httpFallbackInstance = null;
+    state.httpFallbackInstance.close(() => {
+      state.httpFallbackInstance = null;
+      onClosed();
+    });
+  }
+
+  if (totalServers === 0) {
+    clearTimeout(forceTimer);
+    if (callback) callback();
   }
 }
 
 // Graceful shutdown hooks
 process.on('SIGINT', () => {
-  console.log('\n  Shutting down...');
-  stopServer();
-  process.exit(0);
+  stopServer(() => process.exit(0));
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err.message);
+  const logger = getLogger();
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
 });
 
 module.exports = {

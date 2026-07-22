@@ -3,6 +3,24 @@ const router = express.Router();
 const state = require('../state');
 const auth = require('../auth');
 const utils = require('../utils');
+const { getLogger } = require('../logger');
+
+const logger = getLogger();
+
+/**
+ * Helper: Build secure cookie options based on current server config.
+ * Note: httpOnly is false because mobile-app.js reads the cookie via document.cookie
+ * to use as a Bearer token in API requests. This is by design for local-network operation.
+ */
+function getSecureCookieOptions() {
+  return {
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: state.HTTPS_ENABLED,
+    path: '/'
+  };
+}
 
 // Check authentication status
 router.get('/status', (req, res) => {
@@ -19,25 +37,48 @@ router.get('/status', (req, res) => {
 // Verify 4-digit PIN code submitted from phone
 router.post('/verify-pin', (req, res) => {
   const { pin, deviceName } = req.body || {};
+  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+
+  // Check brute-force lockout
+  const rateCheck = auth.checkPinRateLimit(clientIp);
+  if (rateCheck.locked) {
+    res.set('Retry-After', String(rateCheck.retryAfter));
+    return res.status(429).json({
+      success: false,
+      error: 'Too many failed attempts. Please try again later.',
+      retryAfter: rateCheck.retryAfter
+    });
+  }
+
   if (!pin) {
     return res.status(400).json({ error: 'PIN code is required' });
   }
 
   if (String(pin).trim() !== String(state.PIN_CODE).trim()) {
-    utils.writeLog(`Failed PIN verification attempt from IP ${req.ip}`);
-    return res.status(401).json({ success: false, error: 'Invalid 4-digit PIN code' });
+    // Record failed attempt and check if lockout should trigger
+    const result = auth.recordFailedPinAttempt(clientIp);
+    utils.writeLog(`[SECURITY] Failed PIN verification attempt from IP ${clientIp}`);
+
+    if (result.locked) {
+      res.set('Retry-After', String(result.retryAfter));
+      return res.status(429).json({
+        success: false,
+        error: 'Too many failed attempts. Account locked temporarily.',
+        retryAfter: result.retryAfter
+      });
+    }
+
+    return res.status(401).json({ success: false, error: 'Invalid PIN code' });
   }
 
-  const device = auth.pairDevice(deviceName || 'Mobile Device', req.ip);
-  
-  // Set 1-year persistent session cookie
-  res.cookie('airodrop_session', device.token, {
-    maxAge: 365 * 24 * 60 * 60 * 1000,
-    httpOnly: false,
-    sameSite: 'lax'
-  });
+  // Successful verification — clear failed attempts and pair device
+  auth.clearPinAttempts(clientIp);
+  const device = auth.pairDevice(deviceName || 'Mobile Device', clientIp);
 
-  utils.writeLog(`Device successfully paired via PIN: ${device.deviceName} (${req.ip})`);
+  // Set secure session cookie
+  res.cookie('airodrop_session', device.token, getSecureCookieOptions());
+
+  utils.writeLog(`Device successfully paired via PIN: ${device.deviceName} (${clientIp})`);
   utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
 
   res.json({
@@ -50,6 +91,19 @@ router.post('/verify-pin', (req, res) => {
 // Request direct approval popup on PC host
 router.post('/request-approval', (req, res) => {
   const { deviceName } = req.body || {};
+  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+
+  // Also rate-limit approval requests to prevent spam
+  const rateCheck = auth.checkPinRateLimit(clientIp);
+  if (rateCheck.locked) {
+    res.set('Retry-After', String(rateCheck.retryAfter));
+    return res.status(429).json({
+      success: false,
+      error: 'Too many requests. Please try again later.',
+      retryAfter: rateCheck.retryAfter
+    });
+  }
+
   const serverEvents = require('../../server').serverEvents;
 
   if (serverEvents) {
@@ -65,24 +119,22 @@ router.post('/request-approval', (req, res) => {
 
     serverEvents.emit('request-host-approval', {
       deviceName: deviceName || 'Unknown Device',
-      ip: req.ip,
+      ip: clientIp,
       respond: (approved) => {
         if (handled) return;
         handled = true;
         clearTimeout(timeout);
 
         if (approved) {
-          const device = auth.pairDevice(deviceName || 'Mobile Device', req.ip);
-          res.cookie('airodrop_session', device.token, {
-            maxAge: 365 * 24 * 60 * 60 * 1000,
-            httpOnly: false,
-            sameSite: 'lax'
-          });
-          utils.writeLog(`Device paired via Host Approval: ${device.deviceName} (${req.ip})`);
+          auth.clearPinAttempts(clientIp);
+          const device = auth.pairDevice(deviceName || 'Mobile Device', clientIp);
+          res.cookie('airodrop_session', device.token, getSecureCookieOptions());
+          utils.writeLog(`Device paired via Host Approval: ${device.deviceName} (${clientIp})`);
           utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
           res.json({ success: true, approved: true, deviceToken: device.token });
         } else {
-          utils.writeLog(`Host denied pairing request from: ${deviceName} (${req.ip})`);
+          auth.recordFailedPinAttempt(clientIp);
+          utils.writeLog(`Host denied pairing request from: ${deviceName} (${clientIp})`);
           res.status(403).json({ success: false, approved: false, error: 'Host denied connection request' });
         }
       }
@@ -108,7 +160,7 @@ router.post('/regenerate-pin', (req, res) => {
       fs.writeFileSync(state.CONFIG_FILE, JSON.stringify(data, null, 2));
     }
   } catch (err) {
-    console.error('[AUTH] Failed to persist PIN to config:', err.message);
+    logger.warn('Failed to persist PIN to config', { error: err.message });
   }
 
   utils.writeLog(`Regenerated local PIN code: ${state.PIN_CODE}`);

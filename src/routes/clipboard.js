@@ -6,6 +6,11 @@ const os = require('os');
 const multer = require('multer');
 const state = require('../state');
 const utils = require('../utils');
+const { sanitizeFilename, sanitizeText } = require('../sanitize');
+const { getLogger } = require('../logger');
+const asyncHandler = require('../asyncHandler');
+
+const logger = getLogger();
 
 function getRawBinaryFilename(req, rawMime, fallbackPrefix) {
   let originalNameHeader = req.headers['x-filename'] || '';
@@ -23,13 +28,11 @@ function getRawBinaryFilename(req, rawMime, fallbackPrefix) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   
   if (originalNameHeader) {
-    const ext = path.extname(originalNameHeader) || '.bin';
-    const base = path.basename(originalNameHeader, ext);
-    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
-    if (cleanBase.length > 15) {
-      cleanBase = cleanBase.slice(0, 15);
-    }
-    cleanBase = cleanBase.trim();
+    // Use sanitize module for safe filename handling
+    const sanitized = sanitizeFilename(originalNameHeader, fallbackPrefix);
+    const ext = path.extname(sanitized) || '.bin';
+    const base = path.basename(sanitized, ext);
+    let cleanBase = base.slice(0, 15).trim();
     return {
       filename: `${cleanBase || fallbackPrefix}_${timestamp}${ext}`,
       originalName: originalNameHeader
@@ -81,15 +84,12 @@ const storage = multer.diskStorage({
     cb(null, state.SAVE_DIR);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.bin';
-    const base = path.basename(file.originalname, ext);
+    const sanitized = sanitizeFilename(file.originalname, 'file');
+    const ext = path.extname(sanitized) || '.bin';
+    const base = path.basename(sanitized, ext);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    let cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
-    if (cleanBase.length > 15) {
-      cleanBase = cleanBase.slice(0, 15);
-    }
-    cleanBase = cleanBase.trim();
-    cb(null, `${cleanBase || 'file'}_${timestamp}${ext}`);
+    const cleanBase = base.slice(0, 15).trim() || 'file';
+    cb(null, `${cleanBase}_${timestamp}${ext}`);
   }
 });
 
@@ -134,6 +134,13 @@ router.post('/text', async (req, res) => {
       return res.status(400).json({ error: 'No text provided' });
     }
 
+    // Sanitize text input (strip null bytes, enforce max length)
+    const sanitized = sanitizeText(text);
+    if (!sanitized.valid) {
+      return res.status(400).json({ error: 'Invalid text content' });
+    }
+    text = sanitized.text;
+
     // HTML Web Page detection & URL extraction
     if (typeof text === 'string' && (text.trim().startsWith('<') || text.trim().toLowerCase().startsWith('<!doctype') || text.trim().toLowerCase().includes('<html'))) {
       const extractedUrl = utils.extractUrlFromHtml(text);
@@ -155,10 +162,10 @@ router.post('/text', async (req, res) => {
     utils.addToHistory(item);
     utils.notifyText(text);
 
-    console.log(`[TEXT] ${text.substring(0, 60)}${text.length > 60 ? '...' : ''}`);
+    logger.info('Text received', { preview: text.substring(0, 60) });
     res.json({ success: true, id: item.id, message: 'Text received and copied to clipboard' });
   } catch (err) {
-    console.error('[TEXT] Error:', err.message);
+    logger.error('Text receive failed', { error: err.message, requestId: req.requestId });
     res.status(500).json({ error: err.message });
   }
 });
@@ -213,7 +220,7 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
       };
       utils.addToHistory(item);
       utils.notifyText(extractedUrl);
-      console.log(`[FILE/URL-EXTRACT] Extracted URL from uploaded file: ${extractedUrl}`);
+      logger.info('URL extracted from uploaded file', { url: extractedUrl });
       return res.json({
         success: true,
         id: item.id,
@@ -251,7 +258,7 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
     }
 
     const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
-    console.log(`[FILE] ${filename} (${sizeMB} MB)`);
+    logger.info('File received', { filename, size: `${sizeMB}MB` });
     res.json({
       success: true,
       id: item.id,
@@ -261,7 +268,7 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
       message: isImg ? 'Image saved successfully' : 'File saved successfully'
     });
   } catch (err) {
-    console.error('[FILE] Error:', err.message);
+    logger.error('File receive failed', { error: err.message, requestId: req.requestId });
     res.status(500).json({ error: err.message });
   }
 });
@@ -380,7 +387,7 @@ router.get('/clipboard', async (req, res) => {
       message: 'Clipboard is empty'
     });
   } catch (err) {
-    console.error('[GET-CLIPBOARD] Error:', err.message);
+    logger.error('Clipboard read failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -402,7 +409,7 @@ router.get('/latest-file', (req, res) => {
       res.status(404).json({ success: false, error: 'No pending files found' });
     }
   } catch (err) {
-    console.error('[LATEST-FILE] Error:', err.message);
+    logger.error('Latest file fetch failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -417,7 +424,7 @@ router.get('/history', (req, res) => {
         ? path.join(state.SAVE_DIR, item.filename) 
         : (path.isAbsolute(item.path) ? item.path : path.resolve(path.join(__dirname, '..', '..'), item.path));
       if (!fs.existsSync(fullPath)) {
-        console.log(`[HISTORY-CLEANUP] File no longer exists on disk, removing from list: ${item.filename || item.id}`);
+        logger.debug('History cleanup: file missing from disk', { filename: item.filename || item.id });
         state.history.splice(i, 1);
         changed = true;
       }
@@ -446,7 +453,7 @@ router.delete('/history', (req, res) => {
           try {
             if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
           } catch (e) {
-            console.error(`[DELETE-ALL] Failed to delete file: ${item.filename}`, e.message);
+            logger.warn('Failed to delete file during history clear', { filename: item.filename, error: e.message });
           }
         }
       }
@@ -477,10 +484,10 @@ router.delete('/history/:id', (req, res) => {
       try {
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
-          console.log(`[DELETE] Deleted file: ${item.filename}`);
+          logger.debug('Deleted file', { filename: item.filename });
         }
       } catch (e) {
-        console.error(`[DELETE] Failed to delete file: ${item.filename}`, e.message);
+        logger.warn('Failed to delete file', { filename: item.filename, error: e.message });
       }
     }
     
@@ -504,11 +511,13 @@ router.get('/scratchpad', (req, res) => {
 
 // POST /api/scratchpad
 router.post('/scratchpad', (req, res) => {
-  state.scratchpadText = req.body.text || "";
+  const raw = req.body.text || "";
+  const sanitized = sanitizeText(raw, 1 * 1024 * 1024); // 1 MB max for scratchpad
+  state.scratchpadText = sanitized.text;
   try {
     fs.writeFileSync(state.SCRATCHPAD_FILE, state.scratchpadText || "", 'utf8');
   } catch (err) {
-    console.error('[SCRATCHPAD] Failed to save scratchpad:', err.message);
+    logger.warn('Scratchpad save failed', { error: err.message });
   }
   utils.broadcastSSE('scratchpad', { text: state.scratchpadText });
   res.json({ success: true, text: state.scratchpadText });
@@ -580,10 +589,10 @@ router.post('/control', (req, res) => {
 
   exec(cmd, (err) => {
     if (err) {
-      console.error(`[CONTROL] Action "${action}" failed:`, err.message);
+      logger.error('Control action failed', { action, error: err.message });
       return res.status(500).json({ error: `Action failed: ${err.message}` });
     }
-    console.log(`[CONTROL] Triggered action: ${action}`);
+    logger.info('Control action triggered', { action });
     res.json({ success: true, action });
   });
 });
@@ -612,12 +621,12 @@ router.get('/screenshot', (req, res) => {
 
   exec(cmd, (err) => {
     if (err) {
-      console.error('[SCREENSHOT] Capture failed:', err.message);
+      logger.error('Screenshot capture failed', { error: err.message });
       return res.status(500).json({ error: 'Screenshot capture failed: ' + err.message });
     }
     
     if (!fs.existsSync(tempPath)) {
-      console.error('[SCREENSHOT] File not found after capture');
+      logger.error('Screenshot file not found after capture');
       return res.status(500).json({ error: 'Screenshot file not found after capture' });
     }
 
@@ -625,10 +634,10 @@ router.get('/screenshot', (req, res) => {
       try {
         fs.unlinkSync(tempPath);
       } catch (unlinkErr) {
-        console.error('[SCREENSHOT] Failed to cleanup temp file:', unlinkErr.message);
+        logger.warn('Screenshot temp file cleanup failed', { error: unlinkErr.message });
       }
       if (sendErr) {
-        console.error('[SCREENSHOT] Error sending file:', sendErr.message);
+        logger.error('Screenshot send failed', { error: sendErr.message });
       }
     });
   });
@@ -857,7 +866,7 @@ router.post('/send', async (req, res) => {
     return handleTextSend(text, res);
 
   } catch (err) {
-    console.error('[UNIFIED-SEND] Error:', err.message);
+    logger.error('Unified send failed', { error: err.message, requestId: req.requestId });
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,5 +1,7 @@
 // Progressive Web App Service Worker for AiroDrop
-const CACHE_NAME = 'airodrop-cache-v6';
+// Cache version is tied to the app version — update this on each release
+const APP_VERSION = '6.2.11';
+const CACHE_NAME = `airodrop-v${APP_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
 // Assets to pre-cache on service worker installation
@@ -9,36 +11,51 @@ const PRECACHE_ASSETS = [
   '/logo.svg',
   '/logo.png',
   '/logo-192.png',
-  '/style.css',
-  '/app.js',
-  '/mobile.html',
-  '/mobile-app.js'
+  '/style.css'
 ];
 
-// Installation event: Pre-cache assets and activate immediately
+// Installation event: Pre-cache critical assets and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[ServiceWorker] Pre-caching offline fallback and assets');
+      console.log(`[SW] Installing v${APP_VERSION}, pre-caching assets`);
       return cache.addAll(PRECACHE_ASSETS);
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activation event: Clean up old caches and claim clients
+// Activation event: Clean up ALL old caches and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', cacheName);
+            console.log(`[SW] Removing stale cache: ${cacheName}`);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      // Notify all open clients that a new version is active
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: APP_VERSION
+          });
+        });
+      });
+      return self.clients.claim();
+    })
   );
+});
+
+// Message handler — allow page to request skipWaiting
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Fetch event: Apply customized caching strategies
@@ -50,7 +67,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // 1. Bypass Service Worker entirely for APIs, WebDAV, WebSockets, Files, Received, and core mobile app resources
+  // 1. Bypass SW entirely for dynamic/real-time endpoints
   if (url.pathname.startsWith('/api/') || 
       url.pathname.startsWith('/webdav') || 
       url.pathname.startsWith('/trackpad') ||
@@ -59,22 +76,22 @@ self.addEventListener('fetch', (event) => {
       url.pathname === '/mobile-app.js' ||
       url.pathname === '/mobile.html' ||
       url.pathname === '/m' ||
+      url.pathname === '/auth-pin' ||
+      url.pathname === '/auth-pin.html' ||
       event.request.url.startsWith('ws') || 
       event.request.headers.get('Upgrade') === 'websocket') {
     return;
   }
 
-  // 2. Network-First (with offline fallback to cache/offline page) for HTML Documents
+  // 2. Network-First for HTML page navigations
   const isDocument = event.request.mode === 'navigate' || 
                      url.pathname.endsWith('.html') || 
-                     url.pathname === '/' || 
-                     url.pathname === '/m';
+                     url.pathname === '/';
 
   if (isDocument) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // If response is valid, cache it for offline use
           if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
@@ -82,21 +99,14 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // If network fails, try to serve from cache
           return caches.match(event.request)
-            .then((cachedResponse) => {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              // If not in cache, fallback to the offline page
-              return caches.match(OFFLINE_URL);
-            });
+            .then((cachedResponse) => cachedResponse || caches.match(OFFLINE_URL));
         })
     );
     return;
   }
 
-  // 3. Stale-While-Revalidate for Static Resources (CSS, JS, images, fonts)
+  // 3. Cache-First with network update for static assets (CSS, JS, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
@@ -107,9 +117,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Silent catch for network failure inside background fetch
-        });
+        .catch(() => undefined);
 
       return cachedResponse || fetchPromise;
     })

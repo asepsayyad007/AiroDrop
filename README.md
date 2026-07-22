@@ -1,4 +1,4 @@
-# AiroDrop v6.1.14 🚀
+# AiroDrop v6.2.0 🚀
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.1.14-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.2.0-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -21,6 +21,42 @@ Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.2.0
+
+This is a major production-hardening release focused on security, reliability, and developer experience:
+
+### 🛡️ Security Hardening
+- **HTTP Security Headers** — Helmet.js integration with CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and DNS prefetch control.
+- **Input Sanitization** — New `src/sanitize.js` module: filename sanitization, path traversal prevention, settings validation (port, PIN, device name, security mode).
+- **Hardened CORS** — Wildcard `*` replaced with local-network-only origin validation (RFC 1918 private IP ranges).
+- **PIN Brute-Force Protection** — 5-attempt soft lockout (5 min), 10-attempt hard lockout (30 min), `Retry-After` header, automatic expiry cleanup.
+- **CSRF Protection** — Origin/Referer validation for state-changing endpoints, with exemptions for iOS Shortcuts and localhost.
+- **Secure Cookies** — `SameSite=Lax`, `Secure` flag when HTTPS enabled, `Path=/`, 7-day expiry.
+- **HTTP Parameter Pollution (HPP)** protection.
+
+### 📋 Structured Logging & Error Handling
+- **Winston Logger** — Leveled logging (error/warn/info/http/debug), daily-rotated log files (7-day retention), JSON format for machine parsing, colorized console output.
+- **Centralized Error Handler** — Consistent error response format, Multer/parse error classification, `AppError` class with factory methods.
+- **Request ID Tracking** — Unique 16-char hex ID on every request (`X-Request-ID` response header), correlated in logs.
+- **Async Route Wrapper** — Eliminates try/catch boilerplate across all route handlers.
+- **Process Crash Handlers** — Uncaught exception/rejection logging with graceful state persistence.
+
+### 🏗️ Server Robustness
+- **Graceful Shutdown** — Closes WebSocket/SSE connections with notification, saves history + scratchpad, 5s drain timeout.
+- **Health Check Endpoint** — `GET /api/health` returns version, uptime, memory usage, connection counts, disk writability.
+- **Request Timeouts** — 30s for API routes, 10min for uploads/downloads, 408 on timeout.
+- **Sliding Window Rate Limiter** — Per-IP per-category (default: 60/min, auth: 10, upload: 20, control: 30), `Retry-After` header.
+- **Port Conflict Resolution** — Automatic retry on `EADDRINUSE` (up to 3 attempts, +2 per retry).
+
+### ✨ Frontend Polish
+- **Global Fetch Retry** — 2 retries with exponential backoff, automatic error toasts, auth/rate-limit awareness.
+- **Loading Skeleton States** — Shimmer animation on initial history load.
+- **SSE Reconnection** — Exponential backoff (1s → 30s cap), countdown in status indicator, resets on success.
+- **Keyboard Accessibility** — `:focus-visible` outlines, Escape to close modals, focus management, `aria-modal` attributes.
+- **Service Worker Versioning** — Cache name tied to app version, stale caches auto-purged, update toast prompt with tap-to-refresh.
 
 ---
 

@@ -101,7 +101,9 @@
     function initAppComponents() {
       const storedToken = localStorage.getItem('deviceToken');
       
-      // Reveal UI
+      // Hide loading fallback and reveal UI
+      const fallback = document.getElementById('appLoadingFallback');
+      if (fallback) fallback.style.display = 'none';
       const mainApp = document.getElementById('mainAppContainer');
       const bottomNav = document.getElementById('bottomNavContainer');
       if (mainApp) mainApp.style.display = 'block';
@@ -593,6 +595,7 @@
           const text = mobileTextInput.value.trim();
           if (!text) return showToast('Please enter some text');
           sendTextBtn.disabled = true;
+          sendTextBtn.classList.add('is-loading');
           try {
             const res = await doFetch('/api/text', {
               method: 'POST',
@@ -609,6 +612,7 @@
             showToast('Failed to connect to server');
           } finally {
             sendTextBtn.disabled = false;
+            sendTextBtn.classList.remove('is-loading');
           }
         });
       }
@@ -653,6 +657,7 @@
         sendFileBtn.addEventListener('click', async () => {
           if (!selectedFile) return;
           sendFileBtn.disabled = true;
+          sendFileBtn.classList.add('is-loading');
           const formData = new FormData();
           formData.append('file', selectedFile);
 
@@ -674,6 +679,7 @@
             showToast('Failed to send file');
           } finally {
             sendFileBtn.disabled = false;
+            sendFileBtn.classList.remove('is-loading');
           }
         });
       }
@@ -2125,6 +2131,9 @@
       if (!btnOpen || !overlay || !iframe || !btnClose) return;
 
       btnOpen.addEventListener('click', () => {
+        // Show loading state and reset iframe
+        const loadingEl = document.getElementById('fileBrowserLoading');
+        if (loadingEl) loadingEl.style.display = 'flex';
         iframe.src = '/files';
         overlay.style.display = 'flex';
       });
