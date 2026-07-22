@@ -16,8 +16,8 @@ AiroDrop is engineered with a strict **Local-First, Zero-Data Retention** archit
 | :--- | :--- | :--- | :--- |
 | **Files & Media** | Yes | Only when using Share-to-Friend links | ❌ **No (Streamed in-memory)** |
 | **Clipboard Content** | Yes | ❌ No | ❌ **No** |
-| **Auth Tokens & Keys** | Yes (Browser LocalStorage) | ❌ No | ❌ **No** |
-| **IP Addresses** | Yes (LAN Pairing) | Temporary network socket connection | ❌ **No logs retained** |
+| **Auth Tokens & Keys** | Yes (Browser LocalStorage + PC `paired_devices.json`) | ❌ No | Local PC only (never uploaded) |
+| **IP Addresses** | Yes (LAN Pairing) | Temporary network socket connection | ❌ **No persistent logs** |
 
 ### 3. Cloud Relay Sharing (`airodrop-relay`)
 When you create a Share-to-Friend link (`/d/:token`):

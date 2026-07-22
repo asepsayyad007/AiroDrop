@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.12] - 2026-07-22
+
+### Removed
+- Internal implementation plan files (`.kiro/plans/MASTER_IMPLEMENTATION_PLAN.md`, `.kiro/plans/PHASE1_SECURITY_HARDENING.md`)
+- `Build Instructions Guide.md` (redundant with README, contained hardcoded local paths)
+
+### Fixed
+- LEGAL.md: Auth tokens table now accurately reflects that paired device tokens are stored on the PC in `paired_devices.json` (not browser-only)
+- PRIVACY.md: Corrected authentication storage description to include server-side persistence
+
+### Changed
+- `.gitignore` updated to exclude `.kiro/` directory from version control
+
+---
+
 ## [6.2.0] - 2026-07-22
 
 ### Added

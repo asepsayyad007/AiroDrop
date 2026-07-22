@@ -8,7 +8,7 @@
 ## 1. Local Network Privacy (LAN)
 AiroDrop is built from the ground up to operate over your Local Area Network (LAN):
 - All local file transfers, clipboard syncs, trackpad events, and camera streams move directly between your mobile device and PC over private Wi-Fi IPs (e.g., `192.168.x.x`).
-- Authentication uses paired token hashes stored exclusively in your browser's `localStorage`.
+- Authentication tokens are stored in your browser's `localStorage` and on the PC in a local `paired_devices.json` file. They are never transmitted to external servers.
 - No telemetry analytics, trackers, or user identity logs are collected.
 
 ---

@@ -1,4 +1,4 @@
-# AiroDrop v6.2.0 🚀
+# AiroDrop v6.2.12 🚀
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.2.0-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.2.12-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -21,6 +21,20 @@ Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.2.12
+
+Cleanup and accuracy release — removes internal development artifacts and corrects legal documentation.
+
+### 🧹 Housekeeping
+- **Removed internal planning files** — `.kiro/plans/` and `Build Instructions Guide.md` no longer tracked in repository.
+- **Updated `.gitignore`** — `.kiro/` directory now excluded from version control.
+
+### 📜 Legal & Privacy Accuracy
+- **Fixed auth token storage claim** — LEGAL.md and PRIVACY.md now correctly state that paired device tokens are stored both in browser localStorage *and* on the PC (`paired_devices.json`). Previously claimed browser-only storage.
+- **Clarified IP address logging** — No persistent logs are retained, but transient console output exists during runtime.
 
 ---
 
