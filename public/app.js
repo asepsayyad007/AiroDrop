@@ -2311,10 +2311,12 @@
     if (isElectron && ipcRenderer) {
       ipcRenderer.on('update-status', (event, status, info) => {
         const updateBtnText = status === 'checking' ? '🔄 Checking...' : 
+                             status === 'downloading' ? '📥 Downloading...' :
                              status === 'available' ? '📥 Update Available' : '🔄 Check for Updates';
         const manualBtnText = status === 'checking' ? 'Checking...' :
-                             status === 'available' ? 'Downloading...' : 'Check for Updates Now';
-        const isBtnDisabled = status === 'checking' || status === 'available';
+                             status === 'downloading' ? 'Downloading...' :
+                             status === 'available' ? 'Update Available' : 'Check for Updates Now';
+        const isBtnDisabled = status === 'checking' || status === 'available' || status === 'downloading';
 
         if (btnCheckUpdates) {
           btnCheckUpdates.disabled = isBtnDisabled;
@@ -2325,39 +2327,67 @@
           checkUpdatesManualBtn.textContent = manualBtnText;
         }
 
+        const updateProgressDetails = $('#updateProgressDetails');
+
         switch (status) {
           case 'checking':
             if (updateStatusText) updateStatusText.textContent = 'Checking for updates...';
+            if (updateProgressContainer) updateProgressContainer.style.display = 'none';
             break;
           case 'available':
-            showToast(`Update v${info.version} available! Downloading...`, 'info');
-            if (updateProgressContainer) updateProgressContainer.style.display = 'flex';
-            if (updateStatusText) updateStatusText.textContent = `New update v${info.version} downloading...`;
+            if (updateStatusText) {
+              const ver = info && info.version ? info.version : '';
+              updateStatusText.innerHTML = `<span style="color:var(--accent-light);font-weight:600;">v${ver} available</span>`;
+            }
+            break;
+          case 'downloading':
+            showToast('Downloading update...', 'info');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'block';
+            if (updateProgressBarFill) updateProgressBarFill.style.width = '0%';
+            if (updateProgressPercent) updateProgressPercent.textContent = '0%';
+            if (updateProgressLabel) updateProgressLabel.textContent = 'Downloading update...';
+            if (updateProgressDetails) updateProgressDetails.textContent = 'Starting download...';
+            if (updateStatusText) updateStatusText.textContent = 'Downloading...';
             break;
           case 'not-available':
             showToast('You are already running the latest version!', 'success');
             if (updateProgressContainer) updateProgressContainer.style.display = 'none';
             if (updateStatusText) updateStatusText.textContent = 'Up to date';
+            if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
           case 'error':
             showToast('Update check failed. Try again later.', 'error');
             if (updateProgressContainer) updateProgressContainer.style.display = 'none';
-            if (updateStatusText) updateStatusText.textContent = 'Check failed';
+            if (updateStatusText) updateStatusText.textContent = 'Check failed — try again';
+            if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
           case 'downloaded':
-            showToast('Update downloaded successfully! Restart to apply.', 'success');
-            if (updateProgressContainer) updateProgressContainer.style.display = 'none';
-            if (updateStatusText) updateStatusText.textContent = 'Update downloaded. Restart to apply.';
+            showToast('Update downloaded! Restarting to install...', 'success');
+            if (updateProgressContainer) updateProgressContainer.style.display = 'block';
+            if (updateProgressBarFill) updateProgressBarFill.style.width = '100%';
+            if (updateProgressPercent) updateProgressPercent.textContent = '100%';
+            if (updateProgressLabel) updateProgressLabel.textContent = 'Download complete!';
+            if (updateProgressDetails) updateProgressDetails.textContent = 'Restart the app to apply the update.';
+            if (updateStatusText) updateStatusText.innerHTML = '<span style="color:#00d26a;font-weight:600;">Ready to install</span>';
+            if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
         }
       });
 
       ipcRenderer.on('update-download-progress', (event, progressObj) => {
-        if (updateProgressPercent) updateProgressPercent.textContent = `${Math.round(progressObj.percent)}%`;
-        if (updateProgressBarFill) updateProgressBarFill.style.width = `${progressObj.percent}%`;
+        const pct = Math.round(progressObj.percent || 0);
+        if (updateProgressContainer) updateProgressContainer.style.display = 'block';
+        if (updateProgressPercent) updateProgressPercent.textContent = `${pct}%`;
+        if (updateProgressBarFill) updateProgressBarFill.style.width = `${pct}%`;
         if (updateProgressLabel) {
-          const speed = (progressObj.bytesPerSecond / 1024 / 1024).toFixed(1);
+          const speed = ((progressObj.bytesPerSecond || 0) / 1024 / 1024).toFixed(1);
           updateProgressLabel.textContent = `Downloading (${speed} MB/s)`;
+        }
+        const updateProgressDetails = $('#updateProgressDetails');
+        if (updateProgressDetails) {
+          const transferred = ((progressObj.transferred || 0) / 1024 / 1024).toFixed(1);
+          const total = ((progressObj.total || 0) / 1024 / 1024).toFixed(1);
+          updateProgressDetails.textContent = `${transferred} MB / ${total} MB`;
         }
       });
     }
