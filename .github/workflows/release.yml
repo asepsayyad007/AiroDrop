@@ -2,10 +2,14 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: 'Version override (leave empty to use package.json)'
+        required: false
+        default: ''
 
 jobs:
   build-and-release:
@@ -13,7 +17,7 @@ jobs:
     runs-on: windows-latest
 
     permissions:
-      contents: write # Required for creating release and uploading assets
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -37,20 +41,25 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          if [ -n "${{ github.event.inputs.version_override }}" ]; then
+            VERSION="${{ github.event.inputs.version_override }}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building release v${VERSION}"
 
       - name: Create Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}
+          name: AiroDrop v${{ steps.get_version.outputs.version }}
           files: |
             dist/*.exe
             dist/latest.yml
           generate_release_notes: true
           draft: false
           prerelease: false
-          overwrite: true
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

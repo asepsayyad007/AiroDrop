@@ -189,34 +189,70 @@ app.whenReady().then(() => {
 });
 
 let isManualCheck = false;
+let updateCheckTimeout = null;
+const UPDATE_CHECK_TIMEOUT_MS = 30000; // 30s timeout for update checks
+const UPDATE_CHECK_DELAY_MS = 10000;   // 10s delay on startup to let server fully init
+
+function safeMainWindowSend(channel, ...args) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+      mainWindow.webContents.send(channel, ...args);
+    }
+  } catch (_) {}
+}
+
+function resetUpdateCheckState() {
+  isManualCheck = false;
+  if (updateCheckTimeout) {
+    clearTimeout(updateCheckTimeout);
+    updateCheckTimeout = null;
+  }
+}
 
 function checkUpdatesManually() {
+  resetUpdateCheckState();
   isManualCheck = true;
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', 'checking');
-  }
+  safeMainWindowSend('update-status', 'checking');
 
-  // Handle unpackaged dev environment checks to show direct feedback
+  // Handle unpackaged dev environment
   if (!app.isPackaged) {
     isManualCheck = false;
-    dialog.showMessageBox(mainWindow || null, {
-      type: 'info',
-      title: 'AiroDrop Update Check',
-      message: 'Update checks are only active in compiled production builds.\n(Running in Developer Mode)'
-    });
-    if (mainWindow) {
-      mainWindow.webContents.send('update-status', 'not-available');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'AiroDrop Update Check',
+        message: 'Update checks are only active in compiled production builds.\n(Running in Developer Mode)'
+      });
     }
+    safeMainWindowSend('update-status', 'not-available');
     return;
   }
 
-  autoUpdater.checkForUpdates().catch((err) => {
+  // Set timeout to prevent hanging indefinitely
+  updateCheckTimeout = setTimeout(() => {
     if (isManualCheck) {
       isManualCheck = false;
-      dialog.showErrorBox('Update Check Failed', `Failed to check for updates: ${err.message}`);
-      if (mainWindow) {
-        mainWindow.webContents.send('update-status', 'error', err.message);
+      safeMainWindowSend('update-status', 'error', 'Timed out');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          title: 'Update Check',
+          message: 'Update check timed out. Please check your internet connection and try again.'
+        });
       }
+    }
+  }, UPDATE_CHECK_TIMEOUT_MS);
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    resetUpdateCheckState();
+    const msg = err.message || 'Unknown error';
+    safeMainWindowSend('update-status', 'error', msg);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        title: 'Update Check Failed',
+        message: `Could not check for updates:\n${msg}\n\nPlease check your internet connection.`
+      });
     }
   });
 }
@@ -240,125 +276,186 @@ function getReleaseNotesText(releaseNotes) {
   return typeof releaseNotes === 'object' ? JSON.stringify(releaseNotes) : String(releaseNotes);
 }
 
+/**
+ * Compare two semver strings. Returns:
+ *  -1 if a < b, 0 if equal, 1 if a > b
+ */
+function compareSemver(a, b) {
+  const pa = a.replace(/^v/, '').split('.').map(Number);
+  const pb = b.replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
 function setupAutoUpdater() {
   autoUpdater.logger = console;
-  autoUpdater.autoDownload = false; // Disable auto-downloading updates
+  autoUpdater.autoDownload = false;
+  autoUpdater.allowDowngrade = false;
 
-  autoUpdater.on('checking-for-updates', () => {
-    server.writeLog("Checking for updates...");
-    if (mainWindow) mainWindow.webContents.send('update-status', 'checking');
+  autoUpdater.on('checking-for-update', () => {
+    server.writeLog('[AutoUpdater] Checking for updates...');
+    safeMainWindowSend('update-status', 'checking');
   });
 
   autoUpdater.on('update-available', (info) => {
-    server.writeLog(`New update available: v${info.version}`);
+    // Clear the timeout — we got a response
+    if (updateCheckTimeout) { clearTimeout(updateCheckTimeout); updateCheckTimeout = null; }
 
-    // Check if user has skipped this version (only skip on automatic checks)
+    server.writeLog(`[AutoUpdater] Update available: v${info.version}`);
+
+    // Skip if user previously dismissed this version (auto-check only)
     let skippedVersion = '';
     const state = require('./src/state');
     try {
-      if (fs.existsSync(state.CONFIG_FILE)) {
+      if (state.CONFIG_FILE && fs.existsSync(state.CONFIG_FILE)) {
         const configData = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
         skippedVersion = configData.skippedVersion || '';
       }
     } catch (e) {
-      console.error('[AutoUpdater] Failed to read skippedVersion from config:', e.message);
+      console.error('[AutoUpdater] Failed to read skippedVersion:', e.message);
     }
 
     if (info.version === skippedVersion && !isManualCheck) {
-      server.writeLog(`Skipping update v${info.version} (user previously skipped this version)`);
-      if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
+      server.writeLog(`[AutoUpdater] Skipping v${info.version} (previously skipped by user)`);
+      safeMainWindowSend('update-status', 'not-available');
       return;
     }
 
-    if (mainWindow) mainWindow.webContents.send('update-status', 'available', info);
+    safeMainWindowSend('update-status', 'available', info);
+
+    if (!mainWindow || mainWindow.isDestroyed()) return;
 
     const notes = getReleaseNotesText(info.releaseNotes);
     const changelogDisplay = notes.length > 500 ? notes.slice(0, 497) + '...' : notes;
 
-    dialog.showMessageBox(mainWindow || null, {
+    dialog.showMessageBox(mainWindow, {
       type: 'question',
       title: 'Update Available',
-      message: `A new version (v${info.version}) of AiroDrop is available!\n\nChangelog / What's New:\n${changelogDisplay}\n\nWould you like to download and install this update now?`,
-      buttons: ['Download Now', 'Skip This Update', 'Later'],
+      message: `A new version (v${info.version}) of AiroDrop is available!\n\nChangelog:\n${changelogDisplay}\n\nDownload and install now?`,
+      buttons: ['Download Now', 'Skip This Version', 'Later'],
       defaultId: 0,
       cancelId: 2
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.downloadUpdate();
-        server.writeLog(`Downloading update v${info.version}...`);
-        if (mainWindow) mainWindow.webContents.send('update-status', 'downloading');
+        autoUpdater.downloadUpdate().catch((dlErr) => {
+          server.writeLog(`[AutoUpdater] Download failed: ${dlErr.message}`);
+          safeMainWindowSend('update-status', 'error', dlErr.message);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            dialog.showMessageBox(mainWindow, {
+              type: 'warning',
+              title: 'Download Failed',
+              message: `Failed to download update: ${dlErr.message}\n\nPlease try again later.`
+            });
+          }
+        });
+        server.writeLog(`[AutoUpdater] Downloading v${info.version}...`);
+        safeMainWindowSend('update-status', 'downloading');
       } else if (result.response === 1) {
-        // Skip this update - save to config.json
+        // Skip this version
         try {
           let configData = {};
-          if (fs.existsSync(state.CONFIG_FILE)) {
+          if (state.CONFIG_FILE && fs.existsSync(state.CONFIG_FILE)) {
             configData = JSON.parse(fs.readFileSync(state.CONFIG_FILE, 'utf8'));
           }
           configData.skippedVersion = info.version;
           fs.writeFileSync(state.CONFIG_FILE, JSON.stringify(configData, null, 2));
-          server.writeLog(`User chose to skip update v${info.version}`);
+          server.writeLog(`[AutoUpdater] User skipped v${info.version}`);
         } catch (err) {
           console.error('[AutoUpdater] Failed to save skippedVersion:', err.message);
         }
         isManualCheck = false;
-        if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
+        safeMainWindowSend('update-status', 'not-available');
       } else {
         isManualCheck = false;
-        if (mainWindow) mainWindow.webContents.send('update-status', 'not-available');
+        safeMainWindowSend('update-status', 'not-available');
       }
+    }).catch(() => {
+      // Dialog was dismissed (e.g. window closed)
+      isManualCheck = false;
     });
   });
 
   autoUpdater.on('update-not-available', (info) => {
-    server.writeLog("You are up to date.");
-    if (mainWindow) mainWindow.webContents.send('update-status', 'not-available', info);
+    if (updateCheckTimeout) { clearTimeout(updateCheckTimeout); updateCheckTimeout = null; }
+    server.writeLog('[AutoUpdater] Already up to date.');
+    safeMainWindowSend('update-status', 'not-available', info);
     if (isManualCheck) {
       isManualCheck = false;
-      dialog.showMessageBox(mainWindow || null, {
-        type: 'info',
-        title: 'AiroDrop Update',
-        message: 'You are up to date!'
-      });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'AiroDrop Update',
+          message: `You are up to date! (v${info.version})`
+        });
+      }
     }
   });
 
   autoUpdater.on('error', (err) => {
-    server.writeLog(`Update check failed: ${err.message}`);
-    if (mainWindow) mainWindow.webContents.send('update-status', 'error', err.message);
+    if (updateCheckTimeout) { clearTimeout(updateCheckTimeout); updateCheckTimeout = null; }
+    const msg = err ? err.message : 'Unknown error';
+    server.writeLog(`[AutoUpdater] Error: ${msg}`);
+    safeMainWindowSend('update-status', 'error', msg);
     if (isManualCheck) {
       isManualCheck = false;
-      dialog.showMessageBox(mainWindow || null, {
-        type: 'warning',
-        title: 'Update Check',
-        message: 'Update check failed.'
-      });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          title: 'Update Check',
+          message: `Update check failed: ${msg}`
+        });
+      }
     }
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
-    if (mainWindow) mainWindow.webContents.send('update-download-progress', progressObj);
+    safeMainWindowSend('update-download-progress', progressObj);
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    server.writeLog("Update downloaded successfully.");
-    if (mainWindow) mainWindow.webContents.send('update-status', 'downloaded', info);
-    dialog.showMessageBox(mainWindow || null, {
+    server.writeLog(`[AutoUpdater] Update v${info.version} downloaded.`);
+    safeMainWindowSend('update-status', 'downloaded', info);
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      // If no window, install silently on next quit
+      autoUpdater.autoInstallOnAppQuit = true;
+      return;
+    }
+    dialog.showMessageBox(mainWindow, {
       type: 'info',
       title: 'Update Ready',
-      message: `Version ${info.version} is ready to install. Restart the app to apply the update?`,
+      message: `Version ${info.version} is ready. Restart now to apply?`,
       buttons: ['Restart Now', 'Later']
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.quitAndInstall();
+        isQuitting = true;
+        autoUpdater.quitAndInstall(false, true);
+      } else {
+        // Will install on next app quit
+        autoUpdater.autoInstallOnAppQuit = true;
       }
+    }).catch(() => {
+      autoUpdater.autoInstallOnAppQuit = true;
     });
   });
 
-  // Only perform auto update check if enabled in settings
-  if (server.getAutoUpdate()) {
-    autoUpdater.checkForUpdates().catch((err) => {
-      console.error('[AutoUpdater] Auto check failed:', err.message);
-    });
+  // Delay auto-check to let server fully initialize (avoid race condition with config)
+  if (app.isPackaged) {
+    setTimeout(() => {
+      try {
+        if (server.getAutoUpdate && server.getAutoUpdate()) {
+          autoUpdater.checkForUpdates().catch((err) => {
+            console.error('[AutoUpdater] Startup check failed:', err.message);
+          });
+        }
+      } catch (e) {
+        console.error('[AutoUpdater] Startup check error:', e.message);
+      }
+    }, UPDATE_CHECK_DELAY_MS);
   }
 }
 

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.13] - 2026-07-22
+
+### Fixed
+- **Auto-updater race condition** — Startup check delayed 10s so server config is fully loaded first
+- **Update check timeout** — 30s timeout prevents infinite hangs on poor network; shows user-friendly message
+- **Download failure handling** — Errors during download now surface a dialog and reset UI cleanly
+- **Window crash on IPC send** — All `mainWindow.webContents.send` calls wrapped in destroyed-check guard
+- **Semver comparison** — Both `/api/check-update` and Electron updater now compare versions numerically; dev builds ahead of remote no longer falsely trigger "update available"
+- **`isManualCheck` state leak** — Timer and flag now properly reset on every check path (timeout, error, dialog dismiss)
+- **Release workflow duplicate builds** — Removed `push: branches: main` trigger; releases now only created on `v*` tags or manual dispatch
+
+### Added
+- `autoInstallOnAppQuit` — Downloaded updates install silently on next app quit if user defers
+- `/api/check-update` request timeout (15s) and GitHub rate-limit (429) handling
+- `publishedAt` field in `/api/check-update` response
+- Manual `workflow_dispatch` trigger with optional version override for CI releases
+
+---
+
 ## [6.2.12] - 2026-07-22
 
 ### Removed

@@ -1,4 +1,4 @@
-# AiroDrop v6.2.12 🚀
+# AiroDrop v6.2.13 🚀
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.2.12-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.2.13-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -21,6 +21,26 @@ Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.2.13
+
+Stabilizes the auto-update system for reliable production use.
+
+### 🔄 Auto-Updater Stability
+- **Fixed race condition** — Startup update check now delayed 10s to ensure server config is fully loaded before querying GitHub.
+- **30-second timeout** — Update checks no longer hang indefinitely on poor connections; times out with a user-friendly message.
+- **Download error recovery** — Failed downloads now show a dialog and reset UI state cleanly instead of leaving the app in a broken "downloading" state.
+- **Window crash protection** — All IPC sends now check `mainWindow.isDestroyed()` to prevent Electron crashes when the window is closed during an update.
+- **Auto-install on quit** — If user clicks "Later" on a downloaded update, it installs automatically on next app quit.
+- **Proper semver comparison** — Both the Electron updater and `/api/check-update` endpoint now compare versions numerically (major.minor.patch) instead of naive string equality. Local builds ahead of remote no longer falsely flag as "update available".
+
+### 🛠 CI/CD Fix
+- **Release workflow** — No longer triggers on every push to `main`. Now only builds and publishes when a `v*` tag is pushed, or via manual workflow dispatch. This prevents duplicate/phantom releases that confused electron-updater.
+
+### 🌐 API Improvements
+- **`/api/check-update`** — 15s request timeout, GitHub rate-limit handling (429), proper error messages, `publishedAt` field in response.
 
 ---
 

@@ -50,38 +50,73 @@ const upload = multer({
 // GET /api/check-update — Query GitHub Releases API for updates
 router.get('/check-update', (req, res) => {
   const https = require('https');
+  const currentVersion = require('../../package.json').version;
+
   const options = {
     hostname: 'api.github.com',
     path: '/repos/asepsayyad007/AiroDrop/releases/latest',
-    headers: { 'User-Agent': 'AiroDrop-Server' }
+    headers: { 'User-Agent': 'AiroDrop-Server/' + currentVersion },
+    timeout: 15000 // 15s request timeout
   };
 
-  https.get(options, (apiRes) => {
+  const request = https.get(options, (apiRes) => {
     let data = '';
     apiRes.on('data', (chunk) => { data += chunk; });
     apiRes.on('end', () => {
       try {
+        if (apiRes.statusCode === 403 || apiRes.statusCode === 429) {
+          return res.status(429).json({ error: 'GitHub API rate limited. Try again later.' });
+        }
         if (apiRes.statusCode !== 200) {
-          return res.status(apiRes.statusCode).json({ error: 'GitHub API returned status ' + apiRes.statusCode });
+          return res.status(502).json({ error: 'GitHub API returned status ' + apiRes.statusCode });
         }
         const release = JSON.parse(data);
+        if (!release || !release.tag_name) {
+          return res.status(502).json({ error: 'Invalid response from GitHub (no tag_name)' });
+        }
         const latestVersion = release.tag_name.replace(/^v/, '');
-        const currentVersion = require('../../package.json').version;
+
+        // Proper semver comparison: only flag update if remote is strictly newer
+        const updateAvailable = compareSemver(latestVersion, currentVersion) > 0;
 
         res.json({
           current: currentVersion,
           latest: latestVersion,
-          updateAvailable: latestVersion !== currentVersion,
-          url: release.html_url
+          updateAvailable,
+          url: release.html_url,
+          publishedAt: release.published_at || null
         });
       } catch (e) {
-        res.status(500).json({ error: 'Failed to parse GitHub response' });
+        res.status(500).json({ error: 'Failed to parse GitHub response: ' + e.message });
       }
     });
-  }).on('error', (err) => {
-    res.status(500).json({ error: err.message });
+  });
+
+  request.on('error', (err) => {
+    res.status(500).json({ error: 'Network error: ' + (err.message || 'connection failed') });
+  });
+
+  request.on('timeout', () => {
+    request.destroy();
+    res.status(504).json({ error: 'GitHub API request timed out' });
   });
 });
+
+/**
+ * Compare two semver strings (major.minor.patch).
+ * Returns: 1 if a > b, -1 if a < b, 0 if equal.
+ */
+function compareSemver(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
 
 // GET /api/info
 router.get('/info', async (req, res) => {
