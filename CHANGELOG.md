@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.14] - 2026-07-22
+
+### Added
+- Visible download progress bar in Application Updates settings card (percentage, speed, transferred/total bytes)
+- Distinct UI states for checking, downloading, ready-to-install, and error
+
+---
+
 ## [6.2.13] - 2026-07-22
 
 ### Fixed

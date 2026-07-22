@@ -1,6 +1,6 @@
 // Progressive Web App Service Worker for AiroDrop
 // Cache version is tied to the app version — update this on each release
-const APP_VERSION = '6.2.13';
+const APP_VERSION = '6.2.14';
 const CACHE_NAME = `airodrop-v${APP_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
