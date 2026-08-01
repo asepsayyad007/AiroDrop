@@ -5,6 +5,13 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.2.16] - 2026-08-01
+
+### Added
+- **High-speed cloud relay file streaming** — Increased file slice payload from 64 KB to 512 KB and implemented dynamic WebSocket backpressure (`relayWs.bufferedAmount < 2 MB`), allowing full 100Mbps+ speed utilization without timer delay caps.
+
+---
+
 ## [6.2.15] - 2026-08-01
 
 ### Fixed

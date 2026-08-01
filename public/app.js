@@ -3381,7 +3381,8 @@
   }
 
   async function streamFileToRelay(token, file) {
-    const CHUNK_SIZE = 64 * 1024;
+    const CHUNK_SIZE = 512 * 1024; // 512 KB per chunk (8x increase for high throughput)
+    const MAX_BUFFERED_AMOUNT = 2 * 1024 * 1024; // 2 MB backpressure threshold
     const totalSize = file.size;
     let offset = 0;
 
@@ -3396,6 +3397,11 @@
         return;
       }
 
+      // Backpressure control: pause reading if WebSocket outbound buffer exceeds threshold
+      while (relayWs && relayWs.bufferedAmount > MAX_BUFFERED_AMOUNT) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
       const slice = file.slice(offset, offset + CHUNK_SIZE);
       const buffer = await readSliceAsArrayBuffer(slice);
 
@@ -3406,7 +3412,7 @@
       }
 
       offset += CHUNK_SIZE;
-      await new Promise(resolve => setTimeout(resolve, 5));
+      // Zero artificial delay when buffer is clear — streams at full hardware/ISP speed!
     }
 
     sendRelayMessage({

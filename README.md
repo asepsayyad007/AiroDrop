@@ -1,4 +1,4 @@
-# AiroDrop v6.2.15 🚀
+# AiroDrop v6.2.16 🚀
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.2.15-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.2.16-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -21,6 +21,14 @@ Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.2.16
+
+### ⚡ Share to Friend High-Speed Streaming Optimization
+- **512 KB Chunk Streaming** — Increased file slice payload size from 64 KB to 512 KB to minimize WebSocket framing overhead.
+- **Dynamic Backpressure Control** — Replaced fixed `setTimeout(5)` timer delay with real-time `relayWs.bufferedAmount` threshold monitoring, eliminating artificial browser rate-limiting and allowing full 100Mbps+ internet bandwidth utilization (~12.5 MB/s).
 
 ---
 

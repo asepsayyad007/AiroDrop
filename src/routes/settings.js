@@ -14,14 +14,14 @@ const asyncHandler = require('../asyncHandler');
 
 const logger = getLogger();
 
-let appVersion = '6.2.15';
+let appVersion = '6.2.16';
 try {
   const pkg = require('../../package.json');
-  appVersion = pkg.version || '6.2.15';
+  appVersion = pkg.version || '6.2.16';
 } catch (e) {
   try {
     const pkg = require('../package.json');
-    appVersion = pkg.version || '6.2.15';
+    appVersion = pkg.version || '6.2.16';
   } catch {}
 }
 
