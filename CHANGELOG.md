@@ -5,6 +5,12 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.2.15] - 2026-08-01
+
+### Fixed
+- **Screencast two-finger tap** — Properly registered multi-touch tracking (`scMaxTouches = 2`) so 2-finger tap triggers right click on remote desktop.
+- **Screencast two-finger drag** — Deferred pinch-to-zoom mode activation so 2-finger vertical drag smoothly scrolls the remote desktop screen.
+
 ---
 
 ## [6.2.14] - 2026-07-22

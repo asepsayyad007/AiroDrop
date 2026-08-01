@@ -1965,7 +1965,9 @@
       frame.addEventListener('touchstart', (e) => {
         const touches = e.touches;
         if (touches.length === 2) {
-          isPinching = true;
+          scMaxTouches = 2;
+          scIsTwoFinger = true;
+          isPinching = false;
           const p1 = touches[0];
           const p2 = touches[1];
           startTouchDistance = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
@@ -2002,6 +2004,15 @@
           const currentDistance = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
           const mid = getTouchMidpoint(e);
 
+          if (!isPinching && Math.abs(currentDistance - startTouchDistance) > 20) {
+            isPinching = true;
+            startTouchDistance = currentDistance;
+            startTouchScale = zoomScale;
+            startTouchMidpoint = mid;
+            startTranslateX = zoomTranslateX;
+            startTranslateY = zoomTranslateY;
+          }
+
           if (isPinching) {
             if (startTouchDistance > 0) {
               const scaleFactor = currentDistance / startTouchDistance;
@@ -2013,14 +2024,7 @@
 
             applyZoomTransform();
           } else {
-            if (Math.abs(currentDistance - startTouchDistance) > 15) {
-              isPinching = true;
-              startTouchDistance = currentDistance;
-              startTouchScale = zoomScale;
-              startTouchMidpoint = mid;
-              startTranslateX = zoomTranslateX;
-              startTranslateY = zoomTranslateY;
-            } else if (interactiveMode) {
+            if (interactiveMode) {
               const cy = mid.y;
               if (!scIsTwoFinger || !scLastScrollY) {
                 scIsTwoFinger = true;

@@ -1,4 +1,4 @@
-# AiroDrop v6.2.14 🚀
+# AiroDrop v6.2.15 🚀
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[Creator Portfolio](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.2.14-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.2.15-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -21,6 +21,14 @@ Official Website **[AiroDrop](https://airodrop.site/)** |  Creator Portfolio **[
 
 > [!IMPORTANT]
 > **Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just share/send on your iPhone and instantly paste (Ctrl+V) wherever you want on your PC!**
+
+---
+
+## 🚀 What's New in v6.2.15
+
+### 🖥️ Screencast Touch Gesture Fixes
+- **Two-finger tap (Right Click)** — Fixed 2-finger tap registration by properly initializing multi-touch tracking (`scMaxTouches = 2`), enabling reliable right-clicks on the remote desktop.
+- **Two-finger drag (Scrolling)** — Deferred pinch-to-zoom detection on 2-finger touches, enabling smooth 2-finger vertical drag scrolling without accidental zooming.
 
 ---
 
