@@ -168,23 +168,22 @@
       // Setup Bottom Navigation
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-tab');
+          if (!targetId) return;
+          const targetContent = document.getElementById(targetId);
+          if (!targetContent) return;
+
           // Reset tabs
           document.querySelectorAll('.mobile-tab-content').forEach(c => c.classList.remove('active'));
           document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
           
           // Set active tab
           btn.classList.add('active');
-          document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+          targetContent.classList.add('active');
         });
       });
 
-      // File manager button triggers overlay directly
-      const btnBottomNavFiles = document.getElementById('btnBottomNavFiles');
-      if (btnBottomNavFiles) {
-        btnBottomNavFiles.addEventListener('click', () => {
-          document.getElementById('fileBrowserOverlay').style.display = 'flex';
-        });
-      }
+
 
       // Redirect legacy open file browser button to just open the overlay
       const btnLegacyOpenFileBrowser = document.getElementById('btnOpenFileBrowser');
@@ -193,6 +192,19 @@
           document.getElementById('fileBrowserOverlay').style.display = 'flex';
         });
       }
+
+      // External link handler for mobile PWA/browser
+      document.addEventListener('click', (e) => {
+        const anchor = e.target.closest('a');
+        if (!anchor) return;
+        const href = anchor.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+        if (href.startsWith('http://') || href.startsWith('https://')) {
+          e.preventDefault();
+          window.open(href, '_blank', 'noopener,noreferrer');
+        }
+      });
 
       // Auto-hide/show trackpad card and overlay when rotating
       window.addEventListener('resize', () => {
@@ -783,63 +795,158 @@
       };
     }
 
+    let _pendingSysConfirmAction = null;
+
+    function showSystemConfirmModal(options) {
+      const modal = document.getElementById('systemConfirmModal');
+      const titleEl = document.getElementById('sysConfirmTitle');
+      const msgEl = document.getElementById('sysConfirmMessage');
+      const btnOK = document.getElementById('btnSysConfirmOK');
+      const btnCancel = document.getElementById('btnSysConfirmCancel');
+      const iconContainer = document.getElementById('sysConfirmIconContainer');
+      if (!modal || !titleEl || !msgEl || !btnOK) return;
+
+      titleEl.textContent = options.title || 'Confirm Action';
+      msgEl.textContent = options.message || 'Are you sure you want to proceed?';
+      btnOK.textContent = options.confirmText || 'Confirm';
+
+      if (options.isDanger) {
+        btnOK.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+        btnOK.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+        if (iconContainer) {
+          iconContainer.style.background = 'rgba(239, 68, 68, 0.15)';
+          iconContainer.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+          iconContainer.style.color = '#ef4444';
+        }
+      } else {
+        btnOK.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+        btnOK.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+        if (iconContainer) {
+          iconContainer.style.background = 'rgba(99, 102, 241, 0.15)';
+          iconContainer.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+          iconContainer.style.color = '#818cf8';
+        }
+      }
+
+      _pendingSysConfirmAction = options.onConfirm;
+
+      const closeModal = () => {
+        modal.style.display = 'none';
+      };
+
+      if (btnCancel) btnCancel.onclick = closeModal;
+      btnOK.onclick = async () => {
+        closeModal();
+        if (_pendingSysConfirmAction) {
+          try {
+            await _pendingSysConfirmAction();
+          } catch (err) {
+            console.error('[Modal] Action execution failed:', err);
+          }
+          _pendingSysConfirmAction = null;
+        }
+      };
+
+      modal.style.display = 'flex';
+    }
+
     function setupMobileControl() {
-      let powerOffTimeout = null;
       document.querySelectorAll('.btn-control-cmd').forEach(btn => {
         btn.addEventListener('click', async () => {
+          if (btn._isPending) return;
           const action = btn.getAttribute('data-cmd');
           
-          // Special confirmation logic for Power Off to prevent accidental clicks
+          const executeAction = async () => {
+            triggerHaptic(15);
+            btn._isPending = true;
+            try {
+              const res = await doFetch('/api/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+              });
+              if (res.ok) {
+                showToast(`Triggered: ${action}`);
+              } else {
+                showToast('Failed to trigger action');
+              }
+            } catch {
+              showToast('Failed to connect to server');
+            } finally {
+              btn._isPending = false;
+            }
+          };
+
           if (action === 'poweroff') {
-            if (!btn.classList.contains('confirm-mode')) {
-              triggerHaptic(30); // Stronger haptic for alert
-              btn.classList.add('confirm-mode');
-              const span = btn.querySelector('span');
-              const origText = span ? span.textContent : 'Power Off';
-              if (span) span.textContent = 'Confirm?';
-              
-              powerOffTimeout = setTimeout(() => {
-                btn.classList.remove('confirm-mode');
-                if (span) span.textContent = origText;
-              }, 3000);
-              return; // Wait for second tap
-            } else {
-              // Confirmed! Clear timeout and remove class
-              clearTimeout(powerOffTimeout);
-              btn.classList.remove('confirm-mode');
-              const span = btn.querySelector('span');
-              if (span) span.textContent = 'Power Off';
-            }
-          }
-          
-          triggerHaptic(15);
-          btn.disabled = true;
-          try {
-            const res = await doFetch('/api/control', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action })
+            triggerHaptic(25);
+            showSystemConfirmModal({
+              title: 'Shut Down PC?',
+              message: 'Are you sure you want to shut down your computer remotely?',
+              confirmText: 'Shut Down',
+              isDanger: true,
+              onConfirm: executeAction
             });
-            if (res.ok) {
-              showToast(`Triggered: ${action}`);
-            } else {
-              showToast('Failed to trigger action');
-            }
-          } catch {
-            showToast('Failed to connect to server');
-          } finally {
-            btn.disabled = false;
+          } else if (action === 'sleep') {
+            triggerHaptic(20);
+            showSystemConfirmModal({
+              title: 'Put PC to Sleep?',
+              message: 'Are you sure you want to put your PC to sleep remotely?',
+              confirmText: 'Sleep PC',
+              isDanger: false,
+              onConfirm: executeAction
+            });
+          } else {
+            executeAction();
           }
         });
       });
     }
 
     function setupVlcControl() {
+      const btnHeaderAction = document.getElementById('btnVlcHeaderAction');
+
+      if (btnHeaderAction) {
+        btnHeaderAction.addEventListener('click', () => {
+          triggerHaptic(12);
+          if (window._vlcIsRunning) {
+            showSystemConfirmModal({
+              title: 'Close VLC Player?',
+              message: 'Are you sure you want to close VLC Media Player on your PC remotely?',
+              confirmText: 'Close VLC',
+              isDanger: true,
+              onConfirm: async () => {
+                triggerHaptic(20);
+                showToast('Closing VLC media player...');
+                try {
+                  await doFetch('/api/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'vlc_close' })
+                  });
+                  setTimeout(updateVlcStatus, 600);
+                } catch (_) {
+                  showToast('Failed to send close signal');
+                }
+              }
+            });
+          } else {
+            const svgIcon = document.getElementById('svgVlcHeaderIcon');
+            if (svgIcon) svgIcon.style.transform = 'rotate(360deg)';
+            showToast('Checking VLC status...');
+            updateVlcStatus();
+            setTimeout(() => {
+              if (svgIcon) svgIcon.style.transform = 'none';
+            }, 600);
+          }
+        });
+      }
+
       document.querySelectorAll('.vlc-cmd-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
+          if (btn._isPending) return;
           const action = btn.getAttribute('data-vlc-cmd');
           triggerHaptic(15);
-          btn.disabled = true;
+          btn._isPending = true;
           try {
             const res = await doFetch('/api/control', {
               method: 'POST',
@@ -855,7 +962,7 @@
           } catch {
             showToast('Failed to connect to server');
           } finally {
-            btn.disabled = false;
+            btn._isPending = false;
           }
         });
       });
@@ -879,30 +986,42 @@
 
       if (slider && indicator) {
         slider.addEventListener('input', () => {
-          const val = parseInt(slider.value);
+          const val = parseInt(slider.value, 10);
           let action = null;
           let secondsPerTick = 0;
+          let tickIntervalMs = 200;
 
-          if (val < 20) {
+          if (val <= 10) {
+            action = 'vlc_seek_backward_300s';
+            secondsPerTick = -300;
+            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
+          } else if (val > 10 && val <= 25) {
             action = 'vlc_seek_backward_60s';
             secondsPerTick = -60;
-          } else if (val >= 20 && val < 40) {
+            tickIntervalMs = 150;
+          } else if (val > 25 && val <= 43) {
             action = 'vlc_seek_backward_10s';
             secondsPerTick = -10;
-          } else if (val >= 40 && val <= 60) {
-            action = null; // Neutral
+            tickIntervalMs = 200;
+          } else if (val >= 44 && val <= 56) {
+            action = null; // Neutral Center
             secondsPerTick = 0;
-          } else if (val > 60 && val <= 80) {
+          } else if (val > 56 && val <= 74) {
             action = 'vlc_seek_forward_10s';
             secondsPerTick = 10;
-          } else {
+            tickIntervalMs = 200;
+          } else if (val > 74 && val <= 89) {
             action = 'vlc_seek_forward_60s';
             secondsPerTick = 60;
+            tickIntervalMs = 150;
+          } else {
+            action = 'vlc_seek_forward_300s';
+            secondsPerTick = 300;
+            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
           }
 
-          // If the seek action type has changed
+          // If action or interval changed
           if (action !== currentSeekAction) {
-            // Stop current interval
             if (seekInterval) {
               clearInterval(seekInterval);
               seekInterval = null;
@@ -916,7 +1035,7 @@
             }
 
             if (action) {
-              // Trigger first seek immediately
+              // Immediate first trigger
               accumulatedSeconds += secondsPerTick;
               indicator.textContent = formatSeconds(accumulatedSeconds);
               indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
@@ -928,21 +1047,20 @@
                 body: JSON.stringify({ action })
               }).catch(err => console.error('[VLC] Initial seek failed:', err));
 
-              // Start repeating seek interval
+              // Rapid repeat interval
               seekInterval = setInterval(() => {
                 accumulatedSeconds += secondsPerTick;
                 indicator.textContent = formatSeconds(accumulatedSeconds);
                 indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
-                triggerHaptic(10);
+                triggerHaptic(8);
 
                 doFetch('/api/control', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action })
                 }).catch(err => console.error('[VLC] Hold seek failed:', err));
-              }, 600);
+              }, tickIntervalMs);
             } else {
-              // Neutral zone: pause seeking but show current accumulated amount
               if (accumulatedSeconds === 0) {
                 indicator.textContent = 'Neutral';
                 indicator.style.color = 'var(--text3)';
@@ -992,6 +1110,9 @@
           const text = document.getElementById('vlcNowPlayingText');
           const activeControls = document.getElementById('vlcActiveControls');
           const inactivePlaceholder = document.getElementById('vlcInactivePlaceholder');
+          const btnHeader = document.getElementById('btnVlcHeaderAction');
+
+          window._vlcIsRunning = !!data.running;
           
           if (data.running) {
             if (activeControls) activeControls.style.display = 'flex';
@@ -1006,6 +1127,14 @@
               text.innerHTML = `<strong>Now Playing:</strong> ${escapeHtml(data.title)}`;
               text.style.color = 'var(--text)';
             }
+            if (btnHeader) {
+              btnHeader.innerHTML = '&times;';
+              btnHeader.style.background = 'rgba(239, 68, 68, 0.15)';
+              btnHeader.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+              btnHeader.style.color = '#ef4444';
+              btnHeader.style.fontSize = '1.2rem';
+              btnHeader.title = 'Close VLC Player on PC';
+            }
           } else {
             if (activeControls) activeControls.style.display = 'none';
             if (inactivePlaceholder) inactivePlaceholder.style.display = 'flex';
@@ -1018,6 +1147,14 @@
             if (text) {
               text.textContent = 'VLC media player is not running.';
               text.style.color = 'var(--text3)';
+            }
+            if (btnHeader) {
+              btnHeader.innerHTML = '<svg id="svgVlcHeaderIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.5s;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>';
+              btnHeader.style.background = 'rgba(255, 255, 255, 0.08)';
+              btnHeader.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+              btnHeader.style.color = 'var(--text)';
+              btnHeader.style.fontSize = '0.9rem';
+              btnHeader.title = 'Check VLC Status';
             }
           }
         }
@@ -1316,9 +1453,9 @@
           }
           if (data.type === 'privacy_pause') {
             if (window._isScreencasting) {
-              const previewImg = document.getElementById('scPreviewImg');
-              if (previewImg) {
-                previewImg.style.filter = data.pause ? 'blur(15px) brightness(0.5)' : '';
+              const frameEl = document.getElementById('liveScreenFrame');
+              if (frameEl) {
+                frameEl.style.filter = data.pause ? 'blur(15px) brightness(0.5)' : '';
               }
               if (data.pause) {
                 showToast('PC Paused Screencast for Privacy');
@@ -1706,7 +1843,7 @@
       const btnMode = document.getElementById('btnScreencastMode');
       const btnKeyboard = document.getElementById('btnScreencastKeyboard');
       const btnOpen = document.getElementById('btnOpenScreencast');
-      const cursorDot = document.getElementById('scCursorDot');
+
       const keyboardPanel = document.getElementById('scKeyboardPanel');
       const scKeyboardInput = document.getElementById('scKeyboardInput');
       const btnScKeyboardClear = document.getElementById('btnScKeyboardClear');
@@ -2558,6 +2695,31 @@
 
       showToast('Microphone stream stopped.', 'info');
     }
+
+    // ─── Global Viewport & Touch Gesture Stabilizer ───────────────
+    // Prevents double-tap zoom & focus scroll jumps during rapid button taps (e.g. Volume + / -)
+    (function initTouchStabilizer() {
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        const isButtonOrControl = e.target.closest('button, .btn, .btn-control-cmd, .btn-vlc-cmd, .vlc-cmd-btn, .nav-item');
+        if (isButtonOrControl) {
+          if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+          }
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+        }
+        lastTouchEnd = now;
+      }, { passive: false });
+
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    })();
 
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);

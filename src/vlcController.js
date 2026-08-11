@@ -105,6 +105,20 @@ function sendVlcAction(action) {
         PostMessageW(hwnd, WM_KEYDOWN, VK_RIGHT, 0);
         PostMessageW(hwnd, WM_KEYUP, VK_RIGHT, 0);
         break;
+      case 'vlc_seek_backward_300s':
+        // Ctrl + Alt + Left (5 min jump)
+        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_LEFT, 0x20000001);
+        PostMessageW(hwnd, WM_SYSKEYUP, VK_LEFT, 0xC0000001);
+        PostMessageW(hwnd, WM_KEYDOWN, VK_LEFT, 0);
+        PostMessageW(hwnd, WM_KEYUP, VK_LEFT, 0);
+        break;
+      case 'vlc_seek_forward_300s':
+        // Ctrl + Alt + Right (5 min jump)
+        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_RIGHT, 0x20000001);
+        PostMessageW(hwnd, WM_SYSKEYUP, VK_RIGHT, 0xC0000001);
+        PostMessageW(hwnd, WM_KEYDOWN, VK_RIGHT, 0);
+        PostMessageW(hwnd, WM_KEYUP, VK_RIGHT, 0);
+        break;
       case 'vlc_volume_up':
         // Ctrl + Up
         PostMessageW(hwnd, WM_KEYDOWN, VK_UP, 0);
@@ -134,6 +148,15 @@ function sendVlcAction(action) {
         // b key
         PostMessageW(hwnd, WM_KEYDOWN, VK_B, 0);
         PostMessageW(hwnd, WM_KEYUP, VK_B, 0);
+        break;
+      case 'vlc_close':
+      case 'vlc_quit':
+        // Post WM_CLOSE message (0x0010) to close VLC window on PC
+        PostMessageW(hwnd, 0x0010, 0, 0);
+        try {
+          const { exec } = require('child_process');
+          exec('taskkill /IM vlc.exe /F', () => {});
+        } catch (_) {}
         break;
       default:
         return false;

@@ -17,6 +17,8 @@ const ALLOWED_SEND_CHANNELS = [
   'send-webrtc-offer',
   'send-mic-candidate',
   'send-mic-answer',
+  'open-link',
+  'open-dashboard',
   'receive-file-start',
   'receive-file-chunk',
   'receive-file-end',

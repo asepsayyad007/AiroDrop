@@ -111,10 +111,12 @@ function registerMiddleware(app) {
     }
 
     const cleanPath = req.path.toLowerCase();
-    // Skip rate limiting for static assets, SSE, and health
+    // Skip rate limiting for static assets, SSE, health, and real-time remote control
     if (
       cleanPath === '/api/events' ||
       cleanPath === '/api/health' ||
+      cleanPath === '/api/control' ||
+      cleanPath.startsWith('/api/control/') ||
       cleanPath === '/' ||
       cleanPath === '/m' ||
       cleanPath === '/style.css' ||

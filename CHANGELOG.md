@@ -5,6 +5,23 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.1] - 2026-08-12
+
+### Added
+- **Confirmation Warning Dialogs** — Added a system confirmation modal for remote PC Power Off, Sleep, and VLC app closure to prevent accidental execution from the mobile UI.
+- **Dynamic VLC Header Action Button** — VLC Media Player header button dynamically converts into a Refresh button when VLC is not running, and restores to a Close VLC button (with warning dialog) when VLC is active.
+
+### Changed
+- **Thicker VLC Shuttle Seek Slider** — Increased seek slider track thickness to 14px and thumb handle diameter to 28px with a 3px solid border and active scale effect for touchscreen ergonomics.
+- **Bypassed Rate Limiter for Shuttle Seek** — Configured shuttle seek slider to bypass command rate limiting (`bypassRateLimit: true`) for aggressive real-time seeking while holding the slider.
+- **Simplified VLC Control Labels** — Renamed "Cycle Audio Tracks" to "Change Audio" and cleaned up technical terminology into plain English across the mobile player UI.
+- **Icon-Only Power Control Buttons** — Streamlined Power Controls card with clean SVG icon layout for Shut Down, Sleep, and Lock.
+
+### Fixed
+- **Mobile Viewport Touch Stabilization & Jitter Fix** — Fixed issue where rapid repeated button taps (e.g. Volume Up/Down) caused the mobile webpage to jump or scroll up/down. Implemented `touch-action: manipulation;`, `overscroll-behavior: none;`, in-memory rate guards (replacing DOM `btn.disabled` focus loss toggles), and a global double-tap gesture stabilizer.
+
+---
+
 ## [6.3.0] - 2026-08-11
 
 ### Added

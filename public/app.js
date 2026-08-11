@@ -119,6 +119,7 @@
     runSetup('Scratchpad', setupScratchpad);
     runSetup('ControlCommands', setupControlCommands);
     runSetup('ShareToFriend', setupShareToFriend);
+    runSetup('GlobalExternalLinks', setupGlobalExternalLinks);
     
     // Request permission for system notifications
     if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -306,15 +307,7 @@
     if (imgGetPCClipboard && imgGetPCClipboard.src) {
       imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
     }
-    // Update File Browser and SMB URL displays
-    const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
-    if (fileBrowserUrlEl && serverInfo) {
-      fileBrowserUrlEl.textContent = `http://${serverInfo.ip}:${serverInfo.port}/files`;
-    }
-    const smbUrlEl = document.getElementById('smbUrlText');
-    if (smbUrlEl && serverInfo) {
-      smbUrlEl.textContent = `smb://${serverInfo.ip}`;
-    }
+
   }
 
   function setTheme(themeName) {
@@ -925,6 +918,22 @@
           initRelayWebSocket();
         }
       });
+    });
+  }
+
+  function setupGlobalExternalLinks() {
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        if (window.electronAPI && window.electronAPI.send) {
+          e.preventDefault();
+          window.electronAPI.send('open-link', anchor.href || href);
+        }
+      }
     });
   }
 
@@ -1950,21 +1959,9 @@
           $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
           $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port, 10) + 1);
 
-          // File Browser URL setup
-          const fileBrowserUrlEl = document.getElementById('fileBrowserUrlText');
-          if (fileBrowserUrlEl) {
-            const fileBrowserUrl = `http://${serverInfo.ip}:${serverInfo.port}/files`;
-            fileBrowserUrlEl.textContent = fileBrowserUrl;
-            fileBrowserUrlEl.title = fileBrowserUrl;
-          }
 
-          // SMB URL setup
-          const smbUrlEl = document.getElementById('smbUrlText');
-          if (smbUrlEl) {
-            const smbUrl = `smb://${serverInfo.ip}`;
-            smbUrlEl.textContent = smbUrl;
-            smbUrlEl.title = smbUrl;
-          }
+
+
         }
         
         // Reset tabs to default (Device Security) on modal open

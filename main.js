@@ -477,6 +477,15 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, 'public', 'index.html'));
 
+  // Handle external link clicks (target="_blank" or window.open) to open in OS default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
       event.preventDefault();
