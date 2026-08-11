@@ -1,4 +1,4 @@
-# AiroDrop v6.2.16 🚀
+# AiroDrop v6.2.16
 
 ![AiroDrop Banner](banner.png)
 
@@ -17,7 +17,7 @@ Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayy
 
 ---
 
-## 📥 Downloads (v6.2.16)
+## Downloads (v6.2.16)
 
 Get the latest pre-compiled binaries for Windows:
 * **[Download Setup Installer (v6.2.16)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.2.16/AiroDrop.Setup.6.2.16.exe)** — Standard Windows wizard installation.
@@ -38,18 +38,18 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
 ## Core Features
 
-* **⚡ Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
-* **📁 HTTP File Browser:** Mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
-* **📁 Files App SMB Integration:** Expose your shared folders using native Windows SMB. Connect directly via the iOS Files app &rarr; Connect to Server &rarr; `smb://[YOUR-PC-IP]` for full file browser access natively.
-* **🖱️ Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
-* **🖥️ Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
-* **🔌 Universal Connection:** Unified connection state management. Connect on portal load, with auto-reconnect fallback and status indicators.
-* **🛠️ PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
-* **📊 Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
-* **🔒 Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
-* **🔔 Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
-* **📱 Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
-* **🎨 5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
+* **Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
+* **HTTP File Browser:** Mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
+* **Files App SMB Integration:** Expose your shared folders using native Windows SMB. Connect directly via the iOS Files app &rarr; Connect to Server &rarr; `smb://[YOUR-PC-IP]` for full file browser access natively.
+* **Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
+* **Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
+* **Universal Connection:** Unified connection state management. Connect on portal load, with auto-reconnect fallback and status indicators.
+* **PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
+* **Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
+* **Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
+* **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
+* **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
+* **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
 
 ---
 
@@ -82,7 +82,7 @@ To run or modify the app locally:
 
 ---
 
-## 📁 Using the File Browser & Files App (SMB)
+## Using the File Browser & Files App (SMB)
 
 ### Option 1: Native iOS Files App (SMB)
 1. Right-click your shared folder on Windows &rarr; **Properties** &rarr; **Sharing** &rarr; Click **Share** and add your user account with Read/Write permission.
@@ -99,15 +99,15 @@ To run or modify the app locally:
 
 ---
 
-## 🖥️ Using Live Screencast
+## Using Live Screencast
 
-1. On your phone, open the mobile portal → scroll to **PC Live Screen** → tap **"📺 Open Live Screen"**.
+1. On your phone, open the mobile portal → scroll to **PC Live Screen** → tap **"Open Live Screen"**.
 2. If PC services are not connected, the page will auto-connect for you in the background.
 3. The fullscreen overlay opens with a live ~15fps stream of your PC desktop.
-4. Toggle **"👁️ View Only"** → **"🖱️ Interactive"** to enable tap-to-click and drag-to-move-mouse control.
+4. Toggle **"View Only"** → **"Interactive"** to enable tap-to-click and drag-to-move-mouse control.
 5. **Pinch to zoom** with 2 fingers (up to 5×). Drag with 1 finger to pan when zoomed in. Tap "Reset Zoom" button to restore.
 6. **Landscape mode:** Rotate your phone for a wider view — the screencast fills the full screen with no UI bleed-through.
-7. **Typing on your PC:** Tap the ⌨️ keyboard icon to open the text sync panel. In landscape mode, the QWERTY rows auto-hide so the video stays visible while you type.
+7. **Typing on your PC:** Tap the keyboard icon to open the text sync panel. In landscape mode, the QWERTY rows auto-hide so the video stays visible while you type.
 
 ---
 
@@ -115,7 +115,7 @@ To run or modify the app locally:
 
 Easily share content directly from any iOS App Share Sheet or Home Screen widget, or integrate via REST API.
 
-> **🔒 Authentication & Secret Key:**
+> **Authentication & Secret Key:**
 > If Security Mode is enabled or an **iOS Shortcut Secret** is configured on PC, pass your secret in every HTTP request as a header: `X-AiroDrop-Token: <your_secret>` or append `?token=<your_secret>` to the URL. Use port `3479` (HTTP fallback port) for iOS Shortcuts to bypass self-signed SSL warnings.
 
 ### Shortcut 1: "Send to PC" (Share Sheet)
@@ -127,12 +127,12 @@ Easily share content directly from any iOS App Share Sheet or Home Screen widget
 ### Shortcut 3: "Get From PC" (Receive Text & Files)
 **Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac)
 
-### 📲 Quick Install QR Codes
+### Quick Install QR Codes
 | 1. Share to PC | 2. Send Clipboard | 3. Get From PC |
 | :-: | :-: | :-: |
 | ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac) |
 
-### ⚡ REST API Endpoints
+### REST API Endpoints
 * **`POST /api/send`**: Send form text (`content=hello`) or raw binary file body. Header: `X-AiroDrop-Token`.
 * **`GET /api/clipboard`**: Fetch current active text or pending transfer item. Header: `X-AiroDrop-Token`.
 * **`POST /api/pending/:id/ack`**: Acknowledge receipt of a queued transfer item. Header: `X-AiroDrop-Token`.
@@ -153,7 +153,7 @@ Settings are stored in `<App Data Directory>/AiroDrop/config.json`. Key configur
 
 ---
 
-## 🛠️ Credits & Authors
+## Credits & Authors
 
 AiroDrop is created and maintained by **[Asep Sayyad](https://asepsayyad007.in/)**. You can explore the project details and links on the **[AiroDrop Hub](https://airodrop.site/)**.
 
