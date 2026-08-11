@@ -5,6 +5,22 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.0] - 2026-08-11
+
+### Added
+- **VLC Remote Controller** — FFI-based VLC Media Player remote control via `user32.dll` `PostMessageW`. Controls: play/pause, seek forward/backward (10s and 60s), volume up/down, mute, fullscreen toggle, subtitle cycling, and audio track switching. Real-time "Now Playing" HUD polls the active VLC window title from the mobile PWA.
+- **VLC Controller backend module** (`src/vlcController.js`) — Enumerates Windows desktop windows via `EnumWindows` + `GetWindowTextW` using `koffi` FFI bindings, posts virtual key messages to the VLC window handle without requiring VLC's HTTP Lua interface.
+- **VLC status API endpoint** (`GET /api/control/vlc-status`) — Returns `{ running, title }` for mobile clients to detect if VLC is active and display the current media title.
+- **VLC action routing** — `POST /api/control` now routes all `vlc_*` actions (e.g. `vlc_play_pause`, `vlc_seek_forward_10s`) through `vlcController.sendVlcAction()` before falling through to existing system controls.
+- **Mobile Home tab redesign** — Unified composer card with tabbed "Text / URL" and "File / Photo" send panels (replacing two separate sender cards). Added drag-and-drop file zone with upload icon, image preview, and file type icon.
+- **Transfer History inbox** — Tabbed transfer history on Home tab with "Files" and "Text" filter tabs, replacing the old flat received list.
+- **Mobile VLC controller panel** — Full remote control interface in the Media tab with play/pause, seek, volume, mute, fullscreen, subtitles, and audio track buttons. Conditionally hidden when VLC is not running, showing a placeholder instead.
+- **Hold-to-seek jog shuttle slider** — Continuous seeking slider in the VLC controller that sends repeated seek commands based on drag distance (proportional acceleration).
+- **PC System Controls repositioned** — Power controls (Lock, Sleep, Shutdown) moved to top of the mobile Tools tab for quicker access.
+- **Emoji-to-SVG vector replacements** — Replaced all raw emoji characters in mobile.html with inline SVG vector icons for consistent cross-device rendering.
+
+---
+
 ## [6.2.16] - 2026-08-01
 
 ### Added

@@ -1,6 +1,7 @@
 
     const SERVER = window.location.origin;
 
+
     function triggerHaptic(arg) {
       const hapticToggle = document.getElementById('hapticFeedbackToggle');
       if (hapticToggle && !hapticToggle.checked) return;
@@ -146,6 +147,8 @@
       setupScratchpad();
       connectMobileSSE();
       setupMobileControl();
+      setupVlcControl();
+      updateVlcStatus();
       setupMobileScreenshot();
       setupUniversalConnect();
       setupMobileTrackpad();
@@ -236,6 +239,7 @@
       _autoPollTimer = setInterval(async () => {
         await fetchPending(true);
         updateLastChecked();
+        await updateVlcStatus();
       }, 10000);
     }
 
@@ -329,11 +333,17 @@
         btnRefresh.addEventListener('click', async () => {
           triggerHaptic(30);
           btnRefresh.disabled = true;
-          btnRefresh.textContent = '🔄 Refreshing...';
+          btnRefresh.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s infinite linear;"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Refreshing...</span>
+          `;
           await checkConnection();
           await fetchPending();
           btnRefresh.disabled = false;
-          btnRefresh.textContent = '🔄 Refresh Connection & Data';
+          btnRefresh.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Refresh Connection &amp; Data</span>
+          `;
           showToast('Connection refreshed!', 'success');
         });
       }
@@ -397,18 +407,37 @@
     }
 
     function getFileTypeIcon(mimeType) {
-      if (!mimeType) return '📄';
+      const defIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+      if (!mimeType) return defIcon;
       const type = mimeType.toLowerCase();
-      if (type.startsWith('image/')) return '🖼️';
-      if (type.startsWith('video/')) return '🎥';
-      if (type.startsWith('audio/')) return '🎵';
-      if (type.includes('pdf')) return '📄';
-      if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) return '🗃️';
-      if (type.includes('word') || type.includes('document') || type.includes('officedocument')) return '📝';
-      if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return '📊';
-      if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
-      if (type.includes('text/')) return '📋';
-      return '📄';
+      if (type.startsWith('image/')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+      }
+      if (type.startsWith('video/')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7a2 2 0 0 0-2.45-1.45L16 7.5V5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5l4.55 1.95A2 2 0 0 0 23 17V7z"/></svg>`;
+      }
+      if (type.startsWith('audio/')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+      }
+      if (type.includes('pdf')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+      }
+      if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`;
+      }
+      if (type.includes('word') || type.includes('document') || type.includes('officedocument')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+      }
+      if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+      }
+      if (type.includes('presentation') || type.includes('powerpoint')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`;
+      }
+      if (type.includes('text/')) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+      }
+      return defIcon;
     }
 
     function renderPending(items) {
@@ -428,13 +457,13 @@
           const downloadName = `text_${item.id}.txt`;
           return `
             <div class="receive-item" style="cursor: default;">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">📋</span>
+              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
               <span class="receive-content">${escapeHtml(item.content)}</span>
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
                 <a href="${downloadUrl}" download="${escapeAttr(downloadName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
@@ -460,7 +489,7 @@
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <button onclick="copyFileLink('${downloadUrl}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy Link</button>
                 <a href="${downloadUrl}" download="${escapeAttr(displayName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;">🗑️</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
@@ -755,9 +784,35 @@
     }
 
     function setupMobileControl() {
+      let powerOffTimeout = null;
       document.querySelectorAll('.btn-control-cmd').forEach(btn => {
         btn.addEventListener('click', async () => {
           const action = btn.getAttribute('data-cmd');
+          
+          // Special confirmation logic for Power Off to prevent accidental clicks
+          if (action === 'poweroff') {
+            if (!btn.classList.contains('confirm-mode')) {
+              triggerHaptic(30); // Stronger haptic for alert
+              btn.classList.add('confirm-mode');
+              const span = btn.querySelector('span');
+              const origText = span ? span.textContent : 'Power Off';
+              if (span) span.textContent = 'Confirm?';
+              
+              powerOffTimeout = setTimeout(() => {
+                btn.classList.remove('confirm-mode');
+                if (span) span.textContent = origText;
+              }, 3000);
+              return; // Wait for second tap
+            } else {
+              // Confirmed! Clear timeout and remove class
+              clearTimeout(powerOffTimeout);
+              btn.classList.remove('confirm-mode');
+              const span = btn.querySelector('span');
+              if (span) span.textContent = 'Power Off';
+            }
+          }
+          
+          triggerHaptic(15);
           btn.disabled = true;
           try {
             const res = await doFetch('/api/control', {
@@ -777,6 +832,198 @@
           }
         });
       });
+    }
+
+    function setupVlcControl() {
+      document.querySelectorAll('.vlc-cmd-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.getAttribute('data-vlc-cmd');
+          triggerHaptic(15);
+          btn.disabled = true;
+          try {
+            const res = await doFetch('/api/control', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action })
+            });
+            if (res.ok) {
+              setTimeout(updateVlcStatus, 500);
+            } else {
+              const data = await res.json().catch(() => ({}));
+              showToast(data.error || 'Failed to trigger VLC command');
+            }
+          } catch {
+            showToast('Failed to connect to server');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+
+      // Seek Slider Shuttle Control (Hold & Drag continuous seeking)
+      const slider = document.getElementById('vlcSeekSlider');
+      const indicator = document.getElementById('vlcSeekIndicator');
+      let seekInterval = null;
+      let accumulatedSeconds = 0;
+      let currentSeekAction = null;
+      let resetTimeout = null;
+
+      function formatSeconds(secs) {
+        if (secs === 0) return 'Neutral';
+        const abs = Math.abs(secs);
+        const mins = Math.floor(abs / 60);
+        const remaining = abs % 60;
+        const timeStr = mins > 0 ? `${mins}m ${remaining}s` : `${remaining}s`;
+        return secs > 0 ? `Seek +${timeStr}` : `Seek -${timeStr}`;
+      }
+
+      if (slider && indicator) {
+        slider.addEventListener('input', () => {
+          const val = parseInt(slider.value);
+          let action = null;
+          let secondsPerTick = 0;
+
+          if (val < 20) {
+            action = 'vlc_seek_backward_60s';
+            secondsPerTick = -60;
+          } else if (val >= 20 && val < 40) {
+            action = 'vlc_seek_backward_10s';
+            secondsPerTick = -10;
+          } else if (val >= 40 && val <= 60) {
+            action = null; // Neutral
+            secondsPerTick = 0;
+          } else if (val > 60 && val <= 80) {
+            action = 'vlc_seek_forward_10s';
+            secondsPerTick = 10;
+          } else {
+            action = 'vlc_seek_forward_60s';
+            secondsPerTick = 60;
+          }
+
+          // If the seek action type has changed
+          if (action !== currentSeekAction) {
+            // Stop current interval
+            if (seekInterval) {
+              clearInterval(seekInterval);
+              seekInterval = null;
+            }
+            
+            currentSeekAction = action;
+
+            if (resetTimeout) {
+              clearTimeout(resetTimeout);
+              resetTimeout = null;
+            }
+
+            if (action) {
+              // Trigger first seek immediately
+              accumulatedSeconds += secondsPerTick;
+              indicator.textContent = formatSeconds(accumulatedSeconds);
+              indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
+              triggerHaptic(15);
+              
+              doFetch('/api/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+              }).catch(err => console.error('[VLC] Initial seek failed:', err));
+
+              // Start repeating seek interval
+              seekInterval = setInterval(() => {
+                accumulatedSeconds += secondsPerTick;
+                indicator.textContent = formatSeconds(accumulatedSeconds);
+                indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
+                triggerHaptic(10);
+
+                doFetch('/api/control', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action })
+                }).catch(err => console.error('[VLC] Hold seek failed:', err));
+              }, 600);
+            } else {
+              // Neutral zone: pause seeking but show current accumulated amount
+              if (accumulatedSeconds === 0) {
+                indicator.textContent = 'Neutral';
+                indicator.style.color = 'var(--text3)';
+              } else {
+                indicator.textContent = `${formatSeconds(accumulatedSeconds)} (Paused)`;
+                indicator.style.color = accumulatedSeconds > 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
+              }
+            }
+          }
+        });
+
+        // Touch or click released: stop seeking and snap back
+        const handleRelease = () => {
+          if (seekInterval) {
+            clearInterval(seekInterval);
+            seekInterval = null;
+          }
+          currentSeekAction = null;
+          slider.value = 50;
+
+          // Keep showing the final seek duration briefly, then fade back to "Hold & Drag"
+          if (accumulatedSeconds !== 0) {
+            indicator.textContent = `Applied: ${formatSeconds(accumulatedSeconds).replace('Seek ', '')}`;
+            triggerHaptic(20);
+            setTimeout(updateVlcStatus, 500);
+          }
+
+          resetTimeout = setTimeout(() => {
+            indicator.textContent = 'Hold & Drag';
+            indicator.style.color = 'var(--text3)';
+            accumulatedSeconds = 0;
+          }, 1500);
+        };
+
+        slider.addEventListener('change', handleRelease);
+        slider.addEventListener('touchend', handleRelease);
+        slider.addEventListener('mouseup', handleRelease);
+      }
+    }
+
+    async function updateVlcStatus() {
+      try {
+        const res = await doFetch('/api/control/vlc-status');
+        if (res.ok) {
+          const data = await res.json();
+          const badge = document.getElementById('vlcStatusBadge');
+          const text = document.getElementById('vlcNowPlayingText');
+          const activeControls = document.getElementById('vlcActiveControls');
+          const inactivePlaceholder = document.getElementById('vlcInactivePlaceholder');
+          
+          if (data.running) {
+            if (activeControls) activeControls.style.display = 'flex';
+            if (inactivePlaceholder) inactivePlaceholder.style.display = 'none';
+            if (badge) {
+              badge.textContent = 'Active';
+              badge.style.background = 'var(--success-bg)';
+              badge.style.color = 'var(--success)';
+              badge.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+            }
+            if (text) {
+              text.innerHTML = `<strong>Now Playing:</strong> ${escapeHtml(data.title)}`;
+              text.style.color = 'var(--text)';
+            }
+          } else {
+            if (activeControls) activeControls.style.display = 'none';
+            if (inactivePlaceholder) inactivePlaceholder.style.display = 'flex';
+            if (badge) {
+              badge.textContent = 'Closed';
+              badge.style.background = 'rgba(255, 255, 255, 0.05)';
+              badge.style.color = 'var(--text3)';
+              badge.style.borderColor = 'var(--card-border)';
+            }
+            if (text) {
+              text.textContent = 'VLC media player is not running.';
+              text.style.color = 'var(--text3)';
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[VLC] Failed to fetch VLC status:', err);
+      }
     }
 
     function setupMobileScreenshot() {

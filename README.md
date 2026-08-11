@@ -1,4 +1,4 @@
-# AiroDrop v6.2.16
+# AiroDrop v6.3.0
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayyad](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.2.16-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.3.0-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey.svg?style=flat-square)
@@ -17,11 +17,11 @@ Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayy
 
 ---
 
-## Downloads (v6.2.16)
+## Downloads (v6.3.0)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.2.16)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.2.16/AiroDrop.Setup.6.2.16.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.2.16)](https://github.com/asepsayyad007/AiroDrop-Portable-6.2.16.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.3.0)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.0/AiroDrop.Setup.6.3.0.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.3.0)](https://github.com/asepsayyad007/AiroDrop-Portable-6.3.0.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
@@ -49,6 +49,7 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 * **Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
 * **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
 * **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
+* **VLC Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s), volume, mute, fullscreen, subtitles, and audio track switching. Auto-detects when VLC is running and displays the current media title.
 * **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
 
 ---

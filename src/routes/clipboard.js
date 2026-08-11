@@ -9,6 +9,7 @@ const utils = require('../utils');
 const { sanitizeFilename, sanitizeText } = require('../sanitize');
 const { getLogger } = require('../logger');
 const asyncHandler = require('../asyncHandler');
+const vlcController = require('../vlcController');
 
 const logger = getLogger();
 
@@ -552,10 +553,30 @@ router.delete('/bookmarks/:id', (req, res) => {
   res.json({ success: true, bookmarks: state.bookmarks });
 });
 
+// GET /api/control/vlc-status — Retrieve active VLC media player playback info
+router.get('/control/vlc-status', (req, res) => {
+  const vlc = vlcController.findVlcWindow();
+  if (vlc) {
+    res.json({ running: true, title: vlc.title });
+  } else {
+    res.json({ running: false, title: '' });
+  }
+});
+
 // POST /api/control — Media controls and lock screen
 router.post('/control', (req, res) => {
   const { action } = req.body;
   const { exec } = require('child_process');
+  
+  if (action && action.startsWith('vlc_')) {
+    const success = vlcController.sendVlcAction(action);
+    if (success) {
+      logger.info('VLC action triggered', { action });
+      return res.json({ success: true, action });
+    } else {
+      return res.status(400).json({ error: 'VLC player is not running or action failed' });
+    }
+  }
   
   let cmd = '';
   switch (action) {
