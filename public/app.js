@@ -2297,9 +2297,16 @@
     };
 
     // ─── Windows 11 Settings GUI Navigation & Actions ─────────
+    const btnHeaderSettings = document.getElementById('btnHeaderSettings');
     const btnCancelSettings = document.getElementById('btnCancelSettings');
     const btnCloseSettings = document.getElementById('btnCloseSettings');
     const settingsModal = document.getElementById('settingsModal');
+
+    if (btnHeaderSettings && settingsModal) {
+      btnHeaderSettings.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+      });
+    }
 
     if (btnCancelSettings && settingsModal) {
       btnCancelSettings.addEventListener('click', () => {
@@ -2310,6 +2317,14 @@
     if (btnCloseSettings && settingsModal) {
       btnCloseSettings.addEventListener('click', () => {
         settingsModal.style.display = 'none';
+      });
+    }
+
+    if (settingsModal) {
+      window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+          settingsModal.style.display = 'none';
+        }
       });
     }
 

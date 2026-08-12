@@ -699,7 +699,23 @@
                     <div>Fetch current active text or pending transfer item queued from PC to mobile. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
                   </div>
                   <div>
-             <!-- ─── Windows 11 Native GUI Settings Modal ────────────────── -->
+                    <code style="color: var(--accent); font-weight: bold;">POST /api/pending/:id/ack</code>
+                    <div>Acknowledge receipt of a queued item from PC to clear it from queue. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── Windows 11 Native GUI Settings Modal ────────────────── -->
   <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow-y: auto; background-color: rgba(0, 0, 0, 0.75); align-items: center; justify-content: center; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 20px; box-sizing: border-box;">
     
     <!-- Native Windows Application Window -->
@@ -1021,10 +1037,6 @@
         </div>
       </div>
 
-    </div>
-  </div>s" id="settingsStatus" style="font-size: 0.8rem; text-align: center; margin-bottom: 2px;"></div>
-        <button class="btn btn-primary" id="saveDirBtn" style="padding: 12px; font-size: 0.86rem; font-weight: 700; width: 100%; cursor: pointer; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); box-shadow: 0 4px 15px rgba(255,85,0,0.25); border: none; color: white; transition: all 0.25s ease;">Save Configurations</button>
-      </div>
     </div>
   </div>
 
