@@ -705,8 +705,18 @@ function updateTrayMenu(isRunning) {
         }
       } 
     },
-    { type: 'separator' },
-    { label: 'Check for Updates...', click: () => { checkUpdatesManually(); } },
+    { 
+      label: 'Check for Updates...', 
+      click: () => { 
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+          safeMainWindowSend('navigate-tab', 'settings');
+        }
+        checkUpdatesManually(); 
+      } 
+    },
     { type: 'separator' },
     { label: 'Quit', click: () => { isQuitting = true; app.quit(); } }
   ]);

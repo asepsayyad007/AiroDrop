@@ -2434,18 +2434,29 @@
 
       ipcRenderer.on('update-download-progress', (event, progressObj) => {
         const pct = Math.round(progressObj.percent || 0);
+        const transferredMB = ((progressObj.transferred || 0) / (1024 * 1024)).toFixed(1);
+        const totalMB = ((progressObj.total || 0) / (1024 * 1024)).toFixed(1);
+        const speedBytes = progressObj.bytesPerSecond || 0;
+        const speedText = speedBytes >= 1024 * 1024 
+          ? `${(speedBytes / (1024 * 1024)).toFixed(1)} MB/s` 
+          : `${(speedBytes / 1024).toFixed(0)} KB/s`;
+
         if (updateProgressContainer) updateProgressContainer.style.display = 'block';
         if (updateProgressPercent) updateProgressPercent.textContent = `${pct}%`;
         if (updateProgressBarFill) updateProgressBarFill.style.width = `${pct}%`;
-        if (updateProgressLabel) {
-          const speed = ((progressObj.bytesPerSecond || 0) / 1024 / 1024).toFixed(1);
-          updateProgressLabel.textContent = `Downloading (${speed} MB/s)`;
-        }
+        if (updateProgressLabel) updateProgressLabel.textContent = `Downloading (${speedText})`;
         const updateProgressDetails = $('#updateProgressDetails');
         if (updateProgressDetails) {
-          const transferred = ((progressObj.transferred || 0) / 1024 / 1024).toFixed(1);
-          const total = ((progressObj.total || 0) / 1024 / 1024).toFixed(1);
-          updateProgressDetails.textContent = `${transferred} MB / ${total} MB`;
+          updateProgressDetails.textContent = progressObj.total > 0 
+            ? `${transferredMB} MB of ${totalMB} MB downloaded` 
+            : `${transferredMB} MB downloaded`;
+        }
+      });
+
+      ipcRenderer.on('navigate-tab', (event, tabName) => {
+        if (tabName === 'settings') {
+          const tabBtn = document.querySelector('[data-tab="settings"]');
+          if (tabBtn) tabBtn.click();
         }
       });
     }

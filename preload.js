@@ -33,6 +33,7 @@ const ALLOWED_INVOKE_CHANNELS = [
 
 const ALLOWED_ON_CHANNELS = [
   'server-status',
+  'navigate-tab',
   'dir-updated',
   'receive-file-completed',
   'update-status',

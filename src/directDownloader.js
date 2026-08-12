@@ -43,16 +43,28 @@ function downloadFile(targetUrl, destinationPath, onProgress) {
 
         const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
         let downloadedBytes = 0;
+        let lastTime = Date.now();
+        let lastDownloaded = 0;
+        let currentSpeedBps = 0;
 
         res.on('data', (chunk) => {
           downloadedBytes += chunk.length;
-          if (totalBytes > 0 && typeof onProgress === 'function') {
-            const percent = Math.min(100, Math.round((downloadedBytes / totalBytes) * 100));
+          const now = Date.now();
+          const timeDiff = (now - lastTime) / 1000;
+          if (timeDiff >= 0.2) {
+            const bytesDiff = downloadedBytes - lastDownloaded;
+            currentSpeedBps = bytesDiff / timeDiff;
+            lastTime = now;
+            lastDownloaded = downloadedBytes;
+          }
+
+          if (typeof onProgress === 'function') {
+            const percent = totalBytes > 0 ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)) : 0;
             onProgress({
               percent,
               transferred: downloadedBytes,
               total: totalBytes,
-              bytesPerSecond: 0
+              bytesPerSecond: currentSpeedBps
             });
           }
         });
