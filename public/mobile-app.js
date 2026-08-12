@@ -112,18 +112,21 @@
       
       setupPWA();
       checkConnection();
-      document.getElementById('checkPendingBtn').addEventListener('click', () => {
-        fetchPending();
-        updateLastChecked();
-      });
+      const checkPendingBtn = document.getElementById('checkPendingBtn');
+      if (checkPendingBtn) {
+        checkPendingBtn.addEventListener('click', () => {
+          fetchPending();
+          updateLastChecked();
+        });
+      }
       
       const btnRefresh = document.getElementById('btnUniversalRefresh');
       if (btnRefresh) {
         btnRefresh.addEventListener('click', async () => {
-          btnRefresh.style.transform = 'translateY(-50%) rotate(360deg)';
+          btnRefresh.style.transform = 'rotate(360deg)';
           btnRefresh.style.transition = 'transform 0.6s ease';
           setTimeout(() => {
-            btnRefresh.style.transform = 'translateY(-50%)';
+            btnRefresh.style.transform = 'none';
             btnRefresh.style.transition = 'none';
           }, 600);
 
@@ -290,8 +293,36 @@
         const nameEl = document.getElementById('mobileInfoDeviceName');
         if (nameEl) nameEl.textContent = info.deviceName || 'PC';
         document.querySelectorAll('.mobileSetupIpCode').forEach(el => el.textContent = info.ip || '...');
+
+        // Home Tab Connection Card updates
+        const homeIpEl = document.getElementById('homeConnIp');
+        if (homeIpEl) homeIpEl.textContent = info.ip || 'Local Network';
+        const homeNameEl = document.getElementById('homeConnDeviceName');
+        if (homeNameEl) homeNameEl.textContent = info.deviceName || 'PC';
+        const homeStatusText = document.getElementById('homeConnStatusText');
+        if (homeStatusText) {
+          homeStatusText.textContent = 'PC Connected';
+          homeStatusText.style.color = 'var(--text-primary)';
+        }
+        const homeBadge = document.getElementById('homeConnBadge');
+        if (homeBadge) {
+          homeBadge.style.background = 'rgba(255, 106, 0, 0.12)';
+          homeBadge.style.borderColor = 'rgba(255, 106, 0, 0.3)';
+          homeBadge.style.color = 'var(--accent-light)';
+        }
       } catch {
         dot.className = 'dot err';
+        const homeStatusText = document.getElementById('homeConnStatusText');
+        if (homeStatusText) {
+          homeStatusText.textContent = 'PC Offline';
+          homeStatusText.style.color = 'var(--text-muted)';
+        }
+        const homeBadge = document.getElementById('homeConnBadge');
+        if (homeBadge) {
+          homeBadge.style.background = 'rgba(255, 255, 255, 0.05)';
+          homeBadge.style.borderColor = 'var(--border)';
+          homeBadge.style.color = 'var(--text-muted)';
+        }
         if (!_isReconnecting) {
           _isReconnecting = true;
           _reconnectCountdown = 15;
@@ -452,21 +483,33 @@
       return defIcon;
     }
 
+    let _lastNewestItemId = null;
+
     function renderPending(items) {
       const textList = document.getElementById('textInboxList');
       const fileList = document.getElementById('fileInboxList');
       if (!textList || !fileList) return;
 
-      const textItems = (items || []).filter(item => item.type === 'text');
-      const fileItems = (items || []).filter(item => item.type !== 'text');
+      const validItems = items || [];
+      if (validItems.length > 0) {
+        const newest = validItems[0];
+        if (_lastNewestItemId === null || _lastNewestItemId !== newest.id) {
+          if (newest.type === 'text') {
+            if (typeof switchInboxTab === 'function') switchInboxTab('text');
+          } else {
+            if (typeof switchInboxTab === 'function') switchInboxTab('file');
+          }
+          _lastNewestItemId = newest.id;
+        }
+      }
+
+      const textItems = validItems.filter(item => item.type === 'text');
+      const fileItems = validItems.filter(item => item.type !== 'text');
 
       if (textItems.length === 0) {
         textList.innerHTML = '<div class="empty-receive">No texts received yet</div>';
       } else {
         textList.innerHTML = textItems.map(item => {
-          // Dynamic data url to download text content as a file
-          const downloadUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(item.content)}`;
-          const downloadName = `text_${item.id}.txt`;
           return `
             <div class="receive-item" style="cursor: default;">
               <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
@@ -474,7 +517,6 @@
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
-                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(downloadName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
@@ -697,62 +739,99 @@
       const mobilePreviewFileName = document.getElementById('mobilePreviewFileName');
       const sendFileBtn = document.getElementById('sendFileBtn');
 
-      let selectedFile = null;
+      let selectedFiles = [];
 
       if (sendFileTrigger && mobileFileInput) {
         sendFileTrigger.addEventListener('click', () => mobileFileInput.click());
         mobileFileInput.addEventListener('change', () => {
           if (mobileFileInput.files.length > 0) {
-            selectedFile = mobileFileInput.files[0];
+            selectedFiles = Array.from(mobileFileInput.files);
             sendFileTrigger.style.display = 'none';
             mobileFilePreview.style.display = 'flex';
-            mobilePreviewFileName.textContent = `${selectedFile.name} (${formatSize(selectedFile.size)})`;
-
-            if (selectedFile.type.startsWith('image/')) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                mobilePreviewImg.src = e.target.result;
-                mobilePreviewImg.style.display = 'block';
-                mobilePreviewFileIcon.style.display = 'none';
-              };
-              reader.readAsDataURL(selectedFile);
+            
+            if (selectedFiles.length === 1) {
+              const file = selectedFiles[0];
+              mobilePreviewFileName.textContent = `${file.name} (${formatSize(file.size)})`;
+              if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  mobilePreviewImg.src = e.target.result;
+                  mobilePreviewImg.style.display = 'block';
+                  mobilePreviewFileIcon.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+              } else {
+                mobilePreviewImg.style.display = 'none';
+                mobilePreviewFileIcon.style.display = 'block';
+                mobilePreviewFileIcon.textContent = getFileTypeIcon(file.type);
+              }
             } else {
+              const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+              mobilePreviewFileName.textContent = `${selectedFiles.length} files selected (${formatSize(totalSize)})`;
               mobilePreviewImg.style.display = 'none';
               mobilePreviewFileIcon.style.display = 'block';
-              mobilePreviewFileIcon.textContent = getFileTypeIcon(selectedFile.type);
+              mobilePreviewFileIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6m-3-3h6"/></svg>`;
             }
           }
         });
       }
 
+      const cancelFileBtn = document.getElementById('cancelFileBtn');
+      if (cancelFileBtn) {
+        cancelFileBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedFiles = [];
+          if (mobileFileInput) mobileFileInput.value = '';
+          if (mobileFilePreview) mobileFilePreview.style.display = 'none';
+          if (sendFileTrigger) sendFileTrigger.style.display = 'flex';
+          if (mobilePreviewImg) { mobilePreviewImg.src = ''; mobilePreviewImg.style.display = 'none'; }
+        });
+      }
+
       if (sendFileBtn) {
         sendFileBtn.addEventListener('click', async () => {
-          if (!selectedFile) return;
+          if (!selectedFiles || selectedFiles.length === 0) {
+            showToast('Please select file(s) or photo(s) to send');
+            return;
+          }
           sendFileBtn.disabled = true;
           sendFileBtn.classList.add('is-loading');
-          const formData = new FormData();
-          formData.append('file', selectedFile);
 
-          try {
-            const res = await doFetch('/api/file', {
-              method: 'POST',
-              body: formData
-            });
-            if (res.ok) {
-              showToast('File sent to PC!');
-              selectedFile = null;
-              mobileFileInput.value = '';
-              mobileFilePreview.style.display = 'none';
-              sendFileTrigger.style.display = 'flex';
-            } else {
-              showToast('Failed to send file');
+          let successCount = 0;
+          let failCount = 0;
+
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+              const res = await doFetch('/api/file', {
+                method: 'POST',
+                body: formData
+              });
+              if (res.ok) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+            } catch {
+              failCount++;
             }
-          } catch {
-            showToast('Failed to send file');
-          } finally {
-            sendFileBtn.disabled = false;
-            sendFileBtn.classList.remove('is-loading');
           }
+
+          if (successCount > 0) {
+            showToast(selectedFiles.length === 1 ? 'File sent to PC!' : `${successCount} file(s) sent to PC!`);
+            selectedFiles = [];
+            if (mobileFileInput) mobileFileInput.value = '';
+            if (mobileFilePreview) mobileFilePreview.style.display = 'none';
+            if (sendFileTrigger) sendFileTrigger.style.display = 'flex';
+            if (mobilePreviewImg) { mobilePreviewImg.src = ''; mobilePreviewImg.style.display = 'none'; }
+          } else {
+            showToast('Failed to send file(s)');
+          }
+
+          sendFileBtn.disabled = false;
+          sendFileBtn.classList.remove('is-loading');
         });
       }
     }
