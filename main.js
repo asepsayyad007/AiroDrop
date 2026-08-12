@@ -214,17 +214,53 @@ function checkUpdatesManually() {
   isManualCheck = true;
   safeMainWindowSend('update-status', 'checking');
 
-  // Handle unpackaged dev environment
+  // Handle unpackaged dev environment gracefully via GitHub API
   if (!app.isPackaged) {
     isManualCheck = false;
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'AiroDrop Update Check',
-        message: 'Update checks are only active in compiled production builds.\n(Running in Developer Mode)'
+    const https = require('https');
+    const currentVersion = require('./package.json').version;
+    https.get({
+      hostname: 'api.github.com',
+      path: '/repos/asepsayyad007/AiroDrop/releases/latest',
+      headers: { 'User-Agent': 'AiroDrop-Server/' + currentVersion },
+      timeout: 10000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          if (release && release.tag_name) {
+            const latest = release.tag_name.replace(/^v/, '');
+            if (compareSemver(latest, currentVersion) > 0) {
+              safeMainWindowSend('update-status', 'available-portable', { version: latest, releaseNotes: release.body || '' });
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'AiroDrop Update (Dev Mode)',
+                  message: `A new version (v${latest}) is available on GitHub!\n(Running in Developer Mode)\n\nWould you like to open the GitHub Release page to download?`,
+                  buttons: ['Open GitHub Release Page', 'Later'],
+                  defaultId: 0
+                }).then(r => {
+                  if (r.response === 0) shell.openExternal(release.html_url || 'https://github.com/asepsayyad007/AiroDrop/releases/latest');
+                });
+              }
+              return;
+            }
+          }
+        } catch(e) {}
+        safeMainWindowSend('update-status', 'not-available');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'AiroDrop Update Check',
+            message: 'You are running the latest version! (Developer Mode)'
+          });
+        }
       });
-    }
-    safeMainWindowSend('update-status', 'not-available');
+    }).on('error', () => {
+      safeMainWindowSend('update-status', 'not-available');
+    });
     return;
   }
 
@@ -266,12 +302,21 @@ ipcMain.on('manual-check-update', () => {
 });
 
 ipcMain.on('start-download-update', () => {
-  if (isPortableBuild()) {
+  if (isPortableBuild() || !app.isPackaged) {
     shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
   } else {
     autoUpdater.downloadUpdate().catch((dlErr) => {
-      server.writeLog(`[AutoUpdater] Download failed: ${dlErr.message}`);
-      safeMainWindowSend('update-status', 'error', dlErr.message);
+      server.writeLog(`[AutoUpdater] Direct download failed: ${dlErr.message}`);
+      safeMainWindowSend('update-status', 'error', `Download failed (${dlErr.message || '404 Asset Missing'}). Opening release page...`);
+      shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Download Fallback',
+          message: `Direct auto-update binary download failed (${dlErr.message || 'Asset not found'}).\n\nOpening the GitHub Release page in your browser so you can download the setup executable directly.`,
+          buttons: ['OK']
+        });
+      }
     });
   }
 });
