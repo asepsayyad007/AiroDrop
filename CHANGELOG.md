@@ -5,6 +5,22 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.3] - 2026-08-12
+
+### Added
+- **In-App Direct Binary Downloader (`src/directDownloader.js`)** — Native HTTP/HTTPS stream downloader with redirect handling and real-time speed & percentage progress tracking directly in the Update Hub.
+- **Dynamic Release Asset Resolver (`getReleaseAssetUrl`)** — Queries GitHub API for the exact setup or portable `.exe` asset download URL attached to the release tag.
+
+### Changed
+- **System Tray Update Check** — Right-clicking the system tray icon and clicking **"Check for Updates..."** now automatically restores the main window, brings it into focus, and navigates directly to the Settings tab.
+- **Vector Icons** — Replaced raw emoji characters in the Update Hub buttons with clean, crisp SVG vector icons.
+
+### Fixed
+- **Electron Preload Whitelist** — Added `start-download-update`, `quit-and-install-update`, and `navigate-tab` to `preload.js` security channel whitelist so button click events fire properly.
+- **Real-Time Speed Calculation** — Fixed `0 MB/s` download speed display by calculating real-time chunk delta speed in `directDownloader.js`.
+
+---
+
 ## [6.3.2] - 2026-08-12
 
 ### Added

@@ -22,7 +22,7 @@ function downloadFile(targetUrl, destinationPath, onProgress) {
         hostname: parsed.hostname,
         path: parsed.pathname + parsed.search,
         headers: {
-          'User-Agent': 'AiroDrop-DirectDownloader/6.3.2',
+          'User-Agent': 'AiroDrop-DirectDownloader/6.3.3',
           'Accept': '*/*'
         }
       };

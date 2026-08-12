@@ -1,4 +1,4 @@
-# AiroDrop v6.3.2
+# AiroDrop v6.3.3
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayyad](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.3.2-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.3.3-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows-blue.svg?style=flat-square&logo=windows)
@@ -17,11 +17,11 @@ Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayy
 
 ---
 
-## Downloads (v6.3.2)
+## Downloads (v6.3.3)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.3.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.2/AiroDrop.Setup.6.3.2.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.3.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.2/AiroDrop-Portable-6.3.2.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.3.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.3/AiroDrop.Setup.6.3.3.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.3.3)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.3/AiroDrop-Portable-6.3.3.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
