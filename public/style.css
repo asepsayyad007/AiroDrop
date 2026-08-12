@@ -3026,3 +3026,65 @@ textarea:focus-visible {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+
+/* ─── Professional Settings Dashboard Enhancements ────────────── */
+.settings-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.settings-card:hover {
+  border-color: rgba(255, 85, 0, 0.25) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 85, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.settings-text-input {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  padding: 8px 12px !important;
+  font-size: 0.82rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-text-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(255, 85, 0, 0.2) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.settings-browse-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-browse-btn:hover {
+  background: rgba(255, 85, 0, 0.15) !important;
+  border-color: rgba(255, 85, 0, 0.4) !important;
+  color: var(--accent-light) !important;
+}
+
+.settings-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.settings-switch-row:last-child {
+  border-bottom: none;
+}
+
+#saveDirBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 85, 0, 0.45) !important;
+}
