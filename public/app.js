@@ -2296,11 +2296,19 @@
       }
     };
 
-    // ─── Windows 11 Settings GUI Navigation & Actions ─────────
+    // ─── Windows Settings GUI Dedicated Page Navigation & Modal Controls ─────────
     const btnHeaderSettings = document.getElementById('btnHeaderSettings');
     const btnCancelSettings = document.getElementById('btnCancelSettings');
     const btnCloseSettings = document.getElementById('btnCloseSettings');
     const settingsModal = document.getElementById('settingsModal');
+
+    const closeSettingsModal = () => {
+      if (settingsModal) settingsModal.style.display = 'none';
+      if (btnHeaderSettings) {
+        btnHeaderSettings.blur();
+        btnHeaderSettings.classList.remove('glow');
+      }
+    };
 
     if (btnHeaderSettings && settingsModal) {
       btnHeaderSettings.addEventListener('click', () => {
@@ -2308,37 +2316,40 @@
       });
     }
 
-    if (btnCancelSettings && settingsModal) {
-      btnCancelSettings.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
-      });
+    if (btnCancelSettings) {
+      btnCancelSettings.addEventListener('click', closeSettingsModal);
     }
 
-    if (btnCloseSettings && settingsModal) {
-      btnCloseSettings.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
-      });
+    if (btnCloseSettings) {
+      btnCloseSettings.addEventListener('click', closeSettingsModal);
     }
 
     if (settingsModal) {
       window.addEventListener('click', (e) => {
         if (e.target === settingsModal) {
-          settingsModal.style.display = 'none';
+          closeSettingsModal();
         }
       });
     }
 
+    // Dedicated Page Tab Navigation Handler
     const winNavItems = document.querySelectorAll('.win-nav-item');
+    const winSections = document.querySelectorAll('.win-section-group');
+
     if (winNavItems.length > 0) {
       winNavItems.forEach(item => {
         item.addEventListener('click', () => {
           winNavItems.forEach(nav => nav.classList.remove('active'));
           item.classList.add('active');
           const targetId = item.getAttribute('data-target');
-          const targetEl = document.getElementById(targetId);
-          if (targetEl) {
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
+
+          winSections.forEach(sec => {
+            if (sec.id === targetId) {
+              sec.style.display = 'flex';
+            } else {
+              sec.style.display = 'none';
+            }
+          });
         });
       });
     }

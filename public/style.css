@@ -3458,3 +3458,10 @@ textarea:focus-visible {
   gap: 10px;
   margin-left: auto;
 }
+
+/* Prevent unwanted gear spin animation on close/blur */
+.settings-gear-icon {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
