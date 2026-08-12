@@ -609,8 +609,10 @@ function setupAutoUpdater() {
 // ─── Window Management ────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 780,
+    width: 1280,
     height: 720,
+    minWidth: 960,
+    minHeight: 640,
     resizable: true,
     title: 'AiroDrop',
     icon: path.join(__dirname, 'public', process.platform === 'win32' ? 'logo.ico' : 'logo.png'),

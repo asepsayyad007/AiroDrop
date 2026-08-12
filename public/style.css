@@ -3029,10 +3029,10 @@ textarea:focus-visible {
 
 /* ─── Windows GUI Software Layout (Original AiroDrop Dark Glass Theme) ─ */
 .win-app-window {
-  width: 920px;
-  max-width: 95vw;
-  height: 640px;
-  max-height: 90vh;
+  width: 1040px;
+  max-width: 92vw;
+  height: 620px;
+  max-height: 85vh;
   background: linear-gradient(135deg, rgba(20, 20, 28, 0.98), rgba(10, 10, 15, 0.99));
   border: 1px solid rgba(255, 85, 0, 0.22);
   border-radius: var(--radius-xl, 16px);
