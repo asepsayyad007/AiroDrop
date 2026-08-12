@@ -178,8 +178,8 @@ router.get('/qr.png', async (req, res) => {
   }
 });
 
-// GET /api/qr-gen.png
-router.get('/qr-gen.png', async (req, res) => {
+// GET /api/qr-gen.png or /api/qr
+router.get(['/qr-gen.png', '/qr'], async (req, res) => {
   try {
     const { text, dark, light } = req.query;
     if (!text) {

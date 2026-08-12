@@ -1214,19 +1214,15 @@
 
   let selectedFileObj = null;
 
-  function getFileTypeEmoji(mimeType) {
-    if (!mimeType) return '📄';
+  function getFileTypeSvg(mimeType) {
+    if (!mimeType) return '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
     const type = mimeType.toLowerCase();
-    if (type.startsWith('image/')) return '🖼️';
-    if (type.startsWith('video/')) return '🎥';
-    if (type.startsWith('audio/')) return '🎵';
-    if (type.includes('pdf')) return '📄';
-    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) return '🗃️';
-    if (type.includes('word') || type.includes('document') || type.includes('officedocument')) return '📝';
-    if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return '📊';
-    if (type.includes('presentation') || type.includes('powerpoint')) return '📊';
-    if (type.includes('text/')) return '📋';
-    return '📄';
+    if (type.startsWith('image/')) return '<svg class="icon-svg md" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+    if (type.startsWith('video/')) return '<svg class="icon-svg md" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>';
+    if (type.startsWith('audio/')) return '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+    if (type.includes('pdf')) return '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar') || type.includes('gzip')) return '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+    return '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   }
 
   function handleFileSelection(file) {
@@ -2307,9 +2303,9 @@
 
     if (isElectron && ipcRenderer) {
       ipcRenderer.on('update-status', (event, status, info) => {
-        const updateBtnText = status === 'checking' ? '🔄 Checking...' : 
-                             status === 'downloading' ? '📥 Downloading...' :
-                             status === 'available' ? '📥 Update Available' : '🔄 Check for Updates';
+        const updateBtnText = status === 'checking' ? 'Checking...' : 
+                             status === 'downloading' ? 'Downloading...' :
+                             status === 'available' ? 'Update Available' : 'Check for Updates';
         const manualBtnText = status === 'checking' ? 'Checking...' :
                              status === 'downloading' ? 'Downloading...' :
                              status === 'available' ? 'Update Available' : 'Check for Updates Now';
@@ -3826,23 +3822,13 @@
         previewImg.style.display = 'none';
         previewIcon.style.display = 'block';
         const ext = file.name.split('.').pop().toLowerCase();
-        if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
-          previewIcon.textContent = '🎵';
-        } else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
-          previewIcon.textContent = '🎬';
-        } else if (['pdf'].includes(ext)) {
-          previewIcon.textContent = '📕';
-        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-          previewIcon.textContent = '📦';
-        } else {
-          previewIcon.textContent = '📄';
-        }
+        previewIcon.innerHTML = getFileTypeSvg(file.type);
       }
     } else {
       // Multiple files mode
       previewImg.style.display = 'none';
       previewIcon.style.display = 'block';
-      previewIcon.textContent = '📦';
+      previewIcon.innerHTML = '<svg class="icon-svg lg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
 
       const totalSize = files.reduce((sum, f) => sum + f.size, 0);
       fileName.style.display = 'block';
@@ -3861,12 +3847,7 @@
           item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:4px 8px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:0.75rem; width:100%; box-sizing:border-box;';
 
           const ext = f.name.split('.').pop().toLowerCase();
-          let icon = '📄';
-          if (f.type.startsWith('image/')) icon = '🖼️';
-          else if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
-          else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
-          else if (['pdf'].includes(ext)) icon = '📕';
-          else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
+          let icon = getFileTypeSvg(f.type || ext);
 
           item.innerHTML = `
             <span style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;">
@@ -3948,7 +3929,7 @@
       
       let name = '';
       let meta = '';
-      let icon = '📄';
+      let icon = '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
 
       if (share.direction === 'receive') {
         const fileList = Object.values(share.files || {});
@@ -3994,91 +3975,80 @@
               badgeClass = 'failed';
             }
 
-            const ext = file.name.split('.').pop().toLowerCase();
-            let icon = '📄';
-            if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
-            else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
-            else if (['pdf'].includes(ext)) icon = '📕';
-            else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
-            else if (file.preview) {
-              const safeSrc = escapeAttr(file.preview);
-              icon = `<img src="${safeSrc}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.05); display: block;">`;
-            } else if (file.mimeType && file.mimeType.startsWith('image/')) {
-              icon = '🖼️';
-            }
+          const ext = file.name.split('.').pop().toLowerCase();
+          let icon = getFileTypeSvg(file.mimeType || file.type || ext);
+          if (file.preview) {
+            const safeSrc = escapeAttr(file.preview);
+            icon = `<img src="${safeSrc}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.05); display: block;">`;
+          }
 
-            const safeFileName = escapeHtml(file.name);
-            const safeFileNameAttr = escapeAttr(file.name);
+          const safeFileName = escapeHtml(file.name);
+          const safeFileNameAttr = escapeAttr(file.name);
 
-            return `
-              <div class="receive-file-row ${file.status === 'receiving' ? 'active' : ''}" id="file-item-${file.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">
-                <div class="receive-file-left" style="display: flex; align-items: center; gap: 8px;">
-                  ${checkboxHtml}
-                  <span class="active-share-icon" style="font-size:0.9rem; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">${icon}</span>
-                  <div class="receive-file-info" style="display: flex; flex-direction: column;">
-                    <span class="receive-file-name" title="${safeFileNameAttr}" style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</span>
-                    <span class="receive-file-size" style="font-size: 0.7rem; color: var(--text-secondary);">${formatSize(file.size)}</span>
-                  </div>
-                </div>
-                <div class="receive-file-actions" style="display: flex; align-items: center; gap: 8px;">
-                  <span class="share-status-tag ${badgeClass}" style="padding: 2px 6px; font-size: 0.65rem;">
-                    <span class="status-text">${rowStatusText}</span>
-                  </span>
-                  ${fileActions}
+          return `
+            <div class="receive-file-row ${file.status === 'receiving' ? 'active' : ''}" id="file-item-${file.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03);">
+              <div class="receive-file-left" style="display: flex; align-items: center; gap: 8px;">
+                ${checkboxHtml}
+                <span class="active-share-icon" style="font-size:0.9rem; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">${icon}</span>
+                <div class="receive-file-info" style="display: flex; flex-direction: column;">
+                  <span class="receive-file-name" title="${safeFileNameAttr}" style="font-size: 0.8rem; font-weight: 500; color: var(--text-primary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</span>
+                  <span class="receive-file-size" style="font-size: 0.7rem; color: var(--text-secondary);">${formatSize(file.size)}</span>
                 </div>
               </div>
-            `;
-          }).join('');
-          filesHtml += `</div>`;
-        }
-
-        let bulkActionsHtml = '';
-        const pendingFiles = fileList.filter(f => f.status === 'pending_accept');
-        const hasFinished = fileList.some(f => ['completed', 'declined', 'failed'].includes(f.status));
-
-        if (pendingFiles.length > 0 || hasFinished) {
-          bulkActionsHtml = `<div class="receive-bulk-actions" style="display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; flex-wrap: wrap; align-items: center; width: 100%;">`;
-          if (pendingFiles.length > 0) {
-            bulkActionsHtml += `<button class="btn-bulk-action download-all-btn" data-token="${token}" style="background: var(--accent) !important; color: #fff !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600;">Download All</button>`;
-            if (pendingFiles.length > 1) {
-              bulkActionsHtml += `
-                <button class="btn-bulk-action download-checked-btn" data-token="${token}" style="background: rgba(0, 210, 106, 0.12) !important; color: #00d26a !important; border: 1px solid rgba(0, 210, 106, 0.25) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Download Checked</button>
-                <button class="btn-bulk-action cancel-checked-btn" data-token="${token}" style="background: rgba(255, 59, 48, 0.12) !important; color: #ff3b30 !important; border: 1px solid rgba(255, 59, 48, 0.25) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel Checked</button>
-              `;
-            }
-          }
-          if (hasFinished) {
-            bulkActionsHtml += `<button class="btn-bulk-action clear-finished-btn" data-token="${token}" style="background: rgba(255, 255, 255, 0.08) !important; color: var(--text-primary) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: auto;">Clear Finished</button>`;
-          }
-          bulkActionsHtml += `</div>`;
-        }
-
-        name = `Receive Link (${fileList.length} files)`;
-        meta = `Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
-        icon = '📥';
-
-        actionButtonsHtml = bulkActionsHtml;
-        statusText = share.status === 'pending_accept' ? 'Action Required' : (share.status === 'receiving' ? 'Receiving...' : 'Waiting');
-        statusClass = share.status === 'pending_accept' ? 'downloading' : (share.status === 'receiving' ? 'downloading' : 'waiting');
-      } else {
-        if (share.status === 'downloading') {
-          statusText = `Downloading (${share.percent || 0}%)`;
-          statusClass = 'downloading';
-        } else if (share.status === 'completed') {
-          statusText = 'Completed';
-          statusClass = 'completed';
-        }
-        
-        name = escapeHtml(share.file.name);
-        meta = `${formatSize(share.file.size)} • Send Link • Expiry: ${getFriendlyExpiry(share.expiryMode, false)}`;
-        
-        const ext = share.file.name.split('.').pop().toLowerCase();
-        if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) icon = '🎵';
-        else if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) icon = '🎬';
-        else if (['pdf'].includes(ext)) icon = '📕';
-        else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) icon = '📦';
-        else if (share.file.type && share.file.type.startsWith('image/')) icon = '🖼️';
+              <div class="receive-file-actions" style="display: flex; align-items: center; gap: 8px;">
+                <span class="share-status-tag ${badgeClass}" style="padding: 2px 6px; font-size: 0.65rem;">
+                  <span class="status-text">${rowStatusText}</span>
+                </span>
+                ${fileActions}
+              </div>
+            </div>
+          `;
+        }).join('');
+        filesHtml += `</div>`;
       }
+
+      let bulkActionsHtml = '';
+      const pendingFiles = fileList.filter(f => f.status === 'pending_accept');
+      const hasFinished = fileList.some(f => ['completed', 'declined', 'failed'].includes(f.status));
+
+      if (pendingFiles.length > 0 || hasFinished) {
+        bulkActionsHtml = `<div class="receive-bulk-actions" style="display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; flex-wrap: wrap; align-items: center; width: 100%;">`;
+        if (pendingFiles.length > 0) {
+          bulkActionsHtml += `<button class="btn-bulk-action download-all-btn" data-token="${token}" style="background: var(--accent) !important; color: #fff !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600;">Download All</button>`;
+          if (pendingFiles.length > 1) {
+            bulkActionsHtml += `
+              <button class="btn-bulk-action download-checked-btn" data-token="${token}" style="background: rgba(0, 210, 106, 0.12) !important; color: #00d26a !important; border: 1px solid rgba(0, 210, 106, 0.25) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Download Checked</button>
+              <button class="btn-bulk-action cancel-checked-btn" data-token="${token}" style="background: rgba(255, 59, 48, 0.12) !important; color: #ff3b30 !important; border: 1px solid rgba(255, 59, 48, 0.25) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel Checked</button>
+            `;
+          }
+        }
+        if (hasFinished) {
+          bulkActionsHtml += `<button class="btn-bulk-action clear-finished-btn" data-token="${token}" style="background: rgba(255, 255, 255, 0.08) !important; color: var(--text-primary) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; padding: 6px 14px; font-size: 0.76rem; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: auto;">Clear Finished</button>`;
+        }
+        bulkActionsHtml += `</div>`;
+      }
+
+      name = `Receive Link (${fileList.length} files)`;
+      meta = `Receive Link • Expiry: ${getFriendlyExpiry(share.expiryMode, true)}`;
+      icon = '<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+      actionButtonsHtml = bulkActionsHtml;
+      statusText = share.status === 'pending_accept' ? 'Action Required' : (share.status === 'receiving' ? 'Receiving...' : 'Waiting');
+      statusClass = share.status === 'pending_accept' ? 'downloading' : (share.status === 'receiving' ? 'downloading' : 'waiting');
+    } else {
+      if (share.status === 'downloading') {
+        statusText = `Downloading (${share.percent || 0}%)`;
+        statusClass = 'downloading';
+      } else if (share.status === 'completed') {
+        statusText = 'Completed';
+        statusClass = 'completed';
+      }
+      
+      name = escapeHtml(share.file.name);
+      meta = `${formatSize(share.file.size)} • Send Link • Expiry: ${getFriendlyExpiry(share.expiryMode, false)}`;
+      
+      icon = getFileTypeSvg(share.file.type);
+    }
 
       const safeItemName = escapeHtml(name);
       const safeItemNameAttr = escapeAttr(name);
@@ -4287,6 +4257,52 @@
     if (mainContent && !mainContent.getAttribute('role')) {
       mainContent.setAttribute('role', 'main');
     }
+  }
+
+  // ─── Global Image Lightbox Handler ─────────────────────────
+  window.openImageLightbox = function(src, name) {
+    const modal = document.getElementById('globalImageLightbox');
+    const img = document.getElementById('lightboxImage');
+    const title = document.getElementById('lightboxTitle');
+    const downloadBtn = document.getElementById('btnLightboxDownload');
+    if (!modal || !img) return;
+
+    title.textContent = name || 'Image Preview';
+    img.src = src;
+    if (downloadBtn) {
+      downloadBtn.href = src;
+      downloadBtn.download = name || 'image';
+    }
+    modal.style.display = 'flex';
+  };
+
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('img, .clickable-image-preview, [data-preview-img]');
+    if (target && target.id !== 'lightboxImage' && (target.dataset.previewImg || target.classList.contains('clickable-image-preview') || target.closest('.receive-file-row') || target.closest('.file-card'))) {
+      const src = target.getAttribute('data-src') || target.src;
+      const name = target.getAttribute('data-name') || target.alt || 'Image Preview';
+      if (src && !src.endsWith('#') && !src.includes('logo.png') && !src.includes('favicon')) {
+        e.stopPropagation();
+        window.openImageLightbox(src, name);
+      }
+    }
+  });
+
+  const btnCloseLight = document.getElementById('btnCloseLightbox');
+  if (btnCloseLight) {
+    btnCloseLight.addEventListener('click', () => {
+      const modal = document.getElementById('globalImageLightbox');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+
+  const modalLight = document.getElementById('globalImageLightbox');
+  if (modalLight) {
+    modalLight.addEventListener('click', (e) => {
+      if (e.target === modalLight) {
+        modalLight.style.display = 'none';
+      }
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => { init(); applyAccessibility(); });

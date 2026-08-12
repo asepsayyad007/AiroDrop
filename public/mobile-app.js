@@ -474,7 +474,7 @@
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
                 <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
-                <a href="${downloadUrl}" download="${escapeAttr(downloadName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(downloadName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
@@ -486,21 +486,45 @@
         fileList.innerHTML = '<div class="empty-receive">No files received yet</div>';
       } else {
         fileList.innerHTML = fileItems.map(item => {
-          const isImg = item.type === 'image';
-          const downloadUrl = isImg 
+          const ext = (item.filename || item.originalName || item.name || '').split('.').pop().toLowerCase();
+          const isImg = item.type === 'image' || ['jpg','jpeg','png','gif','webp','svg','heic','bmp'].includes(ext);
+          const isVid = item.type === 'video' || ['mp4','mov','m4v','webm','ogv','avi','mkv'].includes(ext);
+          const isPdf = ext === 'pdf' || (item.mimeType && item.mimeType.includes('pdf'));
+          const downloadUrl = (isImg || isVid || isPdf) 
             ? (item.filename ? `/received/${item.filename}` : item.url)
             : `/received/${item.filename}`;
-          const displayName = isImg ? (item.filename || 'Image') : (item.originalName || item.filename || 'File');
-          const mime = item.mimeType || item.mimetype || (isImg ? 'image/jpeg' : '');
-          const icon = getFileTypeIcon(mime);
+          const displayName = isImg ? (item.filename || 'Image') : (isVid ? (item.filename || 'Video') : (isPdf ? (item.filename || 'PDF Document') : (item.originalName || item.filename || 'File')));
+          const mime = item.mimeType || item.mimetype || (isImg ? 'image/jpeg' : (isVid ? 'video/mp4' : (isPdf ? 'application/pdf' : '')));
+          
+          let icon = getFileTypeIcon(mime);
+          if (isImg && downloadUrl) {
+            icon = `<img src="${downloadUrl}" alt="${escapeAttr(displayName)}" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; display: block;" />`;
+          } else if (isVid) {
+            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`;
+          } else if (isPdf) {
+            icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+          }
+
+          const safeUrl = escapeAttr(downloadUrl);
+          const safeTitle = escapeAttr(displayName);
+
+          let clickHandler = '';
+          if (isImg) {
+            clickHandler = `onclick="openMobileImageLightbox('${safeUrl}', '${safeTitle}')"`;
+          } else if (isVid) {
+            clickHandler = `onclick="openMobileVideoPlayer('${safeUrl}?stream=true', '${safeTitle}')"`;
+          } else if (isPdf) {
+            clickHandler = `onclick="openMobilePdfViewer('${safeUrl}', '${safeTitle}')"`;
+          }
+
           return `
-            <div class="receive-item" style="cursor: default;">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${icon}</span>
+            <div class="receive-item" ${clickHandler} style="${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
+              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; overflow: hidden; border-radius: 6px;">${icon}</span>
               <span class="receive-content">${escapeHtml(displayName)}</span>
               <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
+              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;" onclick="event.stopPropagation();">
                 <button onclick="copyFileLink('${downloadUrl}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy Link</button>
-                <a href="${downloadUrl}" download="${escapeAttr(displayName)}" target="_blank" style="color:var(--accent-light);font-size:0.78rem;font-weight:600;text-decoration:none;white-space:nowrap;">Download</a>
+                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
@@ -594,10 +618,17 @@
 
     // ─── Utilities ────────────────────────────────────────────
     function showToast(msg) {
-      const t = document.getElementById('toast');
+      let t = document.getElementById('toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.className = 'toast';
+        document.body.appendChild(t);
+      }
       t.textContent = msg;
       t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2500);
+      if (t._timer) clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2500);
     }
 
     function escapeHtml(s) {
@@ -1327,17 +1358,17 @@
           btn.style.borderColor = 'var(--card-border)';
           break;
         case 'connecting':
-          btn.innerHTML = '⏳ Connecting to PC...';
+          btn.innerHTML = 'Connecting to PC...';
           btn.style.background = 'rgba(255,255,255,0.05)';
           btn.style.borderColor = 'var(--card-border)';
           break;
         case 'connected':
-          btn.innerHTML = '🟢 Services Connected';
+          btn.innerHTML = 'Services Connected';
           btn.style.background = 'rgba(16,185,129,0.15)';
           btn.style.borderColor = '#10b981';
           break;
         case 'failed':
-          btn.innerHTML = '🔴 Connection Failed — Retry';
+          btn.innerHTML = 'Connection Failed — Retry';
           btn.style.background = 'rgba(239,68,68,0.15)';
           btn.style.borderColor = '#ef4444';
           break;
@@ -1630,7 +1661,9 @@
         btnToggleKbd.addEventListener('click', () => {
           const isOpen = kbdPanel.style.display !== 'none';
           kbdPanel.style.display = isOpen ? 'none' : 'block';
-          btnToggleKbd.textContent = isOpen ? '⌨️ Keyboard ▼' : '⌨️ Keyboard ▲';
+          btnToggleKbd.innerHTML = isOpen
+            ? '<svg class="icon-svg sm" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="16" x2="16" y2="16"/></svg> <span>Keyboard ▼</span>'
+            : '<svg class="icon-svg sm" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="16" x2="16" y2="16"/></svg> <span>Keyboard ▲</span>';
         });
       }
 
@@ -1735,7 +1768,7 @@
         if (touchpadMaxTouches === 2) {
           if (!touchpadHasMoved && duration < 250) {
             sendWS({ type: 'click', button: 'right' });
-            showToast('🖱️ Right Click', 600);
+            showToast('Right Click', 600);
           }
           touchpadIsScrolling = false;
           return;
@@ -1750,10 +1783,10 @@
             const screenWidth = window.innerWidth;
             if (touchpadLastX < screenWidth / 2) {
               sendWS({ type: 'key', code: 37 }); // ArrowLeft
-              showToast('⏮ Previous Slide', 600);
+              showToast('Previous Slide', 600);
             } else {
               sendWS({ type: 'key', code: 39 }); // ArrowRight
-              showToast('⏭ Next Slide', 600);
+              showToast('Next Slide', 600);
             }
             return;
           }
@@ -1763,13 +1796,13 @@
             if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
             sendWS({ type: 'click', button: 'left' });
             setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
-            showToast('🖱️ Double Click', 600);
+            showToast('Double Click', 600);
             touchpadLastTapTime = 0;
           } else {
             touchpadLastTapTime = now;
             touchpadTapTimeout = setTimeout(() => {
               sendWS({ type: 'click', button: 'left' });
-              showToast('🖱️ Left Click', 600);
+              showToast('Left Click', 600);
               touchpadTapTimeout = null;
             }, 220);
           }
@@ -2046,7 +2079,7 @@
           // Transition audioOnlyStreamMode to false (since the user is opening the full screenshare UI)
           audioOnlyStreamMode = false;
           syncAudioStates();
-          showToast('🖥️ Screencast active');
+          showToast('Screencast active');
         }
       });
 
@@ -2514,9 +2547,13 @@
       const btnOpen = document.getElementById('btnOpenFileBrowser');
       const overlay = document.getElementById('fileBrowserOverlay');
       const iframe = document.getElementById('fileBrowserIframe');
-      const btnClose = document.getElementById('btnCloseFileBrowser');
 
-      if (!btnOpen || !overlay || !iframe || !btnClose) return;
+      if (!btnOpen || !overlay || !iframe) return;
+
+      const closeFileBrowser = () => {
+        overlay.style.display = 'none';
+        iframe.src = 'about:blank';
+      };
 
       btnOpen.addEventListener('click', () => {
         // Show loading state and reset iframe
@@ -2526,9 +2563,15 @@
         overlay.style.display = 'flex';
       });
 
-      btnClose.addEventListener('click', () => {
-        overlay.style.display = 'none';
-        iframe.src = 'about:blank';
+      const btnClose = document.getElementById('btnCloseFileBrowser');
+      if (btnClose) {
+        btnClose.addEventListener('click', closeFileBrowser);
+      }
+
+      window.addEventListener('message', (e) => {
+        if (e.data === 'closeFileBrowser') {
+          closeFileBrowser();
+        }
       });
 
       const btnCloseVideo = document.getElementById('btnCloseVideoPlayer');
@@ -2720,6 +2763,321 @@
         }
       }, { passive: false });
     })();
+
+    // ─── Mobile Image Lightbox Handler ─────────────────────────────
+    window.closeMobileLightbox = function() {
+      const modal = document.getElementById('mobileImageLightbox');
+      if (modal) modal.style.display = 'none';
+    };
+
+    // ─── PWA Download Link & QR Modal Handlers ─────────────────────────────
+    window.openDownloadLinkModal = function(url, name) {
+      if (!url) return;
+      const modal = document.getElementById('mobileDownloadLinkModal');
+      const titleEl = document.getElementById('downloadModalFileName');
+      const inputEl = document.getElementById('downloadModalUrlInput');
+      const qrImg = document.getElementById('downloadModalQrImg');
+      if (!modal) return;
+
+      const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
+
+      if (titleEl) titleEl.textContent = name || 'Download File';
+      if (inputEl) inputEl.value = fullUrl;
+      if (qrImg) {
+        qrImg.onerror = function() {
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(fullUrl)}`;
+        };
+        qrImg.src = `/api/qr-gen.png?text=${encodeURIComponent(fullUrl)}`;
+      }
+
+      modal.style.display = 'flex';
+    };
+
+    window.closeDownloadLinkModal = function() {
+      const modal = document.getElementById('mobileDownloadLinkModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.copyDownloadUrlFromModal = async function() {
+      const inputEl = document.getElementById('downloadModalUrlInput');
+      const btnEl = document.getElementById('btnCopyDownloadUrl');
+      if (!inputEl || !inputEl.value) return;
+      try {
+        await navigator.clipboard.writeText(inputEl.value);
+      } catch(e) {
+        inputEl.select();
+        document.execCommand('copy');
+      }
+      showToast('Copied to clipboard!');
+      if (btnEl) {
+        const originalHtml = btnEl.innerHTML;
+        btnEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        btnEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Copied!</span>`;
+        setTimeout(() => {
+          btnEl.style.background = '';
+          btnEl.innerHTML = originalHtml;
+        }, 2000);
+      }
+    };
+
+    window.downloadPhotoDirectly = function(url, name) {
+      if (!url || url === 'undefined' || url === 'null') return;
+      window.openDownloadLinkModal(url, name || 'photo.jpg');
+    };
+
+    window.openMobileImageLightbox = function(src, title) {
+      if (!src || src === 'undefined' || src === 'null') return;
+      const modal = document.getElementById('mobileImageLightbox');
+      const img = document.getElementById('mobileLightboxImg');
+      const titleEl = document.getElementById('mobileLightboxTitle');
+      if (!modal || !img) return;
+
+      if (titleEl) titleEl.textContent = title || 'Photo Preview';
+      img.src = src;
+      modal.style.display = 'flex';
+    };
+
+    // Attach click to mobile file preview image when selecting local photo to send
+    const mobilePreviewImg = document.getElementById('mobilePreviewImg');
+    if (mobilePreviewImg) {
+      mobilePreviewImg.style.cursor = 'pointer';
+      mobilePreviewImg.title = 'Tap to enlarge photo';
+      mobilePreviewImg.addEventListener('click', () => {
+        const nameEl = document.getElementById('mobilePreviewFileName');
+        window.openMobileImageLightbox(mobilePreviewImg.src, nameEl ? nameEl.textContent : 'Selected Photo');
+      });
+    }
+
+    // ─── Mobile Video Stream Player Handlers ─────────────────────────────
+    window.openMobileVideoPlayer = function(url, title) {
+      if (!url || url === 'undefined' || url === 'null') return;
+
+      // Stop & hide any legacy video overlay
+      const oldModal = document.getElementById('videoPlayerOverlay');
+      const oldVideo = document.getElementById('videoPlayerEl');
+      if (oldVideo) { try { oldVideo.pause(); oldVideo.removeAttribute('src'); oldVideo.load(); } catch(e) {} }
+      if (oldModal) oldModal.style.display = 'none';
+
+      const modal = document.getElementById('mobileVideoLightbox');
+      const video = document.getElementById('mobileVideoEl');
+      const titleEl = document.getElementById('mobileVideoTitle');
+      if (!modal || !video) return;
+
+      if (titleEl) titleEl.textContent = title || 'Video Stream';
+
+      // Reset previous stream cleanly
+      try { video.pause(); } catch(e) {}
+
+      video.src = url;
+      modal.style.display = 'flex';
+
+      // Load and play in foreground modal
+      video.load();
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          // Auto-launch native mobile video player mode
+          if (video.webkitEnterFullscreen) {
+            try { video.webkitEnterFullscreen(); } catch(e) {}
+          }
+        }).catch(err => {
+          console.log('[VIDEO] Autoplay waiting for user tap:', err);
+        });
+      }
+    };
+
+    window.toggleMobileVideoFullscreen = function() {
+      const video = document.getElementById('mobileVideoEl');
+      if (!video) return;
+
+      if (video.webkitEnterFullscreen) {
+        // Native iOS Safari / WebKit PWA Video Fullscreen
+        video.webkitEnterFullscreen();
+      } else if (video.requestFullscreen) {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          video.requestFullscreen();
+        }
+      } else if (video.webkitRequestFullscreen) {
+        if (document.webkitFullscreenElement) {
+          document.webkitExitFullscreen();
+        } else {
+          video.webkitRequestFullscreen();
+        }
+      } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+      }
+    };
+
+    window.resetViewportZoom = function() {
+      let meta = document.querySelector('meta[name="viewport"]');
+      if (meta) {
+        meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
+      }
+      const iframe = document.getElementById('fileBrowserIframe');
+      if (iframe) {
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        if (iframe.contentWindow) {
+          try {
+            let doc = iframe.contentWindow.document;
+            if (doc) {
+              let docMeta = doc.querySelector('meta[name="viewport"]');
+              if (docMeta) {
+                docMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
+              }
+              doc.documentElement.style.width = '100vw';
+              doc.documentElement.style.maxWidth = '100vw';
+              doc.body.style.width = '100vw';
+              doc.body.style.maxWidth = '100vw';
+            }
+            iframe.contentWindow.scrollTo(0, 0);
+          } catch(e) {}
+        }
+      }
+      window.scrollTo(0, 0);
+    };
+
+    const mobileVidEl = document.getElementById('mobileVideoEl');
+    if (mobileVidEl) {
+      mobileVidEl.addEventListener('webkitendfullscreen', () => {
+        window.resetViewportZoom();
+      });
+    }
+
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => { window.resetViewportZoom(); }, 100);
+      setTimeout(() => { window.resetViewportZoom(); }, 400);
+    });
+    window.addEventListener('resize', window.resetViewportZoom);
+
+    window.closeMobileVideoPlayer = function() {
+      const modal = document.getElementById('mobileVideoLightbox');
+      const video = document.getElementById('mobileVideoEl');
+      if (video) {
+        try {
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+        } catch(e) {}
+      }
+      if (modal) modal.style.display = 'none';
+
+      const oldModal = document.getElementById('videoPlayerOverlay');
+      const oldVideo = document.getElementById('videoPlayerEl');
+      if (oldVideo) { try { oldVideo.pause(); oldVideo.removeAttribute('src'); oldVideo.load(); } catch(e) {} }
+      if (oldModal) oldModal.style.display = 'none';
+
+      window.resetViewportZoom();
+    };
+
+    window.downloadVideoDirectly = function(url, name) {
+      if (!url || url === 'undefined' || url === 'null') return;
+      const cleanUrl = url.replace('&stream=true', '');
+      window.openDownloadLinkModal(cleanUrl, name || 'video.mp4');
+    };
+
+    // Intercept messages from iframe (e.g. File Manager requesting image/video/audio/no-preview/download-modal)
+    window.addEventListener('message', (e) => {
+      if (!e.data) return;
+      if (e.data.type === 'stream-video' || e.data.type === 'open-video') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'Video Stream';
+        if (url) window.openMobileVideoPlayer(url, name);
+      } else if (e.data.type === 'open-image' || e.data.type === 'preview-image') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'Photo Preview';
+        if (url) window.openMobileImageLightbox(url, name);
+      } else if (e.data.type === 'stream-audio' || e.data.type === 'open-audio') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'Music Track';
+        if (url) window.openMobileAudioPlayer(url, name);
+      } else if (e.data.type === 'no-preview' || e.data.type === 'open-no-preview') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'File Preview';
+        if (url) window.openMobileNoPreview(url, name);
+      } else if (e.data.type === 'open-download-modal') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'Download File';
+        if (url) window.openDownloadLinkModal(url, name);
+      }
+    });
+
+    // ─── Mobile Audio Stream Player Handlers ─────────────────────────────
+    window.openMobileAudioPlayer = function(url, title) {
+      if (!url) return;
+      const modal = document.getElementById('mobileAudioLightbox');
+      const audio = document.getElementById('mobileAudioEl');
+      const titleEl = document.getElementById('mobileAudioTitle');
+      if (!modal || !audio) return;
+
+      if (titleEl) titleEl.textContent = title || 'Music Track';
+      try { audio.pause(); } catch(e) {}
+      audio.src = url;
+      modal.style.display = 'flex';
+      audio.load();
+      audio.play().catch(e => console.log('[AUDIO] Autoplay waiting for tap:', e));
+    };
+
+    window.closeMobileAudioPlayer = function() {
+      const modal = document.getElementById('mobileAudioLightbox');
+      const audio = document.getElementById('mobileAudioEl');
+      if (audio) {
+        try { audio.pause(); audio.removeAttribute('src'); audio.load(); } catch(e) {}
+      }
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.downloadAudioDirectly = function() {
+      const audio = document.getElementById('mobileAudioEl');
+      const titleEl = document.getElementById('mobileAudioTitle');
+      if (audio && audio.src) {
+        const cleanUrl = audio.src.replace('&stream=true', '');
+        downloadPhotoDirectly(cleanUrl, titleEl ? titleEl.textContent : 'music.mp3');
+      }
+    };
+
+    // ─── Mobile No-Preview Handler ─────────────────────────────
+    let noPreviewDownloadUrl = '';
+    let noPreviewDownloadName = '';
+
+    window.openMobileNoPreview = function(url, title) {
+      if (!url) return;
+      noPreviewDownloadUrl = url;
+      noPreviewDownloadName = title || 'file';
+      const modal = document.getElementById('mobileNoPreviewLightbox');
+      const titleEl = document.getElementById('mobileNoPreviewTitle');
+      if (!modal) return;
+
+      if (titleEl) titleEl.textContent = title || 'File Preview';
+      modal.style.display = 'flex';
+    };
+
+    window.closeMobileNoPreview = function() {
+      const modal = document.getElementById('mobileNoPreviewLightbox');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.downloadNoPreviewFile = function() {
+      if (noPreviewDownloadUrl) {
+        downloadPhotoDirectly(noPreviewDownloadUrl, noPreviewDownloadName);
+      }
+    };
+
+    // Global image click interceptor for PWA touch UI
+    document.addEventListener('click', (e) => {
+      const img = e.target.closest('img');
+      if (img && img.id !== 'mobileLightboxImg' && img.src && !img.src.includes('about:blank')) {
+        const isClickable = img.id === 'mobilePreviewImg' || img.id === 'mobileScreenshotImg' || img.closest('.receive-item') || img.closest('.file-card') || img.closest('.file-row');
+        if (isClickable || (img.naturalWidth > 60 && img.naturalHeight > 60)) {
+          e.stopPropagation();
+          const src = img.src;
+          const title = img.alt || img.title || 'Photo Preview';
+          window.openMobileImageLightbox(src, title);
+        }
+      }
+    });
 
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);

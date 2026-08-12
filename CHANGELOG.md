@@ -5,6 +5,23 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.2] - 2026-08-12
+
+### Added
+- **Multi-File Selection & Download Page** — Added Select Mode to File Manager allowing users to check multiple files and generate a dynamic download webpage (`/files/download-page?files=...`).
+- **Auth Token Passthrough** — Embedded active device auth tokens into download page URLs (`&token=...`) so Safari and Chrome can open download pages and file links without requiring re-authentication.
+
+### Changed
+- **Polished Standalone Download Page** — Redesigned the download page UI with a dark glassmorphism layout, AiroDrop logo from `/logo.png`, summary stat bar (file count, total size, local network), per-file extension badges, and copyable download links.
+- **Selection Bottom Bar UI** — Polished selection bar with a vibrant count pill badge (`.sel-badge`), dynamic label (`.sel-label`), and gradient `Get Download Link` action button.
+- **Long-Press Multi-Select Gesture** — Touch long-press (500ms) on any file item automatically enters Select Mode and selects that file.
+
+### Fixed
+- **PWA Copy Link Toast Feedback** — Fixed missing `#toast` element in `mobile.html` and updated `.toast` `z-index` to `10000000` so visual toast acknowledgments ("Copied to clipboard!") pop up over all full-screen modals.
+- **DOM Tree Nesting Bug** — Fixed an unclosed `downloadInfoOverlay` container in `files.html` that caused fixed bottom bars and modals to inherit `display: none`.
+
+---
+
 ## [6.3.1] - 2026-08-12
 
 ### Added

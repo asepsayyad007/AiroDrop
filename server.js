@@ -54,7 +54,7 @@ app.get('/vendor/qrcode.min.js', (req, res) => {
 
 // Serve image and file downloads from the dynamic save directory
 app.use('/received', (req, res, next) => {
-  express.static(state.SAVE_DIR)(req, res, next);
+  express.static(state.SAVE_DIR, { acceptRanges: true })(req, res, next);
 });
 
 // Serve static dashboard files with 1-hour cache for JS/CSS/images

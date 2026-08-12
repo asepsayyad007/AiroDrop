@@ -55,6 +55,24 @@
     radial-gradient(ellipse 400px 300px at 60% 30%, rgba(255,170,0,0.05), transparent);
 }
 
+/* ─── Vector SVG Icon Utilities ──────────────────────────────── */
+.icon-svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+.icon-svg.sm { width: 14px; height: 14px; }
+.icon-svg.md { width: 18px; height: 18px; }
+.icon-svg.lg { width: 24px; height: 24px; }
+.icon-svg.xl { width: 32px; height: 32px; }
+
+
 /* ─── Theme: Liquid Glass ───────────────────────────────────── */
 [data-theme="liquid-glass"] {
   --bg-primary: #e8ecf4;
@@ -2889,7 +2907,7 @@ input:checked + .slider:before {
 }
 
 .relay-offline-disabled::after {
-  content: "⚠️ Relay Server Offline";
+  content: "Relay Server Offline";
   position: absolute;
   top: 0;
   left: 0;
