@@ -699,187 +699,295 @@
                     <div>Fetch current active text or pending transfer item queued from PC to mobile. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
                   </div>
                   <div>
-                    <code style="color: var(--accent); font-weight: bold;">POST /api/pending/:id/ack</code>
-                    <div>Acknowledge receipt of a queued item from PC to clear it from queue. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+             <!-- ─── Windows 11 Native GUI Settings Modal ────────────────── -->
+  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow-y: auto; background-color: rgba(0, 0, 0, 0.75); align-items: center; justify-content: center; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 20px; box-sizing: border-box;">
+    
+    <!-- Native Windows Application Window -->
+    <div class="win-app-window">
+      
+      <!-- Windows App Title Bar -->
+      <div class="win-app-titlebar">
+        <div class="win-app-title-left">
+          <img src="/logo.png" alt="AiroDrop" class="win-app-icon" style="width: 18px; height: 18px; object-fit: contain;">
+          <span class="win-app-title-text">AiroDrop Settings</span>
+          <span id="appVersionTag" class="win-app-version-badge">v6.3.3</span>
+        </div>
+        <div class="win-app-controls">
+          <button class="win-app-close-btn" id="btnCloseSettings" title="Close Settings">✕</button>
+        </div>
+      </div>
+      
+      <!-- Windows Settings Body Layout -->
+      <div class="win-settings-body">
+        
+        <!-- Left Fluent Navigation Sidebar -->
+        <div class="win-settings-sidebar">
+          <!-- Device Info Banner -->
+          <div class="win-sidebar-device-card">
+            <div class="win-device-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div class="win-device-info">
+              <span class="win-device-name" id="winSidebarDeviceName">AiroDrop Host PC</span>
+              <span class="win-device-status"><span class="win-status-dot"></span> Server Active</span>
+            </div>
+          </div>
+          
+          <!-- Navigation Menu Items -->
+          <nav class="win-sidebar-nav">
+            <button class="win-nav-item active" data-target="win-sec-system">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              <span>Server &amp; Network</span>
+            </button>
+
+            <button class="win-nav-item" data-target="win-sec-storage">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>Storage &amp; Folders</span>
+            </button>
+
+            <button class="win-nav-item" data-target="win-sec-security">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Security &amp; Alerts</span>
+            </button>
+
+            <button class="win-nav-item" data-target="win-sec-updates">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              <span>Update Hub</span>
+            </button>
+          </nav>
+        </div>
+        
+        <!-- Right Main Viewport Content Pane -->
+        <div class="win-settings-content">
+          
+          <!-- Section 1: Server & Network -->
+          <div class="win-section-group" id="win-sec-system">
+            <h3 class="win-section-title">Server &amp; Network Configuration</h3>
+            <p class="win-section-subtitle">Configure host PC identification and local network binding parameters.</p>
+            
+            <div class="win-card">
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Device Name</span>
+                  <span class="win-setting-desc">Visible to mobile devices on the network.</span>
+                </div>
+                <div class="win-setting-control">
+                  <input type="text" id="deviceNameInput" placeholder="My PC" class="win-input-text">
+                </div>
+              </div>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Server Port</span>
+                  <span class="win-setting-desc">Port used for HTTPS local communication (Default: 3478). Requires restart.</span>
+                </div>
+                <div class="win-setting-control">
+                  <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" class="win-input-text" style="width: 100px;">
+                </div>
+              </div>
+
+              <div class="win-setting-row" id="desktopAppPreferencesCard" style="display: none;">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Launch on Startup</span>
+                  <span class="win-setting-desc">Automatically launch AiroDrop when Windows starts up.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="desktopAutoStart">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Storage & Folders -->
+          <div class="win-section-group" id="win-sec-storage">
+            <h3 class="win-section-title">Storage &amp; Directory Paths</h3>
+            <p class="win-section-subtitle">Manage download save paths, shared file browser roots, and file purge rules.</p>
+            
+            <div class="win-card">
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Save Directory (Downloads)</span>
+                  <span class="win-setting-desc">Folder where incoming files from mobile are saved.</span>
+                </div>
+                <div class="win-setting-control" style="flex: 1; max-width: 320px;">
+                  <div style="display: flex; gap: 8px; width: 100%;">
+                    <input type="text" id="saveDirInput" placeholder="./received" class="win-input-text" style="flex: 1;">
+                    <button class="win-btn-secondary" id="browseDirBtn">Browse</button>
                   </div>
                 </div>
               </div>
 
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ─── Settings Modal ────────────────────────────────── -->
-  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow-y: auto; background-color: rgba(6, 6, 10, 0.85); align-items: center; justify-content: center; backdrop-filter: blur(12px); padding: 40px 20px; box-sizing: border-box;">
-    <div class="modal-content settings-modal-content">
-      <div class="settings-modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="settings-gear-icon" style="color: var(--accent); transition: transform 0.4s ease;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          <h2 style="margin: 0; font-size: 1.25rem; color: #fff; font-weight: 700;">Settings &amp; Preferences</h2>
-          <span id="appVersionTag" style="background: var(--accent-bg); color: var(--accent-light); font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; border: 1px solid var(--accent-dark); font-family: sans-serif;">...</span>
-        </div>
-        <span class="settings-modal-close" id="btnCloseSettings" style="font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
-      </div>
-      
-      <div class="settings-form" style="display: flex; flex-direction: column; gap: 16px; margin-top: 10px;">
-        
-        <!-- 2-Column Grid Layout -->
-        <div class="settings-grid">
-          
-          <!-- Left Column: Server Preferences & Startup Configurations -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            
-            <!-- Server Preferences Card -->
-            <div class="settings-card" style="margin-bottom: 0;">
-              <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Server Preferences</h3>
-              
-              <div class="settings-input-group">
-                <label class="settings-input-label">Device Name</label>
-                <input type="text" id="deviceNameInput" placeholder="My PC" class="settings-text-input">
-              </div>
-              
-              <div class="settings-input-group">
-                <label class="settings-input-label">Save Directory</label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="saveDirInput" placeholder="./received" class="settings-text-input" style="flex: 1; min-width: 0;">
-                  <button class="settings-browse-btn" id="browseDirBtn">Browse...</button>
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Shared Directory</span>
+                  <span class="win-setting-desc">Root folder accessible from mobile WebApp file manager.</span>
+                </div>
+                <div class="win-setting-control" style="flex: 1; max-width: 320px;">
+                  <div style="display: flex; gap: 8px; width: 100%;">
+                    <input type="text" id="shareDirInput" placeholder="./shared" class="win-input-text" style="flex: 1;">
+                    <button class="win-btn-secondary" id="browseShareDirBtn">Browse</button>
+                  </div>
                 </div>
               </div>
 
-              <div class="settings-input-group">
-                <label class="settings-input-label">Shared Directory (File Browser)</label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="shareDirInput" placeholder="./shared" class="settings-text-input" style="flex: 1; min-width: 0;">
-                  <button class="settings-browse-btn" id="browseShareDirBtn">Browse...</button>
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Temporary Auto-Delete Mode</span>
+                  <span class="win-setting-desc">Automatically delete files after specified retention period.</span>
                 </div>
-              </div>
-              
-              <div class="settings-input-group" style="margin-bottom: 0;">
-                <label class="settings-input-label">Server Port</label>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" class="settings-text-input" style="width: 90px;">
-                  <span style="font-size: 0.72rem; color: var(--text-secondary); opacity: 0.8;">Needs restart</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Desktop App Startup Preferences (Visible inside Electron) -->
-            <div id="desktopAppPreferencesCard" class="settings-card" style="display: none; margin-bottom: 0;">
-              <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Desktop Preferences</h3>
-              <div class="settings-switch-row" style="border-bottom: none; padding: 4px 0;">
-                <span>Launch on System Startup</span>
-                <label class="switch">
-                  <input type="checkbox" id="desktopAutoStart">
-                  <span class="slider"></span>
-                </label>
-              </div>
-            </div>
-
-
-
-          </div>
-
-          <!-- Right Column: Security, Toggles & Auto-Updater -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            
-            <!-- Security & Notifications Card -->
-            <div class="settings-card" style="margin-bottom: 0;">
-              <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Security & Alerts</h3>
-              
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                <div class="settings-switch-row">
-                  <span>Privacy Pause (Screencast)</span>
-                  <label class="switch">
-                    <input type="checkbox" id="privacyPauseInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row">
-                  <span>Desktop Notifications</span>
-                  <label class="switch">
-                    <input type="checkbox" id="notificationsInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row">
-                  <span>Rate Limiting (DoS)</span>
-                  <label class="switch">
-                    <input type="checkbox" id="rateLimitInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row">
-                  <span>Auto-open links on PC</span>
-                  <label class="switch">
-                    <input type="checkbox" id="autoOpenLinksInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row" id="contextMenuSettingRow" style="display: none;">
-                  <span>Add to Windows Right-click Menu</span>
-                  <label class="switch">
-                    <input type="checkbox" id="contextMenuInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row">
-                  <span>Enable HTTPS (Secure SSL/TLS)</span>
-                  <label class="switch">
-                    <input type="checkbox" id="httpsEnabledInput">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="settings-switch-row">
-                  <span>Temporary Mode (Auto-delete)</span>
-                  <label class="switch">
+                <div class="win-setting-control">
+                  <label class="win-switch">
                     <input type="checkbox" id="tempModeInput">
-                    <span class="slider"></span>
+                    <span class="win-slider"></span>
                   </label>
                 </div>
               </div>
-              
-              <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-secondary);">
-                <span>Delete files after:</span>
-                <select id="tempModeHoursInput" style="padding: 6px 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: white; font-size: 0.78rem; cursor: pointer; outline: none;">
-                  <option value="1">1 Hour</option>
-                  <option value="2">2 Hours</option>
-                  <option value="6">6 Hours</option>
-                  <option value="12">12 Hours</option>
-                  <option value="24">24 Hours</option>
-                </select>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">File Retention Duration</span>
+                  <span class="win-setting-desc">Time before temporary files are purged from PC.</span>
+                </div>
+                <div class="win-setting-control">
+                  <select id="tempModeHoursInput" class="win-select">
+                    <option value="1">1 Hour</option>
+                    <option value="2">2 Hours</option>
+                    <option value="6">6 Hours</option>
+                    <option value="12">12 Hours</option>
+                    <option value="24">24 Hours</option>
+                  </select>
+                </div>
               </div>
             </div>
+          </div>
 
-<!-- Application Updates Card -->
-            <div class="settings-card" style="margin-bottom: 0;">
-              <h3 style="display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Update Hub</h3>
-              <div class="settings-switch-row" style="padding: 4px 0;">
-                <span>Check for updates automatically</span>
-                <label class="switch">
-                  <input type="checkbox" id="autoUpdaterInput">
-                  <span class="slider"></span>
-                </label>
+          <!-- Section 3: Security & Alerts -->
+          <div class="win-section-group" id="win-sec-security">
+            <h3 class="win-section-title">Security &amp; Automation</h3>
+            <p class="win-section-subtitle">Adjust privacy options, desktop notifications, and Windows shell integration.</p>
+            
+            <div class="win-card">
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Privacy Pause (Screencasting)</span>
+                  <span class="win-setting-desc">Pause active screen mirroring when PC user is inactive.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="privacyPauseInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
               </div>
-              <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <button class="settings-browse-btn" id="checkUpdatesManualBtn" style="padding: 6px 12px; font-size: 0.78rem;">Check for Updates Now</button>
-                <span id="updateStatusText" style="font-size: 0.74rem; color: var(--text-secondary);"></span>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Desktop Toast Notifications</span>
+                  <span class="win-setting-desc">Display native Windows notification popups for received transfers.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="notificationsInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
               </div>
-              
-              <!-- One-Click Direct Update Action Container -->
-              <div id="updateActionContainer" style="display: none; margin-top: 12px; padding: 12px; background: rgba(255,149,0,0.08); border: 1px solid rgba(255,149,0,0.25); border-radius: 10px;">
-                <div id="updateNotesBox" style="font-size: 0.76rem; color: var(--text); margin-bottom: 8px; max-height: 80px; overflow-y: auto; white-space: pre-wrap;"></div>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Rate Limiting (DoS Protection)</span>
+                  <span class="win-setting-desc">Protect local server against rapid request floods.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="rateLimitInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Auto-Open Web Links</span>
+                  <span class="win-setting-desc">Automatically launch received URLs in default browser.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="autoOpenLinksInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="win-setting-row" id="contextMenuSettingRow" style="display: none;">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Windows Explorer Integration</span>
+                  <span class="win-setting-desc">Add "Send via AiroDrop" option to Windows right-click menu.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="contextMenuInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">HTTPS SSL/TLS Encryption</span>
+                  <span class="win-setting-desc">Enable secure self-signed TLS certificates for local network.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="httpsEnabledInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Update Hub -->
+          <div class="win-section-group" id="win-sec-updates">
+            <h3 class="win-section-title">AiroDrop Update Hub</h3>
+            <p class="win-section-subtitle">Check software updates and download executables directly within the app.</p>
+            
+            <div class="win-card">
+              <div class="win-setting-row">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Automatic Update Checking</span>
+                  <span class="win-setting-desc">Periodically check GitHub Releases for software updates.</span>
+                </div>
+                <div class="win-setting-control">
+                  <label class="win-switch">
+                    <input type="checkbox" id="autoUpdaterInput">
+                    <span class="win-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="win-setting-row" style="align-items: center;">
+                <div class="win-setting-info">
+                  <span class="win-setting-title">Manual Version Check</span>
+                  <span class="win-setting-desc" id="updateStatusText">Status: Idle</span>
+                </div>
+                <div class="win-setting-control">
+                  <button class="win-btn-secondary" id="checkUpdatesManualBtn">Check for Updates</button>
+                </div>
+              </div>
+
+              <!-- Action & Progress Panel -->
+              <div id="updateActionContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(0, 120, 212, 0.08); border: 1px solid rgba(0, 120, 212, 0.25); border-radius: 8px;">
+                <div id="updateNotesBox" style="font-size: 0.78rem; color: var(--text-primary); margin-bottom: 10px; max-height: 90px; overflow-y: auto; white-space: pre-wrap;"></div>
                 <div style="display: flex; gap: 8px;">
-                  <button id="btnStartUpdateDownload" class="settings-browse-btn" style="background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; padding: 8px 14px; font-weight: 700; font-size: 0.78rem; border-radius: 8px; cursor: pointer; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <button id="btnStartUpdateDownload" class="win-btn-primary" style="flex: 1;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>Download &amp; Update Directly</span>
                   </button>
-                  <button id="btnQuitAndInstallUpdate" class="settings-browse-btn" style="display: none; background: #00d26a; color: #fff; border: none; padding: 8px 14px; font-weight: 700; font-size: 0.78rem; border-radius: 8px; cursor: pointer; flex: 1; align-items: center; justify-content: center; gap: 6px;">
+                  <button id="btnQuitAndInstallUpdate" class="win-btn-success" style="display: none; flex: 1;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                     <span>Restart Now to Install</span>
                   </button>
@@ -887,27 +995,34 @@
               </div>
 
               <!-- Download Progress UI -->
-              <div id="updateProgressContainer" style="display: none; margin-top: 12px; padding: 12px; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15); border-radius: 10px;">
+              <div id="updateProgressContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <span id="updateProgressLabel" style="font-size: 0.78rem; font-weight: 600; color: var(--accent-light);">Downloading update...</span>
-                  <span id="updateProgressPercent" style="font-size: 0.78rem; font-weight: 700; color: var(--accent-light);">0%</span>
+                  <span id="updateProgressLabel" style="font-size: 0.78rem; font-weight: 600; color: #60a5fa;">Downloading update...</span>
+                  <span id="updateProgressPercent" style="font-size: 0.78rem; font-weight: 700; color: #60a5fa;">0%</span>
                 </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;">
-                  <div id="updateProgressBarFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); border-radius: 99px; transition: width 0.3s ease;"></div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+                  <div id="updateProgressBarFill" style="width: 0%; height: 100%; background: #0078d4; border-radius: 99px; transition: width 0.2s ease;"></div>
                 </div>
-                <p id="updateProgressDetails" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; text-align: center;"></p>
+                <p id="updateProgressDetails" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 600;"></p>
               </div>
             </div>
-
           </div>
 
         </div>
 
+      </div>
 
+      <!-- Windows App Command Bar / Footer -->
+      <div class="win-app-footer">
+        <div class="settings-status" id="settingsStatus"></div>
+        <div class="win-footer-actions">
+          <button class="win-btn-secondary" id="btnCancelSettings">Close</button>
+          <button class="win-btn-primary" id="saveDirBtn">Apply Settings</button>
+        </div>
+      </div>
 
-
-        <!-- Save Configurations Button (Full width at bottom) -->
-        <div class="settings-status" id="settingsStatus" style="font-size: 0.8rem; text-align: center; margin-bottom: 2px;"></div>
+    </div>
+  </div>s" id="settingsStatus" style="font-size: 0.8rem; text-align: center; margin-bottom: 2px;"></div>
         <button class="btn btn-primary" id="saveDirBtn" style="padding: 12px; font-size: 0.86rem; font-weight: 700; width: 100%; cursor: pointer; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); box-shadow: 0 4px 15px rgba(255,85,0,0.25); border: none; color: white; transition: all 0.25s ease;">Save Configurations</button>
       </div>
     </div>

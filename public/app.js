@@ -1630,6 +1630,8 @@
         const shareDir = shareDirInput ? shareDirInput.value.trim() : '';
         const temporaryMode = tempModeInput ? tempModeInput.checked : false;
         const deviceName = deviceNameInput ? deviceNameInput.value.trim() : '';
+        const winSidebarDeviceName = document.getElementById('winSidebarDeviceName');
+        if (winSidebarDeviceName && deviceName) winSidebarDeviceName.textContent = deviceName;
         const port = portInput ? portInput.value : 3478;
         const notificationsEnabled = notificationsInput ? notificationsInput.checked : true;
         const rateLimitEnabled = rateLimitInput ? rateLimitInput.checked : true;
@@ -2294,10 +2296,37 @@
       }
     };
 
-    const updateActionContainer = document.getElementById('updateActionContainer');
-    const updateNotesBox = document.getElementById('updateNotesBox');
-    const btnStartUpdateDownload = document.getElementById('btnStartUpdateDownload');
-    const btnQuitAndInstallUpdate = document.getElementById('btnQuitAndInstallUpdate');
+    // ─── Windows 11 Settings GUI Navigation & Actions ─────────
+    const btnCancelSettings = document.getElementById('btnCancelSettings');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+    const settingsModal = document.getElementById('settingsModal');
+
+    if (btnCancelSettings && settingsModal) {
+      btnCancelSettings.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+      });
+    }
+
+    if (btnCloseSettings && settingsModal) {
+      btnCloseSettings.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+      });
+    }
+
+    const winNavItems = document.querySelectorAll('.win-nav-item');
+    if (winNavItems.length > 0) {
+      winNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+          winNavItems.forEach(nav => nav.classList.remove('active'));
+          item.classList.add('active');
+          const targetId = item.getAttribute('data-target');
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    }
 
     if (btnStartUpdateDownload) {
       btnStartUpdateDownload.addEventListener('click', () => {
