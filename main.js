@@ -235,29 +235,11 @@ function checkUpdatesManually() {
             latestReleaseVersion = latest;
             if (compareSemver(latest, currentVersion) > 0) {
               safeMainWindowSend('update-status', 'available', { version: latest, releaseNotes: release.body || '' });
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                dialog.showMessageBox(mainWindow, {
-                  type: 'info',
-                  title: 'AiroDrop Update (Dev Mode)',
-                  message: `A new version (v${latest}) is available on GitHub!\n(Running in Developer Mode)\n\nWould you like to open the GitHub Release page to download?`,
-                  buttons: ['Open GitHub Release Page', 'Later'],
-                  defaultId: 0
-                }).then(r => {
-                  if (r.response === 0) shell.openExternal(release.html_url || 'https://github.com/asepsayyad007/AiroDrop/releases/latest');
-                });
-              }
               return;
             }
           }
         } catch(e) {}
         safeMainWindowSend('update-status', 'not-available');
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'AiroDrop Update Check',
-            message: 'You are running the latest version! (Developer Mode)'
-          });
-        }
       });
     }).on('error', () => {
       safeMainWindowSend('update-status', 'not-available');
@@ -270,13 +252,6 @@ function checkUpdatesManually() {
     if (isManualCheck) {
       isManualCheck = false;
       safeMainWindowSend('update-status', 'error', 'Timed out');
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'warning',
-          title: 'Update Check',
-          message: 'Update check timed out. Please check your internet connection and try again.'
-        });
-      }
     }
   }, UPDATE_CHECK_TIMEOUT_MS);
 
@@ -284,13 +259,6 @@ function checkUpdatesManually() {
     resetUpdateCheckState();
     const msg = err.message || 'Unknown error';
     safeMainWindowSend('update-status', 'error', msg);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'warning',
-        title: 'Update Check Failed',
-        message: `Could not check for updates:\n${msg}\n\nPlease check your internet connection.`
-      });
-    }
   });
 }
 
@@ -305,26 +273,55 @@ ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
 });
 
-ipcMain.on('start-download-update', (event, targetVersion) => {
+function getReleaseAssetUrl(version, isPortable) {
+  return new Promise((resolve) => {
+    const https = require('https');
+    https.get({
+      hostname: 'api.github.com',
+      path: `/repos/asepsayyad007/AiroDrop/releases/latest`,
+      headers: { 'User-Agent': 'AiroDrop-Downloader/6.3.2' },
+      timeout: 10000
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const rel = JSON.parse(data);
+          if (rel && Array.isArray(rel.assets)) {
+            const exeAsset = rel.assets.find(a => {
+              const name = (a.name || '').toLowerCase();
+              if (isPortable) return name.includes('portable') && name.endsWith('.exe');
+              return name.endsWith('.exe') && !name.includes('portable');
+            }) || rel.assets.find(a => (a.name || '').endsWith('.exe'));
+
+            if (exeAsset && exeAsset.browser_download_url) {
+              return resolve(exeAsset.browser_download_url);
+            }
+          }
+        } catch(e) {}
+        const fname = isPortable ? `AiroDrop-Portable-${version}.exe` : `AiroDrop.Setup.${version}.exe`;
+        resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/${encodeURIComponent(fname)}`);
+      });
+    }).on('error', () => {
+      const fname = isPortable ? `AiroDrop-Portable-${version}.exe` : `AiroDrop.Setup.${version}.exe`;
+      resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/${encodeURIComponent(fname)}`);
+    });
+  });
+}
+
+ipcMain.on('start-download-update', async (event, targetVersion) => {
   const versionToUse = targetVersion || latestReleaseVersion || '6.3.2';
   const isPortable = isPortableBuild();
-  const fileName = isPortable ? `AiroDrop-Portable-${versionToUse}.exe` : `AiroDrop.Setup.${versionToUse}.exe`;
-  const downloadUrl = `https://github.com/asepsayyad007/AiroDrop/releases/download/v${versionToUse}/${encodeURIComponent(fileName)}`;
-  const destPath = path.join(app.getPath('temp'), fileName);
 
-  server.writeLog(`[AutoUpdater] Starting direct download: ${downloadUrl}`);
+  server.writeLog(`[AutoUpdater] Resolving asset download URL for v${versionToUse}...`);
   safeMainWindowSend('update-status', 'downloading');
 
-  // Try electron-updater first if packaged and not portable
-  if (app.isPackaged && !isPortable) {
-    autoUpdater.downloadUpdate().catch((dlErr) => {
-      server.writeLog(`[AutoUpdater] electron-updater failed (${dlErr.message}). Falling back to direct HTTP stream...`);
-      performDirectDownload(downloadUrl, destPath, versionToUse);
-    });
-  } else {
-    // Direct stream download fallback (works in dev mode and for portable/custom builds)
-    performDirectDownload(downloadUrl, destPath, versionToUse);
-  }
+  const downloadUrl = await getReleaseAssetUrl(versionToUse, isPortable);
+  const fileName = isPortable ? `AiroDrop-Portable-${versionToUse}.exe` : `AiroDrop.Setup.${versionToUse}.exe`;
+  const destPath = path.join(app.getPath('temp'), fileName);
+
+  server.writeLog(`[AutoUpdater] Starting direct stream download from: ${downloadUrl}`);
+  performDirectDownload(downloadUrl, destPath, versionToUse);
 });
 
 function performDirectDownload(downloadUrl, destPath, versionToUse) {
