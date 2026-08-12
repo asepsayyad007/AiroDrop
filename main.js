@@ -232,8 +232,9 @@ function checkUpdatesManually() {
           const release = JSON.parse(data);
           if (release && release.tag_name) {
             const latest = release.tag_name.replace(/^v/, '');
+            latestReleaseVersion = latest;
             if (compareSemver(latest, currentVersion) > 0) {
-              safeMainWindowSend('update-status', 'available-portable', { version: latest, releaseNotes: release.body || '' });
+              safeMainWindowSend('update-status', 'available', { version: latest, releaseNotes: release.body || '' });
               if (mainWindow && !mainWindow.isDestroyed()) {
                 dialog.showMessageBox(mainWindow, {
                   type: 'info',
@@ -297,29 +298,49 @@ function isPortableBuild() {
   return Boolean(process.env.PORTABLE_EXECUTABLE_DIR || (app.getPath('exe') && app.getPath('exe').toLowerCase().includes('portable')));
 }
 
+let downloadedInstallerPath = null;
+let latestReleaseVersion = '6.3.2';
+
 ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
 });
 
-ipcMain.on('start-download-update', () => {
-  if (isPortableBuild() || !app.isPackaged) {
-    shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
-  } else {
+ipcMain.on('start-download-update', (event, targetVersion) => {
+  const versionToUse = targetVersion || latestReleaseVersion || '6.3.2';
+  const isPortable = isPortableBuild();
+  const fileName = isPortable ? `AiroDrop-Portable-${versionToUse}.exe` : `AiroDrop.Setup.${versionToUse}.exe`;
+  const downloadUrl = `https://github.com/asepsayyad007/AiroDrop/releases/download/v${versionToUse}/${encodeURIComponent(fileName)}`;
+  const destPath = path.join(app.getPath('temp'), fileName);
+
+  server.writeLog(`[AutoUpdater] Starting direct download: ${downloadUrl}`);
+  safeMainWindowSend('update-status', 'downloading');
+
+  // Try electron-updater first if packaged and not portable
+  if (app.isPackaged && !isPortable) {
     autoUpdater.downloadUpdate().catch((dlErr) => {
-      server.writeLog(`[AutoUpdater] Direct download failed: ${dlErr.message}`);
-      safeMainWindowSend('update-status', 'error', `Download failed (${dlErr.message || '404 Asset Missing'}). Opening release page...`);
-      shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: 'Download Fallback',
-          message: `Direct auto-update binary download failed (${dlErr.message || 'Asset not found'}).\n\nOpening the GitHub Release page in your browser so you can download the setup executable directly.`,
-          buttons: ['OK']
-        });
-      }
+      server.writeLog(`[AutoUpdater] electron-updater failed (${dlErr.message}). Falling back to direct HTTP stream...`);
+      performDirectDownload(downloadUrl, destPath, versionToUse);
     });
+  } else {
+    // Direct stream download fallback (works in dev mode and for portable/custom builds)
+    performDirectDownload(downloadUrl, destPath, versionToUse);
   }
 });
+
+function performDirectDownload(downloadUrl, destPath, versionToUse) {
+  const directDownloader = require('./src/directDownloader');
+  directDownloader.downloadFile(downloadUrl, destPath, (progressObj) => {
+    safeMainWindowSend('update-download-progress', progressObj);
+  }).then((downloadedPath) => {
+    downloadedInstallerPath = downloadedPath;
+    server.writeLog(`[AutoUpdater] Direct download complete: ${downloadedPath}`);
+    safeMainWindowSend('update-status', 'downloaded', { version: versionToUse, path: downloadedPath });
+  }).catch((err) => {
+    server.writeLog(`[AutoUpdater] Direct download failed: ${err.message}`);
+    safeMainWindowSend('update-status', 'error', `Download failed: ${err.message}`);
+    shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
+  });
+}
 
 ipcMain.on('quit-and-install-update', () => {
   if (activeWriteStreams.size > 0) {
@@ -332,16 +353,30 @@ ipcMain.on('quit-and-install-update', () => {
         defaultId: 0
       }).then(res => {
         if (res.response === 1) {
-          isQuitting = true;
-          autoUpdater.quitAndInstall(false, true);
+          executeInstallAndQuit();
         }
       });
       return;
     }
   }
-  isQuitting = true;
-  autoUpdater.quitAndInstall(false, true);
+  executeInstallAndQuit();
 });
+
+function executeInstallAndQuit() {
+  if (downloadedInstallerPath && fs.existsSync(downloadedInstallerPath)) {
+    const { spawn } = require('child_process');
+    try {
+      spawn(downloadedInstallerPath, [], { detached: true, stdio: 'ignore' }).unref();
+    } catch(e) {
+      shell.openPath(downloadedInstallerPath);
+    }
+    isQuitting = true;
+    app.quit();
+  } else {
+    isQuitting = true;
+    autoUpdater.quitAndInstall(false, true);
+  }
+}
 
 function getReleaseNotesText(releaseNotes) {
   if (!releaseNotes) return 'No release notes provided.';
