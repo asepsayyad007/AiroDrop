@@ -5,6 +5,20 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.0] - 2026-08-12
+
+### Added
+- **Windows 11 Fluent Desktop Settings GUI** — Redesigned desktop Settings window into a native Windows 11 Fluent interface with dedicated navigation pages, dark glass styling, and vibrant orange theme accents.
+
+### Changed
+- **Dedicated Navigation Architecture** — Converted settings sub-tabs to dedicated navigation pages with smooth sidebar transitions.
+- **Desktop Window Constraints** — Optimized default launch resolution and proportioned settings window layout (840x680).
+
+### Fixed
+- **Clean Settings Layout** — Removed deprecated activity log modals, cleaned up sidebar device cards, and fixed header settings gear icon button behavior.
+
+---
+
 ## [6.3.3] - 2026-08-12
 
 ### Added

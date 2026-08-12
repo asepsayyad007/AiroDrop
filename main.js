@@ -267,7 +267,7 @@ function isPortableBuild() {
 }
 
 let downloadedInstallerPath = null;
-let latestReleaseVersion = '6.3.3';
+let latestReleaseVersion = '6.4.0';
 
 ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
@@ -279,7 +279,7 @@ function getReleaseAssetUrl(version, isPortable) {
     https.get({
       hostname: 'api.github.com',
       path: `/repos/asepsayyad007/AiroDrop/releases/latest`,
-      headers: { 'User-Agent': 'AiroDrop-Downloader/6.3.3' },
+      headers: { 'User-Agent': 'AiroDrop-Downloader/6.4.0' },
       timeout: 10000
     }, (res) => {
       let data = '';
@@ -310,7 +310,7 @@ function getReleaseAssetUrl(version, isPortable) {
 }
 
 ipcMain.on('start-download-update', async (event, targetVersion) => {
-  const versionToUse = targetVersion || latestReleaseVersion || '6.3.3';
+  const versionToUse = targetVersion || latestReleaseVersion || '6.4.0';
   const isPortable = isPortableBuild();
 
   server.writeLog(`[AutoUpdater] Resolving asset download URL for v${versionToUse}...`);
