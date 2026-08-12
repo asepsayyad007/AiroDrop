@@ -83,11 +83,6 @@
           </div>
         </div>
 
-        <button class="btn btn-secondary" id="btnHeaderLogs" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; margin-right: 8px; width: auto !important; height: 36px !important;" title="Logs">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--accent-light);"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-          <span style="font-weight: 600;">Logs</span>
-        </button>
-
         <button class="btn btn-secondary" id="btnHeaderSettings" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; width: auto !important; height: 36px !important;" title="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="settings-gear-icon" style="width:16px;height:16px; transition: transform 0.4s ease;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           <span class="settings-gear-text" style="font-weight: 600;">Settings</span>
@@ -738,17 +733,6 @@
         
         <!-- Left Fluent Navigation Sidebar -->
         <div class="win-settings-sidebar">
-          <!-- Device Info Banner -->
-          <div class="win-sidebar-device-card">
-            <div class="win-device-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <div class="win-device-info">
-              <span class="win-device-name" id="winSidebarDeviceName">AiroDrop Host PC</span>
-              <span class="win-device-status"><span class="win-status-dot"></span> Server Active</span>
-            </div>
-          </div>
-          
           <!-- Navigation Menu Items -->
           <nav class="win-sidebar-nav">
             <button class="win-nav-item active" data-target="win-sec-system">
@@ -1040,24 +1024,6 @@
     </div>
   </div>
 
-  <!-- ─── Logs Modal ────────────────────────────────────── -->
-  <div id="logsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(6, 6, 10, 0.85); align-items: center; justify-content: center; backdrop-filter: blur(12px);">
-    <div class="modal-content settings-modal-content" style="max-width: 780px !important;">
-      <div class="settings-modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          <h2 style="margin: 0; font-size: 1.25rem; color: #fff; font-weight: 700;">System Activity Logs</h2>
-        </div>
-        <span class="settings-modal-close" id="btnCloseLogs" style="font-size: 24px; cursor: pointer; color: var(--text-secondary);">&times;</span>
-      </div>
-      
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <div id="logsTerminal" style="background: rgba(10, 10, 16, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px; height: 380px; overflow-y: auto; font-family: 'Fira Code', 'SF Mono', Consolas, Monaco, monospace; font-size: 0.74rem; color: #00e5ff; line-height: 1.5; white-space: pre-wrap; box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 229, 255, 0.05); text-shadow: 0 0 4px rgba(0, 229, 255, 0.15);">[system] Loading dashboard logs...</div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button class="settings-browse-btn" id="btnClearLogs" style="padding: 6px 12px; font-size: 0.76rem; cursor: pointer; border-radius: 8px;">Clear Screen</button>
-        </div>
-      </div>
-    </div>
   <!-- ─── Global Image Lightbox Modal ────────────────────── -->
   <div id="globalImageLightbox" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(5, 5, 10, 0.94); align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 20px; box-sizing: border-box;">
     <div style="width: 100%; max-width: 850px; max-height: 90vh; background: var(--bg-card, #111118); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative;">
