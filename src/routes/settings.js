@@ -102,13 +102,26 @@ router.get('/check-update', (req, res) => {
   });
 });
 
+// POST /api/check-update/trigger — Remote update trigger from mobile/web
+router.post('/check-update/trigger', (req, res) => {
+  try {
+    const { ipcMain } = require('electron');
+    if (ipcMain) {
+      ipcMain.emit('manual-check-update');
+    }
+  } catch(e) {}
+  res.json({ success: true, message: 'Update check triggered on PC' });
+});
+
 /**
  * Compare two semver strings (major.minor.patch).
  * Returns: 1 if a > b, -1 if a < b, 0 if equal.
  */
 function compareSemver(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
+  const cleanA = String(a || '').replace(/^v/, '').split('-')[0];
+  const cleanB = String(b || '').replace(/^v/, '').split('-')[0];
+  const pa = cleanA.split('.').map(n => parseInt(n, 10) || 0);
+  const pb = cleanB.split('.').map(n => parseInt(n, 10) || 0);
   for (let i = 0; i < 3; i++) {
     const na = pa[i] || 0;
     const nb = pb[i] || 0;

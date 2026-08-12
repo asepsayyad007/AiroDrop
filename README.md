@@ -21,7 +21,7 @@ Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayy
 
 Get the latest pre-compiled binaries for Windows:
 * **[Download Setup Installer (v6.3.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.2/AiroDrop.Setup.6.3.2.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.3.2)](https://github.com/asepsayyad007/AiroDrop-Portable-6.3.2.exe)** — Standalone execution without installation.
+* **[Download Portable Version (v6.3.2)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.3.2/AiroDrop-Portable-6.3.2.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 

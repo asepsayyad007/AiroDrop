@@ -257,8 +257,45 @@ function checkUpdatesManually() {
   });
 }
 
+function isPortableBuild() {
+  return Boolean(process.env.PORTABLE_EXECUTABLE_DIR || (app.getPath('exe') && app.getPath('exe').toLowerCase().includes('portable')));
+}
+
 ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
+});
+
+ipcMain.on('start-download-update', () => {
+  if (isPortableBuild()) {
+    shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/latest`);
+  } else {
+    autoUpdater.downloadUpdate().catch((dlErr) => {
+      server.writeLog(`[AutoUpdater] Download failed: ${dlErr.message}`);
+      safeMainWindowSend('update-status', 'error', dlErr.message);
+    });
+  }
+});
+
+ipcMain.on('quit-and-install-update', () => {
+  if (activeWriteStreams.size > 0) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        title: 'File Transfer in Progress',
+        message: 'A file transfer is currently in progress. Restarting now will interrupt the transfer.\n\nAre you sure you want to restart now?',
+        buttons: ['Cancel', 'Restart Anyway'],
+        defaultId: 0
+      }).then(res => {
+        if (res.response === 1) {
+          isQuitting = true;
+          autoUpdater.quitAndInstall(false, true);
+        }
+      });
+      return;
+    }
+  }
+  isQuitting = true;
+  autoUpdater.quitAndInstall(false, true);
 });
 
 function getReleaseNotesText(releaseNotes) {
@@ -281,8 +318,10 @@ function getReleaseNotesText(releaseNotes) {
  *  -1 if a < b, 0 if equal, 1 if a > b
  */
 function compareSemver(a, b) {
-  const pa = a.replace(/^v/, '').split('.').map(Number);
-  const pb = b.replace(/^v/, '').split('.').map(Number);
+  const cleanA = String(a || '').replace(/^v/, '').split('-')[0];
+  const cleanB = String(b || '').replace(/^v/, '').split('-')[0];
+  const pa = cleanA.split('.').map(n => parseInt(n, 10) || 0);
+  const pb = cleanB.split('.').map(n => parseInt(n, 10) || 0);
   for (let i = 0; i < 3; i++) {
     const na = pa[i] || 0;
     const nb = pb[i] || 0;
@@ -329,6 +368,22 @@ function setupAutoUpdater() {
     safeMainWindowSend('update-status', 'available', info);
 
     if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    if (isPortableBuild()) {
+      server.writeLog(`[AutoUpdater] Portable build detected. Directing to GitHub Release for v${info.version}`);
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Portable Update Available',
+        message: `A new version (v${info.version}) of AiroDrop is available!\n\nSince you are running Portable AiroDrop, please download the latest portable executable from GitHub.`,
+        buttons: ['Open Release Page', 'Later'],
+        defaultId: 0
+      }).then((res) => {
+        if (res.response === 0) {
+          shell.openExternal(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${info.version}/AiroDrop-Portable-${info.version}.exe`);
+        }
+      });
+      return;
+    }
 
     const notes = getReleaseNotesText(info.releaseNotes);
     const changelogDisplay = notes.length > 500 ? notes.slice(0, 497) + '...' : notes;
@@ -432,6 +487,21 @@ function setupAutoUpdater() {
       buttons: ['Restart Now', 'Later']
     }).then((result) => {
       if (result.response === 0) {
+        if (activeWriteStreams.size > 0) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'warning',
+            title: 'File Transfer in Progress',
+            message: 'A file transfer is currently in progress. Restarting now will interrupt the transfer.\n\nAre you sure you want to restart now?',
+            buttons: ['Cancel', 'Restart Anyway'],
+            defaultId: 0
+          }).then(res => {
+            if (res.response === 1) {
+              isQuitting = true;
+              autoUpdater.quitAndInstall(false, true);
+            }
+          });
+          return;
+        }
         isQuitting = true;
         autoUpdater.quitAndInstall(false, true);
       } else {

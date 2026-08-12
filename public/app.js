@@ -2294,6 +2294,27 @@
       }
     };
 
+    const updateActionContainer = $('#updateActionContainer');
+    const updateNotesBox = $('#updateNotesBox');
+    const btnStartUpdateDownload = $('#btnStartUpdateDownload');
+    const btnQuitAndInstallUpdate = $('#btnQuitAndInstallUpdate');
+
+    if (btnStartUpdateDownload) {
+      btnStartUpdateDownload.addEventListener('click', () => {
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('start-download-update');
+        }
+      });
+    }
+
+    if (btnQuitAndInstallUpdate) {
+      btnQuitAndInstallUpdate.addEventListener('click', () => {
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('quit-and-install-update');
+        }
+      });
+    }
+
     if (btnCheckUpdates) {
       btnCheckUpdates.addEventListener('click', triggerManualCheck);
     }
@@ -2326,15 +2347,46 @@
           case 'checking':
             if (updateStatusText) updateStatusText.textContent = 'Checking for updates...';
             if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateActionContainer) updateActionContainer.style.display = 'none';
             break;
           case 'available':
             if (updateStatusText) {
               const ver = info && info.version ? info.version : '';
               updateStatusText.innerHTML = `<span style="color:var(--accent-light);font-weight:600;">v${ver} available</span>`;
             }
+            if (updateActionContainer) {
+              updateActionContainer.style.display = 'block';
+              if (updateNotesBox) {
+                const notes = info && info.releaseNotes ? (typeof info.releaseNotes === 'string' ? info.releaseNotes : JSON.stringify(info.releaseNotes)) : 'New version available for 1-click download.';
+                updateNotesBox.textContent = `AiroDrop v${info.version || ''} Ready:\n${notes.slice(0, 300)}`;
+              }
+              if (btnStartUpdateDownload) {
+                btnStartUpdateDownload.style.display = 'inline-block';
+                btnStartUpdateDownload.textContent = '⬇️ Download & Update Directly';
+              }
+              if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'none';
+            }
+            break;
+          case 'available-portable':
+            if (updateStatusText) {
+              const ver = info && info.version ? info.version : '';
+              updateStatusText.innerHTML = `<span style="color:var(--accent-light);font-weight:600;">v${ver} (Portable)</span>`;
+            }
+            if (updateActionContainer) {
+              updateActionContainer.style.display = 'block';
+              if (updateNotesBox) {
+                updateNotesBox.textContent = `Portable AiroDrop v${info.version || ''} is available on GitHub. Click below to download directly.`;
+              }
+              if (btnStartUpdateDownload) {
+                btnStartUpdateDownload.style.display = 'inline-block';
+                btnStartUpdateDownload.textContent = '↗️ Download Portable Exe from GitHub';
+              }
+              if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'none';
+            }
             break;
           case 'downloading':
             showToast('Downloading update...', 'info');
+            if (updateActionContainer) updateActionContainer.style.display = 'none';
             if (updateProgressContainer) updateProgressContainer.style.display = 'block';
             if (updateProgressBarFill) updateProgressBarFill.style.width = '0%';
             if (updateProgressPercent) updateProgressPercent.textContent = '0%';
@@ -2345,23 +2397,31 @@
           case 'not-available':
             showToast('You are already running the latest version!', 'success');
             if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateActionContainer) updateActionContainer.style.display = 'none';
             if (updateStatusText) updateStatusText.textContent = 'Up to date';
             if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
           case 'error':
             showToast('Update check failed. Try again later.', 'error');
             if (updateProgressContainer) updateProgressContainer.style.display = 'none';
+            if (updateActionContainer) updateActionContainer.style.display = 'none';
             if (updateStatusText) updateStatusText.textContent = 'Check failed — try again';
             if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
           case 'downloaded':
-            showToast('Update downloaded! Restarting to install...', 'success');
+            showToast('Update downloaded! Ready to install.', 'success');
             if (updateProgressContainer) updateProgressContainer.style.display = 'block';
             if (updateProgressBarFill) updateProgressBarFill.style.width = '100%';
             if (updateProgressPercent) updateProgressPercent.textContent = '100%';
             if (updateProgressLabel) updateProgressLabel.textContent = 'Download complete!';
-            if (updateProgressDetails) updateProgressDetails.textContent = 'Restart the app to apply the update.';
+            if (updateProgressDetails) updateProgressDetails.textContent = 'Click below to restart and install.';
             if (updateStatusText) updateStatusText.innerHTML = '<span style="color:#00d26a;font-weight:600;">Ready to install</span>';
+            if (updateActionContainer) {
+              updateActionContainer.style.display = 'block';
+              if (updateNotesBox) updateNotesBox.textContent = `AiroDrop v${info.version || ''} downloaded cleanly. Click below to restart and update instantly.`;
+              if (btnStartUpdateDownload) btnStartUpdateDownload.style.display = 'none';
+              if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'inline-block';
+            }
             if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;
         }
