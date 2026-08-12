@@ -2294,15 +2294,17 @@
       }
     };
 
-    const updateActionContainer = $('#updateActionContainer');
-    const updateNotesBox = $('#updateNotesBox');
-    const btnStartUpdateDownload = $('#btnStartUpdateDownload');
-    const btnQuitAndInstallUpdate = $('#btnQuitAndInstallUpdate');
+    const updateActionContainer = document.getElementById('updateActionContainer');
+    const updateNotesBox = document.getElementById('updateNotesBox');
+    const btnStartUpdateDownload = document.getElementById('btnStartUpdateDownload');
+    const btnQuitAndInstallUpdate = document.getElementById('btnQuitAndInstallUpdate');
 
     if (btnStartUpdateDownload) {
       btnStartUpdateDownload.addEventListener('click', () => {
         if (isElectron && ipcRenderer) {
           ipcRenderer.send('start-download-update');
+        } else {
+          window.open('https://github.com/asepsayyad007/AiroDrop/releases/latest', '_blank');
         }
       });
     }
@@ -2361,8 +2363,8 @@
                 updateNotesBox.textContent = `AiroDrop v${info.version || ''} Ready:\n${notes.slice(0, 300)}`;
               }
               if (btnStartUpdateDownload) {
-                btnStartUpdateDownload.style.display = 'inline-block';
-                btnStartUpdateDownload.textContent = '⬇️ Download & Update Directly';
+                btnStartUpdateDownload.style.display = 'inline-flex';
+                btnStartUpdateDownload.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download &amp; Update Directly</span>`;
               }
               if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'none';
             }
@@ -2378,8 +2380,8 @@
                 updateNotesBox.textContent = `Portable AiroDrop v${info.version || ''} is available on GitHub. Click below to download directly.`;
               }
               if (btnStartUpdateDownload) {
-                btnStartUpdateDownload.style.display = 'inline-block';
-                btnStartUpdateDownload.textContent = '↗️ Download Portable Exe from GitHub';
+                btnStartUpdateDownload.style.display = 'inline-flex';
+                btnStartUpdateDownload.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>Download Portable Exe from GitHub</span>`;
               }
               if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'none';
             }
@@ -2420,7 +2422,10 @@
               updateActionContainer.style.display = 'block';
               if (updateNotesBox) updateNotesBox.textContent = `AiroDrop v${info.version || ''} downloaded cleanly. Click below to restart and update instantly.`;
               if (btnStartUpdateDownload) btnStartUpdateDownload.style.display = 'none';
-              if (btnQuitAndInstallUpdate) btnQuitAndInstallUpdate.style.display = 'inline-block';
+              if (btnQuitAndInstallUpdate) {
+                btnQuitAndInstallUpdate.style.display = 'inline-flex';
+                btnQuitAndInstallUpdate.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><span>Restart Now to Install</span>`;
+              }
             }
             if (checkUpdatesManualBtn) { checkUpdatesManualBtn.disabled = false; checkUpdatesManualBtn.textContent = 'Check for Updates Now'; }
             break;

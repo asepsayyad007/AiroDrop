@@ -13,6 +13,8 @@ const ALLOWED_SEND_CHANNELS = [
   'stop-server',
   'force-kill-all',
   'manual-check-update',
+  'start-download-update',
+  'quit-and-install-update',
   'send-webrtc-candidate',
   'send-webrtc-offer',
   'send-mic-candidate',
