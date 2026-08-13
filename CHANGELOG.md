@@ -5,6 +5,28 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.3] - 2026-08-13
+
+### Added
+- **1-Tap Android PWA Installation** — Added a prominent green 1-Tap **Install App Now** button inside the Android Setup modal (`#btnTriggerPwaInstall`) that directly triggers Chrome's native `beforeinstallprompt` PWA installation dialog.
+- **Dynamic Audio Stream Animations** — Added distinct visual active state animations for live audio streams:
+  - **PC Audio**: Live bouncing 3-bar green equalizer with pulsing `audioWaveGlow` aura.
+  - **Mic Stream**: Red soundwave sonar/radar expansion ring animation (`micRadarExpand`) with pulsing `micWaveGlow` aura.
+- **Categorized Mobile Settings Page** — Structured `#tabSettings` into 3 clean, Fluent Dark category cards:
+  1. **🖥️ PC Host & Storage**: Displays PC Hostname, App Version (`v6.4.3`), and active PC Shared Folder storage path.
+  2. **⚡ Network & Shortcuts**: Displays Local IP Address, HTTPS Web Service Port (3478), Shortcuts Direct Sync Port (3479), and direct companion setup action buttons.
+  3. **👤 About Creator**: Developer branding card with View Creator Profile modal launcher.
+
+### Changed
+- **Subtext Descriptions Cleanup** — Removed redundant text labels and subtitle paragraphs across all Tools and Media tab buttons for a clean, vertically-centered interface.
+- **Mobile Setup Modals Streamlining** — Removed redundant Quick Connection steps and Troubleshooting sections from iOS and Android setup modals for a focused installation guide flow.
+- **PWA Service Worker Update** — Bumped Service Worker version to `v6.4.3` to ensure instant client cache refresh across all active mobile PWA installations.
+
+### Fixed
+- **Mic Stream Color Reset** — Fixed `stopMicStreaming()` and error handler routines to explicitly restore the subtle dark orange glass background (`rgba(255, 106, 0, 0.1)`) and border (`rgba(255, 106, 0, 0.3)`) when microphone streaming is stopped.
+
+---
+
 ## [6.4.2] - 2026-08-13
 
 ### Added
