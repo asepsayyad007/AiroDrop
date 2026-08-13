@@ -843,18 +843,19 @@
     <div id="tabHome" class="mobile-tab-content active">
 
       <!-- PC Connection Card -->
-      <div class="section-title" style="margin-top: 0;">Connection</div>
-      <div class="sender-card" style="margin-bottom: 20px; padding: 14px 16px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255,106,0,0.1); border: 1px solid rgba(255,106,0,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0, 180, 216, 0.12); border: 1px solid rgba(0, 180, 216, 0.35); display: flex; align-items: center; justify-content: center; color: #00e5ff; flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+              <span id="homeConnDeviceName" style="font-size: 0.9rem; font-weight: 700; color: var(--text); line-height: 1.2;">PC Connected</span>
+              <span id="homeConnStatusText" style="font-size: 0.72rem; color: var(--text3); margin-top: 3px;">Active on <span id="homeConnIp">Local Network</span></span>
+            </div>
           </div>
-          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
-            <span id="homeConnDeviceName" style="font-size: 0.9rem; font-weight: 700; color: var(--text); line-height: 1.2;">PC Connected</span>
-            <span id="homeConnStatusText" style="font-size: 0.72rem; color: var(--text3); margin-top: 3px;">Active on <span id="homeConnIp">Local Network</span></span>
-          </div>
-          <span class="receive-badge text" id="homeConnBadge" style="font-size: 0.7rem; border-radius: 20px; font-weight: 700; padding: 4px 10px; background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+          <span class="receive-badge text" id="homeConnBadge" style="font-size: 0.65rem; border-radius: 20px; font-weight: 700; padding: 3px 10px; background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
             <span>Online</span>
           </span>
         </div>
@@ -865,16 +866,14 @@
         <!-- Card Header -->
         <div style="margin-bottom: 12px;">
           <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Quick Send</div>
-          <div style="font-size: 0.74rem; color: var(--text3); margin-top: 2px;">Send files, links or text to your PC instantly</div>
         </div>
 
         <!-- 2-Option Selector Grid -->
         <div class="quick-send-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <!-- Option 1: Send Text -->
-          <div class="quick-option-card active" onclick="switchSendTab('text')" id="tabBtnSendText" style="border-radius: 14px; border: 1.5px solid var(--accent); background: rgba(255,106,0,0.08); padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 14px rgba(255,106,0,0.12);">
-            <div style="font-size: 1.45rem; font-weight: 800; color: var(--accent); margin-bottom: 4px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1;">Aa</div>
-            <div style="font-size: 0.82rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Send Text</div>
-            <div style="font-size: 0.68rem; color: var(--text3);">Paste or type text</div>
+          <div class="quick-option-card active" onclick="switchSendTab('text')" id="tabBtnSendText" style="border-radius: 14px; border: 1.5px solid rgba(0,180,216,0.45); background: rgba(0,180,216,0.08); padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 14px rgba(0,180,216,0.12);">
+            <div style="font-size: 1.45rem; font-weight: 800; color: #00e5ff; margin-bottom: 4px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1;">Aa</div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #ffffff;">Send Text</div>
           </div>
 
           <!-- Option 2: Send File / Photo -->
@@ -882,8 +881,7 @@
             <div style="color: #765cff; margin-bottom: 4px; display: flex; align-items: center; justify-content: center;">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
             </div>
-            <div style="font-size: 0.82rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Send File / Photo</div>
-            <div style="font-size: 0.68rem; color: var(--text3);">Documents, photos, etc.</div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: #ffffff;">Send File / Photo</div>
           </div>
         </div>
 
@@ -891,12 +889,12 @@
         <div id="sendTextPanel" style="display: block;">
           <textarea id="mobileTextInput" rows="4" placeholder="Type message, paste links, or text to send..." style="height: 94px; margin-bottom: 12px; box-sizing: border-box; display: block; width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.25); color: #ffffff; padding: 10px 12px; font-size: 0.86rem; outline: none; resize: none;"></textarea>
           
-          <button class="btn" id="sendTextBtn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: 0 4px 16px rgba(255,106,0,0.28); outline: none;">
+          <button class="btn" id="sendTextBtn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; padding: 0 16px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               <span style="font-size: 0.92rem; font-weight: 700; color: #ffffff;">Send to PC</span>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 16px;"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 16px;"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
 
@@ -904,7 +902,7 @@
         <div id="sendFilePanel" style="display: none;">
           <div style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: rgba(0,0,0,0.15); height: 94px; margin-bottom: 12px; box-sizing: border-box; position: relative; transition: border-color 0.2s;" id="fileDropZone">
             <button class="photo-btn" id="sendFileTrigger" style="margin: 0; min-height: unset; border: none; background: transparent; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-              <span class="icon" style="color: var(--accent); margin-bottom: 4px; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+              <span class="icon" style="color: #00e5ff; margin-bottom: 4px; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
               <span style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Choose File or Photo</span>
             </button>
             <input type="file" id="mobileFileInput" multiple accept="*/*" style="display: none;">
@@ -923,12 +921,12 @@
             </div>
           </div>
 
-          <button class="btn" id="sendFileBtn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: 0 4px 16px rgba(255,106,0,0.28); outline: none;">
+          <button class="btn" id="sendFileBtn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; padding: 0 16px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
             <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <span style="font-size: 0.92rem; font-weight: 700; color: #ffffff;">Send to PC</span>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 16px;"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; right: 16px;"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
       </div>
@@ -1068,66 +1066,80 @@
             <div style="font-size: 0.65rem; color: var(--text3);">Instant screen grab</div>
           </button>
         </div>
-
-        <!-- Embedded Screenshot Preview Container -->
-        <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 12px; width: 100%;">
-          <img id="mobileScreenshotImg" src="" alt="PC Screen Grab" style="width: 100%; height: auto; max-width: 100%; object-fit: contain; display: block; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
-          <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
-            <a id="btnDownloadScreenshot" href="" download="screenshot.png" target="_blank" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.8rem; background: var(--accent); display: flex; align-items: center; justify-content: center; border-radius: 10px; padding: 8px;">Download</a>
-            <button id="btnFullscreenScreenshot" class="btn" style="flex: 1; margin: 0; font-size: 0.8rem; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 8px;">Fullscreen</button>
-          </div>
-          <button class="btn" id="btnCloseScreenshot" style="background: rgba(255,255,255,0.08); color: var(--text2); margin-top: 8px; width: 100%; border-radius: 10px; padding: 8px; font-size: 0.8rem;">Close Preview</button>
-        </div>
       </div>
 
     </div>
 
-    <!-- Media Controls Tab -->
     <div id="tabMedia" class="mobile-tab-content">
       
-      <!-- System Media Controls -->
-      <div class="section-title">PC System Media</div>
-      <div class="sender-card" style="margin-bottom: 16px;">
-        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-          <span>PC Global Playback</span>
-        </h3>
-        <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 12px;">Control global volume and media tracks on your PC.</p>
+      <!-- PC System Media Controls -->
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">PC Global Playback</div>
+          </div>
+        </div>
+
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Tracks row -->
-          <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-            <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 44px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          <!-- 3 Playback Controls Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 10px;">
+            <!-- Prev -->
+            <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 14px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+              <div style="color: var(--text2); margin-bottom: 4px; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+              </div>
+              <div style="font-size: 0.76rem; font-weight: 600; color: var(--text3);">Prev</div>
             </button>
-            <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause" style="background: linear-gradient(135deg, #ff6a00, #ff8533) !important; border: none !important; color: #ffffff !important; cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: 2; min-height: 44px; font-weight: 700; font-size: 0.84rem; gap: 6px; box-shadow: 0 4px 14px rgba(255,106,0,0.35);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-              <span>Play / Pause</span>
+            
+            <!-- Play/Pause -->
+            <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause" style="border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; padding: 14px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+              <div style="color: #00e5ff; margin-bottom: 4px; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+              </div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #ffffff;">Play / Pause</div>
             </button>
-            <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 44px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+
+            <!-- Next -->
+            <button class="btn-control-cmd" data-cmd="next" title="Next Track" style="border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 14px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+              <div style="color: var(--text2); margin-bottom: 4px; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+              </div>
+              <div style="font-size: 0.76rem; font-weight: 600; color: var(--text3);">Next</div>
             </button>
           </div>
-          <!-- Volume row -->
-          <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-            <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 44px; gap: 6px; font-size: 0.76rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="19" y2="12"/></svg>
-              <span>Volume -</span>
+
+          <!-- Volume Controls Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <!-- Volume Down -->
+            <button class="btn-control-cmd" data-cmd="volume_down" title="Volume Down" style="border-radius: 14px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); padding: 12px 6px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; outline: none; height: 44px;">
+              <div style="color: #06b6d4; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="19" y2="12"/></svg>
+              </div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #ffffff;">Volume -</div>
             </button>
-            <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 44px; gap: 6px; font-size: 0.76rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="21" y2="12"/><line x1="18" y1="9" x2="18" y2="15"/></svg>
-              <span>Volume +</span>
+
+            <!-- Volume Up -->
+            <button class="btn-control-cmd" data-cmd="volume_up" title="Volume Up" style="border-radius: 14px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); padding: 12px 6px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; outline: none; height: 44px;">
+              <div style="color: #06b6d4; display: flex; align-items: center; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="21" y2="12"/><line x1="18" y1="9" x2="18" y2="15"/></svg>
+              </div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #ffffff;">Volume +</div>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- VLC Media Controller -->
-      <div class="section-title">VLC Remote</div>
-      <div class="sender-card" style="margin-bottom: 16px;" id="vlcControllerCard">
-        <h3 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; color: var(--accent);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg></span>
-            <span>VLC Controller</span>
+      <!-- VLC Controller -->
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;" id="vlcControllerCard">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">VLC Controller</div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="receive-badge text" id="vlcStatusBadge" style="font-size: 0.65rem; border-radius: 20px; font-weight: 700; padding: 2px 8px; border: 1px solid var(--card-border);">VLC Closed</span>
@@ -1135,10 +1147,10 @@
               <svg id="svgVlcHeaderIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
             </button>
           </div>
-        </h3>
+        </div>
         
         <!-- Sleek Now Playing HUD -->
-        <div class="now-playing-hud" style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 4px;">
+        <div class="now-playing-hud" style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 4px;">
           <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 700;">Now Playing</span>
           <div style="display: flex; align-items: center; gap: 8px; min-height: 20px;">
             <span class="now-playing-icon" style="color: var(--accent); display: inline-flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
@@ -1147,7 +1159,7 @@
         </div>
 
         <!-- Inactive Placeholder State -->
-        <div id="vlcInactivePlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; border-radius: 12px; background: rgba(0,0,0,0.15); border: 1px dashed var(--card-border); text-align: center; gap: 8px; margin-top: 10px;">
+        <div id="vlcInactivePlaceholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; border-radius: 12px; background: rgba(0,0,0,0.15); border: 1px dashed var(--card-border); text-align: center; gap: 8px;">
           <div style="color: var(--text3); display: flex; align-items: center; justify-content: center;">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6; margin-bottom: 4px;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </div>
@@ -1175,147 +1187,166 @@
             </div>
           </div>
 
-          <!-- Play / Seek row -->
-          <div style="display: flex; gap: 6px; align-items: center; justify-content: center;">
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_backward_60s" title="Seek Back 1m" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; height: 50px; min-width: 50px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Play / Seek Grid (5 Columns) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1.6fr 1fr 1fr; gap: 6px; align-items: center;">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_backward_60s" title="Seek Back 1m" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; height: 50px; min-width: 0; margin: 0; outline: none; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="11 19 2 12 11 5 11 19"/>
                 <polygon points="22 19 13 12 22 5 22 19"/>
               </svg>
-              <span style="font-size: 0.6rem; font-weight: 700; opacity: 0.7;">-1m</span>
+              <span style="font-size: 0.58rem; font-weight: 700; opacity: 0.7; color: #ffffff;">-1m</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_backward_10s" title="Seek Back 10s" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; height: 50px; min-width: 50px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_backward_10s" title="Seek Back 10s" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; height: 50px; min-width: 0; margin: 0; outline: none; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                 <polyline points="3 3 3 8 8 8"/>
               </svg>
-              <span style="font-size: 0.6rem; font-weight: 700; opacity: 0.7;">-10s</span>
+              <span style="font-size: 0.58rem; font-weight: 700; opacity: 0.7; color: #ffffff;">-10s</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_play_pause" title="Play/Pause" style="flex: 1.5; height: 50px; font-size: 0.8rem; font-weight: 700; color: #ffffff !important; background: linear-gradient(135deg, #ff6a00, #ff8533) !important; border: none !important; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(255,106,0,0.35);">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_play_pause" title="Play/Pause" style="height: 50px; font-size: 0.74rem; font-weight: 800; color: #00e5ff !important; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border: 1px solid rgba(0, 180, 216, 0.35) !important; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); margin: 0; cursor: pointer; outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
                 <rect x="3" y="5" width="3" height="14" rx="1"/>
                 <rect x="8" y="5" width="3" height="14" rx="1"/>
                 <polygon points="14 5 22 12 14 19 14 5"/>
               </svg>
-              <span>PLAY / PAUSE</span>
+              <span style="font-size: 0.58rem; font-weight: 800; color: #ffffff;">PLAY</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_forward_10s" title="Seek Forward 10s" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; height: 50px; min-width: 50px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_forward_10s" title="Seek Forward 10s" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; height: 50px; min-width: 0; margin: 0; outline: none; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                 <polyline points="21 3 21 8 16 8"/>
               </svg>
-              <span style="font-size: 0.6rem; font-weight: 700; opacity: 0.7;">+10s</span>
+              <span style="font-size: 0.58rem; font-weight: 700; opacity: 0.7; color: #ffffff;">+10s</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_forward_60s" title="Seek Forward 1m" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 10px; height: 50px; min-width: 50px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_seek_forward_60s" title="Seek Forward 1m" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; height: 50px; min-width: 0; margin: 0; outline: none; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="13 19 22 12 13 5 13 19"/>
                 <polygon points="2 19 11 12 2 5 2 19"/>
               </svg>
-              <span style="font-size: 0.6rem; font-weight: 700; opacity: 0.7;">+1m</span>
+              <span style="font-size: 0.58rem; font-weight: 700; opacity: 0.7; color: #ffffff;">+1m</span>
             </button>
           </div>
           
-          <!-- Volume / Screen row -->
-          <div style="display: flex; gap: 6px; align-items: center; justify-content: center;">
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_volume_down" title="VLC Volume Down" style="flex: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; font-size: 0.62rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="19" y2="12"/></svg>
-              <span>VOL -</span>
+          <!-- Volume / Screen Action Grid (5 Columns) -->
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_volume_down" title="VLC Volume Down" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 10px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); cursor: pointer; outline: none; padding: 4px; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="19" y2="12"/></svg>
+              <span style="font-size: 0.56rem; font-weight: 700; color: #ffffff;">VOL -</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_volume_up" title="VLC Volume Up" style="flex: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; font-size: 0.62rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="21" y2="12"/><line x1="18" y1="9" x2="18" y2="15"/></svg>
-              <span>VOL +</span>
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_volume_up" title="VLC Volume Up" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 10px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); cursor: pointer; outline: none; padding: 4px; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="15" y1="12" x2="21" y2="12"/><line x1="18" y1="9" x2="18" y2="15"/></svg>
+              <span style="font-size: 0.56rem; font-weight: 700; color: #ffffff;">VOL +</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_mute" title="VLC Mute Toggle" style="flex: 0.8; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; font-size: 0.62rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-              <span>MUTE</span>
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_mute" title="VLC Mute Toggle" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 10px; border: 1px solid rgba(255,77,79,0.3); background: rgba(255,77,79,0.1); cursor: pointer; outline: none; padding: 4px; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4d4f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+              <span style="font-size: 0.56rem; font-weight: 700; color: #ffffff;">MUTE</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_subtitles" title="Cycle Subtitles" style="flex: 1.2; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; font-size: 0.62rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="15" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg>
-              <span>SUBTITLE</span>
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_subtitles" title="Cycle Subtitles" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 10px; border: 1px solid rgba(168,85,247,0.3); background: rgba(168,85,247,0.1); cursor: pointer; outline: none; padding: 4px; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="15" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg>
+              <span style="font-size: 0.52rem; font-weight: 700; color: #ffffff;">SUB</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_fullscreen" title="Toggle Fullscreen" style="flex: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; font-size: 0.62rem; font-weight: 600;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 15v6h-6M3 9V3h6"/></svg>
-              <span>FULL</span>
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_fullscreen" title="Toggle Fullscreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 10px; border: 1px solid rgba(25,216,121,0.3); background: rgba(25,216,121,0.1); cursor: pointer; outline: none; padding: 4px; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#19d879" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 15v6h-6M3 9V3h6"/></svg>
+              <span style="font-size: 0.56rem; font-weight: 700; color: #ffffff;">FULL</span>
             </button>
           </div>
-          <!-- Audio track button -->
-          <div style="display: flex; gap: 6px; align-items: center; justify-content: center;">
-            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_audio_track" title="Change Audio Track" style="flex: 1; font-size: 0.72rem; font-weight: 600; min-height: 40px !important; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-              <span>Change Audio</span>
+
+          <!-- Audio Track Button -->
+          <div style="display: flex; margin-top: 2px;">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_audio_track" title="Change Audio Track" style="flex: 1; min-height: 42px !important; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #ffffff; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; outline: none; margin: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <span>Change Audio Track</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Audio Streaming Services -->
-      <div class="section-title">Audio Streaming</div>
-      <div class="sender-card" style="margin-bottom: 16px;">
-        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          <span>Audio Streams</span>
-        </h3>
-        <p style="font-size: 0.72rem; color: var(--text2); margin-bottom: 14px;">Stream real-time audio from your phone mic, or listen to system audio on your mobile device.</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Mic Stream Button -->
-          <button class="btn" id="btnToggleMicStream" style="margin: 0; background: linear-gradient(135deg, #00b4d8, #0077b6); font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-            <span id="btnMicStreamLabel">Start Microphone Stream</span>
+      <!-- Audio Streams -->
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.25); display: flex; align-items: center; justify-content: center; color: #00e5ff; flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Audio Streams</div>
+          </div>
+        </div>
+
+        <!-- 2 Action Boxes Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <!-- Mic Stream Box -->
+          <button class="btn" id="btnToggleMicStream" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(0,180,216,0.3); background: rgba(0,180,216,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: #00b4d8; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Mic Stream</div>
+            <div style="font-size: 0.65rem; color: var(--text3);" id="btnMicStreamLabel">Start Microphone Stream</div>
           </button>
-          
-          <!-- Audio Stream Button -->
-          <button id="btnQuickAudioStream" class="btn" style="margin: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text); font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-            <span id="quickAudioStreamIcon" style="display: flex; align-items: center; justify-content: center; color: var(--text2);">
-              <svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-            </span>
-            <span id="quickAudioStreamLabel">Stream PC Audio: Off</span>
+
+          <!-- PC System Audio Box -->
+          <button class="btn" id="btnQuickAudioStream" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(118,92,255,0.3); background: rgba(118,92,255,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: #765cff; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">PC Audio</div>
+            <div style="font-size: 0.65rem; color: var(--text3);" id="quickAudioStreamLabel">Stream PC Audio: Off</div>
           </button>
         </div>
       </div>
     </div>
 
     <div id="tabSettings" class="mobile-tab-content">
-      <div class="section-title">Settings</div>
-      <p class="section-subtitle">Manage connection and app preferences</p>
       
-      <div class="sender-card" style="margin-top: 16px;">
-        <h3 style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 12px;">Connection</h3>
-        <button id="btnUniversalConnect" class="btn" style="margin-bottom: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); width: 100%; border: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          Connect Remote Control
-        </button>
-        <div style="display: flex; gap: 10px;">
-          <button id="btnMobileMenu" class="btn" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-primary); font-size: 0.85rem;">
-            Setup Options
+      <!-- Connection Settings Card -->
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.25); display: flex; align-items: center; justify-content: center; color: #00e5ff; flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Connection Settings</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Connect Button -->
+          <button id="btnUniversalConnect" class="btn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span style="color: #ffffff; font-weight: 700; font-size: 0.9rem;">Connect Remote Control</span>
           </button>
-          <button id="btnMobileHelpBadge" class="btn" style="flex: 1; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: var(--text-primary); font-size: 0.85rem;">
-            iOS Shortcuts Help
-          </button>
+          
+          <div style="display: flex; gap: 10px;">
+            <button id="btnMobileMenu" class="btn" style="flex: 1; margin: 0; height: 42px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #ffffff; font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; outline: none; cursor: pointer;">
+              Setup Options
+            </button>
+            <button id="btnMobileHelpBadge" class="btn" style="flex: 1; margin: 0; height: 42px; background: rgba(118,92,255,0.1); border: 1px solid rgba(118,92,255,0.3); color: #ffffff; font-size: 0.82rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; outline: none; cursor: pointer;">
+              iOS Shortcuts Help
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Host PC Update Card -->
-      <div class="sender-card" style="margin-top: 16px; padding: 16px; border-radius: 18px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.25); display: flex; align-items: center; justify-content: center; color: #00e5ff; flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
-            <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Host PC Update</span>
+            <span style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Host PC Update</span>
           </div>
-          <span class="receive-badge text" id="mobileUpdateStatusBadge" style="font-size: 0.68rem; border-radius: 16px; font-weight: 700; padding: 3px 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: var(--accent-light);">v6.4.0</span>
+          <span class="receive-badge text" id="mobileUpdateStatusBadge" style="font-size: 0.68rem; border-radius: 16px; font-weight: 700; padding: 3px 10px; background: rgba(0,180,216,0.1); border: 1px solid rgba(0,180,216,0.3); color: #00e5ff;">v6.4.0</span>
         </div>
-        <p style="font-size: 0.74rem; color: var(--text3); margin-bottom: 12px; line-height: 1.3;" id="mobileUpdateDesc">Check or trigger desktop application updates on your Windows PC remotely.</p>
-        <button class="btn" id="btnMobileTriggerPcUpdate" style="margin: 0; width: 100%; height: 44px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border-radius: 12px; border: none; padding: 0 16px; font-size: 0.84rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(255,106,0,0.25); outline: none;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          <span>Check &amp; Update PC App</span>
+        
+        <button class="btn" id="btnMobileTriggerPcUpdate" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span style="color: #ffffff; font-weight: 700; font-size: 0.9rem;">Check &amp; Update PC App</span>
         </button>
       </div>
 
-      <!-- Footer (Settings Tab Only) -->
+      <!-- Footer -->
       <div class="web-footer" style="text-align: center; padding: 24px 10px 10px; font-size: 0.78rem; color: var(--text-muted); margin-top: 24px; border-top: 1px solid var(--border);">
-        Created by Asep Sayyad | <a href="https://asepsayyad007.in/" target="_blank" style="color: var(--accent-light); text-decoration: none; font-weight: 500;">asepsayyad007.in</a>
+        Created by Asep Sayyad | <a href="https://asepsayyad007.in/" target="_blank" style="color: #00e5ff; text-decoration: none; font-weight: 500;">asepsayyad007.in</a>
       </div>
     </div>
   </div> <!-- End MAIN APP UI -->
@@ -1339,11 +1370,39 @@
     </button>
   </nav>
 
-  <!-- Lightbox Overlay for Fullscreen Screenshot -->
-  <div id="screenshotLightbox" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; align-items: center; justify-content: center; flex-direction: column;">
-    <button id="btnCloseLightbox" style="position: absolute; top: env(safe-area-inset-top, 20px); right: 20px; background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.5rem; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 310;">&times;</button>
-    <img id="lightboxImg" src="" style="width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; transform: scale(1); transition: transform 0.2s; display: block;">
-    <div style="position: absolute; bottom: env(safe-area-inset-bottom, 20px); color: var(--text2); font-size: 0.76rem; background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 20px; pointer-events: none;">Pinch to zoom / double tap</div>
+  <!-- Lightbox Overlay for Fullscreen Zoomable Screenshot -->
+  <div id="screenshotLightbox" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.98); z-index: 300; align-items: center; justify-content: center; flex-direction: column;">
+    
+    <!-- Top Header -->
+    <div style="position: absolute; top: max(16px, env(safe-area-inset-top, 16px)); left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 310;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--accent);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+        <span style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Screenshot Viewer</span>
+      </div>
+      <button id="btnCloseLightbox" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: white; font-size: 1.3rem; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; margin: 0; padding: 0;">&times;</button>
+    </div>
+
+    <!-- Zoomable Interactive Container -->
+    <div id="zoomContainer" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; touch-action: none; background: #000000;">
+      <img id="lightboxImg" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center center; will-change: transform; transition: none; display: block;">
+    </div>
+
+    <!-- Bottom Actions Controls -->
+    <div style="position: absolute; bottom: max(20px, calc(20px + env(safe-area-inset-bottom, 0px))); left: 20px; right: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 310;">
+      <div style="display: flex; gap: 10px; width: 100%; max-width: 360px;">
+        <a id="btnDownloadLightbox" href="" download="screenshot.png" target="_blank" class="btn" style="flex: 1; margin: 0; text-align: center; text-decoration: none; font-size: 0.82rem; font-weight: 700; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download</span>
+        </a>
+        <button id="btnCopyLightbox" class="btn" style="flex: 1; margin: 0; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #ff6a00, #ff8533); border: none; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(255,106,0,0.3); color: #fff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Copy Image</span>
+        </button>
+      </div>
+      <div style="color: rgba(255,255,255,0.5); font-size: 0.7rem; background: rgba(0,0,0,0.65); padding: 6px 14px; border-radius: 20px; pointer-events: none; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+        Pinch to zoom • Drag to pan • Double tap to reset
+      </div>
+    </div>
   </div>
 
   <!-- Toast -->
@@ -2153,9 +2212,9 @@
       if (mode === 'text') {
         textPanel.style.display = 'block';
         filePanel.style.display = 'none';
-        btnText.style.border = '1.5px solid var(--accent)';
-        btnText.style.background = 'rgba(255,106,0,0.08)';
-        btnText.style.boxShadow = '0 0 15px rgba(255,106,0,0.12)';
+        btnText.style.border = '1.5px solid rgba(0, 180, 216, 0.45)';
+        btnText.style.background = 'rgba(0, 180, 216, 0.08)';
+        btnText.style.boxShadow = '0 0 15px rgba(0, 180, 216, 0.12)';
         btnText.classList.add('active');
         btnFile.style.border = '1px solid rgba(255,255,255,0.08)';
         btnFile.style.background = 'rgba(255,255,255,0.03)';
@@ -2168,9 +2227,9 @@
         btnText.style.background = 'rgba(255,255,255,0.03)';
         btnText.style.boxShadow = 'none';
         btnText.classList.remove('active');
-        btnFile.style.border = '1.5px solid var(--accent)';
-        btnFile.style.background = 'rgba(255,106,0,0.08)';
-        btnFile.style.boxShadow = '0 0 15px rgba(255,106,0,0.12)';
+        btnFile.style.border = '1.5px solid rgba(118, 92, 255, 0.45)';
+        btnFile.style.background = 'rgba(118, 92, 255, 0.08)';
+        btnFile.style.boxShadow = '0 0 15px rgba(118, 92, 255, 0.12)';
         btnFile.classList.add('active');
       }
     }

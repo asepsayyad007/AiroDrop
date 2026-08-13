@@ -1278,70 +1278,204 @@
 
     function setupMobileScreenshot() {
       const btnFetch = document.getElementById('btnFetchScreenshot');
-      const container = document.getElementById('screenshotPreviewContainer');
-      const img = document.getElementById('mobileScreenshotImg');
-      const btnClose = document.getElementById('btnCloseScreenshot');
+      const lightbox = document.getElementById('screenshotLightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const btnCloseLightbox = document.getElementById('btnCloseLightbox');
+      const btnCopy = document.getElementById('btnCopyLightbox');
+      const btnDownload = document.getElementById('btnDownloadLightbox');
+      const zoomContainer = document.getElementById('zoomContainer');
       const cameraIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
-      if (btnFetch && container && img && btnClose) {
-        btnFetch.addEventListener('click', async () => {
-          btnFetch.disabled = true;
-          btnFetch.innerHTML = cameraIconSvg + ' <span>Capturing...</span>';
-          try {
-            const screenshotUrl = `/api/screenshot?t=${Date.now()}`;
-            img.src = screenshotUrl;
-            img.onload = () => {
-              container.style.display = 'flex';
-              btnFetch.style.display = 'none';
-              btnFetch.disabled = false;
-              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
+      if (!btnFetch || !lightbox || !lightboxImg || !btnCloseLightbox) return;
 
-              const btnDownload = document.getElementById('btnDownloadScreenshot');
-              if (btnDownload) {
-                btnDownload.href = screenshotUrl;
+      // ── Zoom & Pan Logic State ──
+      let scale = 1;
+      let minScale = 1;
+      let maxScale = 4;
+      let translateX = 0;
+      let translateY = 0;
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      
+      // Pinch touch variables
+      let startDist = 0;
+      let startScale = 1;
+      let lastTouchTime = 0;
+
+      function applyTransform() {
+        if (scale <= 1) {
+          translateX = 0;
+          translateY = 0;
+        } else {
+          const maxTx = (lightboxImg.clientWidth * scale - zoomContainer.clientWidth) / 2;
+          const maxTy = (lightboxImg.clientHeight * scale - zoomContainer.clientHeight) / 2;
+          if (maxTx > 0) {
+            translateX = Math.max(-maxTx, Math.min(maxTx, translateX));
+          } else {
+            translateX = 0;
+          }
+          if (maxTy > 0) {
+            translateY = Math.max(-maxTy, Math.min(maxTy, translateY));
+          } else {
+            translateY = 0;
+          }
+        }
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      }
+
+      function resetZoom() {
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        lightboxImg.style.transition = 'transform 0.25s ease-out';
+        applyTransform();
+        setTimeout(() => {
+          if (lightboxImg) lightboxImg.style.transition = 'none';
+        }, 250);
+      }
+
+      // Touch handlers on zoomContainer
+      if (zoomContainer) {
+        zoomContainer.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            // Check double tap
+            const now = Date.now();
+            if (now - lastTouchTime < 300) {
+              if (scale > 1) {
+                resetZoom();
+              } else {
+                scale = 2.5;
+                const rect = zoomContainer.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left - rect.width / 2;
+                const touchY = e.touches[0].clientY - rect.top - rect.height / 2;
+                translateX = -touchX * 1.5;
+                translateY = -touchY * 1.5;
+                lightboxImg.style.transition = 'transform 0.25s ease-out';
+                applyTransform();
+                setTimeout(() => {
+                  if (lightboxImg) lightboxImg.style.transition = 'none';
+                }, 250);
               }
-            };
-            img.onerror = () => {
-              showToast('Failed to load screenshot');
-              btnFetch.disabled = false;
-              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
-            };
-          } catch {
-            showToast('Failed to fetch screenshot');
-            btnFetch.disabled = false;
-            btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
+              lastTouchTime = 0;
+              e.preventDefault();
+              return;
+            }
+            lastTouchTime = now;
+
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+          } else if (e.touches.length === 2) {
+            isDragging = false;
+            startScale = scale;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            startDist = Math.hypot(dx, dy);
+          }
+        }, { passive: false });
+
+        zoomContainer.addEventListener('touchmove', (e) => {
+          if (isDragging && e.touches.length === 1 && scale > 1) {
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            applyTransform();
+            e.preventDefault();
+          } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            if (startDist > 0) {
+              const targetScale = startScale * (dist / startDist);
+              scale = Math.max(minScale, Math.min(maxScale, targetScale));
+              applyTransform();
+            }
+            e.preventDefault();
+          }
+        }, { passive: false });
+
+        zoomContainer.addEventListener('touchend', (e) => {
+          if (e.touches.length < 2) {
+            startDist = 0;
+          }
+          if (e.touches.length === 0) {
+            isDragging = false;
           }
         });
-
-        const btnFullscreen = document.getElementById('btnFullscreenScreenshot');
-        const lightbox = document.getElementById('screenshotLightbox');
-        const lightboxImg = document.getElementById('lightboxImg');
-        const btnCloseLightbox = document.getElementById('btnCloseLightbox');
-
-        if (btnFullscreen && lightbox && lightboxImg && btnCloseLightbox) {
-          btnFullscreen.addEventListener('click', () => {
-            if (img.src) {
-              lightboxImg.src = img.src;
-              lightbox.style.display = 'flex';
-            }
-          });
-
-          btnCloseLightbox.addEventListener('click', () => {
-            lightbox.style.display = 'none';
-            lightboxImg.src = '';
-          });
-        }
-
-        btnClose.addEventListener('click', () => {
-          container.style.display = 'none';
-          btnFetch.style.display = 'flex';
-          img.onload = null;
-          img.onerror = null;
-          img.src = '';
-          const t = document.getElementById('toast');
-          if (t) t.classList.remove('show');
-        });
       }
+
+      // Capture and Fetch Event
+      btnFetch.addEventListener('click', async () => {
+        btnFetch.disabled = true;
+        btnFetch.innerHTML = cameraIconSvg + ' <span>Capturing...</span>';
+        try {
+          const screenshotUrl = `/api/screenshot?t=${Date.now()}`;
+          
+          const response = await fetch(screenshotUrl);
+          if (!response.ok) throw new Error('API capture failed');
+          const blob = await response.blob();
+          const localUrl = URL.createObjectURL(blob);
+          
+          lightboxImg.src = localUrl;
+          lightboxImg.onload = () => {
+            resetZoom();
+            lightbox.style.display = 'flex';
+            btnFetch.disabled = false;
+            btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
+
+            if (btnDownload) {
+              btnDownload.href = localUrl;
+            }
+
+            if (btnCopy) {
+              const newBtnCopy = btnCopy.cloneNode(true);
+              btnCopy.parentNode.replaceChild(newBtnCopy, btnCopy);
+              newBtnCopy.addEventListener('click', async () => {
+                if (typeof window.triggerHaptic === 'function') window.triggerHaptic(20);
+                try {
+                  await navigator.clipboard.write([
+                    new ClipboardItem({
+                      'image/png': blob
+                    })
+                  ]);
+                  showToast('Copied screenshot to clipboard!');
+                } catch (copyErr) {
+                  console.error('[SCREENSHOT] Clipboard copy failed:', copyErr);
+                  try {
+                    const absUrl = window.location.origin + screenshotUrl;
+                    await navigator.clipboard.writeText(absUrl);
+                    showToast('Link copied (direct copy unsupported on this browser)');
+                  } catch {
+                    showToast('Failed to copy to clipboard.');
+                  }
+                }
+              });
+            }
+          };
+
+          lightboxImg.onerror = () => {
+            showToast('Failed to render screenshot');
+            btnFetch.disabled = false;
+            btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
+          };
+
+        } catch (err) {
+          console.error('[SCREENSHOT] Fetch failed:', err);
+          showToast('Failed to fetch screenshot');
+          btnFetch.disabled = false;
+          btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
+        }
+      });
+
+      // Close Lightbox
+      btnCloseLightbox.addEventListener('click', () => {
+        if (typeof window.triggerHaptic === 'function') window.triggerHaptic(15);
+        lightbox.style.display = 'none';
+        if (lightboxImg.src.startsWith('blob:')) {
+          URL.revokeObjectURL(lightboxImg.src);
+        }
+        lightboxImg.src = '';
+      });
     }
 
     let trackpadSocket = null;
