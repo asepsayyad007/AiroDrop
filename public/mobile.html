@@ -110,7 +110,7 @@
       max-width: 480px;
       margin: 0 auto;
       padding: 0 16px;
-      padding-top: env(safe-area-inset-top, 20px);
+      padding-top: calc(58px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 70px); /* Leave space for bottom nav */
     }
 
@@ -803,9 +803,9 @@
 </head>
 <body>
   <!-- Hidden switcher input for iOS 18+ haptics workaround -->
-  <div style="position: fixed; top: -100px; left: -100px; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; visibility: hidden;">
-    <input type="checkbox" switch id="iosHapticSwitch">
-    <label for="iosHapticSwitch" id="iosHapticLabel"></label>
+  <div style="position: fixed; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0.001; z-index: -1; pointer-events: none;">
+    <input type="checkbox" switch id="iosHapticSwitch" style="opacity: 0.001;">
+    <label for="iosHapticSwitch" id="iosHapticLabel" style="opacity: 0.001; cursor: pointer; display: block; width: 1px; height: 1px;"></label>
   </div>
 
   <!-- No-JS Fallback & Loading State -->
@@ -824,9 +824,9 @@
   <!-- MAIN APP UI -->
   <div class="app" id="mainAppContainer" style="display: none;">
     <!-- Header -->
-    <div class="header" style="position: relative; display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
+    <div class="header" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px 16px; background: rgba(10, 10, 15, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <img src="logo.svg" alt="AiroDrop Logo" style="width: 36px; height: 36px; filter: drop-shadow(0 0 10px rgba(255, 106, 0, 0.4)); flex-shrink: 0;">
+        <img src="logo.svg" alt="AiroDrop Logo" style="width: 34px; height: 34px; filter: drop-shadow(0 0 10px rgba(255, 106, 0, 0.4)); flex-shrink: 0;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <h1 style="font-size: 1.15rem; font-weight: 700; line-height: 1; margin: 0; color: var(--text-primary);">AiroDrop <span style="color: var(--accent-light);">Mobile</span></h1>
           <span class="dot ok" id="connDot"></span>
@@ -835,8 +835,8 @@
       </div>
       
       <!-- Redesigned Refresh Button on Right Side -->
-      <button id="btnUniversalRefresh" class="header-refresh-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-primary); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: all 0.2s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" title="Refresh Connection & Data">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <button id="btnUniversalRefresh" class="header-refresh-btn" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text-primary); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; outline: none; transition: all 0.2s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);" title="Refresh Connection & Data">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
     </div>
 
@@ -1124,7 +1124,7 @@
             <button class="btn-control-cmd" data-cmd="prev" title="Previous Track" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 1; min-height: 44px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
             </button>
-            <button class="btn-control-cmd success" data-cmd="play_pause" title="Play/Pause" style="background: var(--success) !important; border: 1px solid rgba(34, 197, 94, 0.4) !important; color: white !important; cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: 2; min-height: 44px; font-weight: 700; font-size: 0.82rem; gap: 6px;">
+            <button class="btn-control-cmd" data-cmd="play_pause" title="Play/Pause" style="background: linear-gradient(135deg, #ff6a00, #ff8533) !important; border: none !important; color: #ffffff !important; cursor: pointer; padding: 10px; margin: 0; outline: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: 2; min-height: 44px; font-weight: 700; font-size: 0.84rem; gap: 6px; box-shadow: 0 4px 14px rgba(255,106,0,0.35);">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
               <span>Play / Pause</span>
             </button>
@@ -1192,11 +1192,11 @@
               <input type="range" id="vlcSeekSlider" min="0" max="100" value="50" style="width: 100%; height: 14px; -webkit-appearance: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.08); border-radius: 100px; outline: none; transition: background 0.2s; cursor: pointer;">
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text3); font-weight: 600; padding: 0 4px; margin-top: 4px;">
+              <span>-5m</span>
               <span>-1m</span>
-              <span>-10s</span>
               <span style="color: var(--accent); opacity: 0.8;">Neutral</span>
-              <span>+10s</span>
               <span>+1m</span>
+              <span>+5m</span>
             </div>
           </div>
 
@@ -1216,7 +1216,7 @@
               </svg>
               <span style="font-size: 0.6rem; font-weight: 700; opacity: 0.7;">-10s</span>
             </button>
-            <button class="btn-vlc-cmd vlc-cmd-btn success" data-vlc-cmd="vlc_play_pause" title="Play/Pause" style="flex: 1.5; height: 50px; font-size: 0.8rem; font-weight: 700; color: white !important; background: linear-gradient(135deg, var(--success), #16a34a) !important; border-color: rgba(34, 197, 94, 0.4) !important; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);">
+            <button class="btn-vlc-cmd vlc-cmd-btn" data-vlc-cmd="vlc_play_pause" title="Play/Pause" style="flex: 1.5; height: 50px; font-size: 0.8rem; font-weight: 700; color: #ffffff !important; background: linear-gradient(135deg, #ff6a00, #ff8533) !important; border: none !important; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(255,106,0,0.35);">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none">
                 <rect x="3" y="5" width="3" height="14" rx="1"/>
                 <rect x="8" y="5" width="3" height="14" rx="1"/>

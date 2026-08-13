@@ -2,38 +2,38 @@
     const SERVER = window.location.origin;
 
 
-    function triggerHaptic(arg) {
-      const hapticToggle = document.getElementById('hapticFeedbackToggle');
-      if (hapticToggle && !hapticToggle.checked) return;
+    function triggerHaptic(arg = 15) {
+      if (localStorage.getItem('hapticFeedbackEnabled') === 'false') return;
 
       // 1. Android/Chrome native Vibration API
-      if (navigator.vibrate) {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         try {
           navigator.vibrate(arg);
-        } catch (e) {
-          console.warn('Vibration API error:', e);
-        }
-        return;
+        } catch (e) {}
       }
 
-      // 2. iOS 18+ switch haptic workaround
+      // 2. iOS 18+ switch Taptic Engine workaround
       const iosLabel = document.getElementById('iosHapticLabel');
+      const iosSwitch = document.getElementById('iosHapticSwitch');
       if (iosLabel) {
-        if (Array.isArray(arg)) {
-          let delay = 0;
-          arg.forEach((val, idx) => {
-            if (idx % 2 === 0) { // vibrate duration
-              setTimeout(() => {
-                iosLabel.click();
-              }, delay);
-            }
-            delay += val;
-          });
-        } else {
+        try {
           iosLabel.click();
-        }
+        } catch (e) {}
+      }
+      if (iosSwitch) {
+        try {
+          iosSwitch.checked = !iosSwitch.checked;
+        } catch (e) {}
       }
     }
+
+    // Universal touchstart listener for instant haptic feedback on button/tab touch down
+    document.addEventListener('touchstart', (e) => {
+      const el = e.target.closest('button, .btn, .bottom-nav-item, .btn-control-cmd, .btn-vlc-cmd, .header-refresh-btn, .switch, label, input[type="range"]');
+      if (el) {
+        triggerHaptic(15);
+      }
+    }, { passive: true });
     
     async function doFetch(url, options = {}) {
       const token = localStorage.getItem('deviceToken');
@@ -168,9 +168,27 @@
       setupMicStream();
       initMobileSetupModal();
 
+      // Setup Haptic Feedback Toggle Preference
+      const hapticToggle = document.getElementById('hapticFeedbackToggle');
+      if (hapticToggle) {
+        const savedState = localStorage.getItem('hapticFeedbackEnabled');
+        if (savedState !== null) {
+          hapticToggle.checked = savedState === 'true';
+        } else {
+          hapticToggle.checked = true;
+          localStorage.setItem('hapticFeedbackEnabled', 'true');
+        }
+
+        hapticToggle.addEventListener('change', () => {
+          localStorage.setItem('hapticFeedbackEnabled', hapticToggle.checked ? 'true' : 'false');
+          if (hapticToggle.checked) triggerHaptic(20);
+        });
+      }
+
       // Setup Bottom Navigation
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic(12);
           const targetId = btn.getAttribute('data-tab');
           if (!targetId) return;
           const targetContent = document.getElementById(targetId);
@@ -991,9 +1009,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action })
               });
-              if (res.ok) {
-                showToast(`Triggered: ${action}`);
-              } else {
+              if (!res.ok) {
                 showToast('Failed to trigger action');
               }
             } catch {
@@ -1093,60 +1109,62 @@
         });
       });
 
-      // Seek Slider Shuttle Control (Hold & Drag continuous seeking)
+      // Seek Slider Shuttle Control (Hold & Drag aggressive seeking)
       const slider = document.getElementById('vlcSeekSlider');
       const indicator = document.getElementById('vlcSeekIndicator');
       let seekInterval = null;
-      let accumulatedSeconds = 0;
       let currentSeekAction = null;
-      let resetTimeout = null;
-
-      function formatSeconds(secs) {
-        if (secs === 0) return 'Neutral';
-        const abs = Math.abs(secs);
-        const mins = Math.floor(abs / 60);
-        const remaining = abs % 60;
-        const timeStr = mins > 0 ? `${mins}m ${remaining}s` : `${remaining}s`;
-        return secs > 0 ? `Seek +${timeStr}` : `Seek -${timeStr}`;
-      }
 
       if (slider && indicator) {
         slider.addEventListener('input', () => {
           const val = parseInt(slider.value, 10);
           let action = null;
-          let secondsPerTick = 0;
-          let tickIntervalMs = 200;
+          let tickIntervalMs = 300;
+          let labelText = 'Hold & Drag';
+          let labelColor = 'var(--text3)';
 
-          if (val <= 10) {
+          if (val <= 15) {
+            // Extreme Rewind (5 min per jump every 300ms = 10 min/sec)
             action = 'vlc_seek_backward_300s';
-            secondsPerTick = -300;
-            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
-          } else if (val > 10 && val <= 25) {
+            tickIntervalMs = 300;
+            labelText = 'Rewind << (Fast)';
+            labelColor = '#ef4444';
+          } else if (val > 15 && val <= 30) {
             action = 'vlc_seek_backward_60s';
-            secondsPerTick = -60;
-            tickIntervalMs = 150;
-          } else if (val > 25 && val <= 43) {
+            tickIntervalMs = 250;
+            labelText = 'Rewind <<';
+            labelColor = '#ef4444';
+          } else if (val > 30 && val <= 42) {
             action = 'vlc_seek_backward_10s';
-            secondsPerTick = -10;
             tickIntervalMs = 200;
-          } else if (val >= 44 && val <= 56) {
+            labelText = 'Rewind <';
+            labelColor = '#ef4444';
+          } else if (val >= 43 && val <= 57) {
             action = null; // Neutral Center
-            secondsPerTick = 0;
-          } else if (val > 56 && val <= 74) {
+            labelText = 'Hold & Drag';
+            labelColor = 'var(--text3)';
+          } else if (val > 57 && val <= 70) {
             action = 'vlc_seek_forward_10s';
-            secondsPerTick = 10;
             tickIntervalMs = 200;
-          } else if (val > 74 && val <= 89) {
+            labelText = 'Fast Forward >';
+            labelColor = '#10b981';
+          } else if (val > 70 && val <= 85) {
             action = 'vlc_seek_forward_60s';
-            secondsPerTick = 60;
-            tickIntervalMs = 150;
+            tickIntervalMs = 250;
+            labelText = 'Fast Forward >>';
+            labelColor = '#10b981';
           } else {
+            // Extreme Forward (5 min per jump every 300ms = 10 min/sec)
             action = 'vlc_seek_forward_300s';
-            secondsPerTick = 300;
-            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
+            tickIntervalMs = 300;
+            labelText = 'Fast Forward >> (Fast)';
+            labelColor = '#10b981';
           }
 
-          // If action or interval changed
+          indicator.textContent = labelText;
+          indicator.style.color = labelColor;
+
+          // If action zone changed
           if (action !== currentSeekAction) {
             if (seekInterval) {
               clearInterval(seekInterval);
@@ -1155,17 +1173,8 @@
             
             currentSeekAction = action;
 
-            if (resetTimeout) {
-              clearTimeout(resetTimeout);
-              resetTimeout = null;
-            }
-
             if (action) {
-              // Immediate first trigger
-              accumulatedSeconds += secondsPerTick;
-              indicator.textContent = formatSeconds(accumulatedSeconds);
-              indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
-              triggerHaptic(15);
+              triggerHaptic(12);
               
               doFetch('/api/control', {
                 method: 'POST',
@@ -1173,27 +1182,15 @@
                 body: JSON.stringify({ action })
               }).catch(err => console.error('[VLC] Initial seek failed:', err));
 
-              // Rapid repeat interval
+              // Aggressive repeat interval
               seekInterval = setInterval(() => {
-                accumulatedSeconds += secondsPerTick;
-                indicator.textContent = formatSeconds(accumulatedSeconds);
-                indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
                 triggerHaptic(8);
-
                 doFetch('/api/control', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action })
                 }).catch(err => console.error('[VLC] Hold seek failed:', err));
               }, tickIntervalMs);
-            } else {
-              if (accumulatedSeconds === 0) {
-                indicator.textContent = 'Neutral';
-                indicator.style.color = 'var(--text3)';
-              } else {
-                indicator.textContent = `${formatSeconds(accumulatedSeconds)} (Paused)`;
-                indicator.style.color = accumulatedSeconds > 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
-              }
             }
           }
         });
@@ -1206,19 +1203,9 @@
           }
           currentSeekAction = null;
           slider.value = 50;
-
-          // Keep showing the final seek duration briefly, then fade back to "Hold & Drag"
-          if (accumulatedSeconds !== 0) {
-            indicator.textContent = `Applied: ${formatSeconds(accumulatedSeconds).replace('Seek ', '')}`;
-            triggerHaptic(20);
-            setTimeout(updateVlcStatus, 500);
-          }
-
-          resetTimeout = setTimeout(() => {
-            indicator.textContent = 'Hold & Drag';
-            indicator.style.color = 'var(--text3)';
-            accumulatedSeconds = 0;
-          }, 1500);
+          indicator.textContent = 'Hold & Drag';
+          indicator.style.color = 'var(--text3)';
+          setTimeout(updateVlcStatus, 500);
         };
 
         slider.addEventListener('change', handleRelease);
@@ -1864,7 +1851,6 @@
         if (touchpadMaxTouches === 2) {
           if (!touchpadHasMoved && duration < 250) {
             sendWS({ type: 'click', button: 'right' });
-            showToast('Right Click', 600);
           }
           touchpadIsScrolling = false;
           return;
@@ -1879,10 +1865,8 @@
             const screenWidth = window.innerWidth;
             if (touchpadLastX < screenWidth / 2) {
               sendWS({ type: 'key', code: 37 }); // ArrowLeft
-              showToast('Previous Slide', 600);
             } else {
               sendWS({ type: 'key', code: 39 }); // ArrowRight
-              showToast('Next Slide', 600);
             }
             return;
           }
@@ -1892,13 +1876,11 @@
             if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
             sendWS({ type: 'click', button: 'left' });
             setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
-            showToast('Double Click', 600);
             touchpadLastTapTime = 0;
           } else {
             touchpadLastTapTime = now;
             touchpadTapTimeout = setTimeout(() => {
               sendWS({ type: 'click', button: 'left' });
-              showToast('Left Click', 600);
               touchpadTapTimeout = null;
             }, 220);
           }
