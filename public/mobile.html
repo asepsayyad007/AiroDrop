@@ -830,7 +830,23 @@
       <p style="font-size: 0.78rem; margin-top: 8px;">Please enable JavaScript in your browser to use AiroDrop.</p>
     </noscript>
   </div>
-  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes audioWaveGlow {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+      70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    @keyframes eqBar1 { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+    @keyframes eqBar2 { 0%, 100% { height: 16px; } 50% { height: 6px; } }
+    @keyframes eqBar3 { 0%, 100% { height: 8px; } 50% { height: 18px; } }
+    .audio-active-wave {
+      animation: audioWaveGlow 1.8s infinite !important;
+      background: rgba(34, 197, 94, 0.15) !important;
+      border-color: rgba(34, 197, 94, 0.5) !important;
+      color: #22c55e !important;
+    }
+  </style>
 
   <!-- MAIN APP UI -->
   <div class="app" id="mainAppContainer" style="display: none;">
@@ -1337,7 +1353,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <!-- Mic Stream Box -->
           <button class="btn" id="btnToggleMicStream" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(255,106,0,0.3); background: rgba(255,106,0,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
-            <div style="color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+            <div id="quickMicStreamIcon" style="color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; height: 22px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
             </div>
             <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff;">Mic Stream</div>
@@ -1345,7 +1361,7 @@
 
           <!-- PC System Audio Box -->
           <button class="btn" id="btnQuickAudioStream" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(118,92,255,0.3); background: rgba(118,92,255,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
-            <div style="color: #765cff; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+            <div id="quickAudioStreamIcon" style="color: #765cff; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; height: 22px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
             </div>
             <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff;">PC Audio</div>

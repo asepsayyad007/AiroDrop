@@ -2338,22 +2338,32 @@
         const isMuted = !frame || frame.muted || !frame.srcObject;
         if (btnAudio) {
           btnAudio.innerHTML = isMuted ? 'Audio: Off' : 'Audio: On';
-          btnAudio.style.color = !isMuted ? '#00d26a' : 'white';
-          btnAudio.style.background = !isMuted ? 'rgba(0,210,106,0.12)' : 'rgba(255,255,255,0.06)';
-          btnAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.4)' : 'rgba(255,255,255,0.1)';
+          btnAudio.style.color = !isMuted ? '#22c55e' : 'white';
+          btnAudio.style.background = !isMuted ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.06)';
+          btnAudio.style.borderColor = !isMuted ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255,255,255,0.1)';
         }
         
-        const quickAudioLabel = document.getElementById('quickAudioStreamLabel');
-        if (btnQuickAudio && quickAudioIcon && quickAudioLabel) {
-          quickAudioLabel.textContent = isMuted ? 'Stream PC Audio Only: Off' : 'Stream PC Audio Only: On';
-          btnQuickAudio.style.background = !isMuted ? 'rgba(0,210,106,0.15)' : 'rgba(255,255,255,0.05)';
-          btnQuickAudio.style.borderColor = !isMuted ? 'rgba(0,210,106,0.4)' : 'var(--card-border)';
-          btnQuickAudio.style.color = !isMuted ? '#00d26a' : 'var(--text)';
-          
-          if (isMuted) {
-            quickAudioIcon.innerHTML = `<svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+        if (btnQuickAudio) {
+          if (!isMuted) {
+            btnQuickAudio.classList.add('audio-active-wave');
+            btnQuickAudio.style.background = 'rgba(34, 197, 94, 0.15)';
+            btnQuickAudio.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+            btnQuickAudio.style.color = '#22c55e';
+            if (quickAudioIcon) {
+              quickAudioIcon.innerHTML = `<div style="display: flex; align-items: flex-end; gap: 3px; height: 18px; width: 22px; justify-content: center; color: #22c55e;">
+                <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar1 0.7s infinite ease-in-out;"></span>
+                <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar2 0.7s infinite ease-in-out 0.15s;"></span>
+                <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar3 0.7s infinite ease-in-out 0.3s;"></span>
+              </div>`;
+            }
           } else {
-            quickAudioIcon.innerHTML = `<svg id="svgQuickAudio" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+            btnQuickAudio.classList.remove('audio-active-wave');
+            btnQuickAudio.style.background = 'rgba(118,92,255,0.1)';
+            btnQuickAudio.style.borderColor = 'rgba(118,92,255,0.3)';
+            btnQuickAudio.style.color = '#765cff';
+            if (quickAudioIcon) {
+              quickAudioIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+            }
           }
         }
         updateWakeLockStatus();
@@ -3089,9 +3099,17 @@
         });
 
         isMicStreaming = true;
+        const quickMicIcon = document.getElementById('quickMicStreamIcon');
         if (btnToggleMicStream) {
           btnToggleMicStream.disabled = false;
-          btnToggleMicStream.style.background = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+          btnToggleMicStream.classList.add('audio-active-wave');
+          if (quickMicIcon) {
+            quickMicIcon.innerHTML = `<div style="display: flex; align-items: flex-end; gap: 3px; height: 18px; width: 22px; justify-content: center; color: #22c55e;">
+              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar1 0.7s infinite ease-in-out;"></span>
+              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar2 0.7s infinite ease-in-out 0.15s;"></span>
+              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar3 0.7s infinite ease-in-out 0.3s;"></span>
+            </div>`;
+          }
         }
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Stop Microphone Stream';
 
@@ -3111,6 +3129,7 @@
         isMicStreaming = false;
         if (btnToggleMicStream) {
           btnToggleMicStream.disabled = false;
+          btnToggleMicStream.classList.remove('audio-active-wave');
           btnToggleMicStream.style.background = '';
         }
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
@@ -3120,6 +3139,7 @@
     function stopMicStreaming() {
       const btnToggleMicStream = document.getElementById('btnToggleMicStream');
       const btnMicStreamLabel = document.getElementById('btnMicStreamLabel');
+      const quickMicIcon = document.getElementById('quickMicStreamIcon');
 
       if (micPC) {
         try { micPC.close(); } catch(e) {}
@@ -3136,7 +3156,11 @@
       isMicStreaming = false;
       if (btnToggleMicStream) {
         btnToggleMicStream.disabled = false;
+        btnToggleMicStream.classList.remove('audio-active-wave');
         btnToggleMicStream.style.background = '';
+        if (quickMicIcon) {
+          quickMicIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
+        }
       }
       if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
 
