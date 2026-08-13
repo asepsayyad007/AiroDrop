@@ -1344,6 +1344,23 @@
         </button>
       </div>
 
+      <!-- About Creator Card -->
+      <div class="sender-card" style="margin-bottom: 18px; padding: 16px; border-radius: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.25); display: flex; align-items: center; justify-content: center; color: #00e5ff; flex-shrink: 0;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <span style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">About Creator</span>
+          </div>
+        </div>
+        
+        <button id="btnOpenCreatorProfile" class="btn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(118, 92, 255, 0.12)) !important; border-radius: 14px; border: 1px solid rgba(0, 180, 216, 0.35) !important; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 180, 216, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2); outline: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span style="color: #ffffff; font-weight: 700; font-size: 0.9rem;">View Creator Profile</span>
+        </button>
+      </div>
+
       <!-- Footer -->
       <div class="web-footer" style="text-align: center; padding: 24px 10px 10px; font-size: 0.78rem; color: var(--text-muted); margin-top: 24px; border-top: 1px solid var(--border);">
         Created by Asep Sayyad | <a href="https://asepsayyad007.in/" target="_blank" style="color: #00e5ff; text-decoration: none; font-weight: 500;">asepsayyad007.in</a>
@@ -1401,6 +1418,64 @@
       </div>
       <div style="color: rgba(255,255,255,0.5); font-size: 0.7rem; background: rgba(0,0,0,0.65); padding: 6px 14px; border-radius: 20px; pointer-events: none; border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
         Pinch to zoom • Drag to pan • Double tap to reset
+      </div>
+    </div>
+  </div>
+
+  <!-- Creator Profile Overlay (Glassmorphic Slide-up Drawer) -->
+  <div id="creatorLightbox" style="display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.75); z-index: 400; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+    <!-- Modal Card Container -->
+    <div id="creatorCard" style="width: 100%; max-width: 480px; background: rgba(20,20,30,0.85); border-top: 1px solid rgba(0,229,255,0.3); border-left: 1px solid rgba(0,229,255,0.1); border-right: 1px solid rgba(0,229,255,0.1); border-radius: 24px 24px 0 0; padding: 24px; box-sizing: border-box; box-shadow: 0 -8px 32px rgba(0,229,255,0.15); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94); position: relative;">
+      
+      <!-- Drag handle (visual indicator) -->
+      <div style="width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; margin: 0 auto 18px;"></div>
+      
+      <!-- Close Button -->
+      <button id="btnCloseCreator" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: white; font-size: 1.2rem; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; margin: 0; padding: 0;">&times;</button>
+      
+      <!-- Profile Header -->
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 24px;">
+        <!-- Avatar Wrapper with Glow -->
+        <div style="position: relative; margin-bottom: 12px;">
+          <div style="position: absolute; inset: -4px; background: linear-gradient(135deg, #00e5ff, #765cff); border-radius: 50%; filter: blur(8px); opacity: 0.7;"></div>
+          <img src="/profile.png" alt="Asep Sayyad" style="position: relative; width: 88px; height: 88px; border-radius: 50%; border: 3px solid rgba(0,229,255,0.8); object-fit: cover; display: block;">
+        </div>
+        
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 4px 0;">Asep Sayyad</h2>
+        <div style="font-size: 0.85rem; font-weight: 700; color: #00e5ff; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.25); padding: 4px 12px; border-radius: 20px; display: inline-block;">Linux &amp; DevOps Engineer</div>
+      </div>
+
+      <!-- Quick Stats / Badges Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 0.65rem; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Primary Expertise</div>
+          <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">Infrastructure &amp; CI/CD</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 0.65rem; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Operating Systems</div>
+          <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">RedHat, Debian, Alpine</div>
+        </div>
+      </div>
+
+      <!-- Professional Connections (Social Buttons) -->
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+        <!-- Portfolio Link -->
+        <a href="https://asepsayyad007.in/" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: linear-gradient(135deg, rgba(0,180,216,0.12), rgba(0,180,216,0.05)) !important; border: 1px solid rgba(0,180,216,0.35) !important; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #ffffff; box-shadow: 0 4px 12px rgba(0,180,216,0.1);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Visit Portfolio Website</span>
+        </a>
+
+        <!-- LinkedIn Link -->
+        <a href="https://www.linkedin.com/in/asepsayyad/" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #ffffff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a66c2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          <span>Connect on LinkedIn</span>
+        </a>
+
+        <!-- GitHub Link -->
+        <a href="https://github.com/asepsayyad007" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #ffffff;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          <span>Follow on GitHub</span>
+        </a>
       </div>
     </div>
   </div>

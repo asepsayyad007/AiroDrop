@@ -154,6 +154,7 @@
       updateVlcStatus();
       setupMobileScreenshot();
       setupUniversalConnect();
+      setupCreatorProfile();
       setupMobileTrackpad();
       setupScreencastOverlay();
       
@@ -1836,6 +1837,38 @@
       // Auto-connect on page load
       wsWantsConnected = true;
       connectWS();
+    }
+
+    function setupCreatorProfile() {
+      const btnOpen = document.getElementById('btnOpenCreatorProfile');
+      const lightbox = document.getElementById('creatorLightbox');
+      const card = document.getElementById('creatorCard');
+      const btnClose = document.getElementById('btnCloseCreator');
+
+      if (!btnOpen || !lightbox || !card || !btnClose) return;
+
+      btnOpen.addEventListener('click', () => {
+        lightbox.style.display = 'flex';
+        setTimeout(() => {
+          lightbox.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 10);
+      });
+
+      const closeCreator = () => {
+        lightbox.style.opacity = '0';
+        card.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+          lightbox.style.display = 'none';
+        }, 300);
+      };
+
+      btnClose.addEventListener('click', closeCreator);
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+          closeCreator();
+        }
+      });
     }
 
     function setupMobileTrackpad() {
