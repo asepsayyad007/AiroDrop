@@ -1294,11 +1294,12 @@
       const container = document.getElementById('screenshotPreviewContainer');
       const img = document.getElementById('mobileScreenshotImg');
       const btnClose = document.getElementById('btnCloseScreenshot');
+      const cameraIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
       if (btnFetch && container && img && btnClose) {
         btnFetch.addEventListener('click', async () => {
           btnFetch.disabled = true;
-          btnFetch.textContent = 'Capturing...';
+          btnFetch.innerHTML = cameraIconSvg + ' <span>Capturing...</span>';
           try {
             const screenshotUrl = `/api/screenshot?t=${Date.now()}`;
             img.src = screenshotUrl;
@@ -1306,7 +1307,7 @@
               container.style.display = 'flex';
               btnFetch.style.display = 'none';
               btnFetch.disabled = false;
-              btnFetch.textContent = '📸 View PC Screen';
+              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
 
               const btnDownload = document.getElementById('btnDownloadScreenshot');
               if (btnDownload) {
@@ -1316,12 +1317,12 @@
             img.onerror = () => {
               showToast('Failed to load screenshot');
               btnFetch.disabled = false;
-              btnFetch.textContent = '📸 View PC Screen';
+              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
             };
           } catch {
             showToast('Failed to fetch screenshot');
             btnFetch.disabled = false;
-            btnFetch.textContent = '📸 View PC Screen';
+            btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
           }
         });
 
