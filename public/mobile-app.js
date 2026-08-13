@@ -113,6 +113,35 @@
       setupPWA();
       setupQuickPCActions();
       checkConnection();
+
+      // Auto-connect PC Services on startup & restore on mid-disconnections
+      wsWantsConnected = true;
+      connectWS();
+
+      window.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkConnection();
+          fetchPending(false);
+          if (wsWantsConnected && (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN)) {
+            connectWS();
+          }
+        }
+      });
+
+      window.addEventListener('online', () => {
+        checkConnection();
+        fetchPending(false);
+        if (wsWantsConnected && (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN)) {
+          connectWS();
+        }
+      });
+
+      window.addEventListener('focus', () => {
+        checkConnection();
+        if (wsWantsConnected && (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN)) {
+          connectWS();
+        }
+      });
       const checkPendingBtn = document.getElementById('checkPendingBtn');
       if (checkPendingBtn) {
         checkPendingBtn.addEventListener('click', () => {
@@ -3534,7 +3563,7 @@
         showToast('Text cleared', 'info');
       });
 
-      document.getElementById('btnQuickSendFile')?.addEventListener('click', () => {
+      document.getElementById('btnQuickCamera')?.addEventListener('click', () => {
         switchSendTab('file');
         const fileInput = document.getElementById('mobileFileInput');
         if (fileInput) fileInput.click();
