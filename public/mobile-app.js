@@ -804,27 +804,45 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show banner after a delay
-        setTimeout(() => {
-          document.getElementById('pwaBanner').classList.add('show');
-        }, 2000);
+        window._pwaDeferredPrompt = e;
+        const pwaBanner = document.getElementById('pwaBanner');
+        if (pwaBanner) {
+          setTimeout(() => {
+            pwaBanner.classList.add('show');
+          }, 1500);
+        }
       });
 
-      document.getElementById('pwaAdd').addEventListener('click', async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const result = await deferredPrompt.userChoice;
+      const handleInstallTrigger = async () => {
+        const promptEvent = deferredPrompt || window._pwaDeferredPrompt;
+        if (promptEvent) {
+          promptEvent.prompt();
+          const result = await promptEvent.userChoice;
           if (result.outcome === 'accepted') {
-            showToast('Added to Home Screen!');
+            showToast('AiroDrop added to Home Screen!', 'success');
           }
           deferredPrompt = null;
+          window._pwaDeferredPrompt = null;
+        } else {
+          showToast('To install, open Chrome menu (⋮) and tap "Install app" or "Add to Home screen"', 'info', 5000);
         }
-        document.getElementById('pwaBanner').classList.remove('show');
-      });
+        const pwaBanner = document.getElementById('pwaBanner');
+        if (pwaBanner) pwaBanner.classList.remove('show');
+      };
 
-      document.getElementById('pwaClose').addEventListener('click', () => {
-        document.getElementById('pwaBanner').classList.remove('show');
-      });
+      const pwaAdd = document.getElementById('pwaAdd');
+      if (pwaAdd) pwaAdd.addEventListener('click', handleInstallTrigger);
+
+      const btnTriggerPwaInstall = document.getElementById('btnTriggerPwaInstall');
+      if (btnTriggerPwaInstall) btnTriggerPwaInstall.addEventListener('click', handleInstallTrigger);
+
+      const pwaClose = document.getElementById('pwaClose');
+      if (pwaClose) {
+        pwaClose.addEventListener('click', () => {
+          const pwaBanner = document.getElementById('pwaBanner');
+          if (pwaBanner) pwaBanner.classList.remove('show');
+        });
+      }
 
       // Register service worker
       if ('serviceWorker' in navigator) {
