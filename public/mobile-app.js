@@ -3485,14 +3485,32 @@
 
     // ─── Quick PC Actions & Clipboard Integration ────────────────
     function setupQuickPCActions() {
+      const mobileTextInput = document.getElementById('mobileTextInput');
+      const btnClearTextTop = document.getElementById('btnClearTextTop');
+
+      const toggleClearBtn = () => {
+        if (!btnClearTextTop || !mobileTextInput) return;
+        if (mobileTextInput.value && mobileTextInput.value.trim().length > 0) {
+          btnClearTextTop.style.display = 'inline-flex';
+        } else {
+          btnClearTextTop.style.display = 'none';
+        }
+      };
+
+      if (mobileTextInput) {
+        mobileTextInput.addEventListener('input', toggleClearBtn);
+        mobileTextInput.addEventListener('keyup', toggleClearBtn);
+        mobileTextInput.addEventListener('change', toggleClearBtn);
+      }
+
       const handlePasteText = async () => {
         try {
           if (navigator.clipboard && navigator.clipboard.readText) {
             const clipText = await navigator.clipboard.readText();
             if (clipText && clipText.trim()) {
-              const input = document.getElementById('mobileTextInput');
-              if (input) input.value = clipText;
+              if (mobileTextInput) mobileTextInput.value = clipText;
               switchSendTab('text');
+              toggleClearBtn();
               showToast('Clipboard text pasted!', 'success');
               return;
             }
@@ -3501,13 +3519,26 @@
           console.warn('Clipboard read error:', err);
         }
         switchSendTab('text');
-        const input = document.getElementById('mobileTextInput');
-        if (input) input.focus();
+        if (mobileTextInput) mobileTextInput.focus();
         showToast('Type or paste text to send', 'info');
       };
 
-      document.getElementById('btnQuickClipboard')?.addEventListener('click', handlePasteText);
       document.getElementById('btnPasteTextTop')?.addEventListener('click', handlePasteText);
+
+      btnClearTextTop?.addEventListener('click', () => {
+        if (mobileTextInput) {
+          mobileTextInput.value = '';
+          mobileTextInput.focus();
+        }
+        toggleClearBtn();
+        showToast('Text cleared', 'info');
+      });
+
+      document.getElementById('btnQuickSendFile')?.addEventListener('click', () => {
+        switchSendTab('file');
+        const fileInput = document.getElementById('mobileFileInput');
+        if (fileInput) fileInput.click();
+      });
 
       document.getElementById('btnQuickFiles')?.addEventListener('click', () => {
         const fileManagerCard = document.getElementById('btnOpenFileManagerCard');
