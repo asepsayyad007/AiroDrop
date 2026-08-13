@@ -754,6 +754,11 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               <span>Update Hub</span>
             </button>
+
+            <button class="win-nav-item" data-target="win-sec-creator">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Creator Profile</span>
+            </button>
           </nav>
         </div>
         
@@ -1004,6 +1009,58 @@
                   <div id="updateProgressBarFill" style="width: 0%; height: 100%; background: #0078d4; border-radius: 99px; transition: width 0.2s ease;"></div>
                 </div>
                 <p id="updateProgressDetails" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 600;"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Creator Profile -->
+          <div class="win-section-group" id="win-sec-creator" style="display: none;">
+            <h3 class="win-section-title" style="color: #00ff66;">Creator Profile</h3>
+            <p class="win-section-subtitle">Developer information, primary expertise, and professional connections.</p>
+            
+            <div class="win-card" style="background: rgba(5, 10, 5, 0.96); border: 1px solid rgba(0, 255, 102, 0.25); border-top: 2px solid #00ff66; padding: 24px; box-shadow: 0 8px 32px rgba(0, 255, 102, 0.12); font-family: 'Consolas', 'Courier New', Courier, monospace !important;">
+              
+              <!-- Profile Header -->
+              <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 20px;">
+                <div style="position: relative; margin-bottom: 12px;">
+                  <div style="position: absolute; inset: -4px; background: linear-gradient(135deg, #00ff66, #005f1f); border-radius: 50%; filter: blur(8px); opacity: 0.8;"></div>
+                  <img src="/profile.png" alt="Asep Sayyad" style="position: relative; width: 88px; height: 88px; border-radius: 50%; border: 3px solid #00ff66; object-fit: cover; display: block;">
+                </div>
+                
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; text-shadow: 0 0 10px rgba(0,255,102,0.5); margin: 0 0 6px 0; font-family: 'Consolas', 'Courier New', Courier, monospace !important;">Asep Sayyad</h2>
+                <div style="font-size: 0.8rem; font-weight: 700; color: #00ff66; background: rgba(0, 255, 102, 0.1); border: 1px solid rgba(0, 255, 102, 0.35); padding: 4px 12px; border-radius: 20px; display: inline-block; font-family: 'Consolas', 'Courier New', Courier, monospace !important; letter-spacing: 0.5px;">
+                  <span style="color: #888;">root@asep:~#</span> Linux &amp; DevOps Engineer
+                </div>
+              </div>
+
+              <!-- Quick Stats / Badges Grid -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-family: 'Consolas', 'Courier New', Courier, monospace !important;">
+                <div style="background: rgba(0, 255, 102, 0.02); border: 1px solid rgba(0, 255, 102, 0.15); padding: 12px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 0.65rem; color: #00ff66; opacity: 0.7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">// Primary Expertise</div>
+                  <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">Cloud Deployments &amp; Support</div>
+                </div>
+                <div style="background: rgba(0, 255, 102, 0.02); border: 1px solid rgba(0, 255, 102, 0.15); padding: 12px; border-radius: 12px; text-align: center;">
+                  <div style="font-size: 0.65rem; color: #00ff66; opacity: 0.7; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">// Operating Systems</div>
+                  <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">Redhat, Ubuntu &amp; Windows</div>
+                </div>
+              </div>
+
+              <!-- Professional Connections (Social Buttons) -->
+              <div style="display: flex; flex-direction: column; gap: 10px; font-family: 'Consolas', 'Courier New', Courier, monospace !important;">
+                <a href="https://asepsayyad007.in/" target="_blank" style="margin: 0; width: 100%; height: 44px; background: rgba(0, 255, 102, 0.12); border: 1px solid rgba(0, 255, 102, 0.45); border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #00ff66; box-shadow: 0 4px 12px rgba(0, 255, 102, 0.15); transition: all 0.2s;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>Visit Portfolio Website</span>
+                </a>
+
+                <a href="https://www.linkedin.com/in/asepsayyad/" target="_blank" style="margin: 0; width: 100%; height: 44px; background: rgba(0, 255, 102, 0.04); border: 1px solid rgba(0, 255, 102, 0.25); border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #ffffff; transition: all 0.2s;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                  <span>Connect on LinkedIn</span>
+                </a>
+
+                <a href="https://github.com/asepsayyad007" target="_blank" style="margin: 0; width: 100%; height: 44px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #ffffff; transition: all 0.2s;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                  <span>Follow on GitHub</span>
+                </a>
               </div>
             </div>
           </div>
