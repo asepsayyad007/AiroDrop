@@ -3102,12 +3102,12 @@
         const quickMicIcon = document.getElementById('quickMicStreamIcon');
         if (btnToggleMicStream) {
           btnToggleMicStream.disabled = false;
-          btnToggleMicStream.classList.add('audio-active-wave');
+          btnToggleMicStream.classList.add('mic-active-wave');
           if (quickMicIcon) {
-            quickMicIcon.innerHTML = `<div style="display: flex; align-items: flex-end; gap: 3px; height: 18px; width: 22px; justify-content: center; color: #22c55e;">
-              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar1 0.7s infinite ease-in-out;"></span>
-              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar2 0.7s infinite ease-in-out 0.15s;"></span>
-              <span style="width: 3px; background: currentColor; border-radius: 2px; animation: eqBar3 0.7s infinite ease-in-out 0.3s;"></span>
+            quickMicIcon.innerHTML = `<div style="position: relative; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; color: #ef4444;">
+              <span style="position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid #ef4444; animation: micRadarExpand 1.2s infinite ease-out;"></span>
+              <span style="position: absolute; inset: 1px; border-radius: 50%; border: 1.5px solid #ef4444; animation: micRadarExpand 1.2s infinite ease-out 0.4s;"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
             </div>`;
           }
         }
@@ -3116,9 +3116,9 @@
         const btnScreencastMic = document.getElementById('btnScreencastMic');
         if (btnScreencastMic) {
           btnScreencastMic.textContent = 'Mic: On';
-          btnScreencastMic.style.color = '#00d26a';
-          btnScreencastMic.style.background = 'rgba(0,210,106,0.12)';
-          btnScreencastMic.style.borderColor = 'rgba(0,210,106,0.4)';
+          btnScreencastMic.style.color = '#ef4444';
+          btnScreencastMic.style.background = 'rgba(239,68,68,0.12)';
+          btnScreencastMic.style.borderColor = 'rgba(239,68,68,0.4)';
         }
 
         showToast('Microphone stream active!', 'success');
@@ -3129,7 +3129,7 @@
         isMicStreaming = false;
         if (btnToggleMicStream) {
           btnToggleMicStream.disabled = false;
-          btnToggleMicStream.classList.remove('audio-active-wave');
+          btnToggleMicStream.classList.remove('mic-active-wave');
           btnToggleMicStream.style.background = '';
         }
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
@@ -3156,7 +3156,7 @@
       isMicStreaming = false;
       if (btnToggleMicStream) {
         btnToggleMicStream.disabled = false;
-        btnToggleMicStream.classList.remove('audio-active-wave');
+        btnToggleMicStream.classList.remove('mic-active-wave');
         btnToggleMicStream.style.background = '';
         if (quickMicIcon) {
           quickMicIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
