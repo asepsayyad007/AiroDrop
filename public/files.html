@@ -28,10 +28,12 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100dvh;
+      height: 100dvh;
       width: 100%;
       max-width: 100vw;
-      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
       -webkit-font-smoothing: antialiased;
@@ -46,12 +48,30 @@
         radial-gradient(ellipse 400px 500px at 90% 100%, rgba(120,50,255,0.07), transparent);
       pointer-events: none;
     }
+    .files-page-app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
     .header {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(9,9,15,0.85);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 100;
+      background: rgba(9,9,15,0.92);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--card-border);
       padding: env(safe-area-inset-top, 0) 0 0 0;
+    }
+    .files-scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-top: 10px;
     }
     /* Vector SVG Icon Utilities */
     .icon-svg {
@@ -72,20 +92,20 @@
 
     .header-inner {
       display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; max-width: 900px; margin: 0 auto;
+      padding: 10px 16px; max-width: 900px; margin: 0 auto;
     }
     .logo-badge {
-      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
       background: linear-gradient(135deg, var(--accent), #8b5cf6);
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 12px var(--accent-glow);
     }
-    .header-title { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-    .header-title h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 0; padding: 0; color: var(--text); }
-    .header-title p { font-size: 0.74rem; color: var(--text2); line-height: 1.2; margin: 0; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-title { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+    .header-title h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 0; padding: 0; color: var(--text); }
+    .header-title p { font-size: 0.72rem; color: var(--text2); line-height: 1.2; margin: 0; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .header-actions { display: flex; gap: 8px; align-items: center; }
     .icon-btn {
-      width: 36px; height: 36px; border-radius: 10px;
+      width: 34px; height: 34px; border-radius: 10px;
       background: var(--card); border: 1px solid var(--card-border);
       color: var(--text2); cursor: pointer;
       display: flex; align-items: center; justify-content: center;
@@ -94,7 +114,7 @@
     .icon-btn:active { transform: scale(0.94); }
     .icon-btn.accent { background: var(--accent); color: white; border-color: transparent; }
     .breadcrumb-bar {
-      padding: 8px 16px; background: rgba(0,0,0,0.15);
+      padding: 6px 16px; background: rgba(0,0,0,0.15);
       border-bottom: 1px solid var(--card-border);
       max-width: 900px; margin: 0 auto;
       display: flex; align-items: center; gap: 4px;
@@ -104,14 +124,15 @@
     .crumb {
       font-size: 0.78rem; color: var(--text2);
       cursor: pointer; padding: 3px 7px; border-radius: 6px; transition: all 0.15s; flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
     }
     .crumb:hover { background: var(--card); color: var(--text); }
     .crumb.active { color: var(--accent2); font-weight: 600; cursor: default; }
     .crumb-sep { color: var(--text3); font-size: 0.72rem; flex-shrink: 0; }
-    .upload-zone { margin: 16px auto; max-width: 900px; padding: 0 16px; }
+    .upload-zone { margin: 10px auto 12px; max-width: 900px; padding: 0 16px; }
     .drop-area {
-      border: 2px dashed var(--card-border); border-radius: var(--radius);
-      padding: 20px 16px; text-align: center; transition: all 0.2s; cursor: pointer;
+      border: 2px dashed var(--card-border); border-radius: 14px;
+      padding: 14px 12px; text-align: center; transition: all 0.2s; cursor: pointer;
       background: rgba(0,0,0,0.15);
     }
     .drop-area.dragging { border-color: var(--accent); background: rgba(255,85,0,0.06); }
@@ -355,37 +376,36 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-inner">
-      <div class="logo-badge">
-        <svg class="icon-svg md" viewBox="0 0 24 24" style="stroke: #fff;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+  <div class="files-page-app">
+    <div class="header">
+      <div class="header-inner">
+        <div class="logo-badge">
+          <svg class="icon-svg md" viewBox="0 0 24 24" style="stroke: #fff;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="header-title">
+          <h1>File Manager</h1>
+          <p id="headerPath">PC Shared Folder</p>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="btnRefresh" title="Refresh">
+            <svg class="icon-svg sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+          <button class="icon-btn" id="btnCloseBrowser" title="Close" style="display:none; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444;">
+            <svg class="icon-svg sm" viewBox="0 0 24 24" style="stroke: #ef4444;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="header-title">
-        <h1>File Manager</h1>
-        <p id="headerPath">PC Shared Folder</p>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="btnRefresh" title="Refresh">
-          <svg class="icon-svg sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        </button>
-        <button class="icon-btn accent" id="btnUpload" title="Upload Files">
-          <svg class="icon-svg sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-        <button class="icon-btn" id="btnCloseBrowser" title="Close" style="display:none; background: rgba(255,255,255,0.08);">
-          <svg class="icon-svg sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
+      <div class="breadcrumb-bar" id="breadcrumb"></div>
     </div>
-    <div class="breadcrumb-bar" id="breadcrumb"></div>
-  </div>
 
-  <div class="upload-zone">
+    <div class="files-scroll-content">
+      <div class="upload-zone">
     <div class="drop-area" id="dropArea">
       <div class="drop-icon">
         <svg class="icon-svg xl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
-      <p><strong>Tap to upload</strong> or drag &amp; drop files here</p>
-      <p style="margin-top:4px;font-size:0.72rem;color:var(--text3)">Supports large files up to 4 GB</p>
+      <p><strong>Tap to upload files</strong></p>
+      <p style="margin-top:2px;font-size:0.72rem;color:var(--text3)">Supports large files up to 4 GB</p>
     </div>
     <input type="file" id="fileInputHidden" multiple>
   </div>
@@ -411,6 +431,10 @@
     <div class="toolbar">
       <span class="file-count" id="fileCount">Loading...</span>
       <div class="view-toggle" style="display:flex;gap:6px;align-items:center;">
+        <button class="select-btn" id="btnDirBack" style="display:none;" title="Back to parent folder">
+          <svg class="icon-svg sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Back</span>
+        </button>
         <button class="select-btn" id="btnSelectMode">
           <svg class="icon-svg sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 11 12 14 22 4"/></svg>
           <span>Select</span>
@@ -445,6 +469,7 @@
     <button class="ctx-action danger" id="ctxDelete"><span class="ctx-icon" style="display:inline-flex;align-items:center;"><svg class="icon-svg sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span> Delete</button>
     <button class="ctx-action" id="ctxCancel"><span class="ctx-icon" style="display:inline-flex;align-items:center;"><svg class="icon-svg sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span> Cancel</button>
   </div>
+  </div></div> <!-- End files-scroll-content & files-page-app -->
 
   <!-- Fullscreen Video Player Modal -->
   <div id="videoPlayerOverlay" style="display: none; position: fixed; inset: 0; background: #000; z-index: 400; flex-direction: column; align-items: center; justify-content: center;">
@@ -666,6 +691,16 @@
     }
   }
 
+  const btnDirBack = document.getElementById('btnDirBack');
+  if (btnDirBack) {
+    btnDirBack.addEventListener('click', () => {
+      if (!currentPath) return;
+      const parts = currentPath.split('/').filter(Boolean);
+      parts.pop();
+      navigate(parts.join('/'));
+    });
+  }
+
   function fileIcon(name, type) {
     if (type === 'dir') return '<svg class="icon-svg lg" viewBox="0 0 24 24" style="stroke: #ffaa00;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     const ext = (name.split('.').pop() || '').toLowerCase();
@@ -683,7 +718,7 @@
   function renderBreadcrumb() {
     const bc = document.getElementById('breadcrumb');
     const parts = currentPath ? currentPath.split('/').filter(Boolean) : [];
-    let html = `<span class="crumb ${parts.length===0?'active':''}" data-path="">Home</span>`;
+    let html = `<span class="crumb ${parts.length===0?'active':''}" data-path=""><svg class="icon-svg sm" viewBox="0 0 24 24" style="stroke: currentColor;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Root</span>`;
     let built = '';
     parts.forEach((p, i) => {
       built += (built?'/':'')+p;
@@ -693,6 +728,7 @@
     bc.innerHTML = html;
     bc.querySelectorAll('.crumb').forEach(el => el.addEventListener('click', () => navigate(el.dataset.path)));
     document.getElementById('headerPath').textContent = currentPath || 'Shared Folder';
+    if (btnDirBack) btnDirBack.style.display = currentPath ? 'inline-flex' : 'none';
   }
 
   function navigate(rel) { currentPath = rel||''; loadDir(); }
@@ -1090,7 +1126,7 @@
 
   const dropArea = document.getElementById('dropArea');
   const fileInput = document.getElementById('fileInputHidden');
-  document.getElementById('btnUpload').addEventListener('click', () => fileInput.click());
+  document.getElementById('btnUpload')?.addEventListener('click', () => fileInput.click());
   dropArea.addEventListener('click', () => fileInput.click());
   dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('dragging'); });
   dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragging'));

@@ -111,71 +111,100 @@
       margin: 0 auto;
       padding: 0 16px;
       padding-top: calc(58px + env(safe-area-inset-top, 0px));
-      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 70px); /* Leave space for bottom nav */
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 84px); /* Leave space for bottom iOS dock */
     }
 
-    /* Tabs */
+    /* Ultra-smooth Directional Tab Slide Animations */
     .mobile-tab-content {
       display: none;
-      animation: fadeIn 0.3s ease;
+      opacity: 0;
+      will-change: transform, opacity;
     }
     .mobile-tab-content.active {
       display: block;
+      opacity: 1;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .mobile-tab-content.slide-in-right {
+      display: block;
+      animation: tabSlideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .mobile-tab-content.slide-in-left {
+      display: block;
+      animation: tabSlideInLeft 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Bottom Navigation */
+    @keyframes tabSlideInRight {
+      from { opacity: 0; transform: translate3d(36px, 0, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @keyframes tabSlideInLeft {
+      from { opacity: 0; transform: translate3d(-36px, 0, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    /* Fully Rounded Bottom Dock */
     .bottom-nav {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: calc(64px + env(safe-area-inset-bottom, 0px));
-      background: rgba(12, 12, 18, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--card-border);
+      bottom: max(6px, env(safe-area-inset-bottom, 6px));
+      left: 10px;
+      right: 10px;
+      width: calc(100% - 20px);
+      max-width: 460px;
+      margin: 0 auto;
+      height: 62px;
+      background: rgba(20, 16, 24, 0.9);
+      backdrop-filter: blur(35px) saturate(180%);
+      -webkit-backdrop-filter: blur(35px) saturate(180%);
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      display: flex;
       align-items: center;
       justify-content: space-around;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding: 6px;
+      box-sizing: border-box;
       z-index: 100;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
     }
     .bottom-nav-item {
       flex: 1;
+      height: 50px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      color: var(--text3);
+      gap: 2px;
+      color: rgba(255, 255, 255, 0.45);
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
+      border-radius: 22px;
       outline: none;
       cursor: pointer;
-      min-height: 48px;
-      padding: 8px 0;
-      transition: all 0.25s;
+      padding: 4px 0;
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
     .bottom-nav-item.active {
+      background: rgba(255, 106, 0, 0.16);
       color: var(--accent);
+      border: 1px solid rgba(255, 106, 0, 0.28);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
     }
     .bottom-nav-item svg {
-      transition: transform 0.25s;
+      transition: transform 0.25s ease, stroke 0.25s ease;
     }
     .bottom-nav-item.active svg {
-      transform: scale(1.15);
+      transform: translateY(-1px);
     }
     .bottom-nav-item span {
       font-size: 0.68rem;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      line-height: 1.1;
     }
 
     /* Header */
@@ -730,24 +759,6 @@
     }
 
     /* ─── Visual Polish: Extracted Component Classes ─────────── */
-
-    /* Tab transition animations */
-    .mobile-tab-content {
-      display: none;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-    }
-    .mobile-tab-content.active {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-      animation: tabFadeIn 0.3s ease forwards;
-    }
-    @keyframes tabFadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
 
     /* Button loading state */
     .btn.is-loading {

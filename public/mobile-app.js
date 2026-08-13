@@ -187,24 +187,96 @@
         });
       }
 
-      // Setup Bottom Navigation
+      // ─── Smooth Directional Tab Navigation ─────────────────────
+      const tabOrder = ['tabHome', 'tabTools', 'tabMedia', 'tabSettings'];
+
+      function performTabSwitch(targetId, forceDirection = null) {
+        if (!targetId) return;
+        const targetContent = document.getElementById(targetId);
+        if (!targetContent) return;
+
+        const currentBtn = document.querySelector('.bottom-nav-item.active[data-tab]');
+        const currentTabId = currentBtn ? currentBtn.getAttribute('data-tab') : null;
+        if (currentTabId === targetId) return;
+
+        triggerHaptic(12);
+
+        const currentIndex = tabOrder.indexOf(currentTabId);
+        const targetIndex = tabOrder.indexOf(targetId);
+
+        let isNext = targetIndex > currentIndex;
+        if (forceDirection === 'next') isNext = true;
+        if (forceDirection === 'prev') isNext = false;
+
+        // Reset previous tabs & animation classes
+        document.querySelectorAll('.mobile-tab-content').forEach(c => {
+          c.classList.remove('active', 'slide-in-right', 'slide-in-left');
+          c.style.display = 'none';
+        });
+        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+
+        // Highlight new target nav button
+        const targetBtn = document.querySelector(`.bottom-nav-item[data-tab="${targetId}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+
+        // Apply directional hardware-accelerated slide animation
+        targetContent.style.display = 'block';
+        targetContent.classList.add(isNext ? 'slide-in-right' : 'slide-in-left');
+        targetContent.classList.add('active');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Setup Bottom Navigation Clicks
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
-          triggerHaptic(12);
           const targetId = btn.getAttribute('data-tab');
-          if (!targetId) return;
-          const targetContent = document.getElementById(targetId);
-          if (!targetContent) return;
+          performTabSwitch(targetId);
+        });
+      });
 
-          // Reset tabs
-          document.querySelectorAll('.mobile-tab-content').forEach(c => c.classList.remove('active'));
-          document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-          
-           // Set active tab
-           btn.classList.add('active');
-           targetContent.classList.add('active');
-         });
-       });
+      // Horizontal Touch Swipe Gesture Support for Tabs
+      (function setupSwipeTabs() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+          if (e.touches.length !== 1) return;
+          if (e.target.closest('input, textarea, select, iframe, #trackpadOverlay, #screencastOverlay, #screenshotLightbox, #creatorLightbox, #mobileAppleSetupOverlay, #mobileAndroidSetupOverlay, #fileManagerOverlay, .bottom-nav')) return;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+          if (!touchStartX || !touchStartY || e.changedTouches.length !== 1) return;
+          if (e.target.closest('input, textarea, select, iframe, #trackpadOverlay, #screencastOverlay, #screenshotLightbox, #creatorLightbox, #mobileAppleSetupOverlay, #mobileAndroidSetupOverlay, #fileManagerOverlay, .bottom-nav')) return;
+
+          const touchEndX = e.changedTouches[0].clientX;
+          const touchEndY = e.changedTouches[0].clientY;
+          const diffX = touchEndX - touchStartX;
+          const diffY = touchEndY - touchStartY;
+
+          touchStartX = 0;
+          touchStartY = 0;
+
+          // Must be horizontal swipe > 50px & predominantly horizontal
+          if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
+            const currentBtn = document.querySelector('.bottom-nav-item.active[data-tab]');
+            if (!currentBtn) return;
+            const currentTabId = currentBtn.getAttribute('data-tab');
+            const currentIndex = tabOrder.indexOf(currentTabId);
+            if (currentIndex === -1) return;
+
+            if (diffX < 0 && currentIndex < tabOrder.length - 1) {
+              // Swipe Left -> Go Next Tab
+              performTabSwitch(tabOrder[currentIndex + 1], 'next');
+            } else if (diffX > 0 && currentIndex > 0) {
+              // Swipe Right -> Go Previous Tab
+              performTabSwitch(tabOrder[currentIndex - 1], 'prev');
+            }
+          }
+        }, { passive: true });
+      })();
 
 
 
