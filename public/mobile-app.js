@@ -1718,20 +1718,28 @@
       if (!btnOpen || !overlay || !btnClose || !touchpadArea) return;
 
       // ── Overlay Open / Close ──
-      btnOpen.addEventListener('click', () => {
+      const openTrackpadOverlay = (openKbd = false) => {
         if (!trackpadSocket || trackpadSocket.readyState !== WebSocket.OPEN) {
           wsWantsConnected = true;
           connectWS();
         }
         overlay.style.display = 'flex';
         isTrackpadOpen = true;
+        if (openKbd && kbdPanel) kbdPanel.style.display = 'flex';
         setTimeout(() => {
           if (keyboardInput) {
             keyboardInput.value = '';
             keyboardInput.focus();
           }
         }, 300);
-      });
+      };
+
+      btnOpen.addEventListener('click', () => openTrackpadOverlay(false));
+
+      const btnOpenKbd = document.getElementById('btnOpenKeyboard');
+      if (btnOpenKbd) {
+        btnOpenKbd.addEventListener('click', () => openTrackpadOverlay(true));
+      }
 
       btnClose.addEventListener('click', () => {
         overlay.style.display = 'none';

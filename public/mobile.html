@@ -962,7 +962,6 @@
             </div>
             <div>
               <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Power Controls</div>
-              <div style="font-size: 0.74rem; color: var(--text3); margin-top: 2px;">Manage your PC power remotely.</div>
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1008,44 +1007,31 @@
             </div>
             <div>
               <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Trackpad &amp; Keyboard</div>
-              <div style="font-size: 0.74rem; color: var(--text3); margin-top: 2px;">Control mouse and keyboard of your PC in real-time</div>
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
 
-        <!-- Toggle Controls Box -->
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="color: #19d879; display: flex; align-items: center; justify-content: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 0.84rem; font-weight: 600; color: #ffffff;">Haptic Feedback</span>
-                <span style="font-size: 0.68rem; color: var(--text3);">Vibrate on clicks and keys</span>
-              </div>
+        <!-- 2 Action Boxes Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
+          <!-- Trackpad Box -->
+          <button class="btn" id="btnOpenTrackpad" title="Open Trackpad" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(25,216,121,0.3); background: rgba(25,216,121,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: #19d879; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="hapticFeedbackToggle" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Trackpad</div>
+            <div style="font-size: 0.65rem; color: var(--text3);">Touch mouse control</div>
+          </button>
 
-        <!-- Green Primary CTA -->
-        <button class="btn" id="btnOpenTrackpad" style="margin: 0; width: 100%; height: 50px; background: linear-gradient(135deg, #19d879, #10b981); border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 4px 16px rgba(25,216,121,0.25); outline: none;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" ry="7"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <!-- Keyboard Box -->
+          <button class="btn" id="btnOpenKeyboard" title="Open Keyboard" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(6,182,212,0.3); background: rgba(6,182,212,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: #06b6d4; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
             </div>
-            <div style="display: flex; flex-direction: column; text-align: left;">
-              <span style="font-size: 0.9rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Open Fullscreen Trackpad</span>
-              <span style="font-size: 0.66rem; color: rgba(255,255,255,0.9); font-weight: 400; margin-top: 1px;">Control your PC seamlessly</span>
-            </div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Keyboard</div>
+            <div style="font-size: 0.65rem; color: var(--text3);">Direct PC typing</div>
+          </button>
+        </div>
       </div>
 
       <!-- Screenshare Card -->
@@ -1057,42 +1043,31 @@
             </div>
             <div>
               <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Screenshare</div>
-              <div style="font-size: 0.74rem; color: var(--text3); margin-top: 2px;">Stream or capture your PC screen</div>
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
 
-        <!-- Screencast Description Box -->
-        <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px; margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="color: #765cff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
-          </div>
-          <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 0.84rem; font-weight: 700; color: #ffffff;">Live Screencast</span>
-            <span style="font-size: 0.68rem; color: var(--text3); line-height: 1.3; margin-top: 2px;">Stream your PC screen at up to 30fps with live touch controls.</span>
-          </div>
+        <!-- 2 Action Boxes Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
+          <!-- Live Screencast Box -->
+          <button class="btn" id="btnOpenScreencast" title="Open Live Screen" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(118,92,255,0.3); background: rgba(118,92,255,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: #765cff; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Live Screen</div>
+            <div style="font-size: 0.65rem; color: var(--text3);">Stream ~30fps live</div>
+          </button>
+
+          <!-- Instant Screenshot Box -->
+          <button class="btn" id="btnFetchScreenshot" title="Fetch Screenshot" style="margin: 0; width: 100%; border-radius: 14px; border: 1px solid rgba(255,106,0,0.3); background: rgba(255,106,0,0.1); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.2s; outline: none;">
+            <div style="color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <div style="font-size: 0.84rem; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Screenshot</div>
+            <div style="font-size: 0.65rem; color: var(--text3);">Instant screen grab</div>
+          </button>
         </div>
-
-        <!-- Purple Primary CTA -->
-        <button class="btn" id="btnOpenScreencast" style="margin: 0; width: 100%; height: 48px; background: linear-gradient(135deg, #765cff, #6366f1); border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 4px 16px rgba(118,92,255,0.28); outline: none;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polygon points="10 8 16 12 10 16 10 8" fill="#ffffff" stroke="none"/></svg>
-            </div>
-            <div style="display: flex; flex-direction: column; text-align: left;">
-              <span style="font-size: 0.88rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Open Live Screen</span>
-              <span style="font-size: 0.65rem; color: rgba(255,255,255,0.9); font-weight: 400; margin-top: 1px;">View your PC screen live</span>
-            </div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-
-        <!-- Compact Fetch Screenshot Button -->
-        <button class="btn" id="btnFetchScreenshot" style="margin-top: 10px; width: 100%; height: 42px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; outline: none; transition: background 0.2s;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span style="font-size: 0.82rem; font-weight: 600; color: #ffffff;">Fetch Instant Screenshot</span>
-        </button>
 
         <!-- Embedded Screenshot Preview Container -->
         <div id="screenshotPreviewContainer" style="display: none; flex-direction: column; align-items: center; margin-top: 12px; width: 100%;">
