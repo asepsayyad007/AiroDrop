@@ -73,6 +73,24 @@ function sendKeystroke(charOrCode) {
   }
 }
 
+function sendShortcutCombo(keys = []) {
+  if (!keybd_event || !Array.isArray(keys) || keys.length === 0) return;
+  const KEYEVENTF_EXTENDEDKEY = 0x0001;
+  const KEYEVENTF_KEYUP = 0x0002;
+
+  keys.forEach(vk => {
+    const isExtended = (vk >= 0x21 && vk <= 0x28) || vk === 0x5B || vk === 0x5C;
+    const flags = isExtended ? KEYEVENTF_EXTENDEDKEY : 0;
+    keybd_event(vk, 0, flags, 0);
+  });
+
+  [...keys].reverse().forEach(vk => {
+    const isExtended = (vk >= 0x21 && vk <= 0x28) || vk === 0x5B || vk === 0x5C;
+    const flags = isExtended ? (KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP) : KEYEVENTF_KEYUP;
+    keybd_event(vk, 0, flags, 0);
+  });
+}
+
 function setupWebSocket(serverInstance, serverEvents) {
   // Only instantiate the WebSocket.Server once
   if (!state.wss) {
@@ -188,6 +206,13 @@ function setupWebSocket(serverInstance, serverEvents) {
               try {
                 if (data.text) {
                   sendKeystroke(data.text);
+                }
+              } catch (e) {}
+              break;
+            case 'shortcut':
+              try {
+                if (Array.isArray(data.keys)) {
+                  sendShortcutCombo(data.keys);
                 }
               } catch (e) {}
               break;

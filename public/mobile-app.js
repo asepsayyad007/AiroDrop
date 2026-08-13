@@ -1736,11 +1736,6 @@
 
       btnOpen.addEventListener('click', () => openTrackpadOverlay(false));
 
-      const btnOpenKbd = document.getElementById('btnOpenKeyboard');
-      if (btnOpenKbd) {
-        btnOpenKbd.addEventListener('click', () => openTrackpadOverlay(true));
-      }
-
       btnClose.addEventListener('click', () => {
         overlay.style.display = 'none';
         isTrackpadOpen = false;
