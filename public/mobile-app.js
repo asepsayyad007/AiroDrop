@@ -2,38 +2,38 @@
     const SERVER = window.location.origin;
 
 
-    function triggerHaptic(arg) {
-      const hapticToggle = document.getElementById('hapticFeedbackToggle');
-      if (hapticToggle && !hapticToggle.checked) return;
+    function triggerHaptic(arg = 15) {
+      if (localStorage.getItem('hapticFeedbackEnabled') === 'false') return;
 
       // 1. Android/Chrome native Vibration API
-      if (navigator.vibrate) {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         try {
           navigator.vibrate(arg);
-        } catch (e) {
-          console.warn('Vibration API error:', e);
-        }
-        return;
+        } catch (e) {}
       }
 
-      // 2. iOS 18+ switch haptic workaround
+      // 2. iOS 18+ switch Taptic Engine workaround
       const iosLabel = document.getElementById('iosHapticLabel');
+      const iosSwitch = document.getElementById('iosHapticSwitch');
       if (iosLabel) {
-        if (Array.isArray(arg)) {
-          let delay = 0;
-          arg.forEach((val, idx) => {
-            if (idx % 2 === 0) { // vibrate duration
-              setTimeout(() => {
-                iosLabel.click();
-              }, delay);
-            }
-            delay += val;
-          });
-        } else {
+        try {
           iosLabel.click();
-        }
+        } catch (e) {}
+      }
+      if (iosSwitch) {
+        try {
+          iosSwitch.checked = !iosSwitch.checked;
+        } catch (e) {}
       }
     }
+
+    // Universal touchstart listener for instant haptic feedback on button/tab touch down
+    document.addEventListener('touchstart', (e) => {
+      const el = e.target.closest('button, .btn, .bottom-nav-item, .btn-control-cmd, .btn-vlc-cmd, .header-refresh-btn, .switch, label, input[type="range"]');
+      if (el) {
+        triggerHaptic(15);
+      }
+    }, { passive: true });
     
     async function doFetch(url, options = {}) {
       const token = localStorage.getItem('deviceToken');
@@ -112,18 +112,21 @@
       
       setupPWA();
       checkConnection();
-      document.getElementById('checkPendingBtn').addEventListener('click', () => {
-        fetchPending();
-        updateLastChecked();
-      });
+      const checkPendingBtn = document.getElementById('checkPendingBtn');
+      if (checkPendingBtn) {
+        checkPendingBtn.addEventListener('click', () => {
+          fetchPending();
+          updateLastChecked();
+        });
+      }
       
       const btnRefresh = document.getElementById('btnUniversalRefresh');
       if (btnRefresh) {
         btnRefresh.addEventListener('click', async () => {
-          btnRefresh.style.transform = 'translateY(-50%) rotate(360deg)';
+          btnRefresh.style.transform = 'rotate(360deg)';
           btnRefresh.style.transition = 'transform 0.6s ease';
           setTimeout(() => {
-            btnRefresh.style.transform = 'translateY(-50%)';
+            btnRefresh.style.transform = 'none';
             btnRefresh.style.transition = 'none';
           }, 600);
 
@@ -165,9 +168,27 @@
       setupMicStream();
       initMobileSetupModal();
 
+      // Setup Haptic Feedback Toggle Preference
+      const hapticToggle = document.getElementById('hapticFeedbackToggle');
+      if (hapticToggle) {
+        const savedState = localStorage.getItem('hapticFeedbackEnabled');
+        if (savedState !== null) {
+          hapticToggle.checked = savedState === 'true';
+        } else {
+          hapticToggle.checked = true;
+          localStorage.setItem('hapticFeedbackEnabled', 'true');
+        }
+
+        hapticToggle.addEventListener('change', () => {
+          localStorage.setItem('hapticFeedbackEnabled', hapticToggle.checked ? 'true' : 'false');
+          if (hapticToggle.checked) triggerHaptic(20);
+        });
+      }
+
       // Setup Bottom Navigation
       document.querySelectorAll('.bottom-nav-item[data-tab]').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic(12);
           const targetId = btn.getAttribute('data-tab');
           if (!targetId) return;
           const targetContent = document.getElementById(targetId);
@@ -290,8 +311,36 @@
         const nameEl = document.getElementById('mobileInfoDeviceName');
         if (nameEl) nameEl.textContent = info.deviceName || 'PC';
         document.querySelectorAll('.mobileSetupIpCode').forEach(el => el.textContent = info.ip || '...');
+
+        // Home Tab Connection Card updates
+        const homeIpEl = document.getElementById('homeConnIp');
+        if (homeIpEl) homeIpEl.textContent = info.ip || 'Local Network';
+        const homeNameEl = document.getElementById('homeConnDeviceName');
+        if (homeNameEl) homeNameEl.textContent = info.deviceName || 'PC';
+        const homeStatusText = document.getElementById('homeConnStatusText');
+        if (homeStatusText) {
+          homeStatusText.textContent = 'PC Connected';
+          homeStatusText.style.color = 'var(--text-primary)';
+        }
+        const homeBadge = document.getElementById('homeConnBadge');
+        if (homeBadge) {
+          homeBadge.style.background = 'rgba(255, 106, 0, 0.12)';
+          homeBadge.style.borderColor = 'rgba(255, 106, 0, 0.3)';
+          homeBadge.style.color = 'var(--accent-light)';
+        }
       } catch {
         dot.className = 'dot err';
+        const homeStatusText = document.getElementById('homeConnStatusText');
+        if (homeStatusText) {
+          homeStatusText.textContent = 'PC Offline';
+          homeStatusText.style.color = 'var(--text-muted)';
+        }
+        const homeBadge = document.getElementById('homeConnBadge');
+        if (homeBadge) {
+          homeBadge.style.background = 'rgba(255, 255, 255, 0.05)';
+          homeBadge.style.borderColor = 'var(--border)';
+          homeBadge.style.color = 'var(--text-muted)';
+        }
         if (!_isReconnecting) {
           _isReconnecting = true;
           _reconnectCountdown = 15;
@@ -452,40 +501,62 @@
       return defIcon;
     }
 
+    let _lastNewestItemId = null;
+
+    function formatFileSize(bytes) {
+      if (!bytes || isNaN(bytes)) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+
+    function timeAgo(timestamp) {
+      if (!timestamp) return 'Just now';
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Just now';
+      const diffSec = Math.floor((new Date() - date) / 1000);
+      if (diffSec < 45) return 'Just now';
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      return `${Math.floor(diffSec / 86400)}d ago`;
+    }
+
     function renderPending(items) {
-      const textList = document.getElementById('textInboxList');
       const fileList = document.getElementById('fileInboxList');
-      if (!textList || !fileList) return;
+      if (!fileList) return;
 
-      const textItems = (items || []).filter(item => item.type === 'text');
-      const fileItems = (items || []).filter(item => item.type !== 'text');
+      const validItems = items || [];
+      if (validItems.length === 0) {
+        fileList.innerHTML = '<div class="empty-receive">No recent transfers</div>';
+        return;
+      }
 
-      if (textItems.length === 0) {
-        textList.innerHTML = '<div class="empty-receive">No texts received yet</div>';
-      } else {
-        textList.innerHTML = textItems.map(item => {
-          // Dynamic data url to download text content as a file
-          const downloadUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(item.content)}`;
-          const downloadName = `text_${item.id}.txt`;
+      fileList.innerHTML = validItems.map(item => {
+        if (item.type === 'text') {
+          const isUrl = typeof item.content === 'string' && (item.content.startsWith('http://') || item.content.startsWith('https://'));
+          const direction = item.direction || 'Received';
+          const typeLabel = isUrl ? 'Link' : 'Text';
+          const subtitle = `${direction} · ${typeLabel}`;
+          const icon = isUrl 
+            ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+
           return `
-            <div class="receive-item" style="cursor: default;">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
-              <span class="receive-content">${escapeHtml(item.content)}</span>
-              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
-                <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
-                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(downloadName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <div class="receive-item" style="cursor: default; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px;">
+              <span style="font-size: 1.1rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px;">${icon}</span>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <span class="receive-content" style="font-weight: 600; color: var(--text); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.content)}</span>
+                <span style="font-size: 0.72rem; color: var(--text3); margin-top: 2px;">${subtitle}</span>
+              </div>
+              <span class="receive-time" style="font-size: 0.72rem; color: var(--text3); flex-shrink: 0; margin-right: 8px;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
+                <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Copy</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:0.9rem; cursor:pointer; padding:2px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
-        }).join('');
-      }
-
-      if (fileItems.length === 0) {
-        fileList.innerHTML = '<div class="empty-receive">No files received yet</div>';
-      } else {
-        fileList.innerHTML = fileItems.map(item => {
+        } else {
           const ext = (item.filename || item.originalName || item.name || '').split('.').pop().toLowerCase();
           const isImg = item.type === 'image' || ['jpg','jpeg','png','gif','webp','svg','heic','bmp'].includes(ext);
           const isVid = item.type === 'video' || ['mp4','mov','m4v','webm','ogv','avi','mkv'].includes(ext);
@@ -498,7 +569,7 @@
           
           let icon = getFileTypeIcon(mime);
           if (isImg && downloadUrl) {
-            icon = `<img src="${downloadUrl}" alt="${escapeAttr(displayName)}" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; display: block;" />`;
+            icon = `<img src="${downloadUrl}" alt="${escapeAttr(displayName)}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: block;" />`;
           } else if (isVid) {
             icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`;
           } else if (isPdf) {
@@ -507,6 +578,9 @@
 
           const safeUrl = escapeAttr(downloadUrl);
           const safeTitle = escapeAttr(displayName);
+          const direction = item.direction || 'Received';
+          const formattedSize = item.size ? formatFileSize(item.size) : 'File';
+          const subtitle = `${direction} · ${formattedSize}`;
 
           let clickHandler = '';
           if (isImg) {
@@ -518,19 +592,21 @@
           }
 
           return `
-            <div class="receive-item" ${clickHandler} style="${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; overflow: hidden; border-radius: 6px;">${icon}</span>
-              <span class="receive-content">${escapeHtml(displayName)}</span>
-              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;" onclick="event.stopPropagation();">
-                <button onclick="copyFileLink('${downloadUrl}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy Link</button>
-                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <div class="receive-item" ${clickHandler} style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px; ${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
+              <span style="font-size: 1.1rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px; overflow: hidden;">${icon}</span>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <span class="receive-content" style="font-weight: 600; color: var(--text); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayName)}</span>
+                <span style="font-size: 0.72rem; color: var(--text3); margin-top: 2px;">${subtitle}</span>
+              </div>
+              <span class="receive-time" style="font-size: 0.72rem; color: var(--text3); flex-shrink: 0; margin-right: 8px;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;" onclick="event.stopPropagation();">
+                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Download</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:0.9rem; cursor:pointer; padding:2px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
-        }).join('');
-      }
+        }
+      }).join('');
     }
 
     async function deletePendingItem(itemId) {
@@ -697,62 +773,99 @@
       const mobilePreviewFileName = document.getElementById('mobilePreviewFileName');
       const sendFileBtn = document.getElementById('sendFileBtn');
 
-      let selectedFile = null;
+      let selectedFiles = [];
 
       if (sendFileTrigger && mobileFileInput) {
         sendFileTrigger.addEventListener('click', () => mobileFileInput.click());
         mobileFileInput.addEventListener('change', () => {
           if (mobileFileInput.files.length > 0) {
-            selectedFile = mobileFileInput.files[0];
+            selectedFiles = Array.from(mobileFileInput.files);
             sendFileTrigger.style.display = 'none';
             mobileFilePreview.style.display = 'flex';
-            mobilePreviewFileName.textContent = `${selectedFile.name} (${formatSize(selectedFile.size)})`;
-
-            if (selectedFile.type.startsWith('image/')) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                mobilePreviewImg.src = e.target.result;
-                mobilePreviewImg.style.display = 'block';
-                mobilePreviewFileIcon.style.display = 'none';
-              };
-              reader.readAsDataURL(selectedFile);
+            
+            if (selectedFiles.length === 1) {
+              const file = selectedFiles[0];
+              mobilePreviewFileName.textContent = `${file.name} (${formatSize(file.size)})`;
+              if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  mobilePreviewImg.src = e.target.result;
+                  mobilePreviewImg.style.display = 'block';
+                  mobilePreviewFileIcon.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+              } else {
+                mobilePreviewImg.style.display = 'none';
+                mobilePreviewFileIcon.style.display = 'block';
+                mobilePreviewFileIcon.textContent = getFileTypeIcon(file.type);
+              }
             } else {
+              const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+              mobilePreviewFileName.textContent = `${selectedFiles.length} files selected (${formatSize(totalSize)})`;
               mobilePreviewImg.style.display = 'none';
               mobilePreviewFileIcon.style.display = 'block';
-              mobilePreviewFileIcon.textContent = getFileTypeIcon(selectedFile.type);
+              mobilePreviewFileIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6m-3-3h6"/></svg>`;
             }
           }
         });
       }
 
+      const cancelFileBtn = document.getElementById('cancelFileBtn');
+      if (cancelFileBtn) {
+        cancelFileBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedFiles = [];
+          if (mobileFileInput) mobileFileInput.value = '';
+          if (mobileFilePreview) mobileFilePreview.style.display = 'none';
+          if (sendFileTrigger) sendFileTrigger.style.display = 'flex';
+          if (mobilePreviewImg) { mobilePreviewImg.src = ''; mobilePreviewImg.style.display = 'none'; }
+        });
+      }
+
       if (sendFileBtn) {
         sendFileBtn.addEventListener('click', async () => {
-          if (!selectedFile) return;
+          if (!selectedFiles || selectedFiles.length === 0) {
+            showToast('Please select file(s) or photo(s) to send');
+            return;
+          }
           sendFileBtn.disabled = true;
           sendFileBtn.classList.add('is-loading');
-          const formData = new FormData();
-          formData.append('file', selectedFile);
 
-          try {
-            const res = await doFetch('/api/file', {
-              method: 'POST',
-              body: formData
-            });
-            if (res.ok) {
-              showToast('File sent to PC!');
-              selectedFile = null;
-              mobileFileInput.value = '';
-              mobileFilePreview.style.display = 'none';
-              sendFileTrigger.style.display = 'flex';
-            } else {
-              showToast('Failed to send file');
+          let successCount = 0;
+          let failCount = 0;
+
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+              const res = await doFetch('/api/file', {
+                method: 'POST',
+                body: formData
+              });
+              if (res.ok) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+            } catch {
+              failCount++;
             }
-          } catch {
-            showToast('Failed to send file');
-          } finally {
-            sendFileBtn.disabled = false;
-            sendFileBtn.classList.remove('is-loading');
           }
+
+          if (successCount > 0) {
+            showToast(selectedFiles.length === 1 ? 'File sent to PC!' : `${successCount} file(s) sent to PC!`);
+            selectedFiles = [];
+            if (mobileFileInput) mobileFileInput.value = '';
+            if (mobileFilePreview) mobileFilePreview.style.display = 'none';
+            if (sendFileTrigger) sendFileTrigger.style.display = 'flex';
+            if (mobilePreviewImg) { mobilePreviewImg.src = ''; mobilePreviewImg.style.display = 'none'; }
+          } else {
+            showToast('Failed to send file(s)');
+          }
+
+          sendFileBtn.disabled = false;
+          sendFileBtn.classList.remove('is-loading');
         });
       }
     }
@@ -896,9 +1009,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action })
               });
-              if (res.ok) {
-                showToast(`Triggered: ${action}`);
-              } else {
+              if (!res.ok) {
                 showToast('Failed to trigger action');
               }
             } catch {
@@ -998,60 +1109,62 @@
         });
       });
 
-      // Seek Slider Shuttle Control (Hold & Drag continuous seeking)
+      // Seek Slider Shuttle Control (Hold & Drag aggressive seeking)
       const slider = document.getElementById('vlcSeekSlider');
       const indicator = document.getElementById('vlcSeekIndicator');
       let seekInterval = null;
-      let accumulatedSeconds = 0;
       let currentSeekAction = null;
-      let resetTimeout = null;
-
-      function formatSeconds(secs) {
-        if (secs === 0) return 'Neutral';
-        const abs = Math.abs(secs);
-        const mins = Math.floor(abs / 60);
-        const remaining = abs % 60;
-        const timeStr = mins > 0 ? `${mins}m ${remaining}s` : `${remaining}s`;
-        return secs > 0 ? `Seek +${timeStr}` : `Seek -${timeStr}`;
-      }
 
       if (slider && indicator) {
         slider.addEventListener('input', () => {
           const val = parseInt(slider.value, 10);
           let action = null;
-          let secondsPerTick = 0;
-          let tickIntervalMs = 200;
+          let tickIntervalMs = 300;
+          let labelText = 'Hold & Drag';
+          let labelColor = 'var(--text3)';
 
-          if (val <= 10) {
+          if (val <= 15) {
+            // Extreme Rewind (5 min per jump every 300ms = 10 min/sec)
             action = 'vlc_seek_backward_300s';
-            secondsPerTick = -300;
-            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
-          } else if (val > 10 && val <= 25) {
+            tickIntervalMs = 300;
+            labelText = 'Rewind << (Fast)';
+            labelColor = '#ef4444';
+          } else if (val > 15 && val <= 30) {
             action = 'vlc_seek_backward_60s';
-            secondsPerTick = -60;
-            tickIntervalMs = 150;
-          } else if (val > 25 && val <= 43) {
+            tickIntervalMs = 250;
+            labelText = 'Rewind <<';
+            labelColor = '#ef4444';
+          } else if (val > 30 && val <= 42) {
             action = 'vlc_seek_backward_10s';
-            secondsPerTick = -10;
             tickIntervalMs = 200;
-          } else if (val >= 44 && val <= 56) {
+            labelText = 'Rewind <';
+            labelColor = '#ef4444';
+          } else if (val >= 43 && val <= 57) {
             action = null; // Neutral Center
-            secondsPerTick = 0;
-          } else if (val > 56 && val <= 74) {
+            labelText = 'Hold & Drag';
+            labelColor = 'var(--text3)';
+          } else if (val > 57 && val <= 70) {
             action = 'vlc_seek_forward_10s';
-            secondsPerTick = 10;
             tickIntervalMs = 200;
-          } else if (val > 74 && val <= 89) {
+            labelText = 'Fast Forward >';
+            labelColor = '#10b981';
+          } else if (val > 70 && val <= 85) {
             action = 'vlc_seek_forward_60s';
-            secondsPerTick = 60;
-            tickIntervalMs = 150;
+            tickIntervalMs = 250;
+            labelText = 'Fast Forward >>';
+            labelColor = '#10b981';
           } else {
+            // Extreme Forward (5 min per jump every 300ms = 10 min/sec)
             action = 'vlc_seek_forward_300s';
-            secondsPerTick = 300;
-            tickIntervalMs = 120; // Aggressive 5-min jump every 120ms
+            tickIntervalMs = 300;
+            labelText = 'Fast Forward >> (Fast)';
+            labelColor = '#10b981';
           }
 
-          // If action or interval changed
+          indicator.textContent = labelText;
+          indicator.style.color = labelColor;
+
+          // If action zone changed
           if (action !== currentSeekAction) {
             if (seekInterval) {
               clearInterval(seekInterval);
@@ -1060,17 +1173,8 @@
             
             currentSeekAction = action;
 
-            if (resetTimeout) {
-              clearTimeout(resetTimeout);
-              resetTimeout = null;
-            }
-
             if (action) {
-              // Immediate first trigger
-              accumulatedSeconds += secondsPerTick;
-              indicator.textContent = formatSeconds(accumulatedSeconds);
-              indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
-              triggerHaptic(15);
+              triggerHaptic(12);
               
               doFetch('/api/control', {
                 method: 'POST',
@@ -1078,27 +1182,15 @@
                 body: JSON.stringify({ action })
               }).catch(err => console.error('[VLC] Initial seek failed:', err));
 
-              // Rapid repeat interval
+              // Aggressive repeat interval
               seekInterval = setInterval(() => {
-                accumulatedSeconds += secondsPerTick;
-                indicator.textContent = formatSeconds(accumulatedSeconds);
-                indicator.style.color = accumulatedSeconds > 0 ? '#10b981' : '#ef4444';
                 triggerHaptic(8);
-
                 doFetch('/api/control', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action })
                 }).catch(err => console.error('[VLC] Hold seek failed:', err));
               }, tickIntervalMs);
-            } else {
-              if (accumulatedSeconds === 0) {
-                indicator.textContent = 'Neutral';
-                indicator.style.color = 'var(--text3)';
-              } else {
-                indicator.textContent = `${formatSeconds(accumulatedSeconds)} (Paused)`;
-                indicator.style.color = accumulatedSeconds > 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
-              }
             }
           }
         });
@@ -1111,19 +1203,9 @@
           }
           currentSeekAction = null;
           slider.value = 50;
-
-          // Keep showing the final seek duration briefly, then fade back to "Hold & Drag"
-          if (accumulatedSeconds !== 0) {
-            indicator.textContent = `Applied: ${formatSeconds(accumulatedSeconds).replace('Seek ', '')}`;
-            triggerHaptic(20);
-            setTimeout(updateVlcStatus, 500);
-          }
-
-          resetTimeout = setTimeout(() => {
-            indicator.textContent = 'Hold & Drag';
-            indicator.style.color = 'var(--text3)';
-            accumulatedSeconds = 0;
-          }, 1500);
+          indicator.textContent = 'Hold & Drag';
+          indicator.style.color = 'var(--text3)';
+          setTimeout(updateVlcStatus, 500);
         };
 
         slider.addEventListener('change', handleRelease);
@@ -1199,11 +1281,12 @@
       const container = document.getElementById('screenshotPreviewContainer');
       const img = document.getElementById('mobileScreenshotImg');
       const btnClose = document.getElementById('btnCloseScreenshot');
+      const cameraIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 
       if (btnFetch && container && img && btnClose) {
         btnFetch.addEventListener('click', async () => {
           btnFetch.disabled = true;
-          btnFetch.textContent = 'Capturing...';
+          btnFetch.innerHTML = cameraIconSvg + ' <span>Capturing...</span>';
           try {
             const screenshotUrl = `/api/screenshot?t=${Date.now()}`;
             img.src = screenshotUrl;
@@ -1211,7 +1294,7 @@
               container.style.display = 'flex';
               btnFetch.style.display = 'none';
               btnFetch.disabled = false;
-              btnFetch.textContent = '📸 View PC Screen';
+              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
 
               const btnDownload = document.getElementById('btnDownloadScreenshot');
               if (btnDownload) {
@@ -1221,12 +1304,12 @@
             img.onerror = () => {
               showToast('Failed to load screenshot');
               btnFetch.disabled = false;
-              btnFetch.textContent = '📸 View PC Screen';
+              btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
             };
           } catch {
             showToast('Failed to fetch screenshot');
             btnFetch.disabled = false;
-            btnFetch.textContent = '📸 View PC Screen';
+            btnFetch.innerHTML = cameraIconSvg + ' <span>Fetch Instant Screenshot</span>';
           }
         });
 
@@ -1768,7 +1851,6 @@
         if (touchpadMaxTouches === 2) {
           if (!touchpadHasMoved && duration < 250) {
             sendWS({ type: 'click', button: 'right' });
-            showToast('Right Click', 600);
           }
           touchpadIsScrolling = false;
           return;
@@ -1783,10 +1865,8 @@
             const screenWidth = window.innerWidth;
             if (touchpadLastX < screenWidth / 2) {
               sendWS({ type: 'key', code: 37 }); // ArrowLeft
-              showToast('Previous Slide', 600);
             } else {
               sendWS({ type: 'key', code: 39 }); // ArrowRight
-              showToast('Next Slide', 600);
             }
             return;
           }
@@ -1796,13 +1876,11 @@
             if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
             sendWS({ type: 'click', button: 'left' });
             setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
-            showToast('Double Click', 600);
             touchpadLastTapTime = 0;
           } else {
             touchpadLastTapTime = now;
             touchpadTapTimeout = setTimeout(() => {
               sendWS({ type: 'click', button: 'left' });
-              showToast('Left Click', 600);
               touchpadTapTimeout = null;
             }, 220);
           }

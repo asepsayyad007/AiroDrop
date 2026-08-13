@@ -5,6 +5,8 @@ let user32 = null;
 let EnumWindows = null;
 let GetWindowTextW = null;
 let PostMessageW = null;
+let SetForegroundWindow = null;
+let keybd_event = null;
 
 if (os.platform() === 'win32') {
   try {
@@ -13,6 +15,8 @@ if (os.platform() === 'win32') {
     EnumWindows = user32.func('bool EnumWindows(EnumWindowsProc* lpEnumFunc, intptr_t lParam)');
     GetWindowTextW = user32.func('int GetWindowTextW(uintptr_t hwnd, char16* lpString, int nMaxCount)');
     PostMessageW = user32.func('bool PostMessageW(uintptr_t hwnd, uint32 msg, uintptr_t wParam, intptr_t lParam)');
+    SetForegroundWindow = user32.func('bool SetForegroundWindow(uintptr_t hwnd)');
+    keybd_event = user32.func('void keybd_event(uint8 bVk, uint8 bScan, uint32 dwFlags, uintptr_t dwExtraInfo)');
   } catch (err) {
     console.error('[VLC-FFI] Failed to load user32 FFI:', err.message);
   }
@@ -34,9 +38,16 @@ function findVlcWindow() {
       const len = GetWindowTextW(hwnd, buf, 512);
       if (len > 0) {
         const title = buf.toString('utf16le', 0, len * 2).trim();
-        if (title.endsWith(' - VLC media player')) {
+        const lowerTitle = title.toLowerCase();
+        if (lowerTitle.includes('vlc media player')) {
           vlcHwnd = hwnd;
-          vlcTitle = title.substring(0, title.length - ' - VLC media player'.length).trim();
+          if (title.endsWith(' - VLC media player')) {
+            vlcTitle = title.substring(0, title.length - ' - VLC media player'.length).trim();
+          } else if (lowerTitle === 'vlc media player') {
+            vlcTitle = 'VLC media player';
+          } else {
+            vlcTitle = title;
+          }
           return false; // Stop enumeration
         }
       }
@@ -53,11 +64,27 @@ function findVlcWindow() {
 }
 
 /**
- * Post keyboard events to VLC window handle
+ * Send keyboard events to VLC window handle
  * @param {string} action - VLC remote action
  * @returns {boolean} Success state
  */
 function sendVlcAction(action) {
+  if (action === 'vlc_close' || action === 'vlc_quit') {
+    const vlc = findVlcWindow();
+    if (vlc && vlc.hwnd && PostMessageW) {
+      try {
+        PostMessageW(vlc.hwnd, 0x0010, 0, 0); // WM_CLOSE message
+      } catch (_) {}
+    }
+    try {
+      const { exec } = require('child_process');
+      exec('taskkill /IM vlc.exe /F', (err) => {
+        if (err) console.error('[VLC] taskkill error:', err ? err.message : '');
+      });
+    } catch (_) {}
+    return true;
+  }
+
   const vlc = findVlcWindow();
   if (!vlc) return false;
   
@@ -68,6 +95,9 @@ function sendVlcAction(action) {
   const WM_SYSKEYUP = 0x0105;
   
   // Virtual Key Codes
+  const VK_SHIFT = 0x10;
+  const VK_CONTROL = 0x11;
+  const VK_MENU = 0x12; // Alt key
   const VK_SPACE = 0x20;
   const VK_LEFT = 0x25;
   const VK_UP = 0x26;
@@ -77,86 +107,104 @@ function sendVlcAction(action) {
   const VK_F = 0x46; // fullscreen
   const VK_M = 0x4D; // mute
   const VK_V = 0x56; // cycle subtitle tracks
+
+  const KEYEVENTF_EXTENDEDKEY = 0x0001;
+  const KEYEVENTF_KEYUP = 0x0002;
+
+  // Helper: send key combination via keybd_event
+  function sendShortcut(vkKey, modifiers = {}) {
+    if (SetForegroundWindow && hwnd) {
+      try {
+        SetForegroundWindow(hwnd);
+      } catch (_) {}
+    }
+
+    if (keybd_event) {
+      if (modifiers.ctrl) keybd_event(VK_CONTROL, 0, 0, 0);
+      if (modifiers.alt) keybd_event(VK_MENU, 0, 0, 0);
+      if (modifiers.shift) keybd_event(VK_SHIFT, 0, 0, 0);
+
+      const isExtended = (vkKey === VK_LEFT || vkKey === VK_RIGHT || vkKey === VK_UP || vkKey === VK_DOWN);
+      const flagsDown = isExtended ? KEYEVENTF_EXTENDEDKEY : 0;
+      const flagsUp = isExtended ? (KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP) : KEYEVENTF_KEYUP;
+
+      keybd_event(vkKey, 0, flagsDown, 0);
+      keybd_event(vkKey, 0, flagsUp, 0);
+
+      if (modifiers.shift) keybd_event(VK_SHIFT, 0, KEYEVENTF_KEYUP, 0);
+      if (modifiers.alt) keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
+      if (modifiers.ctrl) keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+    } else if (PostMessageW) {
+      // Fallback PostMessage
+      if (modifiers.alt) {
+        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_MENU, 0x20000001);
+        PostMessageW(hwnd, WM_SYSKEYDOWN, vkKey, 0x20000001);
+        PostMessageW(hwnd, WM_SYSKEYUP, vkKey, 0xC0000001);
+        PostMessageW(hwnd, WM_SYSKEYUP, VK_MENU, 0xC0000001);
+      } else if (modifiers.ctrl) {
+        PostMessageW(hwnd, WM_KEYDOWN, VK_CONTROL, 0);
+        PostMessageW(hwnd, WM_KEYDOWN, vkKey, 0);
+        PostMessageW(hwnd, WM_KEYUP, vkKey, 0);
+        PostMessageW(hwnd, WM_KEYUP, VK_CONTROL, 0);
+      } else {
+        PostMessageW(hwnd, WM_KEYDOWN, vkKey, 0);
+        PostMessageW(hwnd, WM_KEYUP, vkKey, 0);
+      }
+    }
+  }
   
   try {
     switch (action) {
       case 'vlc_play_pause':
-        PostMessageW(hwnd, WM_KEYDOWN, VK_SPACE, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_SPACE, 0);
+        sendShortcut(VK_SPACE);
         break;
       case 'vlc_seek_backward_10s':
-        // Alt + Left
-        // Bit 29 (0x20000000) indicates ALT down
-        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_LEFT, 0x20000001);
-        PostMessageW(hwnd, WM_SYSKEYUP, VK_LEFT, 0xC0000001);
+        // Alt + Left (Short Jump: 10 seconds)
+        sendShortcut(VK_LEFT, { alt: true });
         break;
       case 'vlc_seek_forward_10s':
-        // Alt + Right
-        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_RIGHT, 0x20000001);
-        PostMessageW(hwnd, WM_SYSKEYUP, VK_RIGHT, 0xC0000001);
+        // Alt + Right (Short Jump: 10 seconds)
+        sendShortcut(VK_RIGHT, { alt: true });
         break;
       case 'vlc_seek_backward_60s':
-        // Ctrl + Left
-        PostMessageW(hwnd, WM_KEYDOWN, VK_LEFT, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_LEFT, 0);
+        // Ctrl + Left (Medium Jump: 1 minute)
+        sendShortcut(VK_LEFT, { ctrl: true });
         break;
       case 'vlc_seek_forward_60s':
-        // Ctrl + Right
-        PostMessageW(hwnd, WM_KEYDOWN, VK_RIGHT, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_RIGHT, 0);
+        // Ctrl + Right (Medium Jump: 1 minute)
+        sendShortcut(VK_RIGHT, { ctrl: true });
         break;
       case 'vlc_seek_backward_300s':
-        // Ctrl + Alt + Left (5 min jump)
-        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_LEFT, 0x20000001);
-        PostMessageW(hwnd, WM_SYSKEYUP, VK_LEFT, 0xC0000001);
-        PostMessageW(hwnd, WM_KEYDOWN, VK_LEFT, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_LEFT, 0);
+        // Ctrl + Alt + Left (Long Jump: 5 minutes)
+        sendShortcut(VK_LEFT, { ctrl: true, alt: true });
         break;
       case 'vlc_seek_forward_300s':
-        // Ctrl + Alt + Right (5 min jump)
-        PostMessageW(hwnd, WM_SYSKEYDOWN, VK_RIGHT, 0x20000001);
-        PostMessageW(hwnd, WM_SYSKEYUP, VK_RIGHT, 0xC0000001);
-        PostMessageW(hwnd, WM_KEYDOWN, VK_RIGHT, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_RIGHT, 0);
+        // Ctrl + Alt + Right (Long Jump: 5 minutes)
+        sendShortcut(VK_RIGHT, { ctrl: true, alt: true });
         break;
       case 'vlc_volume_up':
         // Ctrl + Up
-        PostMessageW(hwnd, WM_KEYDOWN, VK_UP, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_UP, 0);
+        sendShortcut(VK_UP, { ctrl: true });
         break;
       case 'vlc_volume_down':
         // Ctrl + Down
-        PostMessageW(hwnd, WM_KEYDOWN, VK_DOWN, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_DOWN, 0);
+        sendShortcut(VK_DOWN, { ctrl: true });
         break;
       case 'vlc_mute':
         // m key
-        PostMessageW(hwnd, WM_KEYDOWN, VK_M, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_M, 0);
+        sendShortcut(VK_M);
         break;
       case 'vlc_fullscreen':
         // f key
-        PostMessageW(hwnd, WM_KEYDOWN, VK_F, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_F, 0);
+        sendShortcut(VK_F);
         break;
       case 'vlc_subtitles':
         // v key
-        PostMessageW(hwnd, WM_KEYDOWN, VK_V, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_V, 0);
+        sendShortcut(VK_V);
         break;
       case 'vlc_audio_track':
         // b key
-        PostMessageW(hwnd, WM_KEYDOWN, VK_B, 0);
-        PostMessageW(hwnd, WM_KEYUP, VK_B, 0);
-        break;
-      case 'vlc_close':
-      case 'vlc_quit':
-        // Post WM_CLOSE message (0x0010) to close VLC window on PC
-        PostMessageW(hwnd, 0x0010, 0, 0);
-        try {
-          const { exec } = require('child_process');
-          exec('taskkill /IM vlc.exe /F', () => {});
-        } catch (_) {}
+        sendShortcut(VK_B);
         break;
       default:
         return false;

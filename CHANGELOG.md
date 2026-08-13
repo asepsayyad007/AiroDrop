@@ -5,6 +5,24 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.1] - 2026-08-13
+
+### Added
+- **Win32 Native Virtual Key Event Dispatch (`keybd_event`)** — Re-engineered VLC Media Player remote control in `src/vlcController.js` using `keybd_event` and `SetForegroundWindow` from `user32.dll` via Koffi. Synthesizes physical hardware modifier key events (`Ctrl`, `Alt`, `Shift`) to accurately execute 10-second, 1-minute, and 5-minute seek jumps in VLC.
+- **Universal Sticky Top Bar Lock (`position: fixed`)** — Anchored the mobile PWA top title header (`AiroDrop Mobile`) permanently to the top of the viewport frame (`position: fixed; top: 0; left: 0; right: 0; z-index: 1000`) with glassmorphic backdrop blur (`backdrop-filter: blur(20px)`), safe-area inset protection, and precise content offset padding so the header never shifts during scrolling or browser bar transitions.
+- **Immediate Touchstart Haptic Engine (`triggerHaptic`)** — Added a universal `touchstart` event delegate across all interactive elements (`button`, `.bottom-nav-item`, `.btn-control-cmd`, `.btn-vlc-cmd`, `input[type="range"]`, `.switch`). Enables instant tactile haptics on touch down, with dual-state WebKit Taptic Engine switch toggling for iOS 18+ and native `navigator.vibrate` for Android.
+
+### Changed
+- **Mobile UI Shuttle Slider Range** — Updated the VLC fast seek slider markers to `-5m`, `-1m`, `Neutral`, `+1m`, and `+5m` to match true hardware hotkey execution.
+- **Theme-Aligned Play / Pause Controls** — Redesigned PC System Media and VLC Media Player Play / Pause buttons with AiroDrop's signature warm orange gradient (`linear-gradient(135deg, #ff6a00, #ff8533)`) and glowing drop shadow.
+- **Clean Toast Feedback** — Removed repetitive action toast popups (`Triggered: volume_up`, `Left Click`, `Right Click`, etc.) on playback controls and trackpad gestures for silent, zero-distraction remote operation.
+
+### Fixed
+- **VLC Window Detection & Termination** — Case-insensitive title matching in `findVlcWindow()` ensures idle VLC instances (`VLC media player`) are detected and closed reliably via `WM_CLOSE` and `taskkill /IM vlc.exe /F`.
+- **Mobile Viewport Rubber-Banding** — Fixed header shifting on iOS Safari and mobile Chrome during rapid scrolling and momentum gestures.
+
+---
+
 ## [6.4.0] - 2026-08-12
 
 ### Added
