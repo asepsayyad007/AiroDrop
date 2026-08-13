@@ -5,6 +5,25 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.2] - 2026-08-13
+
+### Added
+- **Mobile File Manager (Tools Tab)** — New File Manager card in the Tools tab with a fullscreen iframe overlay to browse, upload, download, and manage PC shared folder files directly from the mobile PWA.
+- **Separate Apple & Android Setup Pages** — Split the mobile setup overlay into two dedicated platform pages (`#mobileAppleSetupOverlay` and `#mobileAndroidSetupOverlay`) accessible from the Settings tab, each with platform-specific PWA installation guides and iOS Shortcuts quick install links.
+
+### Changed
+- **Settings Page Redesign** — Renamed "Connection Settings" to "Setup Mobile Companion". Removed Host PC Updater. Moved Server Diagnostics inline into the first settings card. Redesigned all settings buttons to a unified 46px height with 14px border-radius glass styling.
+- **iOS Shortcut Buttons** — Enlarged shortcut buttons from 42px to 58px with distinct per-button color schemes: orange (Send to PC), purple (Clipboard), and cyan (Get to iOS). Icons scaled from 14px to 18px.
+- **Emoji-Free Interface** — Removed all decorative emoji characters from settings, setup overlays, troubleshooting panels, and download warnings. Replaced with semantic SVG vector icons throughout.
+- **File Manager Title** — Renamed `files.html` header from "PC Shared Folder" to "File Manager" with "PC Shared Folder" as contextual subtitle.
+- **Compact Button Design** — All settings page buttons (Apple iOS Setup, Android Setup, View Creator Profile) use full-width layout with consistent glass morphism styling.
+
+### Fixed
+- **File Manager Duplicate UI** — Removed redundant overlay header that caused double-title display. The iframe now uses `files.html`'s own sticky header with its built-in close button via `postMessage('closeFileBrowser')`.
+- **Setup Modal Event Wiring** — Rewired `initMobileSetupModal()` to correctly bind open/close/action handlers for the new split Apple and Android setup overlays, replacing stale single-modal selectors.
+
+---
+
 ## [6.4.1] - 2026-08-13
 
 ### Added

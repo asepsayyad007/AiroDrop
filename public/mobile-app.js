@@ -157,9 +157,10 @@
       setupCreatorProfile();
       setupMobileTrackpad();
       setupScreencastOverlay();
+      setupFileManager();
       
       // Update File Browser to use token
-      const fileIframe = document.getElementById('fileBrowserIframe');
+      const fileIframe = document.getElementById('fileManagerFrame');
       if (fileIframe && storedToken) {
         fileIframe.src = `/files?token=${storedToken}`;
       }
@@ -199,11 +200,11 @@
           document.querySelectorAll('.mobile-tab-content').forEach(c => c.classList.remove('active'));
           document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
           
-          // Set active tab
-          btn.classList.add('active');
-          targetContent.classList.add('active');
-        });
-      });
+           // Set active tab
+           btn.classList.add('active');
+           targetContent.classList.add('active');
+         });
+       });
 
 
 
@@ -358,82 +359,116 @@
     }
 
     function initMobileSetupModal() {
-      const btnMenu = document.getElementById('btnMobileMenu');
+      // Elements for Apple iOS Setup Overlay
+      const btnAppleSetup = document.getElementById('btnAppleSetup');
+      const modalApple = document.getElementById('mobileAppleSetupOverlay');
+      const btnCloseApple = document.getElementById('btnCloseAppleSetup');
+      
+      const btnAppleRefresh = document.getElementById('btnAppleRefresh');
+      const btnAppleCopyUrl = document.getElementById('btnAppleCopyUrl');
+      const btnAppleLogout = document.getElementById('btnAppleLogout');
+
+      // Elements for Android Setup Overlay
+      const btnAndroidSetup = document.getElementById('btnAndroidSetup');
+      const modalAndroid = document.getElementById('mobileAndroidSetupOverlay');
+      const btnCloseAndroid = document.getElementById('btnCloseAndroidSetup');
+
+      const btnAndroidRefresh = document.getElementById('btnAndroidRefresh');
+      const btnAndroidCopyUrl = document.getElementById('btnAndroidCopyUrl');
+      const btnAndroidLogout = document.getElementById('btnAndroidLogout');
+
       const btnHelpBadge = document.getElementById('btnMobileHelpBadge');
-      const modal = document.getElementById('mobileSetupOverlay');
-      const btnClose = document.getElementById('btnCloseMobileSetup');
-      const btnRefresh = document.getElementById('btnModalRefresh');
-      const btnCopyUrl = document.getElementById('btnModalCopyUrl');
-      const btnLogout = document.getElementById('btnModalLogout');
 
-      // If user has already opened setup or dismissed the help badge, hide badge
-      if (localStorage.getItem('airodrop_setup_badge_dismissed') === 'true') {
-        if (btnHelpBadge) btnHelpBadge.style.display = 'none';
-      }
-
-      const openModal = () => {
-        triggerHaptic(20);
-        if (modal) modal.style.display = 'flex';
-        // Mark badge as dismissed so it only shows for new users before first setup view
-        try {
-          localStorage.setItem('airodrop_setup_badge_dismissed', 'true');
-        } catch (e) {}
-        if (btnHelpBadge) btnHelpBadge.style.display = 'none';
+      // Helper function for quick refresh
+      const handleRefresh = async (btn) => {
+        triggerHaptic(30);
+        btn.disabled = true;
+        const origContent = btn.innerHTML;
+        btn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s infinite linear;"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Refreshing...</span>
+        `;
+        await checkConnection();
+        await fetchPending();
+        btn.disabled = false;
+        btn.innerHTML = origContent;
+        showToast('Connection refreshed!', 'success');
       };
 
-      if (btnMenu) btnMenu.addEventListener('click', openModal);
-      if (btnHelpBadge) btnHelpBadge.addEventListener('click', openModal);
-
-      if (btnClose && modal) {
-        btnClose.addEventListener('click', () => {
-          triggerHaptic(15);
-          modal.style.display = 'none';
+      // Helper function for copy dashboard url
+      const handleCopyUrl = () => {
+        triggerHaptic(20);
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          showToast('Mobile Dashboard URL copied!', 'success');
+        }).catch(() => {
+          showToast('Unable to copy URL automatically', 'error');
         });
-      }
+      };
 
-      if (btnRefresh) {
-        btnRefresh.addEventListener('click', async () => {
-          triggerHaptic(30);
-          btnRefresh.disabled = true;
-          btnRefresh.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s infinite linear;"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            <span>Refreshing...</span>
-          `;
-          await checkConnection();
-          await fetchPending();
-          btnRefresh.disabled = false;
-          btnRefresh.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            <span>Refresh Connection &amp; Data</span>
-          `;
-          showToast('Connection refreshed!', 'success');
-        });
-      }
+      // Helper function for logout
+      const handleLogout = () => {
+        triggerHaptic([30, 50, 30]);
+        if (confirm('Re-authenticate or log out from PC? This will wipe your session token.')) {
+          localStorage.removeItem('deviceToken');
+          document.cookie = "airodrop_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          showToast('Session logged out. Reloading...', 'info');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+      };
 
-      if (btnCopyUrl) {
-        btnCopyUrl.addEventListener('click', () => {
+      // Apple Setup Modal triggers
+      if (btnAppleSetup && modalApple) {
+        btnAppleSetup.addEventListener('click', () => {
           triggerHaptic(20);
-          navigator.clipboard.writeText(window.location.href).then(() => {
-            showToast('Mobile Dashboard URL copied!', 'success');
-          }).catch(() => {
-            showToast('Unable to copy URL automatically', 'error');
-          });
+          modalApple.style.display = 'flex';
+          if (btnHelpBadge) btnHelpBadge.style.display = 'none';
+          try { localStorage.setItem('airodrop_setup_badge_dismissed', 'true'); } catch (e) {}
+        });
+      }
+      if (btnCloseApple && modalApple) {
+        btnCloseApple.addEventListener('click', () => {
+          triggerHaptic(15);
+          modalApple.style.display = 'none';
         });
       }
 
-      if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
-          triggerHaptic([30, 50, 30]);
-          if (confirm('Re-authenticate or log out from PC? This will wipe your session token.')) {
-            localStorage.removeItem('deviceToken');
-            document.cookie = "airodrop_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            showToast('Session logged out. Reloading...', 'info');
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
+      // Android Setup Modal triggers
+      if (btnAndroidSetup && modalAndroid) {
+        btnAndroidSetup.addEventListener('click', () => {
+          triggerHaptic(20);
+          modalAndroid.style.display = 'flex';
+          if (btnHelpBadge) btnHelpBadge.style.display = 'none';
+          try { localStorage.setItem('airodrop_setup_badge_dismissed', 'true'); } catch (e) {}
         });
       }
+      if (btnCloseAndroid && modalAndroid) {
+        btnCloseAndroid.addEventListener('click', () => {
+          triggerHaptic(15);
+          modalAndroid.style.display = 'none';
+        });
+      }
+
+      // Help badge default open (fallback to Apple setup overlay)
+      if (btnHelpBadge && modalApple) {
+        btnHelpBadge.addEventListener('click', () => {
+          triggerHaptic(20);
+          modalApple.style.display = 'flex';
+          btnHelpBadge.style.display = 'none';
+          try { localStorage.setItem('airodrop_setup_badge_dismissed', 'true'); } catch (e) {}
+        });
+      }
+
+      // Apple modal actions
+      if (btnAppleRefresh) btnAppleRefresh.addEventListener('click', () => handleRefresh(btnAppleRefresh));
+      if (btnAppleCopyUrl) btnAppleCopyUrl.addEventListener('click', handleCopyUrl);
+      if (btnAppleLogout) btnAppleLogout.addEventListener('click', handleLogout);
+
+      // Android modal actions
+      if (btnAndroidRefresh) btnAndroidRefresh.addEventListener('click', () => handleRefresh(btnAndroidRefresh));
+      if (btnAndroidCopyUrl) btnAndroidCopyUrl.addEventListener('click', handleCopyUrl);
+      if (btnAndroidLogout) btnAndroidLogout.addEventListener('click', handleLogout);
     }
 
     // ─── Receive from PC ──────────────────────────────────────
@@ -1867,6 +1902,33 @@
       lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) {
           closeCreator();
+        }
+      });
+    }
+
+    // ─── File Manager Overlay Setup ───────────────────────────────
+    function setupFileManager() {
+      const btnOpen = document.getElementById('btnOpenFileManager');
+      const overlay = document.getElementById('fileManagerOverlay');
+      const frame = document.getElementById('fileManagerFrame');
+
+      if (!btnOpen || !overlay || !frame) return;
+
+      btnOpen.addEventListener('click', () => {
+        triggerHaptic(20);
+        // Lazy-load src on first open (if not already set by token init)
+        if (!frame.src || frame.src === '' || frame.src === 'about:blank') {
+          const token = localStorage.getItem('deviceToken') || '';
+          frame.src = token ? `/files?token=${token}` : '/files';
+        }
+        overlay.style.display = 'flex';
+      });
+
+      // Listen for close message from files.html iframe
+      window.addEventListener('message', (e) => {
+        if (e.data === 'closeFileBrowser') {
+          triggerHaptic(15);
+          overlay.style.display = 'none';
         }
       });
     }
