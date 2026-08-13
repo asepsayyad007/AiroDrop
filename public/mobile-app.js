@@ -485,49 +485,60 @@
 
     let _lastNewestItemId = null;
 
+    function formatFileSize(bytes) {
+      if (!bytes || isNaN(bytes)) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+
+    function timeAgo(timestamp) {
+      if (!timestamp) return 'Just now';
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Just now';
+      const diffSec = Math.floor((new Date() - date) / 1000);
+      if (diffSec < 45) return 'Just now';
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      return `${Math.floor(diffSec / 86400)}d ago`;
+    }
+
     function renderPending(items) {
-      const textList = document.getElementById('textInboxList');
       const fileList = document.getElementById('fileInboxList');
-      if (!textList || !fileList) return;
+      if (!fileList) return;
 
       const validItems = items || [];
-      if (validItems.length > 0) {
-        const newest = validItems[0];
-        if (_lastNewestItemId === null || _lastNewestItemId !== newest.id) {
-          if (newest.type === 'text') {
-            if (typeof switchInboxTab === 'function') switchInboxTab('text');
-          } else {
-            if (typeof switchInboxTab === 'function') switchInboxTab('file');
-          }
-          _lastNewestItemId = newest.id;
-        }
+      if (validItems.length === 0) {
+        fileList.innerHTML = '<div class="empty-receive">No recent transfers</div>';
+        return;
       }
 
-      const textItems = validItems.filter(item => item.type === 'text');
-      const fileItems = validItems.filter(item => item.type !== 'text');
+      fileList.innerHTML = validItems.map(item => {
+        if (item.type === 'text') {
+          const isUrl = typeof item.content === 'string' && (item.content.startsWith('http://') || item.content.startsWith('https://'));
+          const direction = item.direction || 'Received';
+          const typeLabel = isUrl ? 'Link' : 'Text';
+          const subtitle = `${direction} · ${typeLabel}`;
+          const icon = isUrl 
+            ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
 
-      if (textItems.length === 0) {
-        textList.innerHTML = '<div class="empty-receive">No texts received yet</div>';
-      } else {
-        textList.innerHTML = textItems.map(item => {
           return `
-            <div class="receive-item" style="cursor: default;">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
-              <span class="receive-content">${escapeHtml(item.content)}</span>
-              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;">
-                <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy</button>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <div class="receive-item" style="cursor: default; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px;">
+              <span style="font-size: 1.1rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px;">${icon}</span>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <span class="receive-content" style="font-weight: 600; color: var(--text); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.content)}</span>
+                <span style="font-size: 0.72rem; color: var(--text3); margin-top: 2px;">${subtitle}</span>
+              </div>
+              <span class="receive-time" style="font-size: 0.72rem; color: var(--text3); flex-shrink: 0; margin-right: 8px;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
+                <button onclick="handleReceiveText('${escapeAttr(item.content)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Copy</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:0.9rem; cursor:pointer; padding:2px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
-        }).join('');
-      }
-
-      if (fileItems.length === 0) {
-        fileList.innerHTML = '<div class="empty-receive">No files received yet</div>';
-      } else {
-        fileList.innerHTML = fileItems.map(item => {
+        } else {
           const ext = (item.filename || item.originalName || item.name || '').split('.').pop().toLowerCase();
           const isImg = item.type === 'image' || ['jpg','jpeg','png','gif','webp','svg','heic','bmp'].includes(ext);
           const isVid = item.type === 'video' || ['mp4','mov','m4v','webm','ogv','avi','mkv'].includes(ext);
@@ -540,7 +551,7 @@
           
           let icon = getFileTypeIcon(mime);
           if (isImg && downloadUrl) {
-            icon = `<img src="${downloadUrl}" alt="${escapeAttr(displayName)}" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; display: block;" />`;
+            icon = `<img src="${downloadUrl}" alt="${escapeAttr(displayName)}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: block;" />`;
           } else if (isVid) {
             icon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`;
           } else if (isPdf) {
@@ -549,6 +560,9 @@
 
           const safeUrl = escapeAttr(downloadUrl);
           const safeTitle = escapeAttr(displayName);
+          const direction = item.direction || 'Received';
+          const formattedSize = item.size ? formatFileSize(item.size) : 'File';
+          const subtitle = `${direction} · ${formattedSize}`;
 
           let clickHandler = '';
           if (isImg) {
@@ -560,19 +574,21 @@
           }
 
           return `
-            <div class="receive-item" ${clickHandler} style="${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
-              <span style="font-size: 1.15rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; overflow: hidden; border-radius: 6px;">${icon}</span>
-              <span class="receive-content">${escapeHtml(displayName)}</span>
-              <span class="receive-time" style="margin-right: 12px; flex-shrink: 0;">${timeAgo(item.timestamp)}</span>
-              <div style="display:flex; align-items:center; gap:12px; margin-left:auto; flex-shrink: 0;" onclick="event.stopPropagation();">
-                <button onclick="copyFileLink('${downloadUrl}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Copy Link</button>
-                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.78rem; font-weight:600; cursor:pointer; padding:0; white-space:nowrap;">Download</button>
-                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:1.05rem; cursor:pointer; padding:4px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <div class="receive-item" ${clickHandler} style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px; ${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
+              <span style="font-size: 1.1rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px; overflow: hidden;">${icon}</span>
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <span class="receive-content" style="font-weight: 600; color: var(--text); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayName)}</span>
+                <span style="font-size: 0.72rem; color: var(--text3); margin-top: 2px;">${subtitle}</span>
+              </div>
+              <span class="receive-time" style="font-size: 0.72rem; color: var(--text3); flex-shrink: 0; margin-right: 8px;">${timeAgo(item.timestamp)}</span>
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;" onclick="event.stopPropagation();">
+                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Download</button>
+                <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:0.9rem; cursor:pointer; padding:2px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
           `;
-        }).join('');
-      }
+        }
+      }).join('');
     }
 
     async function deletePendingItem(itemId) {
