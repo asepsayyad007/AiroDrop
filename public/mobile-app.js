@@ -111,6 +111,7 @@
       if (bottomNav) bottomNav.style.display = 'flex';
       
       setupPWA();
+      setupQuickPCActions();
       checkConnection();
       const checkPendingBtn = document.getElementById('checkPendingBtn');
       if (checkPendingBtn) {
@@ -3481,6 +3482,51 @@
         }
       }
     });
+
+    // ─── Quick PC Actions & Clipboard Integration ────────────────
+    function setupQuickPCActions() {
+      const handlePasteText = async () => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            const clipText = await navigator.clipboard.readText();
+            if (clipText && clipText.trim()) {
+              const input = document.getElementById('mobileTextInput');
+              if (input) input.value = clipText;
+              switchSendTab('text');
+              showToast('Clipboard text pasted!', 'success');
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Clipboard read error:', err);
+        }
+        switchSendTab('text');
+        const input = document.getElementById('mobileTextInput');
+        if (input) input.focus();
+        showToast('Type or paste text to send', 'info');
+      };
+
+      document.getElementById('btnQuickClipboard')?.addEventListener('click', handlePasteText);
+      document.getElementById('btnPasteTextTop')?.addEventListener('click', handlePasteText);
+
+      document.getElementById('btnQuickFiles')?.addEventListener('click', () => {
+        const fileManagerCard = document.getElementById('btnOpenFileManagerCard');
+        if (fileManagerCard) {
+          fileManagerCard.click();
+        } else {
+          const overlay = document.getElementById('fileManagerOverlay');
+          if (overlay) overlay.style.display = 'flex';
+        }
+      });
+
+      document.getElementById('btnQuickScreen')?.addEventListener('click', () => {
+        document.getElementById('btnOpenScreencast')?.click();
+      });
+
+      document.getElementById('btnQuickTrackpad')?.addEventListener('click', () => {
+        document.getElementById('btnOpenTrackpad')?.click();
+      });
+    }
 
     // ─── Start ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', init);
