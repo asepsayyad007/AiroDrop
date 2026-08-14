@@ -445,6 +445,17 @@
     if (tempModeInput) {
       tempModeInput.checked = !!temporaryMode;
     }
+
+    const receivedFeedArea = $('#receivedFeedArea');
+    if (receivedFeedArea) {
+      if (temporaryMode) {
+        receivedFeedArea.classList.add('auto-clean-theme-active');
+      } else {
+        receivedFeedArea.classList.remove('auto-clean-theme-active');
+      }
+    }
+
+    renderFeed();
   }
 
   function updateUptimeUI(seconds) {
@@ -706,8 +717,16 @@
     const exists = allItems.some(i => i.id === item.id);
     if (!exists) {
       item.isNew = true;
+      const isAutoClearOn = $('#dashboardTempModeInput') ? $('#dashboardTempModeInput').checked : false;
+      if (item.isTemporary === undefined) {
+        item.isTemporary = isAutoClearOn;
+      }
       allItems.unshift(item);
       if (allItems.length > 100) allItems.pop();
+      setTimeout(() => {
+        const scrollContainer = document.getElementById('receivedFeedScrollContainer');
+        if (scrollContainer) scrollContainer.scrollTop = 0;
+      }, 50);
     }
   }
 
@@ -782,13 +801,17 @@
 
     const filtered = allItems.filter(item => {
       if (currentFilter === 'all') return true;
+      if (currentFilter === 'image') {
+        return item.type === 'image' || item.type === 'video';
+      }
       if (currentFilter === 'file') {
-        return item.type === 'file' || item.type === 'video' || item.type === 'audio';
+        return item.type === 'file' || item.type === 'audio';
       }
       return item.type === currentFilter;
     });
 
-    if (feedCountEl) feedCountEl.textContent = filtered.length;
+    const countBadgeEl = $('#feedCountBadge');
+    if (countBadgeEl) countBadgeEl.textContent = `${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
 
     if (filtered.length === 0) {
       feedEl.innerHTML = '';
@@ -798,78 +821,167 @@
 
     if (emptyStateEl) emptyStateEl.style.display = 'none';
 
+    const isAutoClearOn = $('#dashboardTempModeInput') ? $('#dashboardTempModeInput').checked : false;
+
     feedEl.innerHTML = filtered.map(item => {
-      const timeStr = formatTime(item.timestamp);
       const isNewClass = item.isNew ? ' is-new' : '';
       if (item.isNew) {
         setTimeout(() => {
           const el = document.getElementById(`item-${item.id}`);
           if (el) el.classList.remove('is-new');
           item.isNew = false;
-        }, 1000);
+        }, 1500);
       }
       
       if (item.type === 'text') {
         const isUrl = /^https?:\/\//i.test((item.content || '').trim());
         const urlHref = isUrl ? escapeAttr(item.content.trim()) : '';
+        const domainStr = isUrl ? urlHref.replace(/^https?:\/\//i, '').split('/')[0] : '';
+        
+        if (isUrl) {
+          return `
+            <div class="feed-item type-text type-url${isNewClass}" id="item-${item.id}">
+              <button class="card-top-close-btn clear-card-btn" data-id="${item.id}" title="Clear card from feed">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <div class="item-header">
+                <div class="item-badge-wrap">
+                  <span class="item-type-badge url">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    Web Link
+                  </span>
+                </div>
+              </div>
+              <div class="item-body">
+                <div class="url-card-box">
+                  <div class="url-icon-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                  <div class="url-text-wrap">
+                    <a href="${urlHref}" target="_blank" class="item-url-link" title="${urlHref}">${escapeHtml(item.content.trim())}</a>
+                    <span class="url-domain-sub">${escapeHtml(domainStr)}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="item-actions">
+                <div class="action-btn-group" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+                  <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.content)}" title="Copy Link to Clipboard">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 01-2-2h9a2 2 0 012 2v1"/></svg>
+                  </button>
+                  <a href="${urlHref}" target="_blank" class="btn btn-primary btn-icon open-url-btn" title="Open Link in Browser">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>
+                  <button class="delete-btn" data-id="${item.id}" title="Delete item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>`;
+        }
+
         return `
-          <div class="feed-item type-text${isNewClass}${isUrl ? ' type-url' : ''}" id="item-${item.id}">
-            <div class="item-header" style="width: 100%;">
-              <span class="item-type-badge ${isUrl ? 'url' : 'text'}">${isUrl ? '🔗 Link' : 'Text'}</span>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span class="item-time">${timeStr}</span>
-                <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </button>
+          <div class="feed-item type-text${isNewClass}" id="item-${item.id}">
+            <button class="card-top-close-btn clear-card-btn" data-id="${item.id}" title="Clear card from feed">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="item-header">
+              <div class="item-badge-wrap">
+                <span class="item-type-badge text">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  Text Message
+                </span>
               </div>
             </div>
-            <div class="item-body" style="width: 100%; margin: 8px 0;">
-              ${isUrl
-                ? `<a href="${urlHref}" target="_blank" class="item-url-preview" style="color:var(--accent);word-break:break-all;font-size:0.85rem;text-decoration:none;" title="${urlHref}">${escapeHtml(item.content.trim())}</a>`
-                : `<pre class="item-text-content">${escapeHtml(item.content)}</pre>`
-              }
+            <div class="item-body">
+              <div class="text-content-box">
+                <pre class="item-text-content">${escapeHtml(item.content)}</pre>
+              </div>
             </div>
             <div class="item-actions">
-              <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.content)}" title="Copy to PC clipboard">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              </button>
-              ${isUrl ? `
-              <button class="btn btn-primary open-url-btn" data-url="${urlHref}" title="Open in Browser" style="display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:0.75rem;border-radius:8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Open in Browser
-              </button>` : ''}
+              <div class="action-btn-group" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.content)}" title="Copy Text to Clipboard">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 01-2-2h9a2 2 0 012 2v1"/></svg>
+                </button>
+                <button class="delete-btn" data-id="${item.id}" title="Delete item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
             </div>
           </div>`;
       }
       
       if (item.type === 'image') {
+        const imgSrc = `${isElectron ? apiBase : ''}/received/${item.filename}`;
+        const isPermanentlySaved = !item.isTemporary || item.userSaved;
+        const tempBannerMsg = isAutoClearOn ? 'Temp' : 'Unsaved Temp';
+        const tempClass = !isPermanentlySaved ? ' is-temporary-item' : '';
+
         return `
-          <div class="feed-item type-image${isNewClass}" id="item-${item.id}">
+          <div class="feed-item type-image${isNewClass}${tempClass}" id="item-${item.id}">
+            <button class="card-top-close-btn clear-card-btn" data-id="${item.id}" title="Clear card from feed">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div class="item-header">
-              <span class="item-type-badge image">Image</span>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span class="item-time">${timeStr}</span>
-                <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </button>
+              <div class="item-badge-wrap">
+                <span class="item-type-badge image">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  Photo
+                </span>
+              </div>
+              ${item.fileDeletedOnDisk ? `
+                <span class="file-deleted-banner" title="File was deleted from saved location on disk">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  Deleted on Disk
+                </span>
+              ` : (!isPermanentlySaved ? `
+                <span class="item-temp-banner" title="File received in temporary mode. Click Save to keep permanently.">
+                  ${tempBannerMsg}
+                </span>
+              ` : `
+                <span class="auto-saved-tag" title="File is saved permanently">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Saved
+                </span>
+              `)}
+            </div>
+            <div class="item-body">
+              ${item.fileDeletedOnDisk ? `
+                <div class="file-deleted-box">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>File deleted in saved location. Send or save it again.</span>
+                </div>
+              ` : `
+                <div class="image-preview-frame lightbox-trigger" data-src="${imgSrc}" data-name="${escapeAttr(item.originalName || item.filename)}">
+                  <img src="${imgSrc}" alt="${escapeAttr(item.filename)}" loading="lazy" onerror="window.markFileDeletedOnDisk &amp;&amp; window.markFileDeletedOnDisk('${item.id}')">
+                  <div class="image-hover-overlay">
+                    <span class="zoom-badge">Click to Expand</span>
+                  </div>
+                </div>
+              `}
+              <div class="media-meta-row">
+                <span class="media-filename" title="${escapeAttr(item.originalName || item.filename)}">${escapeHtml(item.originalName || item.filename)}</span>
               </div>
             </div>
-            <div class="item-image-preview lightbox-trigger" data-src="${isElectron ? apiBase : ''}/received/${item.filename}">
-              <img src="${isElectron ? apiBase : ''}/received/${item.filename}" alt="Image transfer">
-            </div>
             <div class="item-actions">
-              <span class="item-meta">${formatSize(item.size || 0)}</span>
-              <a href="${isElectron ? apiBase : ''}/received/${item.filename}" download="${item.filename}" class="btn btn-secondary btn-icon" title="Save Image">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </a>
-              <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              </button>
-              ${isElectron ? `
-              <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Open Folder">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              </button>
-              ` : ''}
+              <div class="action-meta-left" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span class="action-size-badge">${formatSize(item.size || 0)}</span>
+              </div>
+              <div class="action-btn-group" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary btn-icon copy-img-btn" data-src="${imgSrc}" data-text="${escapeAttr(item.originalName || item.filename)}" title="Copy Photo to Clipboard">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 01-2-2h9a2 2 0 012 2v1"/></svg>
+                </button>
+                ${isPermanentlySaved ? `
+                  ${isElectron ? `
+                  <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Show in Folder">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </button>` : ''}
+                ` : `
+                  <button type="button" data-id="${item.id}" class="btn btn-primary btn-icon save-dl-btn" title="Save Image Permanently">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </button>
+                `}
+                <button class="delete-btn" data-id="${item.id}" title="Delete item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
             </div>
           </div>`;
       }
@@ -878,70 +990,108 @@
         const isAudio = item.type === 'audio' || (item.mimeType && item.mimeType.startsWith('audio'));
         const isVideo = item.type === 'video' || (item.mimeType && item.mimeType.startsWith('video'));
         const isPdf = item.mimeType && item.mimeType.includes('pdf');
+        const fileUrl = `${isElectron ? apiBase : ''}/received/${item.filename}`;
         
-        let fileIcon = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
-          </svg>`;
+        let fileIconSvg = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+        let fileIconSvgLarge = `
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
         
         if (isAudio) {
-          fileIcon = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-            </svg>`;
+          fileIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+          fileIconSvgLarge = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
         } else if (isVideo) {
-          fileIcon = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 7l-7 5 7 5V7z"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>`;
+          fileIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
+          fileIconSvgLarge = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
         } else if (isPdf) {
-          fileIcon = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-            </svg>`;
+          fileIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+          fileIconSvgLarge = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
         }
 
-        let badgeLabel = 'File';
-        if (isVideo) badgeLabel = 'Video';
-        else if (isAudio) badgeLabel = 'Audio';
+        let badgeLabel = 'Document';
+        if (isVideo) {
+          badgeLabel = 'Video File';
+        } else if (isAudio) {
+          badgeLabel = 'Audio File';
+        }
+
+        const extStr = (item.originalName || item.filename).split('.').pop().toUpperCase();
+        const isPermanentlySaved = !item.isTemporary || item.userSaved;
+        const tempBannerMsg = isAutoClearOn ? 'Temp' : 'Unsaved Temp';
+        const tempClass = !isPermanentlySaved ? ' is-temporary-item' : '';
 
         return `
-          <div class="feed-item type-file${isNewClass}" id="item-${item.id}">
-            <div class="item-header" style="width: 100%;">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span class="item-type-badge file">${badgeLabel}</span>
-                <span class="item-time">${timeStr}</span>
+          <div class="feed-item type-file${isNewClass}${tempClass}" id="item-${item.id}">
+            <button class="card-top-close-btn clear-card-btn" data-id="${item.id}" title="Clear card from feed">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="item-header">
+              <div class="item-badge-wrap">
+                <span class="item-type-badge file">
+                  ${fileIconSvg}
+                  ${badgeLabel}
+                </span>
               </div>
-              <button class="delete-btn" data-id="${item.id}" title="Delete" aria-label="Delete item">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              </button>
+              ${item.fileDeletedOnDisk ? `
+                <span class="file-deleted-banner" title="File was deleted from saved location on disk">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  Deleted on Disk
+                </span>
+              ` : (!isPermanentlySaved ? `
+                <span class="item-temp-banner" title="File received in temporary mode. Click Save to keep permanently.">
+                  ${tempBannerMsg}
+                </span>
+              ` : `
+                <span class="auto-saved-tag" title="File is saved permanently">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Saved
+                </span>
+              `)}
             </div>
-            <div class="item-body" style="display:flex;align-items:center;gap:12px;margin: 10px 0; width:100%;">
-              <div style="background:var(--accent-bg);color:var(--accent);padding:10px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                ${fileIcon}
-              </div>
-              <div style="min-width:0;flex:1;">
-                <h4 style="font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);" title="${escapeAttr(item.originalName)}">
-                  ${escapeHtml(item.originalName)}
-                </h4>
-                <p style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">
-                  ${formatSize(item.size || 0)} &bull; ${item.mimeType || 'Unknown Type'}
-                </p>
-              </div>
+            <div class="item-body">
+              ${item.fileDeletedOnDisk ? `
+                <div class="file-deleted-box">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>File deleted in saved location. Send or save it again.</span>
+                </div>
+              ` : `
+                <div class="file-card-box">
+                  <div class="file-icon-square">
+                    ${fileIconSvgLarge}
+                  </div>
+                  <div class="file-info-col">
+                    <div class="file-title-row" title="${escapeAttr(item.originalName || item.filename)}">
+                      ${escapeHtml(item.originalName || item.filename)}
+                    </div>
+                    <div class="file-sub-row">
+                      <span class="file-ext-tag">${escapeHtml(extStr)}</span>
+                    </div>
+                  </div>
+                </div>
+              `}
             </div>
             <div class="item-actions">
-              <a href="${isElectron ? apiBase : ''}/received/${item.filename}" download="${escapeAttr(item.originalName)}" class="btn btn-secondary btn-icon" title="Download File">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </a>
-              <button class="btn btn-secondary btn-icon copy-fn-btn" data-fn="${escapeAttr(item.filename)}" title="Copy File Name">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012 2h9a2 2 0 012 2v1"/></svg>
-              </button>
-              ${isElectron ? `
-              <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Open Folder">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              </button>
-              ` : ''}
+              <div class="action-meta-left" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span class="action-size-badge">${formatSize(item.size || 0)}</span>
+              </div>
+              <div class="action-btn-group" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.originalName || item.filename)}" title="Copy Name to Clipboard">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 01-2-2h9a2 2 0 012 2v1"/></svg>
+                </button>
+                ${isPermanentlySaved ? `
+                  ${isElectron ? `
+                  <button class="btn btn-secondary btn-icon open-folder-btn" data-fn="${escapeAttr(item.filename)}" title="Show in Folder">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </button>` : ''}
+                ` : `
+                  <button type="button" data-id="${item.id}" class="btn btn-primary btn-icon save-dl-btn" title="Download & Save Permanently">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  </button>
+                `}
+                <button class="delete-btn" data-id="${item.id}" title="Delete item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+              </div>
             </div>
           </div>`;
       }
@@ -956,16 +1106,59 @@
       });
     });
 
-    $$('.copy-fn-btn').forEach(btn => {
+    $$('.copy-img-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        copyToClipboard(btn.getAttribute('data-fn'), btn);
+        const imgSrc = btn.getAttribute('data-src');
+        copyImageToClipboard(imgSrc, btn);
       });
     });
 
+    $$('.save-dl-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        try {
+          btn.disabled = true;
+          const res = await doFetch('/api/save-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            const item = allItems.find(i => i.id == id);
+            if (item) {
+              item.isTemporary = false;
+              item.userSaved = true;
+              if (data.item && data.item.path) item.path = data.item.path;
+            }
+            renderFeed();
+            showToast('Saved permanently to download folder!', 'success');
+          } else {
+            showToast(data.error || 'Failed to save file', 'error');
+            btn.disabled = false;
+          }
+        } catch (_) {
+          showToast('Network error: Failed to save file', 'error');
+          btn.disabled = false;
+        }
+      });
+    });
+
+
+
     $$('.lightbox-trigger').forEach(trigger => {
       trigger.addEventListener('click', () => {
-        openLightbox(trigger.getAttribute('data-src'));
+        const src = trigger.getAttribute('data-src');
+        const name = trigger.getAttribute('data-name');
+        if (window.openImageLightbox && src) {
+          window.openImageLightbox(src, name);
+        } else {
+          openLightbox(src);
+        }
       });
     });
 
@@ -1392,15 +1585,47 @@
       });
     }
 
-    // Setup Guide & My QR Code buttons
+    // Setup Guide button
     const btnDashSetup = $('#btnDashSetupGuide');
     if (btnDashSetup) btnDashSetup.addEventListener('click', () => openSetupModal());
 
-    const btnDashQr = $('#btnDashMyQrCode');
-    if (btnDashQr) btnDashQr.addEventListener('click', () => openSetupModal());
-
     const btnOpenSettingsDrawer = $('#btnOpenSettingsDrawer');
     if (btnOpenSettingsDrawer) btnOpenSettingsDrawer.addEventListener('click', () => openSettingsModal());
+
+    // Refresh Received Feed Button
+    const btnRefreshFeed = $('#btnRefreshFeed');
+    if (btnRefreshFeed) {
+      btnRefreshFeed.addEventListener('click', async () => {
+        const icon = $('#refreshFeedIcon');
+        if (icon) icon.style.transform = 'rotate(360deg)';
+        setTimeout(() => { if (icon) icon.style.transform = 'none'; }, 500);
+        await loadHistory();
+        showToast('Received Feed refreshed', 'info');
+      });
+    }
+
+    // Open Download Directory Button
+    const btnOpenSaveDir = $('#btnOpenSaveDir');
+    if (btnOpenSaveDir) {
+      btnOpenSaveDir.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('open-save-directory');
+          showToast('Opening download directory...', 'info');
+        } else {
+          try {
+            const res = await doFetch('/api/open-directory', { method: 'POST' });
+            if (res.ok) {
+              showToast('Opening download directory...', 'info');
+            } else {
+              showToast('Failed to open directory', 'error');
+            }
+          } catch (_) {
+            showToast('Failed to open directory', 'error');
+          }
+        }
+      });
+    }
 
     // Setup Creator Profile Modal & Connected Devices Telemetry
     setupCreatorProfileModal();
@@ -1506,7 +1731,7 @@
     });
   }
 
-  // ─── Filter group setup ────────────────────────────────────
+  // ─── Filter group & View mode switcher setup ─────────────
   function setupFilters() {
     $$('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1516,6 +1741,53 @@
         renderFeed();
       });
     });
+
+    const btnViewList = $('#btnViewList');
+    const btnViewGrid = $('#btnViewGrid');
+    const feedContainer = $('#feed');
+
+    let currentViewMode = localStorage.getItem('airodrop_feed_view_mode') || 'grid';
+
+    function applyViewMode(mode) {
+      currentViewMode = mode;
+      localStorage.setItem('airodrop_feed_view_mode', mode);
+      
+      if (mode === 'grid') {
+        if (feedContainer) feedContainer.classList.add('grid-view');
+        if (btnViewGrid) {
+          btnViewGrid.classList.add('active');
+          btnViewGrid.style.background = 'rgba(255, 255, 255, 0.08)';
+          btnViewGrid.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          btnViewGrid.style.color = '#ffffff';
+        }
+        if (btnViewList) {
+          btnViewList.classList.remove('active');
+          btnViewList.style.background = 'transparent';
+          btnViewList.style.borderColor = 'transparent';
+          btnViewList.style.color = '#a0a0b8';
+        }
+      } else {
+        if (feedContainer) feedContainer.classList.remove('grid-view');
+        if (btnViewList) {
+          btnViewList.classList.add('active');
+          btnViewList.style.background = 'rgba(255, 255, 255, 0.08)';
+          btnViewList.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          btnViewList.style.color = '#ffffff';
+        }
+        if (btnViewGrid) {
+          btnViewGrid.classList.remove('active');
+          btnViewGrid.style.background = 'transparent';
+          btnViewGrid.style.borderColor = 'transparent';
+          btnViewGrid.style.color = '#a0a0b8';
+        }
+      }
+    }
+
+    if (btnViewList && btnViewGrid) {
+      btnViewList.addEventListener('click', () => applyViewMode('list'));
+      btnViewGrid.addEventListener('click', () => applyViewMode('grid'));
+      applyViewMode(currentViewMode);
+    }
   }
 
 
@@ -1569,9 +1841,52 @@
     // Single item delete (using delegation)
     const feedEl = $('#feed');
     if (feedEl) {
+      // Clear card from UI feed only (does NOT delete physical file from disk)
+      feedEl.addEventListener('click', async (e) => {
+        const clearBtn = e.target.closest('.clear-card-btn');
+        if (!clearBtn) return;
+        
+        e.stopPropagation();
+        e.preventDefault();
+        const id = clearBtn.getAttribute('data-id');
+        const card = $(`#item-${id}`);
+        
+        if (card) {
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.95)';
+          card.style.transition = 'all 0.25s ease';
+        }
+        
+        try {
+          const res = await doFetch(`/api/history/${id}?keepFile=true`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setTimeout(() => {
+              allItems = allItems.filter(item => item.id !== id);
+              renderFeed();
+              updateStats();
+              showToast('Card cleared from feed', 'info');
+            }, 250);
+          } else {
+            if (card) {
+              card.style.opacity = '1';
+              card.style.transform = 'scale(1)';
+            }
+            showToast(data.error || 'Failed to clear card', 'error');
+          }
+        } catch {
+          if (card) {
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+          }
+          showToast('Network error', 'error');
+        }
+      });
+
+      // Single item delete from disk history
       feedEl.addEventListener('click', async (e) => {
         const deleteBtn = e.target.closest('.delete-btn');
-        if (!deleteBtn) return;
+        if (!deleteBtn || e.target.closest('.clear-card-btn')) return;
         
         const id = deleteBtn.getAttribute('data-id');
         const card = $(`#item-${id}`);
@@ -2168,7 +2483,7 @@
       if (btnWebCheckUpdates) {
         btnWebCheckUpdates.addEventListener('click', async () => {
           btnWebCheckUpdates.disabled = true;
-          btnWebCheckUpdates.textContent = '🔄 Checking...';
+          btnWebCheckUpdates.textContent = 'Checking...';
           
           if (webUpdateStatusMessage) {
             webUpdateStatusMessage.style.display = 'none';
@@ -2209,7 +2524,7 @@
             showToast('Update check failed', 'error');
           } finally {
             btnWebCheckUpdates.disabled = false;
-            btnWebCheckUpdates.textContent = '🔄 Check for Updates';
+            btnWebCheckUpdates.textContent = 'Check for Updates';
           }
         });
       }
@@ -2457,6 +2772,61 @@
         setCopiedState();
       } catch {
         showToast('Failed to copy', 'error');
+      }
+    }
+  }
+
+  async function copyImageToClipboard(imgSrc, btnElement) {
+    if (!imgSrc) return;
+    
+    function setCopiedState() {
+      if (btnElement) {
+        btnElement.classList.add('copied');
+        const oldHtml = btnElement.innerHTML;
+        btnElement.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>`;
+        setTimeout(() => {
+          btnElement.classList.remove('copied');
+          btnElement.innerHTML = oldHtml;
+        }, 1500);
+      }
+      showToast('Photo copied to clipboard!', 'success');
+    }
+
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = imgSrc;
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('Failed to load image for clipboard copy'));
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Canvas blob generation failed');
+
+      if (navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        setCopiedState();
+      } else {
+        throw new Error('Async Clipboard API write image not supported');
+      }
+    } catch (err) {
+      console.warn('[Clipboard] Web API image copy failed, using fallback:', err);
+      if (btnElement) {
+        const textFallback = btnElement.getAttribute('data-text') || imgSrc;
+        copyToClipboard(textFallback, btnElement);
       }
     }
   }
@@ -2851,7 +3221,7 @@
       }
       if (btnCheckUpdates) {
         btnCheckUpdates.disabled = true;
-        btnCheckUpdates.textContent = '🔄 Checking...';
+        btnCheckUpdates.textContent = 'Checking...';
       }
       if (updateStatusText) updateStatusText.textContent = 'Connecting to server...';
 
@@ -2881,7 +3251,7 @@
           }
           if (btnCheckUpdates) {
             btnCheckUpdates.disabled = false;
-            btnCheckUpdates.textContent = '🔄 Check for Updates';
+            btnCheckUpdates.textContent = 'Check for Updates';
           }
         }
       }
@@ -3100,12 +3470,12 @@
 
       if (status.running) {
         if (ccIndicator) {
-          ccIndicator.style.backgroundColor = '#00ff66';
-          ccIndicator.style.boxShadow = '0 0 10px rgba(0, 255, 102, 0.6)';
+          ccIndicator.style.backgroundColor = '#22c55e';
+          ccIndicator.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.6)';
         }
         if (ccText) {
           ccText.textContent = 'Service Active';
-          ccText.style.color = '#00ff66';
+          ccText.style.color = '#ffffff';
         }
         if (ccIPPort) {
           ccIPPort.textContent = `${status.ip}:${status.port}`;
@@ -3129,9 +3499,10 @@
 
         if (servicePulseRing) servicePulseRing.style.display = 'block';
         if (serviceStatusIcon) {
-          serviceStatusIcon.style.background = 'linear-gradient(135deg, #00d26a, #008a47)';
-          serviceStatusIcon.style.boxShadow = '0 0 10px rgba(0,210,106,0.35)';
-          serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><polyline points="20 6 9 17 4 12"/></svg>`;
+          serviceStatusIcon.style.background = 'rgba(255, 255, 255, 0.08)';
+          serviceStatusIcon.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+          serviceStatusIcon.style.boxShadow = '0 0 10px rgba(255, 255, 255, 0.2)';
+          serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><polyline points="20 6 9 17 4 12"/></svg>`;
         }
         if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Active';
         if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = 'Synchronization engine running smoothly.';
@@ -4573,7 +4944,7 @@
 
           const removeSingleBtn = document.createElement('button');
           removeSingleBtn.style.cssText = 'background:none; border:none; color:#ff6b6b; cursor:pointer; padding:2px 4px; font-size:0.8rem; line-height:1; border-radius:4px;';
-          removeSingleBtn.textContent = '✕';
+          removeSingleBtn.textContent = '×';
           removeSingleBtn.title = 'Remove file';
           removeSingleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -4973,49 +5344,346 @@
     }
   }
 
-  // ─── Global Image Lightbox Handler ─────────────────────────
-  window.openImageLightbox = function(src, name) {
-    const modal = document.getElementById('globalImageLightbox');
-    const img = document.getElementById('lightboxImage');
-    const title = document.getElementById('lightboxTitle');
-    const downloadBtn = document.getElementById('btnLightboxDownload');
-    if (!modal || !img) return;
+  // ─── Universal Media Lightbox Handler (Image Pan/Zoom, Video, Audio & PDF) ───
+  let lightboxScale = 1;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
 
-    title.textContent = name || 'Image Preview';
-    img.src = src;
-    if (downloadBtn) {
-      downloadBtn.href = src;
-      downloadBtn.download = name || 'image';
+  function updateLightboxZoom() {
+    const img = document.getElementById('lightboxImage');
+    const zoomText = document.getElementById('lightboxZoomLevel');
+    if (img) {
+      if (lightboxScale <= 1) {
+        panX = 0;
+        panY = 0;
+        img.style.cursor = 'grab';
+      } else {
+        img.style.cursor = isDragging ? 'grabbing' : 'grab';
+      }
+      img.style.transform = `translate(${panX}px, ${panY}px) scale(${lightboxScale})`;
+      img.style.transition = isDragging ? 'none' : 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)';
     }
+    if (zoomText) {
+      zoomText.textContent = `${Math.round(lightboxScale * 100)}%`;
+    }
+  }
+
+  function resetMediaLightbox() {
+    const img = document.getElementById('lightboxImage');
+    const video = document.getElementById('lightboxVideo');
+    const audio = document.getElementById('lightboxAudio');
+    const audioBox = document.getElementById('lightboxAudioBox');
+    const pdfFrame = document.getElementById('lightboxPdfFrame');
+
+    lightboxScale = 1;
+    panX = 0;
+    panY = 0;
+    isDragging = false;
+
+    if (img) {
+      img.style.display = 'none';
+      img.src = '';
+      img.style.transform = 'none';
+    }
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      video.style.display = 'none';
+    }
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+    }
+    if (audioBox) audioBox.style.display = 'none';
+    if (pdfFrame) {
+      pdfFrame.src = '';
+      pdfFrame.style.display = 'none';
+    }
+  }
+
+  window.markFileDeletedOnDisk = function(itemId) {
+    const item = allItems.find(i => i.id == itemId);
+    if (item && !item.fileDeletedOnDisk) {
+      item.fileDeletedOnDisk = true;
+      renderFeed();
+      showToast('This file was deleted from your saved folder on disk. Save it again or send a new copy.', 'warning');
+    }
+  };
+
+  async function checkFileOnDisk(filename) {
+    if (!filename) return true;
+    try {
+      const res = await fetch(`/api/check-file?filename=${encodeURIComponent(filename)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return !!data.exists;
+      }
+    } catch (_) {}
+    return true;
+  }
+
+  window.openMediaPreview = function(src, name, fileTypeHint) {
+    const modal = document.getElementById('globalImageLightbox');
+    const title = document.getElementById('lightboxTitle');
+    const zoomControls = document.getElementById('lightboxZoomControls');
+    const downloadBtn = document.getElementById('btnLightboxDownload');
+    const downloadText = document.getElementById('btnLightboxDownloadText');
+    if (!modal || !src) return;
+
+    const fn = src.split('/').pop();
+    const item = allItems.find(i => i.filename === fn || (i.originalName && i.originalName === fn));
+
+    if (item && item.fileDeletedOnDisk) {
+      showToast('This file was deleted from your saved folder on disk. Please save it again or send a new copy.', 'warning');
+      return;
+    }
+
+    if (fn) {
+      checkFileOnDisk(fn).then(exists => {
+        if (!exists) {
+          if (item) item.fileDeletedOnDisk = true;
+          renderFeed();
+          showToast('This file was deleted from your saved folder on disk. Please save it again or send a new copy.', 'warning');
+          modal.style.display = 'none';
+          resetMediaLightbox();
+        }
+      });
+    }
+
+    resetMediaLightbox();
+
+    const urlPath = src.split('?')[0].toLowerCase();
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg|heic|bmp)$/i.test(urlPath) || fileTypeHint === 'image';
+    const isVideo = /\.(mp4|mov|m4v|webm|ogv|avi|mkv)$/i.test(urlPath) || fileTypeHint === 'video';
+    const isAudio = /\.(mp3|wav|m4a|ogg|flac|aac)$/i.test(urlPath) || fileTypeHint === 'audio';
+    const isPdf = /\.pdf$/i.test(urlPath) || fileTypeHint === 'pdf';
+
+    title.textContent = name || 'Media Preview';
+    const isPermanentlySaved = item ? (!item.isTemporary || item.userSaved) : false;
+
+    if (downloadBtn) {
+      downloadBtn.removeAttribute('href');
+      downloadBtn.removeAttribute('download');
+      downloadBtn.style.display = isPermanentlySaved ? 'none' : 'inline-flex';
+      downloadBtn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (item && item.id) {
+          try {
+            const res = await doFetch('/api/save-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: item.id })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              item.isTemporary = false;
+              item.userSaved = true;
+              renderFeed();
+              showToast('Saved permanently to download folder!', 'success');
+              downloadBtn.style.display = 'none';
+            } else {
+              showToast(data.error || 'Failed to save file', 'error');
+            }
+          } catch (_) {
+            showToast('Failed to save file', 'error');
+          }
+        }
+      };
+    }
+
+    if (isImage) {
+      const img = document.getElementById('lightboxImage');
+      if (img) {
+        img.src = src;
+        img.alt = name || 'Photo';
+        img.style.display = 'block';
+      }
+      if (zoomControls) zoomControls.style.display = 'flex';
+      if (downloadText) downloadText.textContent = 'Download Photo';
+      updateLightboxZoom();
+    } else if (isVideo) {
+      const video = document.getElementById('lightboxVideo');
+      if (video) {
+        video.src = src;
+        video.style.display = 'block';
+        video.play().catch(() => {});
+      }
+      if (zoomControls) zoomControls.style.display = 'none';
+      if (downloadText) downloadText.textContent = 'Download Video';
+    } else if (isAudio) {
+      const audio = document.getElementById('lightboxAudio');
+      const audioBox = document.getElementById('lightboxAudioBox');
+      const trackName = document.getElementById('lightboxAudioTrackName');
+      if (audio && audioBox) {
+        audio.src = src;
+        if (trackName) trackName.textContent = name || 'Audio Track';
+        audioBox.style.display = 'flex';
+        audio.play().catch(() => {});
+      }
+      if (zoomControls) zoomControls.style.display = 'none';
+      if (downloadText) downloadText.textContent = 'Download Music';
+    } else if (isPdf) {
+      const pdfFrame = document.getElementById('lightboxPdfFrame');
+      if (pdfFrame) {
+        pdfFrame.src = src;
+        pdfFrame.style.display = 'block';
+      }
+      if (zoomControls) zoomControls.style.display = 'none';
+      if (downloadText) downloadText.textContent = 'Download PDF';
+    } else {
+      // Fallback to Image
+      const img = document.getElementById('lightboxImage');
+      if (img) {
+        img.src = src;
+        img.style.display = 'block';
+      }
+      if (zoomControls) zoomControls.style.display = 'flex';
+      if (downloadText) downloadText.textContent = 'Download File';
+      updateLightboxZoom();
+    }
+
     modal.style.display = 'flex';
   };
 
+  window.openImageLightbox = function(src, name) {
+    window.openMediaPreview(src, name, 'image');
+  };
+
+  // Mouse Drag Panning for Photo Zoom
+  const imgEl = document.getElementById('lightboxImage');
+  if (imgEl) {
+    imgEl.addEventListener('mousedown', (e) => {
+      if (lightboxScale > 1) {
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        imgEl.style.cursor = 'grabbing';
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging && lightboxScale > 1) {
+        e.preventDefault();
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateLightboxZoom();
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        if (imgEl) imgEl.style.cursor = 'grab';
+      }
+    });
+  }
+
+  const btnZoomIn = document.getElementById('btnLightboxZoomIn');
+  if (btnZoomIn) {
+    btnZoomIn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxScale = Math.min(4, parseFloat((lightboxScale + 0.25).toFixed(2)));
+      updateLightboxZoom();
+    });
+  }
+
+  const btnZoomOut = document.getElementById('btnLightboxZoomOut');
+  if (btnZoomOut) {
+    btnZoomOut.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxScale = Math.max(0.5, parseFloat((lightboxScale - 0.25).toFixed(2)));
+      if (lightboxScale <= 1) { panX = 0; panY = 0; }
+      updateLightboxZoom();
+    });
+  }
+
+  const btnResetZoom = document.getElementById('btnLightboxResetZoom');
+  if (btnResetZoom) {
+    btnResetZoom.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxScale = 1;
+      panX = 0;
+      panY = 0;
+      updateLightboxZoom();
+    });
+  }
+
+  const lightboxMediaContainer = document.getElementById('lightboxMediaContainer');
+  if (lightboxMediaContainer) {
+    lightboxMediaContainer.addEventListener('wheel', (e) => {
+      const img = document.getElementById('lightboxImage');
+      if (img && img.style.display !== 'none') {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          lightboxScale = Math.min(4, parseFloat((lightboxScale + 0.15).toFixed(2)));
+        } else {
+          lightboxScale = Math.max(0.5, parseFloat((lightboxScale - 0.15).toFixed(2)));
+          if (lightboxScale <= 1) { panX = 0; panY = 0; }
+        }
+        updateLightboxZoom();
+      }
+    }, { passive: false });
+  }
+
+  const btnLightboxDownloadEl = document.getElementById('btnLightboxDownload');
+  if (btnLightboxDownloadEl) {
+    btnLightboxDownloadEl.addEventListener('click', () => {
+      const src = btnLightboxDownloadEl.getAttribute('href');
+      if (src) {
+        const fn = src.split('/').pop();
+        const item = allItems.find(i => i.filename === fn || (i.originalName && i.originalName === fn));
+        if (item) {
+          item.userSaved = true;
+          renderFeed();
+          btnLightboxDownloadEl.style.display = 'none';
+          showToast('File saved permanently!', 'success');
+        }
+      }
+    });
+  }
+
+  // Universal Click Trigger for Media Items (Photos, Videos, Music, PDFs)
   document.addEventListener('click', (e) => {
-    const target = e.target.closest('img, .clickable-image-preview, [data-preview-img]');
-    if (target && target.id !== 'lightboxImage' && (target.dataset.previewImg || target.classList.contains('clickable-image-preview') || target.closest('.receive-file-row') || target.closest('.file-card'))) {
-      const src = target.getAttribute('data-src') || target.src;
-      const name = target.getAttribute('data-name') || target.alt || 'Image Preview';
-      if (src && !src.endsWith('#') && !src.includes('logo.png') && !src.includes('favicon')) {
-        e.stopPropagation();
-        window.openImageLightbox(src, name);
+    const cardEl = e.target.closest('.feed-item');
+    const target = e.target.closest('img, .lightbox-trigger, .file-card-box, [data-preview-img]');
+    if (target && target.id !== 'lightboxImage' && cardEl) {
+      const id = cardEl.getAttribute('id') ? cardEl.getAttribute('id').replace('item-', '') : null;
+      const item = allItems.find(i => i.id == id);
+      if (item && item.type !== 'text') {
+        const fileUrl = `${isElectron ? apiBase : ''}/received/${item.filename}`;
+        const name = item.originalName || item.filename;
+        if (!e.target.closest('.btn, .delete-btn, .copy-btn, .copy-img-btn, .save-dl-btn, .open-folder-btn, a')) {
+          e.stopPropagation();
+          window.openMediaPreview(fileUrl, name, item.type, item.mimeType);
+        }
       }
     }
   });
 
+  function closeLightboxModal() {
+    const modal = document.getElementById('globalImageLightbox');
+    if (modal) {
+      modal.style.display = 'none';
+      resetMediaLightbox();
+    }
+  }
+
   const btnCloseLight = document.getElementById('btnCloseLightbox');
   if (btnCloseLight) {
-    btnCloseLight.addEventListener('click', () => {
-      const modal = document.getElementById('globalImageLightbox');
-      if (modal) modal.style.display = 'none';
-    });
+    btnCloseLight.addEventListener('click', closeLightboxModal);
   }
 
   const modalLight = document.getElementById('globalImageLightbox');
   if (modalLight) {
     modalLight.addEventListener('click', (e) => {
-      if (e.target === modalLight) {
-        modalLight.style.display = 'none';
-      }
+      if (e.target === modalLight) closeLightboxModal();
     });
   }
 

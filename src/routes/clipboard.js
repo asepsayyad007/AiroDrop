@@ -82,7 +82,12 @@ function getRawBinaryFilename(req, rawMime, fallbackPrefix) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, state.SAVE_DIR);
+    const isTemp = state.TEMPORARY_MODE || req.headers['x-temp-mode'] === 'true' || req.query.temp === 'true';
+    const targetDir = (isTemp && state.TEMP_DIR) ? state.TEMP_DIR : state.SAVE_DIR;
+    if (!fs.existsSync(targetDir)) {
+      try { fs.mkdirSync(targetDir, { recursive: true }); } catch (_) {}
+    }
+    cb(null, targetDir);
   },
   filename: (req, file, cb) => {
     const sanitized = sanitizeFilename(file.originalname, 'file');
@@ -171,8 +176,8 @@ router.post('/text', async (req, res) => {
   }
 });
 
-// POST /api/image & POST /api/file — Receive image or generic file from iPhone
-router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, { name: 'file', maxCount: 1 }]), async (req, res) => {
+// POST /api/image, /api/file & /api/clipboard/file — Receive image or generic file from iPhone/iOS Shortcuts
+router.post(['/image', '/file', '/clipboard/file'], upload.any(), async (req, res) => {
   try {
     let savedPath;
     let filename;
@@ -182,8 +187,17 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
 
     let fileObj = null;
     if (req.files) {
-      fileObj = (req.files['image'] && req.files['image'][0]) || (req.files['file'] && req.files['file'][0]);
+      if (Array.isArray(req.files) && req.files.length > 0) {
+        fileObj = req.files[0];
+      } else if (typeof req.files === 'object') {
+        const keys = Object.keys(req.files);
+        if (keys.length > 0 && req.files[keys[0]].length > 0) {
+          fileObj = req.files[keys[0]][0];
+        }
+      }
     }
+
+    const isTemp = state.TEMPORARY_MODE || req.headers['x-temp-mode'] === 'true' || req.query.temp === 'true';
 
     if (fileObj) {
       savedPath = fileObj.path;
@@ -199,13 +213,30 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
       const fileInfo = getRawBinaryFilename(req, detectedMime, 'uploaded');
       filename = fileInfo.filename;
       originalName = fileInfo.originalName;
-      savedPath = path.join(state.SAVE_DIR, filename);
+      const targetDir = isTemp ? state.TEMP_DIR : state.SAVE_DIR;
+      savedPath = path.join(targetDir, filename);
       fileSize = req.body.length;
       mimeType = detectedMime;
 
       fs.writeFileSync(savedPath, req.body);
     } else {
       return res.status(400).json({ error: 'No file or binary buffer provided.' });
+    }
+
+    if (isTemp && savedPath && fs.existsSync(savedPath)) {
+      const targetTempPath = path.join(state.TEMP_DIR, filename);
+      if (path.resolve(savedPath) !== path.resolve(targetTempPath)) {
+        try {
+          fs.renameSync(savedPath, targetTempPath);
+          savedPath = targetTempPath;
+        } catch (_) {
+          try {
+            fs.copyFileSync(savedPath, targetTempPath);
+            fs.unlinkSync(savedPath);
+            savedPath = targetTempPath;
+          } catch (_) {}
+        }
+      }
     }
 
     const extractedUrl = await utils.tryExtractUrlFromHtmlFile(savedPath, mimeType);
@@ -244,11 +275,13 @@ router.post(['/image', '/file'], upload.fields([{ name: 'image', maxCount: 1 }, 
       type: isImg ? 'image' : 'file',
       filename: filename,
       originalName: originalName,
-      path: relativePath,
+      path: savedPath,
       size: fileSize,
       mimetype: mimeType,
       timestamp: new Date().toISOString(),
-      clipboardSuccess: isImg ? clipResult.success : false
+      clipboardSuccess: isImg ? clipResult.success : false,
+      isTemporary: isTemp,
+      userSaved: !isTemp
     };
     utils.addToHistory(item);
 
@@ -346,7 +379,8 @@ router.get('/clipboard', async (req, res) => {
       if (latestItem.type === 'file' || latestItem.type === 'image') {
         const localIP = utils.getLocalIP();
         const httpPort = parseInt(state.PORT, 10) + 1; // fallback HTTP port
-        const downloadUrl = `http://${localIP}:${httpPort}/received/${latestItem.filename}`;
+        const folder = latestItem.isOutgoing ? 'shared' : 'received';
+        const downloadUrl = `http://${localIP}:${httpPort}/${folder}/${latestItem.filename}`;
         
         const size = latestItem.size || 0;
         const mime = latestItem.mimeType || latestItem.mimetype || detectMimeType(latestItem.filename);
@@ -400,7 +434,8 @@ router.get('/latest-file', (req, res) => {
     if (latestFile) {
       const localIP = utils.getLocalIP();
       const httpPort = parseInt(state.PORT, 10) + 1;
-      const downloadUrl = `http://${localIP}:${httpPort}/received/${latestFile.filename}`;
+      const folder = latestFile.isOutgoing ? 'shared' : 'received';
+      const downloadUrl = `http://${localIP}:${httpPort}/${folder}/${latestFile.filename}`;
       res.json({
         success: true,
         filename: latestFile.originalName || latestFile.filename,
@@ -415,14 +450,94 @@ router.get('/latest-file', (req, res) => {
   }
 });
 
+// POST /api/save-file — Save a temporary received file permanently to state.SAVE_DIR
+router.post('/save-file', express.json(), (req, res) => {
+  try {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'File ID is required' });
+
+    const item = state.history.find(i => i.id == id);
+    if (!item) return res.status(404).json({ error: 'Item not found in history' });
+
+    if (item.userSaved && !item.isTemporary) {
+      return res.json({ success: true, message: 'File is already permanently saved', item });
+    }
+
+    const filename = item.filename || (item.path ? path.basename(item.path) : null);
+    if (!filename) return res.status(400).json({ error: 'Item missing filename' });
+
+    // Locate source file on disk
+    let sourcePath = null;
+    const candidates = [
+      item.path,
+      state.TEMP_DIR ? path.join(state.TEMP_DIR, filename) : null,
+      path.join(__dirname, '..', '..', item.path || ''),
+      path.join(state.SAVE_DIR, filename)
+    ].filter(Boolean);
+
+    for (const cand of candidates) {
+      if (fs.existsSync(cand)) {
+        sourcePath = cand;
+        break;
+      }
+    }
+
+    if (!sourcePath) {
+      logger.error('Save file failed: temporary file missing from disk', { filename, itemPath: item.path, tempDir: state.TEMP_DIR });
+      return res.status(404).json({ error: `File "${filename}" missing from temporary storage. Save failed.` });
+    }
+
+    // Ensure permanent SAVE_DIR exists
+    if (!fs.existsSync(state.SAVE_DIR)) {
+      fs.mkdirSync(state.SAVE_DIR, { recursive: true });
+    }
+
+    const savePath = path.join(state.SAVE_DIR, filename);
+
+    // Copy or move file to SAVE_DIR
+    if (path.resolve(sourcePath) !== path.resolve(savePath)) {
+      try {
+        fs.copyFileSync(sourcePath, savePath);
+        if (state.TEMP_DIR && sourcePath.startsWith(state.TEMP_DIR)) {
+          try { fs.unlinkSync(sourcePath); } catch (_) {}
+        }
+      } catch (copyErr) {
+        logger.error('Failed to copy file to permanent SAVE_DIR', { sourcePath, savePath, error: copyErr.message });
+        return res.status(500).json({ error: `Failed to move file to download folder: ${copyErr.message}` });
+      }
+    }
+
+    // VERIFY file exists in SAVE_DIR before updating state!
+    if (!fs.existsSync(savePath)) {
+      logger.error('Save verification failed: file missing after copy', { savePath });
+      return res.status(500).json({ error: 'File save failed: file was not found in download folder after copy.' });
+    }
+
+    item.isTemporary = false;
+    item.userSaved = true;
+    item.path = savePath;
+    item.fileDeletedOnDisk = false;
+
+    utils.saveHistory();
+    utils.broadcastSSE('history-update', state.history);
+
+    logger.info('File saved permanently to download folder', { filename, savePath, id });
+    res.json({ success: true, message: 'File saved permanently to download folder', item });
+  } catch (err) {
+    logger.error('Failed to save file permanently', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/history — Return received items list
 router.get('/history', (req, res) => {
   let changed = false;
   for (let i = state.history.length - 1; i >= 0; i--) {
     const item = state.history[i];
     if (item.type === 'image' || item.type === 'file') {
+      const isTemp = item.isTemporary && !item.userSaved;
       const fullPath = item.filename 
-        ? path.join(state.SAVE_DIR, item.filename) 
+        ? (isTemp ? path.join(state.TEMP_DIR, item.filename) : path.join(state.SAVE_DIR, item.filename))
         : (path.isAbsolute(item.path) ? item.path : path.resolve(path.join(__dirname, '..', '..'), item.path));
       if (!fs.existsSync(fullPath)) {
         logger.debug('History cleanup: file missing from disk', { filename: item.filename || item.id });
@@ -468,33 +583,37 @@ router.delete('/history', (req, res) => {
   }
 });
 
-// DELETE /api/history/:id — Delete a single history item
+// DELETE /api/history/:id — Delete or dismiss a single history item
 router.delete('/history/:id', (req, res) => {
   try {
     const id = req.params.id;
+    const keepFile = req.query.keepFile === 'true';
     const index = state.history.findIndex(item => item.id === id);
     if (index === -1) {
       return res.status(404).json({ error: 'Item not found' });
     }
     const item = state.history[index];
     
-    if (item.filename) {
+    // Only delete file from disk if keepFile is NOT set
+    if (!keepFile && item.filename) {
+      const isTemp = item.isTemporary && !item.userSaved;
       const fullPath = item.filename 
-        ? path.join(state.SAVE_DIR, item.filename) 
+        ? (isTemp ? path.join(state.TEMP_DIR, item.filename) : path.join(state.SAVE_DIR, item.filename)) 
         : (path.isAbsolute(item.path) ? item.path : path.resolve(path.join(__dirname, '..', '..'), item.path));
       try {
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
-          logger.debug('Deleted file', { filename: item.filename });
+          logger.debug('Deleted file from disk', { filename: item.filename });
         }
       } catch (e) {
-        logger.warn('Failed to delete file', { filename: item.filename, error: e.message });
+        logger.warn('Failed to delete file from disk', { filename: item.filename, error: e.message });
       }
     }
     
     state.history.splice(index, 1);
     utils.saveHistory();
-    res.json({ success: true, message: 'Item deleted' });
+    utils.broadcastSSE('history-update', state.history);
+    res.json({ success: true, message: keepFile ? 'Card cleared from feed' : 'Item deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -664,8 +783,8 @@ router.get('/screenshot', (req, res) => {
   });
 });
 
-// POST /api/send — UNIFIED: auto-detect text vs image/file
-router.post('/send', async (req, res) => {
+// POST /api/send, /api/clipboard — UNIFIED: auto-detect text vs image/file from iOS Shortcuts
+router.post(['/send', '/clipboard', '/clipboard/send'], async (req, res) => {
   try {
     const contentType = req.headers['content-type'] || '';
 
@@ -708,13 +827,16 @@ router.post('/send', async (req, res) => {
             clipResult = await copyImage(savedPath);
           }
 
+          const isTemp = state.TEMPORARY_MODE || req.headers['x-temp-mode'] === 'true' || req.query.temp === 'true';
           const item = {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             type: isImg ? 'image' : 'file',
-            filename, originalName, path: relativePath,
+            filename, originalName, path: savedPath,
             size: fileSize, mimetype: mimeType,
             timestamp: new Date().toISOString(),
-            clipboardSuccess: isImg ? clipResult.success : false
+            clipboardSuccess: isImg ? clipResult.success : false,
+            isTemporary: isTemp,
+            userSaved: !isTemp
           };
           utils.addToHistory(item);
           isImg ? utils.notifyImage(filename) : utils.notifyText(`Received File: ${originalName}`);
@@ -794,14 +916,14 @@ router.post('/send', async (req, res) => {
           const isAudio = rawMime.startsWith('audio/');
           const category = isImg ? 'image' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
           const prefix = isImg ? 'photo' : (isVideo ? 'video' : (isAudio ? 'audio' : 'file'));
-
           const fileInfo = getRawBinaryFilename(req, rawMime, prefix);
           const filename = fileInfo.filename;
           const originalName = fileInfo.originalName;
-          const savedPath = path.join(state.SAVE_DIR, filename);
+          const isTemp = state.TEMPORARY_MODE || req.headers['x-temp-mode'] === 'true' || req.query.temp === 'true';
+          const targetDir = (isTemp && state.TEMP_DIR) ? state.TEMP_DIR : state.SAVE_DIR;
+          const savedPath = path.join(targetDir, filename);
           fs.writeFileSync(savedPath, buf);
 
-          const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
           let clipResult = { success: false };
           // Only attempt clipboard copy for images on Windows-supported formats
           const ext = path.extname(filename).toLowerCase();
@@ -814,8 +936,10 @@ router.post('/send', async (req, res) => {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             type: category,
             filename, originalName,
-            path: relativePath, size: buf.length, mimetype: rawMime,
-            timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
+            path: savedPath, size: buf.length, mimetype: rawMime,
+            timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success,
+            isTemporary: isTemp,
+            userSaved: !isTemp
           };
           utils.addToHistory(item);
           isImg
@@ -862,16 +986,19 @@ router.post('/send', async (req, res) => {
         const fileInfo = getRawBinaryFilename(req, detectedMime, 'photo');
         const filename = fileInfo.filename;
         const originalName = fileInfo.originalName;
-        const savedPath = path.join(state.SAVE_DIR, filename);
+        const isTemp = state.TEMPORARY_MODE || req.headers['x-temp-mode'] === 'true' || req.query.temp === 'true';
+        const targetDir = (isTemp && state.TEMP_DIR) ? state.TEMP_DIR : state.SAVE_DIR;
+        const savedPath = path.join(targetDir, filename);
         fs.writeFileSync(savedPath, req.body);
-        const relativePath = path.relative(path.join(__dirname, '..', '..'), savedPath);
         const { copyImage } = require('../../clipboard');
         const clipResult = await copyImage(savedPath);
         const item = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
           type: 'image', filename, originalName,
-          path: relativePath, size: req.body.length, mimetype: detectedMime,
-          timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success
+          path: savedPath, size: req.body.length, mimetype: detectedMime,
+          timestamp: new Date().toISOString(), clipboardSuccess: clipResult.success,
+          isTemporary: isTemp,
+          userSaved: !isTemp
         };
         utils.addToHistory(item);
         utils.notifyImage(filename);

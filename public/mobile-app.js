@@ -1728,7 +1728,7 @@
       if (!btn) return;
       switch (state) {
         case 'disconnected':
-          btn.innerHTML = '🔌 Connect PC Services';
+          btn.innerHTML = 'Connect PC Services';
           btn.style.background = 'rgba(255,255,255,0.08)';
           btn.style.borderColor = 'var(--card-border)';
           break;
@@ -2626,9 +2626,9 @@
             frame.muted = !frame.muted;
             syncAudioStates();
             if (!frame.muted) {
-              showToast('🔊 Screencast audio enabled');
+              showToast('Screencast audio enabled');
             } else {
-              showToast('🔇 Screencast audio muted');
+              showToast('Screencast audio muted');
             }
           }
         });
@@ -2661,14 +2661,14 @@
             // Start stream in audio-only mode
             audioOnlyStreamMode = true;
             sendWS({ type: 'screencast_start' });
-            showToast('🔊 Streaming system audio in background...');
+            showToast('Streaming system audio in background...');
           } else {
             // Stream is already active
             if (frame.muted) {
               // Unmute it
               frame.muted = false;
               audioOnlyStreamMode = true;
-              showToast('🔊 PC system audio unmuted');
+              showToast('PC system audio unmuted');
               syncAudioStates();
             } else {
               // Mute/stop it
@@ -2676,7 +2676,7 @@
                 // Screencast is visible, so we just mute audio but keep screenshare
                 frame.muted = true;
                 syncAudioStates();
-                showToast('🔇 Audio muted');
+                showToast('Audio muted');
               } else {
                 // Screencast is hidden, so stop the stream completely
                 btnClose.click();
@@ -3239,7 +3239,54 @@
       const qrImg = document.getElementById('downloadModalQrImg');
       if (!modal) return;
 
-      const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
+      // Ensure Open Browser link exists in DOM
+      const copyBtn = document.getElementById('btnCopyDownloadUrl');
+      let openBtn = document.getElementById('btnOpenDownloadUrl');
+      if (copyBtn && (!openBtn || openBtn.tagName !== 'A')) {
+        const btnRow = copyBtn.parentElement;
+        if (btnRow) {
+          if (openBtn) openBtn.remove();
+          btnRow.style.display = 'grid';
+          btnRow.style.gridTemplateColumns = '1fr 1fr';
+          btnRow.style.gap = '8px';
+          btnRow.style.width = '100%';
+
+          copyBtn.style.padding = '12px 10px';
+          copyBtn.style.fontSize = '0.82rem';
+          copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg><span>Copy Link</span>`;
+
+          openBtn = document.createElement('a');
+          openBtn.id = 'btnOpenDownloadUrl';
+          openBtn.className = 'btn';
+          openBtn.target = '_blank';
+          openBtn.rel = 'noopener noreferrer';
+          openBtn.style.cssText = 'background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px 10px; font-size: 0.82rem; font-weight: 700; border-radius: 100px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: all 0.2s ease;';
+          openBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>Open Browser</span>`;
+          btnRow.appendChild(openBtn);
+        }
+      }
+
+      let pageUrl = url;
+      if (!url.includes('/files/download-page')) {
+        let targetRel = url;
+        if (url.includes('/received/')) {
+          const filename = url.split('/received/').pop().split('?')[0];
+          targetRel = '__received__/' + filename;
+        }
+        try {
+          const encoded = btoa(unescape(encodeURIComponent(JSON.stringify([targetRel]))));
+          pageUrl = `/files/download-page?files=${encoded}`;
+        } catch (e) {
+          pageUrl = url;
+        }
+      }
+
+      const token = (typeof getDeviceToken === 'function' ? getDeviceToken() : (localStorage.getItem('deviceToken') || ''));
+      if (token && !pageUrl.includes('token=')) {
+        pageUrl += `&token=${encodeURIComponent(token)}`;
+      }
+
+      const fullUrl = pageUrl.startsWith('http') ? pageUrl : window.location.origin + pageUrl;
 
       if (titleEl) titleEl.textContent = name || 'Download File';
       if (inputEl) inputEl.value = fullUrl;
@@ -3250,7 +3297,35 @@
         qrImg.src = `/api/qr-gen.png?text=${encodeURIComponent(fullUrl)}`;
       }
 
+      // Configure external browser escape URL on <a> tag
+      if (openBtn) {
+        const isAndroid = /android/i.test(navigator.userAgent);
+        if (isAndroid) {
+          const cleanUrl = fullUrl.replace(/^https?:\/\//, '');
+          const scheme = fullUrl.startsWith('https') ? 'https' : 'http';
+          openBtn.href = `intent://${cleanUrl}#Intent;scheme=${scheme};action=android.intent.action.VIEW;end;`;
+        } else {
+          openBtn.href = fullUrl;
+        }
+        openBtn.setAttribute('target', '_blank');
+        openBtn.setAttribute('rel', 'noopener noreferrer');
+      }
+
       modal.style.display = 'flex';
+    };
+
+    window.openDownloadUrlFromModal = function() {
+      const inputEl = document.getElementById('downloadModalUrlInput');
+      if (!inputEl || !inputEl.value) return;
+      const url = inputEl.value;
+      const isAndroid = /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        const cleanUrl = url.replace(/^https?:\/\//, '');
+        const scheme = url.startsWith('https') ? 'https' : 'http';
+        window.location.href = `intent://${cleanUrl}#Intent;scheme=${scheme};action=android.intent.action.VIEW;end;`;
+      } else {
+        window.open(url, '_blank');
+      }
     };
 
     window.closeDownloadLinkModal = function() {
@@ -3284,7 +3359,7 @@
     if (btnTriggerPcUpdate) {
       btnTriggerPcUpdate.addEventListener('click', async () => {
         btnTriggerPcUpdate.disabled = true;
-        btnTriggerPcUpdate.textContent = '🔄 Triggering Update on PC...';
+        btnTriggerPcUpdate.textContent = 'Triggering Update on PC...';
         try {
           const res = await doFetch('/api/check-update/trigger', { method: 'POST' });
           showToast('Update check triggered on PC!');

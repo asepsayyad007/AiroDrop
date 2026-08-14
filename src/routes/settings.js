@@ -47,6 +47,37 @@ const upload = multer({
   }
 });
 
+const outgoingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, state.SHARE_DIR);
+  },
+  filename: (req, file, cb) => {
+    const sanitized = sanitizeFilename(file.originalname, 'file');
+    const ext = path.extname(sanitized) || '.bin';
+    const base = path.basename(sanitized, ext);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const cleanBase = base.slice(0, 15).trim() || 'file';
+    cb(null, `outgoing_${cleanBase}_${timestamp}${ext}`);
+  }
+});
+
+const uploadOutgoing = multer({
+  storage: outgoingStorage,
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    cb(null, true);
+  }
+});
+
+function cleanupOutgoingFile(removed) {
+  if (removed && removed.isOutgoing && removed.filename) {
+    try {
+      const fullPath = path.join(state.SHARE_DIR, removed.filename);
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    } catch (_) {}
+  }
+}
+
 // GET /api/check-update — Query GitHub Releases API for updates
 router.get('/check-update', (req, res) => {
   const https = require('https');
@@ -506,7 +537,7 @@ router.post('/settings/browse', async (req, res) => {
 });
 
 // POST /api/send-to-phone
-router.post('/send-to-phone', upload.single('file'), async (req, res) => {
+router.post('/send-to-phone', uploadOutgoing.single('file'), async (req, res) => {
   try {
     if (req.file) {
       const item = {
@@ -516,10 +547,14 @@ router.post('/send-to-phone', upload.single('file'), async (req, res) => {
         originalName: req.file.originalname,
         size: req.file.size,
         mimeType: req.file.mimetype,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isOutgoing: true
       };
       state.pendingForPhone.unshift(item);
-      if (state.pendingForPhone.length > 50) state.pendingForPhone.pop();
+      if (state.pendingForPhone.length > 50) {
+        const popped = state.pendingForPhone.pop();
+        cleanupOutgoingFile(popped);
+      }
       utils.broadcastSSE('phone-queued', item);
       return res.json({ success: true, id: item.id, message: 'File queued for iPhone' });
     }
@@ -534,7 +569,10 @@ router.post('/send-to-phone', upload.single('file'), async (req, res) => {
         timestamp: new Date().toISOString()
       };
       state.pendingForPhone.unshift(item);
-      if (state.pendingForPhone.length > 50) state.pendingForPhone.pop();
+      if (state.pendingForPhone.length > 50) {
+        const popped = state.pendingForPhone.pop();
+        cleanupOutgoingFile(popped);
+      }
       utils.broadcastSSE('phone-queued', item);
       
       // Auto-copy to PC system clipboard
@@ -556,7 +594,10 @@ router.post('/send-to-phone', upload.single('file'), async (req, res) => {
         timestamp: new Date().toISOString()
       };
       state.pendingForPhone.unshift(item);
-      if (state.pendingForPhone.length > 50) state.pendingForPhone.pop();
+      if (state.pendingForPhone.length > 50) {
+        const popped = state.pendingForPhone.pop();
+        cleanupOutgoingFile(popped);
+      }
       utils.broadcastSSE('phone-queued', item);
       return res.json({ success: true, id: item.id, message: 'Image queued for iPhone' });
     }
@@ -572,6 +613,7 @@ router.delete('/pending/:id', (req, res) => {
   const idx = state.pendingForPhone.findIndex(item => item.id === req.params.id);
   if (idx !== -1) {
     const [removed] = state.pendingForPhone.splice(idx, 1);
+    cleanupOutgoingFile(removed);
     utils.broadcastSSE('phone-ack', removed);
     res.json({ success: true, message: 'Pending item canceled' });
   } else {
@@ -650,6 +692,7 @@ router.post('/pending/:id/ack', (req, res) => {
   const idx = state.pendingForPhone.findIndex(item => item.id === req.params.id);
   if (idx !== -1) {
     const [removed] = state.pendingForPhone.splice(idx, 1);
+    cleanupOutgoingFile(removed);
     utils.broadcastSSE('phone-ack', removed);
     res.json({ success: true, message: 'Item acknowledged' });
   } else {
@@ -729,6 +772,30 @@ router.post('/open-url', express.json(), async (req, res) => {
   }
 });
 
+// POST /api/open-directory — Open the AiroDrop download directory in File Explorer / OS File Manager
+router.post('/open-directory', (req, res) => {
+  try {
+    const dirPath = state.SAVE_DIR;
+    try {
+      const { shell } = require('electron');
+      shell.openPath(dirPath);
+    } catch (_) {
+      const { execFile } = require('child_process');
+      if (process.platform === 'win32') {
+        execFile('explorer.exe', [dirPath]);
+      } else if (process.platform === 'darwin') {
+        execFile('open', [dirPath]);
+      } else {
+        execFile('xdg-open', [dirPath]);
+      }
+    }
+    utils.writeLog(`Opened download directory: ${dirPath}`);
+    res.json({ success: true, path: dirPath });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Pending TTL expire check interval
 const PENDING_TTL_MS = 30 * 60 * 1000; // 30 minutes
 setInterval(() => {
@@ -739,6 +806,7 @@ setInterval(() => {
     const itemTime = new Date(item.timestamp).getTime();
     if (now - itemTime > PENDING_TTL_MS) {
       const [removed] = state.pendingForPhone.splice(i, 1);
+      cleanupOutgoingFile(removed);
       utils.broadcastSSE('phone-ack', removed);
       logger.debug('Expired pending item', { id: removed.id, type: removed.type });
       changed = true;

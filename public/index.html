@@ -94,14 +94,9 @@
           </div>
 
           <div class="dashboard-actions-group">
-            <button class="btn btn-secondary" id="btnDashSetupGuide" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 10px; cursor: pointer;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            <button class="btn btn-primary" id="btnDashSetupGuide" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.22); color: #ffffff; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); transition: transform 0.2s, background 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
               <span>Setup Guide</span>
-            </button>
-            
-            <button class="btn btn-primary" id="btnDashMyQrCode" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 10px; background: #ff5500; border: none; cursor: pointer;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              <span>My QR Code</span>
             </button>
           </div>
         </div>
@@ -300,49 +295,83 @@
         </div>
 
         <!-- 2. Received Items Feed Header & Controls -->
-        <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-          <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Received Feed</div>
-        </div>
+        <div id="receivedFeedArea" class="received-feed-area" style="padding: 16px; border-radius: 20px; border: 1px solid transparent; transition: all 0.35s ease;">
+          <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">Received Feed</div>
+              <span id="feedCountBadge" style="font-size: 0.72rem; font-weight: 700; background: rgba(255, 85, 0, 0.15); color: #ff8800; border: 1px solid rgba(255, 136, 0, 0.3); padding: 2px 8px; border-radius: 12px;">0 items</span>
+            </div>
 
-        <div class="feed-controls">
-          <div class="feed-controls-left">
-            <div class="filter-group">
-              <button class="filter-btn active" data-filter="all">All</button>
-              <button class="filter-btn" data-filter="text">Text</button>
-              <button class="filter-btn" data-filter="image">Images</button>
-              <button class="filter-btn" data-filter="file">Files</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b8; user-select: none;">
+                <span>Auto-Clear Temp</span>
+                <label class="switch-sm">
+                  <input type="checkbox" id="dashboardTempModeInput">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <button class="clear-btn" id="clearFeed" title="Clear dashboard queue only" style="padding: 6px 12px; font-size: 0.76rem; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #a0a0b8; cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Clear Feed
+              </button>
+              <button class="clear-btn" id="deleteAllFiles" title="Permanently delete all received files and history" style="padding: 6px 12px; font-size: 0.76rem; border-radius: 10px; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08); cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Delete All
+              </button>
             </div>
           </div>
-          <div class="feed-controls-right">
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.74rem; font-weight: 500; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-secondary); user-select: none; margin-right: 8px;">
-              <span>Temporary Mode</span>
-              <label class="switch-sm">
-                <input type="checkbox" id="dashboardTempModeInput">
-                <span class="slider"></span>
-              </label>
+
+          <!-- Filter Pills & Layout View Toggle Bar -->
+          <div class="feed-controls" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div class="filter-group" style="display: flex; gap: 6px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); padding: 4px; border-radius: 12px;">
+              <button class="filter-btn active" data-filter="all" style="padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;">All Items</button>
+              <button class="filter-btn" data-filter="text" style="padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;">Text &amp; Links</button>
+              <button class="filter-btn" data-filter="image" style="padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;">Photos &amp; Videos</button>
+              <button class="filter-btn" data-filter="file" style="padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;">Files &amp; Documents</button>
             </div>
-            <button class="clear-btn" id="clearFeed" title="Clear dashboard queue only (keeps local files)">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Clear Queue
-            </button>
-            <button class="clear-btn" id="deleteAllFiles" title="Permanently delete all received files and history" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.05);">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Delete All Files
-            </button>
+
+            <!-- Feed Control Group: Open Directory (Big Icon Only), List/Grid View, Refresh -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <!-- Open Download Directory Button (Big Directory Icon Only) -->
+              <button id="btnOpenSaveDir" class="view-btn" title="Open Download Directory in File Explorer" style="padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; backdrop-filter: blur(10px);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </button>
+
+              <!-- List vs Grid View Toggle Switcher -->
+              <div class="view-toggle-group" style="display: flex; gap: 3px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); padding: 3px; border-radius: 10px;">
+                <button id="btnViewList" class="view-btn active" title="List View" style="padding: 5px 9px; border-radius: 7px; font-size: 0.76rem; font-weight: 600; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span>List</span>
+                </button>
+                <button id="btnViewGrid" class="view-btn" title="Grid View" style="padding: 5px 9px; border-radius: 7px; font-size: 0.76rem; font-weight: 600; background: transparent; border: 1px solid transparent; color: #a0a0b8; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  <span>Grid</span>
+                </button>
+              </div>
+
+              <!-- Refresh Feed Button -->
+              <button id="btnRefreshFeed" class="view-btn" title="Refresh Received Feed" style="padding: 5px 10px; border-radius: 10px; font-size: 0.76rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); color: #a0a0b8; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s; backdrop-filter: blur(10px);">
+                <svg id="refreshFeedIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.5s ease;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dedicated Scroll Container for Received Feed Items -->
+          <div id="receivedFeedScrollContainer" class="received-feed-scroll-container">
+            <div id="emptyState" class="empty-state" style="padding: 40px 20px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: 16px; margin-top: 10px;">
+              <div class="empty-icon" style="width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #a0a0b8;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <h3 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Waiting for Received Items</h3>
+              <p style="font-size: 0.8rem; color: #a0a0b8; max-width: 320px; margin: 0 auto; line-height: 1.4;">Send text, photos, or files from your phone or WebRTC client. They will appear here instantly.</p>
+            </div>
+
+            <div id="feed" class="feed grid-view" style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;"></div>
           </div>
         </div>
-
-        <div id="emptyState" class="empty-state">
-          <div class="empty-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-          </div>
-          <h3>Waiting for items</h3>
-          <p>Send text, images, or files from your phone. They will appear here in real time.</p>
-        </div>
-
-        <div id="feed" class="feed"></div>
       </section>
 
       <!-- Hidden legacy Tab 3: Send to Phone (elements preserved for JS handlers) -->
@@ -960,24 +989,24 @@
         </div>
       </div>
 
-      <!-- Card 2: Service Active (Redesigned UI with High-Contrast Crisp Colors) -->
-      <div class="right-panel-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.03)); border: 1px solid rgba(34, 197, 94, 0.25);">
+      <!-- Card 2: Service Active (iOS Liquid Glass Theme) -->
+      <div class="right-panel-card" style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 20px rgba(0, 0, 0, 0.25);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="status-indicator" id="ccIndicator" style="width: 9px; height: 9px; border-radius: 50%; background-color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.6); display: inline-block;"></span>
+            <span class="status-indicator" id="ccIndicator" style="width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.6); display: inline-block;"></span>
             <div style="display: flex; flex-direction: column;">
-              <span id="ccText" style="font-size: 0.88rem; font-weight: 800; color: #00ff66; letter-spacing: 0.01em;">Service Active</span>
+              <span id="ccText" style="font-size: 0.88rem; font-weight: 800; color: #ffffff; letter-spacing: 0.01em;">Service Active</span>
               <span id="ccIPPort" style="font-family: 'Consolas', monospace; font-size: 0.78rem; font-weight: 600; color: #ffffff; margin-top: 1px;">192.168.1.120:5000</span>
             </div>
           </div>
         </div>
 
-        <!-- Instant Server Action Buttons -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px;">
-          <button id="btnCcStart" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Start Server">Start</button>
-          <button id="btnCcRestart" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Restart Server">Restart</button>
-          <button id="btnCcStop" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Stop Server">Stop</button>
-          <button id="btnCcKillAll" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.3); color: #ff4d4d; border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Kill All Server Processes">Kill</button>
+        <!-- Instant Server Action Buttons (iOS Faded Colors Theme) -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 8px;">
+          <button id="btnCcStart" class="service-action-btn" style="padding: 6px 0; font-size: 0.70rem; font-weight: 700; background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.28); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; backdrop-filter: blur(10px);" title="Start Server">Start</button>
+          <button id="btnCcRestart" class="service-action-btn" style="padding: 6px 0; font-size: 0.70rem; font-weight: 700; background: rgba(234, 179, 8, 0.14); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.28); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; backdrop-filter: blur(10px);" title="Restart Server">Restart</button>
+          <button id="btnCcStop" class="service-action-btn" style="padding: 6px 0; font-size: 0.70rem; font-weight: 700; background: rgba(239, 68, 68, 0.14); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.28); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; backdrop-filter: blur(10px);" title="Stop Server">Stop</button>
+          <button id="btnCcKillAll" class="service-action-btn" style="padding: 6px 0; font-size: 0.70rem; font-weight: 700; background: rgba(239, 68, 68, 0.24); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; backdrop-filter: blur(10px);" title="Kill All Server Processes">Kill</button>
         </div>
       </div>
 
@@ -1266,8 +1295,8 @@
                 <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">1. "Send to PC" Shortcut (Share Sheet)</h4>
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
                   <li>Open <strong>Shortcuts App</strong> on iPhone &rarr; tap <strong>+</strong></li>
-                  <li>Tap shortcut settings (top) ➜ turn on <strong>"Show in Share Sheet"</strong></li>
-                  <li>Add action: <strong>"If"</strong> ➜ set input to <strong>Shortcut Input</strong> ➜ choose attribute <strong>"File Extension"</strong> ➜ condition: <strong>"has any value"</strong></li>
+                  <li>Tap shortcut settings (top) &rarr; turn on <strong>"Show in Share Sheet"</strong></li>
+                  <li>Add action: <strong>"If"</strong> &rarr; set input to <strong>Shortcut Input</strong> &rarr; choose attribute <strong>"File Extension"</strong> &rarr; condition: <strong>"has any value"</strong></li>
                   <li>Under <strong>Then</strong> (for Photos &amp; Files):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
                       <li>Add action: <strong>"Get Contents of URL"</strong></li>
@@ -1293,17 +1322,17 @@
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
                   <li>Open <strong>Shortcuts App</strong> &rarr; tap <strong>+</strong></li>
                   <li>Add action: <strong>"Get Clipboard"</strong></li>
-                  <li>Add action: <strong>"If"</strong> ➜ set input to <strong>Clipboard</strong> ➜ attribute <strong>"File Extension"</strong> ➜ condition: <strong>"has any value"</strong></li>
+                  <li>Add action: <strong>"If"</strong> &rarr; set input to <strong>Clipboard</strong> &rarr; attribute <strong>"File Extension"</strong> &rarr; condition: <strong>"has any value"</strong></li>
                   <li>Under <strong>Then</strong> (Files/Images):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
+                      <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Body: <strong>File</strong> &rarr; File: <strong>Clipboard</strong></li>
                       <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
                     </ul>
                   </li>
                   <li>Under <strong>Else</strong> (Text):
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
+                      <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
                       <li>Method: <strong>POST</strong> &rarr; Body: <strong>Form</strong> &rarr; Key <code>content</code>, Value: <strong>Clipboard</strong></li>
                       <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
                     </ul>
@@ -1316,29 +1345,29 @@
                 <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">3. "Get From PC" Shortcut (Receive Text &amp; Files)</h4>
                 <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0; display: flex; flex-direction: column; gap: 4px;">
                   <li>Open <strong>Shortcuts App</strong> &rarr; tap <strong>+</strong></li>
-                  <li>Add action: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> ➜ Method: <strong>GET</strong> (Header if secret set: Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong>)</li>
-                  <li>Add action: <strong>"Get Dictionary from Input"</strong> ➜ set input to <strong>Contents of URL</strong></li>
-                  <li>Add action: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>success</code></li>
-                  <li>Add action: <strong>"If"</strong> ➜ set condition to <code>is true</code>:
+                  <li>Add action: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> &rarr; Method: <strong>GET</strong> (Header if secret set: Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong>)</li>
+                  <li>Add action: <strong>"Get Dictionary from Input"</strong> &rarr; set input to <strong>Contents of URL</strong></li>
+                  <li>Add action: <strong>"Get Dictionary Value"</strong> &rarr; set key to <code>success</code></li>
+                  <li>Add action: <strong>"If"</strong> &rarr; set condition to <code>is true</code>:
                     <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Dictionary Value"</strong> ➜ set key to <code>type</code></li>
-                      <li>Add: <strong>"If"</strong> ➜ set condition to <code>is text</code>:
+                      <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; set key to <code>type</code></li>
+                      <li>Add: <strong>"If"</strong> &rarr; set condition to <code>is text</code>:
                         <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
-                          <li>Add: <strong>"Get Dictionary Value"</strong> ➜ key <code>text</code> &rarr; <strong>"Copy to Clipboard"</strong></li>
-                          <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
-                          <li>Add: <strong>"Show Notification"</strong> ➜ <em>"Text copied to clipboard"</em></li>
+                          <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>text</code> &rarr; <strong>"Copy to Clipboard"</strong></li>
+                          <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> &rarr; Method: <strong>POST</strong></li>
+                          <li>Add: <strong>"Show Notification"</strong> &rarr; <em>"Text copied to clipboard"</em></li>
                         </ul>
                       </li>
                       <li>Under <strong>Otherwise</strong> (If File):
                         <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
-                          <li>Add: <strong>"Choose from Menu"</strong> ➜ Prompt: <em>Download File?</em> ➜ Options: Download / Cancel</li>
+                          <li>Add: <strong>"Choose from Menu"</strong> &rarr; Prompt: <em>Download File?</em> &rarr; Options: Download / Cancel</li>
                           <li>Under Download:
                             <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                              <li>Add: <strong>"Get Dictionary Value"</strong> ➜ key <code>url</code> &rarr; <strong>"Get Contents of URL"</strong></li>
-                              <li>Add: <strong>"Get Dictionary Value"</strong> ➜ key <code>mimeType</code></li>
-                              <li>Add: <strong>"If"</strong> ➜ starts with <code>image/</code> or <code>video/</code> &rarr; <strong>"Save to Photo Album"</strong>; Else &rarr; <strong>"Save File"</strong></li>
-                              <li>Add: <strong>"Get Contents of URL"</strong> ➜ URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> ➜ Method: <strong>POST</strong></li>
-                              <li>Add: <strong>"Show Notification"</strong> ➜ <em>"File downloaded"</em></li>
+                              <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>url</code> &rarr; <strong>"Get Contents of URL"</strong></li>
+                              <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>mimeType</code></li>
+                              <li>Add: <strong>"If"</strong> &rarr; starts with <code>image/</code> or <code>video/</code> &rarr; <strong>"Save to Photo Album"</strong>; Else &rarr; <strong>"Save File"</strong></li>
+                              <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> &rarr; Method: <strong>POST</strong></li>
+                              <li>Add: <strong>"Show Notification"</strong> &rarr; <em>"File downloaded"</em></li>
                             </ul>
                           </li>
                         </ul>
@@ -1388,30 +1417,52 @@
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3);">
         <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
           <svg class="icon-svg md" viewBox="0 0 24 24" style="stroke: #38bdf8; flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <h3 id="lightboxTitle" style="font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Image Preview</h3>
+          <h3 id="lightboxTitle" style="font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Media Preview</h3>
+        </div>
+        <div id="lightboxZoomControls" style="display: flex; align-items: center; gap: 6px; margin-right: 12px; flex-shrink: 0;">
+          <button id="btnLightboxZoomOut" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Zoom Out">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <span id="lightboxZoomLevel" style="font-size: 0.76rem; font-weight: 700; color: #38bdf8; min-width: 42px; text-align: center; user-select: none;">100%</span>
+          <button id="btnLightboxZoomIn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Zoom In">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button id="btnLightboxResetZoom" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer;" title="Reset Zoom">Reset</button>
         </div>
         <button id="btnCloseLightbox" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;" title="Close">✕</button>
       </div>
 
-      <!-- Image Body -->
-      <div style="flex: 1; min-height: 250px; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.4); overflow: auto;">
-        <img id="lightboxImage" src="" alt="Preview" style="max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+      <!-- Universal Media Body Container -->
+      <div id="lightboxMediaContainer" style="flex: 1; min-height: 350px; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.5); overflow: hidden; position: relative;">
+        <!-- Image Element (Pan & Zoom) -->
+        <img id="lightboxImage" src="" alt="Preview" style="max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: grab; user-select: none; transition: transform 0.1s ease-out;" />
+        
+        <!-- Video Player Element -->
+        <video id="lightboxVideo" controls style="display: none; max-width: 100%; max-height: 65vh; width: 100%; border-radius: 10px; outline: none; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></video>
+        
+        <!-- Audio Music Player Box -->
+        <div id="lightboxAudioBox" style="display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; width: 100%; max-width: 460px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+          <div style="width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #a78bfa, #7c3aed); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div id="lightboxAudioTrackName" style="font-size: 0.92rem; font-weight: 700; color: #ffffff; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">Audio Track</div>
+          <audio id="lightboxAudio" controls style="width: 100%; outline: none;"></audio>
+        </div>
+
+        <!-- PDF Document Viewer Frame -->
+        <iframe id="lightboxPdfFrame" src="" style="display: none; width: 100%; height: 65vh; border: none; border-radius: 10px; background: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></iframe>
       </div>
 
       <!-- Footer -->
       <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2);">
-        <a id="btnLightboxDownload" href="#" download class="btn" style="padding: 8px 18px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent, #ff5500), #ff8800); border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <a id="btnLightboxDownload" href="#" download class="btn btn-primary" style="padding: 8px 18px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.18); color: #ffffff; border-radius: 10px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: all 0.2s;">
           <svg class="icon-svg sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Download Image</span>
+          <span id="btnLightboxDownloadText">Download File</span>
         </a>
       </div>
 
     </div>
   </div>
-
-  <footer style="text-align: center; padding: 12px; font-size: 0.75rem; color: var(--text-secondary); margin-top: 20px;">
-    AiroDrop &copy; 2026 | <a href="/privacy.html" target="_blank" style="color: var(--accent); text-decoration: none;">Privacy Policy</a> &bull; <a href="/terms.html" target="_blank" style="color: var(--accent); text-decoration: none;">Terms of Service</a>
-  </footer>
 
   <!-- ─── Toast ─────────────────────────────────────────── -->
   <div id="toastContainer" class="toast-container"></div>

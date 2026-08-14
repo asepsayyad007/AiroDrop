@@ -13,6 +13,7 @@ const state = {
   PORT: 3478,
   SAVE_DIR: '',
   SHARE_DIR: '',
+  TEMP_DIR: '',
   TEMPORARY_MODE: false,
   DEVICE_NAME: os.hostname(),
   RATE_LIMIT_ENABLED: true,

@@ -5,6 +5,29 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.4] - 2026-08-15
+
+### Added
+- **PC Dashboard UI Redesign (iOS Liquid Glass Theme)** — Major overhaul of the PC dashboard status cards, action controls, and feed view:
+  - **Service Active Glass Card**: Translucent liquid glass card background with crisp high-contrast typography, glowing green active status dot, and elegant faded color server action buttons (`Start`, `Restart`, `Stop`, `Kill`).
+  - **Windows Explorer Details List View**: Sleek 48px Details layout for Received Feed items with aligned columns for file type, original filename, size badge, and quick hover actions.
+  - **Top-Right Hover Card Clear Button**: Faded red circular `✕` button on the upper side of each feed card (revealed on hover) allowing users to clear individual cards from the feed UI without deleting physical files from disk.
+  - **Reordered Feed Controls**: Updated header control bar featuring a compact Directory Icon button, List/Grid view toggle, and 360° animated Refresh button.
+- **Standalone Download Webpage & External Browser Escape**:
+  - Automatically converts received files in Recent Transfers into standalone download webpage URLs (`/files/download-page?files=...`).
+  - Added Android System Intent escape (`intent://...`) and native `<a>` out-of-scope link navigation (`target="_blank" rel="noopener noreferrer"`) so tapping "Open Browser" breaks out of PWA containers directly into system web browsers (Chrome, Safari, Opera).
+  - Webpage forced attachment download (`Content-Disposition: attachment`) ensures direct file downloads to mobile device folders without inline streaming.
+
+### Changed
+- **Temp Mode Storage Isolation** — Incoming uploads when Temp Mode is active route strictly to `temp_received/` and are kept isolated from `downloads/` until explicitly saved by the user.
+- **Permanent File Saving** — Refactored `POST /api/save-file` with candidate path search and disk verification (`fs.existsSync`) before state updates.
+- **Card Clear Server Synchronization** — Updated `DELETE /api/history/:id?keepFile=true` to dismiss items from server history state without unlinking files on disk, preventing cleared cards from reappearing on subsequent save operations or history syncs.
+
+### Fixed
+- **iOS Shortcuts File Upload Bug** — Resolved `ReferenceError: prefix is not defined` in Case 2 raw binary upload handler and enabled `upload.any()` with endpoint aliases `/api/clipboard` and `/api/clipboard/file`.
+
+---
+
 ## [6.4.3] - 2026-08-13
 
 ### Added

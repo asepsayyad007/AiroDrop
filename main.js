@@ -1108,7 +1108,7 @@ server.serverEvents.on('request-host-approval', ({ deviceName, ip, respond }) =>
   dialog.showMessageBox(mainWindow || null, {
     type: 'question',
     title: 'AiroDrop Device Pairing Request',
-    message: `A device is requesting access to your AiroDrop PC host:\n\n📱 Device Name: ${deviceName}\n🌐 IP Address: ${ip}\n\nDo you want to allow this device to connect and control AiroDrop?`,
+    message: `A device is requesting access to your AiroDrop PC host:\n\nDevice Name: ${deviceName}\nIP Address: ${ip}\n\nDo you want to allow this device to connect and control AiroDrop?`,
     buttons: ['Approve & Pair Device', 'Deny Connection'],
     defaultId: 0,
     cancelId: 1

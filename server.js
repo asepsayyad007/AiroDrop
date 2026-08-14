@@ -52,9 +52,27 @@ app.get('/vendor/qrcode.min.js', (req, res) => {
   }
 });
 
-// Serve image and file downloads from the dynamic save directory
+// Serve image and file downloads from the dynamic save directory or temporary received directory
 app.use('/received', (req, res, next) => {
+  const relPath = req.path;
+  if (relPath && relPath !== '/') {
+    const targetSave = path.join(state.SAVE_DIR, relPath);
+    if (fs.existsSync(targetSave)) {
+      return express.static(state.SAVE_DIR, { acceptRanges: true })(req, res, next);
+    }
+    if (state.TEMP_DIR) {
+      const targetTemp = path.join(state.TEMP_DIR, relPath);
+      if (fs.existsSync(targetTemp)) {
+        return express.static(state.TEMP_DIR, { acceptRanges: true })(req, res, next);
+      }
+    }
+  }
   express.static(state.SAVE_DIR, { acceptRanges: true })(req, res, next);
+});
+
+// Serve temporary outgoing files from the share directory
+app.use('/shared', (req, res, next) => {
+  express.static(state.SHARE_DIR, { acceptRanges: true })(req, res, next);
 });
 
 // Serve static dashboard files with 1-hour cache for JS/CSS/images
@@ -63,7 +81,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
     const ext = path.extname(filePath).toLowerCase();
     const basename = path.basename(filePath).toLowerCase();
     const cacheable = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
-    if (basename === 'sw.js' || basename === 'mobile-app.js') {
+    const noStoreFiles = ['sw.js', 'mobile-app.js', 'mobile.html', 'index.html', 'app.js', 'files.html'];
+    if (noStoreFiles.includes(basename)) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     } else if (cacheable.includes(ext)) {
       res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -117,6 +136,20 @@ app.get('/api/health', (req, res) => {
     historyCount: state.history.length,
     pairedDevices: state.pairedDevices ? state.pairedDevices.size : 0
   });
+});
+
+// GET /api/check-file — Verify if a received file still exists on disk
+app.get('/api/check-file', (req, res) => {
+  const fn = req.query.filename;
+  if (!fn) return res.json({ exists: false });
+  try {
+    const safeFilename = path.basename(fn);
+    const targetPath = path.join(state.SAVE_DIR, safeFilename);
+    const exists = fs.existsSync(targetPath);
+    return res.json({ exists, filename: safeFilename });
+  } catch {
+    return res.json({ exists: false });
+  }
 });
 
 // SPA fallback — serve index.html for any unmatched route (except /m and /files)
@@ -219,6 +252,15 @@ function init(userDataPath) {
   } catch (err) {
     logger.error('Failed to create share directory', { error: err.message });
     state.SHARE_DIR = state.SAVE_DIR;
+  }
+
+  state.TEMP_DIR = path.join(userDataPath, 'temp_received');
+  try {
+    if (!fs.existsSync(state.TEMP_DIR)) {
+      fs.mkdirSync(state.TEMP_DIR, { recursive: true });
+    }
+  } catch (err) {
+    logger.error('Failed to create temp directory', { error: err.message });
   }
 
   // Apply Login Items auto-launch in Electron
