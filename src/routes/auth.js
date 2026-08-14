@@ -167,15 +167,78 @@ router.post('/regenerate-pin', (req, res) => {
   res.json({ success: true, pin: state.PIN_CODE });
 });
 
-// Get list of paired devices (PC Settings)
+// Get list of paired devices (PC Settings & Right Panel)
 router.get('/paired-devices', (req, res) => {
   const devices = Array.from(state.pairedDevices.values()).map(d => ({
     token: d.token,
-    deviceName: d.deviceName,
-    ip: d.ip,
+    deviceName: d.deviceName || d.name || 'Authorized Device',
+    platform: d.platform || 'Mobile',
+    ip: d.ip || 'Wi-Fi Client',
     pairedAt: d.pairedAt
   }));
-  res.json({ devices });
+  res.json({ success: true, devices });
+});
+
+router.get('/devices', (req, res) => {
+  const devicesMap = new Map();
+
+  // 1. First add paired devices from state.pairedDevices
+  for (const [token, d] of state.pairedDevices.entries()) {
+    devicesMap.set(token, {
+      token: d.token,
+      deviceName: d.deviceName || d.name || 'Authorized Device',
+      platform: d.platform || 'Mobile',
+      ip: d.ip || 'Wi-Fi Client',
+      pairedAt: d.pairedAt,
+      isOnline: false,
+      service: 'Paired'
+    });
+  }
+
+  // 2. Cross-reference active WebSocket & WebRTC connections in state.wss.clients
+  if (state.wss && state.wss.clients) {
+    for (const ws of state.wss.clients) {
+      if (ws.readyState === 1 /* OPEN */) {
+        const token = ws.deviceToken;
+        let rawIp = ws._remoteIp;
+        if (!rawIp && ws._socket && ws._socket.remoteAddress) {
+          rawIp = ws._socket.remoteAddress;
+        }
+        if (!rawIp && ws._req && ws._req.socket && ws._req.socket.remoteAddress) {
+          rawIp = ws._req.socket.remoteAddress;
+        }
+        const cleanIp = rawIp ? String(rawIp).replace(/^.*:/, '') : 'Wi-Fi Client';
+
+        if (token && devicesMap.has(token)) {
+          const existing = devicesMap.get(token);
+          existing.isOnline = true;
+          existing.service = 'WebRTC Direct';
+          if (ws.deviceName) existing.deviceName = ws.deviceName;
+          if (ws.platform) existing.platform = ws.platform;
+        } else {
+          const devKey = token || cleanIp || ('ws-client-' + Math.random().toString(36).slice(2, 7));
+          if (devicesMap.has(devKey)) {
+            const existing = devicesMap.get(devKey);
+            existing.isOnline = true;
+            existing.service = 'WebRTC Direct';
+          } else {
+            devicesMap.set(devKey, {
+              token: devKey,
+              deviceName: ws.deviceName || 'Mobile Phone (WebRTC)',
+              platform: ws.platform || 'Mobile',
+              ip: cleanIp,
+              pairedAt: ws.connectedAt || Date.now(),
+              isOnline: true,
+              service: 'WebRTC Direct'
+            });
+          }
+        }
+      }
+    }
+  }
+
+  const devices = Array.from(devicesMap.values());
+  res.json({ success: true, devices });
 });
 
 // Unpair specific device (PC Settings)

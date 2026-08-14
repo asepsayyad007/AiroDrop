@@ -131,6 +131,58 @@ function compareSemver(a, b) {
   return 0;
 }
 
+let cachedOsCaption = null;
+function getRealOsCaption() {
+  if (cachedOsCaption) return cachedOsCaption;
+  if (process.platform === 'win32') {
+    try {
+      const { execSync } = require('child_process');
+      const raw = execSync('wmic os get Caption /value', { encoding: 'utf8', timeout: 3000 });
+      const match = raw.match(/Caption=(.+)/i);
+      if (match && match[1]) {
+        cachedOsCaption = match[1].trim();
+        return cachedOsCaption;
+      }
+    } catch (e) {}
+    cachedOsCaption = `Windows ${require('os').release().startsWith('10.0.2') ? '11' : '10'}`;
+    return cachedOsCaption;
+  }
+  return `${require('os').type()} ${require('os').release()}`;
+}
+
+function getSystemDrives() {
+  const drives = [];
+  const letters = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  letters.forEach(letter => {
+    const drivePath = `${letter}:\\`;
+    if (fs.existsSync(drivePath)) {
+      try {
+        const stats = fs.statfsSync(drivePath);
+        const totalBytes = stats.blocks * stats.bsize;
+        const freeBytes = stats.bfree * stats.bsize;
+        const usedBytes = totalBytes - freeBytes;
+        if (totalBytes > 0) {
+          const totalGB = parseFloat((totalBytes / (1024 * 1024 * 1024)).toFixed(1));
+          const freeGB = parseFloat((freeBytes / (1024 * 1024 * 1024)).toFixed(1));
+          const usedGB = parseFloat((usedBytes / (1024 * 1024 * 1024)).toFixed(1));
+          const usedPercent = Math.round((usedBytes / totalBytes) * 100);
+          drives.push({
+            letter,
+            label: `Local Disk (${letter}:)`,
+            totalGB,
+            usedGB,
+            freeGB,
+            usedPercent
+          });
+        }
+      } catch (e) {
+        // Ignore unreadable drives
+      }
+    }
+  });
+  return drives;
+}
+
 // GET /api/info
 router.get('/info', async (req, res) => {
   const ip = utils.getLocalIP();
@@ -138,6 +190,8 @@ router.get('/info', async (req, res) => {
   const url = `${protocol}://${ip}:${state.PORT}`;
   const mobileUrl = `${url}/m`;
   const allIps = utils.getAllIPs();
+  const osName = getRealOsCaption();
+  const drives = getSystemDrives();
 
   try {
     const qrDataUrl = await QRCode.toDataURL(mobileUrl, {
@@ -153,6 +207,8 @@ router.get('/info', async (req, res) => {
       saveDir: state.SAVE_DIR,
       uptime: process.uptime(),
       deviceName: state.DEVICE_NAME,
+      osName,
+      drives,
       allIps,
       temporaryMode: state.TEMPORARY_MODE,
       pairingToken: ''
@@ -166,6 +222,8 @@ router.get('/info', async (req, res) => {
       saveDir: state.SAVE_DIR,
       uptime: process.uptime(),
       deviceName: state.DEVICE_NAME,
+      osName,
+      drives,
       allIps,
       temporaryMode: state.TEMPORARY_MODE,
       pairingToken: ''

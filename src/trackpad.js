@@ -112,15 +112,15 @@ function setupWebSocket(serverInstance, serverEvents) {
       }, WS_PING_INTERVAL);
     }
 
-    state.wss.on('connection', (ws) => {
+    state.wss.on('connection', (ws, req) => {
       console.log('[TRACKPAD] Phone connected via WebSocket');
-      if (state.screencastStopTimeout) {
-        clearTimeout(state.screencastStopTimeout);
-        state.screencastStopTimeout = null;
+      if (req && req.socket && req.socket.remoteAddress) {
+        ws._remoteIp = req.socket.remoteAddress;
       }
       ws._isAlive = true;
       ws.on('pong', () => { ws._isAlive = true; });
       serverEvents.emit('phone_connected', ws);
+      utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
       let accumX = 0;
       let accumY = 0;
       
@@ -239,8 +239,10 @@ function setupWebSocket(serverInstance, serverEvents) {
               break;
             case 'identify':
               ws.deviceName = data.deviceName || 'Mobile Device';
-              console.log('[TRACKPAD] Device identified:', ws.deviceName);
-              utils.broadcastSSE('trackpad_status', { connected: true, deviceName: data.deviceName });
+              if (data.platform) ws.platform = data.platform;
+              console.log('[TRACKPAD] Device identified:', ws.deviceName, ws.platform || '');
+              utils.broadcastSSE('device-change', { count: state.pairedDevices.size });
+              utils.broadcastSSE('trackpad_status', { connected: true, deviceName: ws.deviceName });
               break;
             case 'screencast_start':
               if (state.screencastStopTimeout) {
@@ -318,6 +320,8 @@ function setupWebSocket(serverInstance, serverEvents) {
         
         state.wss.handleUpgrade(request, socket, head, (ws) => {
           ws.deviceToken = token || 'localhost';
+          ws._remoteIp = request.socket ? request.socket.remoteAddress : null;
+          ws.connectedAt = Date.now();
           state.wss.emit('connection', ws, request);
         });
       }

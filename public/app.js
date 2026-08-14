@@ -359,6 +359,44 @@
     }
   }
 
+  function renderSidebarStorage(drives) {
+    const container = $('#sidebarStorageContainer');
+    if (!container) return;
+
+    if (!drives || drives.length === 0) {
+      container.innerHTML = `
+        <div style="font-size: 0.72rem; color: #a0a0b8; padding: 4px 0;">Local Disk (C:): Active</div>
+      `;
+      return;
+    }
+
+    let html = '';
+    drives.forEach(drive => {
+      const pct = drive.usedPercent || 0;
+      const strokeDash = `${pct}, 100`;
+      html += `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 0;">
+          <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3.5" />
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ff5500" stroke-dasharray="${strokeDash}" stroke-width="3.5" stroke-linecap="round" />
+            </svg>
+            <span style="position: absolute; font-size: 0.64rem; font-weight: 700; color: #ffffff;">${escapeHtml(drive.letter)}:</span>
+          </div>
+          <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; font-weight: 600; color: #ffffff;">${escapeHtml(drive.label)}</span>
+              <span style="font-size: 0.65rem; color: #ff5500; font-weight: 700;">${pct}%</span>
+            </div>
+            <span style="font-size: 0.66rem; color: #a0a0b8; margin-top: 1px;">${drive.usedGB} GB used / ${drive.totalGB} GB</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
   function updateServerInfoUI(info) {
     const baseUrl = info.url;
     if ($('#serverUrlText')) $('#serverUrlText').textContent = baseUrl.replace(/^https?:\/\//, '');
@@ -372,6 +410,10 @@
     if ($('#unifiedEndpoint')) $('#unifiedEndpoint').textContent = `${baseUrl}/api/send`;
     if ($('#infoDeviceName')) $('#infoDeviceName').textContent = info.deviceName || 'PC Server';
     if ($('#ccIPPort')) $('#ccIPPort').textContent = info.ip;
+    if ($('#rightPanelDeviceName')) $('#rightPanelDeviceName').textContent = info.deviceName || 'Asep\'s PC';
+    if ($('#rightPanelOsName')) $('#rightPanelOsName').textContent = info.osName || 'Windows 11 Home';
+    if ($('#rightPanelIp')) $('#rightPanelIp').textContent = info.ip || '192.168.1.120';
+    if (info.drives) renderSidebarStorage(info.drives);
     const ccPortalLink = $('#ccPortalLink');
     if (ccPortalLink) {
       ccPortalLink.href = `${baseUrl}/m`;
@@ -551,6 +593,8 @@
 
     sseSource.addEventListener('device-change', () => {
       fetchPairedDevicesCount();
+      renderRightPanelConnectedDevices();
+      renderPairedDevicesTab();
     });
 
     sseSource.addEventListener('log', (e) => {
@@ -667,8 +711,70 @@
     }
   }
 
+  function renderDashboardRecentActivity() {
+    const container = $('#dashboardRecentActivityList');
+    if (!container) return;
+
+    if ($('#sidebarTotalFilesCount')) {
+      $('#sidebarTotalFilesCount').textContent = `${allItems ? allItems.length : 0} files`;
+    }
+
+    if (!allItems || allItems.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 24px 0; color: #a0a0b8; font-size: 0.78rem;">
+          No transfers yet. Drop files above or send from your mobile device!
+        </div>
+      `;
+      return;
+    }
+
+    const recentItems = allItems.slice(0, 4);
+    let html = '';
+
+    recentItems.forEach(item => {
+      const isText = item.type === 'text' || item.type === 'link';
+      const isImg = item.type === 'image' || (item.mimeType && item.mimeType.startsWith('image/'));
+      const isVideo = item.mimeType && item.mimeType.startsWith('video/');
+      const name = item.originalName || item.filename || (item.content ? item.content.slice(0, 30) : 'Item');
+      const sizeStr = item.size ? formatBytes(item.size) : (isText ? `${(item.content || '').length} chars` : '');
+      const timeStr = item.timestamp ? formatTimeAgo(new Date(item.timestamp)) : 'Just now';
+      const source = item.deviceName || (item.deviceType === 'mobile' ? 'iPhone' : 'Received');
+
+      let iconSvg = `<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+      if (isImg) {
+        iconSvg = `<svg class="icon-svg md" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+      } else if (isText) {
+        iconSvg = `<svg class="icon-svg md" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+      } else if (isVideo) {
+        iconSvg = `<svg class="icon-svg md" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`;
+      }
+
+      html += `
+        <div class="activity-item-row">
+          <div class="activity-left">
+            <div class="activity-file-icon">
+              ${iconSvg}
+            </div>
+            <div class="activity-file-info">
+              <div class="activity-file-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+              <div class="activity-file-meta">Received from ${escapeHtml(source)}</div>
+            </div>
+          </div>
+          <div class="activity-right">
+            <span>${sizeStr}</span>
+            <span>${timeStr}</span>
+            <svg class="activity-status-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
   // ─── Render Feed ───────────────────────────────────────────
   function renderFeed() {
+    renderDashboardRecentActivity();
     const feedEl = $('#feed');
     const emptyStateEl = $('#emptyState');
     const feedCountEl = $('#feedCount');
@@ -901,24 +1007,431 @@
 
 
   // ─── PWA Config ─────────────────────────────────────────────
-  function setupTabs() {
-    $$('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        $$('.tab').forEach(t => t.classList.remove('active'));
-        $$('.tab-content').forEach(c => c.classList.remove('active'));
+  function openSetupModal() {
+    const shortcutsModal = $('#shortcutsModal');
+    if (!shortcutsModal) return;
 
-        tab.classList.add('active');
-        const contentId = `tab-${tab.getAttribute('data-tab')}`;
-        const content = $(`#${contentId}`);
-        if (content) content.classList.add('active');
+    const imgShareToPC = $('#imgShareToPC');
+    const imgClipboardToPC = $('#imgClipboardToPC');
+    const imgGetPCClipboard = $('#imgGetPCClipboard');
+    const tabBtns = $$('.setup-tab-btn');
+    const tabContents = $$('.setup-tab-content');
 
-        if (tab.getAttribute('data-tab') === 'send') {
-          fetchPending();
-        } else if (tab.getAttribute('data-tab') === 'share') {
-          initRelayWebSocket();
+    if (imgShareToPC) {
+      imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8');
+    }
+    if (imgClipboardToPC) {
+      imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6');
+    }
+    if (imgGetPCClipboard) {
+      imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
+    }
+    if (serverInfo) {
+      const infoIPSetup = $('#infoIPSetup');
+      if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
+      $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
+      $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port, 10) + 1);
+    }
+    
+    tabBtns.forEach(b => b.classList.remove('active'));
+    tabContents.forEach(c => c.style.display = 'none');
+    const defaultBtn = $('.setup-tab-btn[data-target="setup-security"]');
+    if (defaultBtn) defaultBtn.classList.add('active');
+    const defaultContent = $('#setup-security');
+    if (defaultContent) defaultContent.style.display = 'flex';
+    fetchPairedDevicesCount();
+
+    shortcutsModal.style.display = 'flex';
+  }
+
+  function openSettingsModal() {
+    switchDesktopTab('settings');
+  }
+
+  function switchDesktopTab(tabName) {
+    $$('.sidebar-nav-item').forEach(t => {
+      if (t.getAttribute('data-tab') === tabName) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+
+    $$('.tab').forEach(t => {
+      if (t.getAttribute('data-tab') === tabName) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
+
+    const contentId = `tab-${tabName === 'settings' ? 'settings-view' : tabName}`;
+    const content = $(`#${contentId}`);
+    if (content) content.classList.add('active');
+
+    if (tabName === 'send') {
+      fetchPending();
+    } else if (tabName === 'share') {
+      initRelayWebSocket();
+    } else if (tabName === 'dashboard') {
+      renderDashboardRecentActivity();
+    } else if (tabName === 'devices') {
+      renderPairedDevicesTab();
+    }
+  }
+
+  async function renderPairedDevicesTab() {
+    const container = $('#devicesTabContainer');
+    const badge = $('#devicesCountBadge');
+    if (!container) return;
+
+    try {
+      const res = await doFetch('/api/auth/paired-devices');
+      if (res && Array.isArray(res.devices)) {
+        const devices = res.devices;
+        
+        if (badge) {
+          badge.textContent = devices.length;
+          badge.style.display = devices.length > 0 ? 'inline-block' : 'none';
         }
+
+        if (devices.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: 16px; padding: 32px 20px; text-align: center;">
+              <div class="empty-icon" style="margin-bottom: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#a0a0b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <h3 style="margin: 0 0 6px 0; font-size: 1.05rem; font-weight: 700; color: #ffffff;">No Authorized Devices</h3>
+              <p style="margin: 0 0 16px 0; font-size: 0.8rem; color: #a0a0b8; max-width: 360px; margin-left: auto; margin-right: auto;">Scan the QR Code on your mobile phone to authorize a device connection.</p>
+              <button id="btnOpenSetupQrFromDevices" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem; font-weight: 700; background: #ff5500; border: none; border-radius: 10px; cursor: pointer;">
+                Show Setup QR Code
+              </button>
+            </div>
+          `;
+
+          const btnQr = $('#btnOpenSetupQrFromDevices');
+          if (btnQr) btnQr.addEventListener('click', () => openSetupModal());
+          return;
+        }
+
+        let html = '';
+        devices.forEach(dev => {
+          const name = dev.deviceName || 'Authorized Mobile Device';
+          const ip = dev.ip || 'Connected Wi-Fi';
+          const tokenSnippet = dev.token ? `${dev.token.slice(0, 8)}…` : 'Token Active';
+          const isMobile = (dev.deviceName || '').toLowerCase().includes('iphone') || (dev.deviceName || '').toLowerCase().includes('android');
+
+          let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+          if (!isMobile) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+          }
+
+          html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);">
+              <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 85, 0, 0.1); border: 1px solid rgba(255, 85, 0, 0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  ${iconSvg}
+                </div>
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.9rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(name)}</span>
+                    <span style="font-size: 0.65rem; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 2px 8px; border-radius: 12px;">Paired</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 3px; font-size: 0.74rem; color: #a0a0b8;">
+                    <span style="font-family: monospace; color: #ffffff;">IP: ${escapeHtml(ip)}</span>
+                    <span>•</span>
+                    <span style="font-family: monospace;">Token: ${escapeHtml(tokenSnippet)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-unpair-device" data-token="${escapeHtml(dev.token)}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                Unpair Device
+              </button>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+
+        // Bind Unpair Device buttons
+        $$('.btn-unpair-device').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const token = btn.getAttribute('data-token');
+            if (!token) return;
+            if (confirm("Revoke access for this device?")) {
+              try {
+                const res = await doFetch('/api/auth/unpair', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ token })
+                });
+                if (res && res.success) {
+                  showToast('Device unpaired successfully', 'success');
+                  renderPairedDevicesTab();
+                  renderRightPanelConnectedDevices();
+                } else {
+                  showToast('Failed to unpair device', 'error');
+                }
+              } catch {
+                showToast('Network error while unpairing', 'error');
+              }
+            }
+          });
+        });
+
+        return;
+      }
+    } catch (e) {
+      console.warn('Error fetching paired devices:', e);
+    }
+
+    container.innerHTML = `
+      <div style="text-align: center; padding: 20px; font-size: 0.8rem; color: #a0a0b8;">
+        Could not load paired devices.
+      </div>
+    `;
+  }
+
+  async function renderRightPanelConnectedDevices() {
+    const listContainer = $('#rightPanelDeviceList');
+    if (!listContainer) return;
+
+    try {
+      const res = await doFetch('/api/auth/devices');
+      if (res && res.success && Array.isArray(res.devices)) {
+        const devices = res.devices;
+        if (devices.length === 0) {
+          listContainer.innerHTML = `
+            <div style="text-align: center; padding: 14px 0; font-size: 0.74rem; color: #a0a0b8;">
+              No devices connected
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        devices.forEach(dev => {
+          const name = dev.deviceName || dev.platform || 'Connected Device';
+          const ip = dev.ip || dev.lastIp || 'Wi-Fi Client';
+          const isOnline = dev.isOnline !== false;
+          const isMobile = (dev.platform || name || '').toLowerCase().includes('iphone') || 
+                           (dev.platform || name || '').toLowerCase().includes('android') || 
+                           (dev.platform || name || '').toLowerCase().includes('ios') || 
+                           (dev.platform || name || '').toLowerCase().includes('mobile') ||
+                           (dev.platform || name || '').toLowerCase().includes('phone');
+          
+          let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #a0a0b8; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+          if (isMobile) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+          }
+
+          const dotColor = isOnline ? '#22c55e' : '#6b7280';
+          const statusShadow = isOnline ? 'box-shadow: 0 0 6px #22c55e;' : '';
+          const serviceText = dev.service ? escapeHtml(dev.service) : (isOnline ? 'WebRTC Active' : 'Offline');
+
+          html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03);">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                ${iconSvg}
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 0.78rem; font-weight: 600; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(name)}</span>
+                  <span style="font-family: monospace; font-size: 0.68rem; color: #a0a0b8;">${escapeHtml(ip)}</span>
+                </div>
+              </div>
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex-shrink: 0;"></span>
+            </div>
+          `;
+        });
+        listContainer.innerHTML = html;
+        return;
+      }
+    } catch (e) {
+      console.warn('Could not fetch connected devices:', e);
+    }
+
+    listContainer.innerHTML = `
+      <div style="text-align: center; padding: 14px 0; font-size: 0.74rem; color: #a0a0b8;">
+        No devices connected
+      </div>
+    `;
+  }
+
+  function setupCreatorProfileModal() {
+    const btnOpen = $('#btnOpenCreatorProfileModal');
+    const lightbox = $('#creatorLightbox');
+    const card = $('#creatorCard');
+    const btnClose = $('#btnCloseCreator');
+
+    if (!btnOpen || !lightbox || !card || !btnClose) return;
+
+    btnOpen.addEventListener('click', (e) => {
+      e.preventDefault();
+      lightbox.style.display = 'flex';
+      setTimeout(() => {
+        lightbox.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 10);
+    });
+
+    const closeCreator = () => {
+      lightbox.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        lightbox.style.display = 'none';
+      }, 300);
+    };
+
+    btnClose.addEventListener('click', closeCreator);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeCreator();
+    });
+  }
+
+  function setupTabs() {
+    // Transmit Box Segmented Switcher (Text vs Files & Media)
+    const btnTxText = $('#tabTransmitTextBtn');
+    const btnTxFile = $('#tabTransmitFileBtn');
+    const secTxText = $('#sectionSendText');
+    const secTxFile = $('#sectionSendFile');
+
+    if (btnTxText && btnTxFile && secTxText && secTxFile) {
+      btnTxText.addEventListener('click', () => {
+        btnTxText.style.color = '#ff5500';
+        btnTxText.style.background = 'rgba(255, 85, 0, 0.16)';
+        btnTxText.style.borderColor = 'rgba(255, 85, 0, 0.32)';
+
+        btnTxFile.style.color = '#a0a0b8';
+        btnTxFile.style.background = 'transparent';
+        btnTxFile.style.borderColor = 'transparent';
+
+        secTxText.style.display = 'block';
+        secTxFile.style.display = 'none';
+      });
+
+      btnTxFile.addEventListener('click', () => {
+        btnTxFile.style.color = '#ff5500';
+        btnTxFile.style.background = 'rgba(255, 85, 0, 0.16)';
+        btnTxFile.style.borderColor = 'rgba(255, 85, 0, 0.32)';
+
+        btnTxText.style.color = '#a0a0b8';
+        btnTxText.style.background = 'transparent';
+        btnTxText.style.borderColor = 'transparent';
+
+        secTxText.style.display = 'none';
+        secTxFile.style.display = 'block';
+      });
+    }
+    $$('.sidebar-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        if (tab) switchDesktopTab(tab);
       });
     });
+
+    $$('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tName = tab.getAttribute('data-tab');
+        if (tName) switchDesktopTab(tName);
+      });
+    });
+
+    // Quick Action button bindings
+    const quickSend = $('#quickActionSendPhone');
+    if (quickSend) quickSend.addEventListener('click', () => switchDesktopTab('send'));
+
+    const quickShare = $('#quickActionShareFriend');
+    if (quickShare) quickShare.addEventListener('click', () => switchDesktopTab('share'));
+
+    const quickDev = $('#quickActionDevices');
+    if (quickDev) quickDev.addEventListener('click', () => switchDesktopTab('devices'));
+
+    const viewAllFeed = $('#linkViewAllFeed');
+    if (viewAllFeed) viewAllFeed.addEventListener('click', () => switchDesktopTab('feed'));
+
+
+
+    // Refresh devices list buttons
+    const btnRefDev = $('#btnRefreshDevices');
+    if (btnRefDev) {
+      btnRefDev.addEventListener('click', () => {
+        btnRefDev.style.transform = 'rotate(360deg)';
+        setTimeout(() => btnRefDev.style.transform = 'none', 500);
+        renderRightPanelConnectedDevices();
+      });
+    }
+
+    const btnRefDevTab = $('#btnRefreshDevicesTab');
+    if (btnRefDevTab) {
+      btnRefDevTab.addEventListener('click', () => {
+        renderPairedDevicesTab();
+        renderRightPanelConnectedDevices();
+        showToast('Devices list refreshed', 'info');
+      });
+    }
+
+    const btnUnpairAll = $('#btnUnpairAllDevices');
+    if (btnUnpairAll) {
+      btnUnpairAll.addEventListener('click', async () => {
+        if (confirm("Are you sure you want to unpair all authorized devices? All active mobile connections will be revoked.")) {
+          try {
+            const res = await doFetch('/api/auth/unpair-all', { method: 'POST' });
+            if (res && res.success) {
+              showToast('All devices unpaired', 'success');
+              renderPairedDevicesTab();
+              renderRightPanelConnectedDevices();
+            } else {
+              showToast('Failed to unpair all devices', 'error');
+            }
+          } catch {
+            showToast('Network error while unpairing all devices', 'error');
+          }
+        }
+      });
+    }
+
+    // Setup Guide & My QR Code buttons
+    const btnDashSetup = $('#btnDashSetupGuide');
+    if (btnDashSetup) btnDashSetup.addEventListener('click', () => openSetupModal());
+
+    const btnDashQr = $('#btnDashMyQrCode');
+    if (btnDashQr) btnDashQr.addEventListener('click', () => openSetupModal());
+
+    const btnOpenSettingsDrawer = $('#btnOpenSettingsDrawer');
+    if (btnOpenSettingsDrawer) btnOpenSettingsDrawer.addEventListener('click', () => openSettingsModal());
+
+    // Setup Creator Profile Modal & Connected Devices Telemetry
+    setupCreatorProfileModal();
+    renderRightPanelConnectedDevices();
+    setInterval(renderRightPanelConnectedDevices, 5000);
+
+    // Dashboard Central Dropzone
+    const dashDrop = $('#dashDropzone');
+    const sendFileInput = $('#sendFileInput');
+    if (dashDrop) {
+      dashDrop.addEventListener('click', () => {
+        switchDesktopTab('send');
+        if (sendFileInput) sendFileInput.click();
+      });
+      dashDrop.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dashDrop.classList.add('drag-over');
+      });
+      dashDrop.addEventListener('dragleave', () => dashDrop.classList.remove('drag-over'));
+      dashDrop.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dashDrop.classList.remove('drag-over');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          switchDesktopTab('send');
+          if (sendFileInput) {
+            sendFileInput.files = e.dataTransfer.files;
+            sendFileInput.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+    }
   }
 
   function setupGlobalExternalLinks() {
@@ -1117,13 +1630,36 @@
       }
     });
 
-    // Send Text to Phone
+    // Send Text to Phone & Paste Clipboard
     const sendTextBtn = $('#sendTextBtn');
     if (sendTextBtn) {
       sendTextBtn.addEventListener('click', sendTextToPhone);
     }
+    const btnPasteText = $('#btnPasteText');
     const textInput = $('#sendTextInput');
+    
+    if (btnPasteText && textInput) {
+      btnPasteText.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            textInput.value = text;
+            textInput.dispatchEvent(new Event('input'));
+            showToast('Pasted from clipboard', 'info');
+          } else {
+            showToast('Clipboard is empty', 'warning');
+          }
+        } catch {
+          showToast('Unable to read clipboard', 'error');
+        }
+      });
+    }
+
     if (textInput) {
+      textInput.addEventListener('input', () => {
+        textInput.style.height = 'auto';
+        textInput.style.height = Math.min(textInput.scrollHeight, 84) + 'px';
+      });
       textInput.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
           sendTextToPhone();
@@ -1165,6 +1701,59 @@
 
     if (sendFileBtn) {
       sendFileBtn.addEventListener('click', sendFileToPhone);
+    }
+
+    // Unified Single Send Button Handler
+    const unifiedSendBtn = $('#unifiedSendBtn');
+    if (unifiedSendBtn) {
+      unifiedSendBtn.addEventListener('click', async () => {
+        const textInput = $('#sendTextInput');
+        const hasText = textInput && textInput.value.trim().length > 0;
+        const hasFile = selectedFileObj !== null;
+
+        if (!hasText && !hasFile) {
+          return showToast('Type a message or drop a file to send', 'error');
+        }
+
+        unifiedSendBtn.disabled = true;
+        unifiedSendBtn.innerHTML = `<span>Sending...</span>`;
+
+        try {
+          if (hasText) {
+            await sendTextToPhone();
+          }
+          if (hasFile) {
+            await sendFileToPhone();
+            selectedFileObj = null;
+            const preview = $('#sendFilePreview');
+            const fileDrop = $('#fileDrop');
+            const fileInput = $('#sendFileInput');
+            if (preview) preview.style.display = 'none';
+            if (fileDrop) fileDrop.style.display = 'flex';
+            if (fileInput) fileInput.value = '';
+          }
+        } finally {
+          unifiedSendBtn.disabled = false;
+          unifiedSendBtn.innerHTML = `<span>Send to Phone</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+        }
+      });
+    }
+
+    // Remove Selected File Handler
+    const btnRemoveFile = $('#btnRemoveSelectedFile');
+    if (btnRemoveFile) {
+      btnRemoveFile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedFileObj = null;
+        const preview = $('#sendFilePreview');
+        const fileDrop = $('#fileDrop');
+        const fileInput = $('#sendFileInput');
+        const sendBtn = $('#sendFileBtn');
+        if (preview) preview.style.display = 'none';
+        if (fileDrop) fileDrop.style.display = 'flex';
+        if (fileInput) fileInput.value = '';
+        if (sendBtn) sendBtn.disabled = true;
+      });
     }
 
     // Cancel pending queue (delegation)
@@ -1227,11 +1816,12 @@
 
   function handleFileSelection(file) {
     selectedFileObj = file;
-    const isImage = file.type.startsWith('image/');
+    const isImage = file.type && file.type.startsWith('image/');
     const preview = $('#sendFilePreview');
     const previewImg = $('#sendPreviewImg');
     const previewIcon = $('#sendFilePreviewIcon');
     const nameSpan = $('#sendFileName');
+    const sizeSpan = $('#sendFileSize');
     const fileDrop = $('#fileDrop');
     const sendBtn = $('#sendFileBtn');
 
@@ -1248,12 +1838,13 @@
     } else {
       if (previewImg) previewImg.style.display = 'none';
       if (previewIcon) {
-        previewIcon.textContent = getFileTypeEmoji(file.type);
-        previewIcon.style.display = 'block';
+        previewIcon.innerHTML = getFileTypeSvg(file.type);
+        previewIcon.style.display = 'flex';
       }
     }
 
-    if (nameSpan) nameSpan.textContent = `${file.name} (${formatSize(file.size)})`;
+    if (nameSpan) nameSpan.textContent = file.name;
+    if (sizeSpan) sizeSpan.textContent = formatSize(file.size);
     if (preview) preview.style.display = 'flex';
     if (fileDrop) fileDrop.style.display = 'none';
     if (sendBtn) sendBtn.disabled = false;
@@ -1266,7 +1857,7 @@
     if (!sendBtn) return;
     
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Uploading...';
+    sendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="15"/><polyline points="17 8 12 3 7 8"/></svg>`;
 
     const formData = new FormData();
     formData.append('file', selectedFileObj);
@@ -1295,7 +1886,7 @@
       showToast('Failed to send file to phone', 'error');
     } finally {
       sendBtn.disabled = success;
-      sendBtn.textContent = 'Send File';
+      sendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
     }
   }
 
@@ -2310,25 +2901,9 @@
       }
     };
 
-    if (btnHeaderSettings && settingsModal) {
+    if (btnHeaderSettings) {
       btnHeaderSettings.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-      });
-    }
-
-    if (btnCancelSettings) {
-      btnCancelSettings.addEventListener('click', closeSettingsModal);
-    }
-
-    if (btnCloseSettings) {
-      btnCloseSettings.addEventListener('click', closeSettingsModal);
-    }
-
-    if (settingsModal) {
-      window.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-          closeSettingsModal();
-        }
+        switchDesktopTab('settings');
       });
     }
 
@@ -2524,13 +3099,17 @@
       const serviceStatusSubtitle = $('#serviceStatusSubtitle');
 
       if (status.running) {
-        if (ccIndicator) ccIndicator.style.backgroundColor = '#00d26a';
+        if (ccIndicator) {
+          ccIndicator.style.backgroundColor = '#00ff66';
+          ccIndicator.style.boxShadow = '0 0 10px rgba(0, 255, 102, 0.6)';
+        }
         if (ccText) {
-          ccText.textContent = 'Service: Active';
-          ccText.style.color = '#00d26a';
+          ccText.textContent = 'Service Active';
+          ccText.style.color = '#00ff66';
         }
         if (ccIPPort) {
-          ccIPPort.textContent = `(${status.ip}:${status.port})`;
+          ccIPPort.textContent = `${status.ip}:${status.port}`;
+          ccIPPort.style.color = '#ffffff';
         }
         if (btnCcStart) {
           btnCcStart.disabled = true;
@@ -2559,13 +3138,17 @@
 
         setConnectionStatus(true);
       } else {
-        if (ccIndicator) ccIndicator.style.backgroundColor = '#ff3b30';
+        if (ccIndicator) {
+          ccIndicator.style.backgroundColor = '#ff3b30';
+          ccIndicator.style.boxShadow = '0 0 8px rgba(255, 59, 48, 0.5)';
+        }
         if (ccText) {
-          ccText.textContent = 'Service: Inactive';
+          ccText.textContent = 'Service Inactive';
           ccText.style.color = '#ff3b30';
         }
         if (ccIPPort) {
-          ccIPPort.textContent = '';
+          ccIPPort.textContent = 'Offline';
+          ccIPPort.style.color = '#a0a0b8';
         }
         if (btnCcStart) {
           btnCcStart.disabled = false;

@@ -609,8 +609,8 @@ function setupAutoUpdater() {
 // ─── Window Management ────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 840,
-    height: 680,
+    width: 1280,
+    height: 720,
     minWidth: 720,
     minHeight: 580,
     resizable: true,
@@ -623,6 +623,7 @@ function createWindow() {
     }
   });
 
+  mainWindow.maximize();
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, 'public', 'index.html'));
 

@@ -23,101 +23,287 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <div class="app">
-    <!-- ─── Header ──────────────────────────────────────── -->
-    <header class="header">
-      <div class="header-left">
-        <div class="logo" style="background: none; box-shadow: none; border-radius: 0;">
-          <img src="logo.svg" alt="AiroDrop Logo" style="width: 100%; height: 100%; object-fit: contain;">
+  <div class="app-shell">
+    
+    <!-- ─── 1. LEFT SIDEBAR NAVIGATION ─── -->
+    <aside class="app-sidebar">
+      <!-- App Header Branding -->
+      <div class="sidebar-brand" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px 16px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+        <div class="sidebar-logo" style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);">
+          <img src="logo.svg" alt="AiroDrop Logo" style="width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
         </div>
-        <div class="header-title">
-          <h1>AiroDrop</h1>
-          <div class="connection-status" id="connectionStatus" style="display: flex; align-items: center;">
-            <span class="status-dot"></span>
-            <span class="status-text">Connecting...</span>
-            <span id="connectedDeviceBadge" style="display: none; margin-left: 8px; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.25); line-height: 1;">iPhone connected</span>
-            <span id="mobileMicActiveBadge" style="display: none; margin-left: 8px; background: rgba(0, 229, 255, 0.15); color: #00e5ff; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; border: 1px solid rgba(0, 229, 255, 0.25); line-height: 1; align-items: center; gap: 4px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-              Mic Stream Active
-            </span>
-          </div>
+        <div style="display: flex; flex-direction: column;">
+          <div class="sidebar-title" style="font-size: 1.22rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; line-height: 1.1; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">AiroDrop</div>
+          <span style="font-size: 0.68rem; font-weight: 600; color: #a0a0b8; letter-spacing: 0.04em;">PRO CONNECT</span>
         </div>
       </div>
-      <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
-        <button class="btn btn-secondary btn-icon" id="btnUniversalRefresh" title="Refresh all data" style="padding: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-        </button>
 
-        <button class="btn btn-secondary" id="btnHeaderSetup" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; margin-right: 8px; width: auto !important; height: 36px !important;" title="iPhone Setup">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--accent-light);"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          <span style="font-weight: 600;">Setup</span>
-        </button>
-
-        <!-- ─── Service Status Dropdown ─── -->
-        <div class="theme-dropdown-container" style="position: relative; display: flex; align-items: center; margin-right: 8px;">
-          <button class="btn btn-secondary" id="serviceStatusDropdownBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; font-weight: 600;">
-            <span class="status-indicator" id="ccIndicator" style="width: 7px; height: 7px; border-radius: 50%; display: inline-block; background-color: #ff3b30;"></span>
-            <span id="ccText">Service: Inactive</span>
-            <span id="ccIPPort" style="font-family: monospace; font-size: 0.74rem; opacity: 0.85; margin-left: 2px;"></span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px; opacity: 0.8; margin-left: 2px;"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="theme-dropdown" id="serviceStatusDropdown" style="right: 0; min-width: 150px;">
-            <button class="theme-option" id="btnCcStart" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: var(--text-primary);" title="Start the AiroDrop server to accept connections">
-              <span style="color: #00d26a; font-weight: bold;">●</span> Start
-            </button>
-            <button class="theme-option" id="btnCcRestart" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: var(--text-primary);" title="Restart the server (applies port/setting changes)">
-              <span style="color: #ffaa00; font-weight: bold;">●</span> Restart
-            </button>
-            <button class="theme-option" id="btnCcStop" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: var(--text-primary);" title="Stop the server — mobile devices will disconnect">
-              <span style="color: #ff3b30; font-weight: bold;">●</span> Stop
-            </button>
-            <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 4px 0;"></div>
-            <button class="theme-option" id="btnCcKillAll" style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; width: 100%; border: none; background: transparent; text-align: left; padding: 8px 12px; cursor: pointer; color: #ff3b30;" title="Force-kill all server processes immediately">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:2px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-              Kill All
-            </button>
+      <!-- Windows App Navigation List -->
+      <nav class="sidebar-nav-list" style="margin-top: 8px;">
+        <button class="sidebar-nav-item active" data-tab="dashboard">
+          <div class="sidebar-nav-left">
+            <svg class="icon-svg md nav-icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Dashboard</span>
           </div>
-        </div>
-
-        <button class="btn btn-secondary" id="btnHeaderSettings" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; width: auto !important; height: 36px !important;" title="Settings">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="settings-gear-icon" style="width:16px;height:16px; transition: transform 0.4s ease;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          <span class="settings-gear-text" style="font-weight: 600;">Settings</span>
         </button>
-      </div>
-    </header>
 
-    <!-- ─── Main Content ────────────────────────────────── -->
-    <main class="main">
-      <!-- Tabs Navigation -->
-      <nav class="tabs" style="display: flex; align-items: center; justify-content: center; position: relative;">
-        <div style="display: flex; gap: 4px; margin: 0 auto;">
-          <button class="tab active" data-tab="feed">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            Received
-            <span class="tab-badge" id="feedCount">0</span>
-          </button>
-          <button class="tab" data-tab="send">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Send to Phone
-          </button>
-          <button class="tab" data-tab="share">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            Share with Friend
-          </button>
-
-          <button class="tab" data-tab="scratchpad">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Scratchpad
-          </button>
-        </div>
+        <button class="sidebar-nav-item" data-tab="settings">
+          <div class="sidebar-nav-left">
+            <svg class="icon-svg md nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span>
+          </div>
+        </button>
       </nav>
 
-      <!-- Tab 1: Received Feed -->
-      <section class="tab-content active" id="tab-feed">
+      <!-- AiroDrop Creator Card at Bottom -->
+      <div class="sidebar-card" style="margin-top: auto; background: linear-gradient(135deg, rgba(255, 85, 0, 0.1), rgba(255, 170, 0, 0.04)); border-color: rgba(255, 136, 0, 0.25);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#ffaa00" stroke="#ffaa00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span style="font-size: 0.82rem; font-weight: 700; color: #ffffff;">AiroDrop Creator</span>
+        </div>
+        <p style="font-size: 0.72rem; color: #a0a0b8; margin-bottom: 10px; line-height: 1.35;">Created with passion by Asep Sayyad.</p>
+        <button id="btnOpenCreatorProfileModal" class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 0.76rem; font-weight: 700; cursor: pointer; color: white;">
+          View Creator Profile
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── 2. CENTER MAIN CONTENT AREA ─── -->
+    <main class="app-main-content">
+      
+      <!-- Hidden legacy connection status badges to preserve JS references -->
+      <div style="display: none;">
+        <span id="connectionStatus"><span class="status-dot"></span><span class="status-text"></span></span>
+        <span id="connectedDeviceBadge"></span>
+        <span id="mobileMicActiveBadge"></span>
+        <button id="btnUniversalRefresh"></button>
+        <button id="btnHeaderSetup"></button>
+        <button id="btnHeaderSettings"></button>
+      </div>
+
+      <!-- View 1: Main Dashboard (Unified Hub: Send Text, Send File, and Received Feed) -->
+      <section class="tab-content active" id="tab-dashboard">
+        <!-- Status Header Bar -->
+        <div class="dashboard-header-bar">
+          <div class="dashboard-status-group">
+            <span class="dashboard-status-indicator"></span>
+            <div>
+              <div class="dashboard-status-title">Ready to receive &amp; send</div>
+              <div class="dashboard-status-subtitle">AiroDrop is active. Transmit files or view received items in real time.</div>
+            </div>
+          </div>
+
+          <div class="dashboard-actions-group">
+            <button class="btn btn-secondary" id="btnDashSetupGuide" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 10px; cursor: pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              <span>Setup Guide</span>
+            </button>
+            
+            <button class="btn btn-primary" id="btnDashMyQrCode" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 10px; background: #ff5500; border: none; cursor: pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span>My QR Code</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Transmit Workspace (Flex Container) -->
+        <div style="display: flex; gap: 16px; align-items: stretch; margin-bottom: 24px;">
+          
+          <!-- Left Flex Box: Send Text Card -->
+          <div class="send-card" style="
+            flex: 1;
+            min-width: 0;
+            padding: 18px 20px;
+            background: rgba(12, 13, 18, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          ">
+            <!-- Header with Paste Button Above Text Area -->
+            <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <h3 style="font-size: 0.98rem; font-weight: 800; color: #ffffff; margin: 0;">Send Text</h3>
+              <button id="btnPasteText" style="
+                padding: 4px 10px;
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: #a0a0b8;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: all 0.2s;
+              " title="Paste Clipboard Text">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+                <span>Paste</span>
+              </button>
+            </div>
+            
+            <!-- Seamless Typing Area (Text Area + Send Button Only) -->
+            <div style="
+              flex: 1;
+              display: flex;
+              align-items: stretch;
+              gap: 12px;
+              background: rgba(0, 0, 0, 0.35);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 14px;
+              padding: 10px 12px;
+              box-sizing: border-box;
+              min-height: 88px;
+              transition: border-color 0.2s;
+            ">
+              <textarea id="sendTextInput" rows="2" placeholder="Type or paste text snippet here..." style="
+                flex: 1;
+                border: none;
+                background: transparent;
+                color: #ffffff;
+                font-family: inherit;
+                font-size: 0.85rem;
+                line-height: 1.45;
+                resize: none;
+                outline: none;
+                padding: 4px 0;
+                min-height: 52px;
+                max-height: 84px;
+                overflow-y: auto;
+                box-sizing: border-box;
+              "></textarea>
+
+              <!-- Send Text Button Only -->
+              <button class="btn btn-primary" id="sendTextBtn" style="
+                width: 44px;
+                align-self: stretch;
+                height: auto;
+                padding: 0;
+                background: #ff5500;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                box-shadow: 0 4px 14px rgba(255, 85, 0, 0.35);
+                transition: all 0.2s;
+              " title="Send Text (Ctrl + Enter)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Flex Box: Drop Files Card -->
+          <div class="send-card" style="
+            flex: 1;
+            min-width: 0;
+            padding: 18px 20px;
+            background: rgba(12, 13, 18, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          ">
+            <div style="margin-bottom: 12px;">
+              <h3 style="font-size: 0.98rem; font-weight: 800; color: #ffffff; margin: 0;">Drop Files to Send</h3>
+            </div>
+
+            <!-- Dropzone Container Matching Left Height -->
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <!-- 1. Default Empty Dropzone (No Send Button) -->
+              <div class="file-drop" id="fileDrop" style="
+                flex: 1;
+                min-height: 88px;
+                border: 1.5px dashed rgba(255, 85, 0, 0.3);
+                background: rgba(0, 0, 0, 0.35);
+                border-radius: 14px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 12px;
+                cursor: pointer;
+                transition: all 0.2s;
+              ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 4px;">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #ffffff;">Choose or drop file</span>
+              </div>
+              <input type="file" id="sendFileInput" hidden>
+              
+              <!-- 2. Staged File Preview Card (Appears ONLY after file selection with Send File button on right) -->
+              <div id="sendFilePreview" class="send-image-preview" style="
+                display: none;
+                align-items: stretch;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 10px 12px;
+                background: rgba(0, 0, 0, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                min-height: 88px;
+                box-sizing: border-box;
+                flex: 1;
+              ">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                  <img id="sendPreviewImg" alt="Preview" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; display: none; flex-shrink: 0;">
+                  <div id="sendFilePreviewIcon" class="file-preview-icon" style="display:none; width: 44px; height: 44px; border-radius: 8px; background: rgba(255, 85, 0, 0.12); border: 1px solid rgba(255, 85, 0, 0.28); align-items: center; justify-content: center; flex-shrink: 0; color: #ff5500;"><svg class="icon-svg lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                  <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
+                    <span id="sendFileName" style="font-size: 0.82rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px;">
+                      <span id="sendFileSize" style="font-size: 0.72rem; color: #a0a0b8; font-weight: 600;"></span>
+                      <span style="font-size: 0.72rem; color: #22c55e; font-weight: 600;">● Ready</span>
+                      <button id="btnRemoveSelectedFile" style="background: transparent; border: none; color: #ef4444; padding: 0; font-size: 0.72rem; font-weight: 600; cursor: pointer;">Remove ✕</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Send Button on Right Side of File Preview -->
+                <button class="btn btn-primary" id="sendFileBtn" disabled style="
+                  width: 44px;
+                  align-self: stretch;
+                  height: auto;
+                  padding: 0;
+                  background: #ff5500;
+                  border: none;
+                  border-radius: 10px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  box-shadow: 0 4px 14px rgba(255, 85, 0, 0.35);
+                  transition: all 0.2s;
+                " title="Send File">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 2. Received Items Feed Header & Controls -->
+        <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Received Feed</div>
+        </div>
+
         <div class="feed-controls">
           <div class="feed-controls-left">
             <div class="filter-group">
@@ -145,6 +331,7 @@
             </button>
           </div>
         </div>
+
         <div id="emptyState" class="empty-state">
           <div class="empty-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -152,51 +339,25 @@
             </svg>
           </div>
           <h3>Waiting for items</h3>
-          <p>Send text, images, or files from your iPhone using the Shortcuts. They will appear here in real time.</p>
+          <p>Send text, images, or files from your phone. They will appear here in real time.</p>
         </div>
+
         <div id="feed" class="feed"></div>
       </section>
 
-      <!-- Tab 3: Send to Phone -->
-      <section class="tab-content" id="tab-send">
+      <!-- Hidden legacy Tab 3: Send to Phone (elements preserved for JS handlers) -->
+      <section class="tab-content" id="tab-send" style="display: none !important;">
         <div class="send-split-container">
           <!-- Send Text -->
           <div class="send-card">
             <h3>Send Text</h3>
-            <p class="hint-text">Text will be available on your iPhone instantly</p>
-            <textarea id="sendTextInput" rows="4" placeholder="Type or paste text here..."></textarea>
-            <button class="btn btn-primary" id="sendTextBtn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Send Text
-            </button>
-          </div>
-
-          <!-- Send File -->
-          <div class="send-card">
-            <h3>Send File</h3>
-            <p class="hint-text">Drop an image, PDF, or any file to send to iPhone</p>
-            <div class="file-drop" id="fileDrop">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <p>Click or drop files here</p>
-            </div>
-            <input type="file" id="sendFileInput" hidden>
-            <div id="sendFilePreview" class="send-image-preview" style="display:none; flex-direction:column; align-items:center;">
-              <img id="sendPreviewImg" alt="Preview">
-              <div id="sendFilePreviewIcon" class="file-preview-icon" style="display:none;"><svg class="icon-svg lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-              <span id="sendFileName" style="font-size:0.82rem;color:var(--text-secondary); margin-top:8px;"></span>
-            </div>
-            <button class="btn btn-primary" id="sendFileBtn" disabled>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Send File
-            </button>
+            <p class="hint-text">Text will be available on your phone instantly</p>
           </div>
         </div>
       </section>
 
-      <!-- Tab 4: Send to Friend (Share Link) -->
-      <section class="tab-content" id="tab-share">
+      <!-- Hidden legacy Tab 4: Send to Friend (Share Link - preserved in DOM but hidden from UI) -->
+      <section class="tab-content" id="tab-share" style="display: none !important;">
         <!-- Mode Selector -->
         <div class="share-mode-selector" style="display: flex; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: 12px; margin-bottom: 20px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;">
           <button class="share-mode-btn active" id="modeSendBtn" style="flex: 1; padding: 10px; border: none; background: none; color: var(--text-primary); border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;">Send Files</button>
@@ -384,23 +545,530 @@
         </div>
       </section>
 
-      <!-- Tab 3: Scratchpad -->
-      <section class="tab-content" id="tab-scratchpad">
-        <div style="max-width: 800px; margin: 0 auto; padding: 10px 0;">
-          <!-- Shared Scratchpad -->
-          <div class="send-card tool-card" style="margin: 0; display: flex; flex-direction: column; width: 100%;">
-            <h3>Shared Scratchpad</h3>
-            <p class="hint-text" style="font-size: 0.74rem; margin-bottom: 12px;">Text typed here syncs instantly to your phone and vice-versa</p>
-            <textarea id="dashboardScratchpad" rows="12" placeholder="Type notes here to sync with your phone..." style="font-size: 0.82rem; padding: 12px; width: 100%; box-sizing: border-box; resize: vertical; min-height: 250px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; line-height: 1.5; outline: none;"></textarea>
-            <span id="scratchpadStatus" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right; margin-top: 6px;">Saved</span>
+      <!-- Tab 5: Devices (Authorized & Paired Devices Control Page) -->
+      <section class="tab-content" id="tab-devices">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff;">Authorized Devices</h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #a0a0b8;">Manage mobile phones and web browsers authorized to communicate with AiroDrop</p>
           </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnRefreshDevicesTab" class="btn btn-secondary" style="padding: 8px 14px; font-size: 0.78rem; font-weight: 600; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </button>
+            <button id="btnUnpairAllDevices" class="btn" style="padding: 8px 14px; font-size: 0.78rem; font-weight: 700; border-radius: 10px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
+              Unpair All Devices
+            </button>
+          </div>
+        </div>
+
+        <div id="devicesTabContainer" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Dynamically rendered paired device cards by JS -->
+        </div>
+      </section>
+
+      <!-- Tab 6: Settings View (Full Native Dashboard Page) -->
+      <section class="tab-content" id="tab-settings-view">
+        <div style="background: rgba(12, 13, 18, 0.6); border: 1px solid var(--glass-border); border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; min-height: 580px;">
+          
+          <!-- Settings Page Header Bar -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.2);">
+            <div>
+              <h2 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>AiroDrop Settings &amp; Preferences</span>
+              </h2>
+              <p style="margin: 3px 0 0 0; font-size: 0.76rem; color: #a0a0b8;">Configure local server ports, security PIN, storage folders, and system launch options</p>
+            </div>
+            <span class="win-app-version-badge">v6.4.3</span>
+          </div>
+
+          <!-- Windows Settings Body Layout -->
+          <div class="win-settings-body" style="flex: 1;">
+            
+            <!-- Left Fluent Navigation Sidebar -->
+            <div class="win-settings-sidebar">
+              <nav class="win-sidebar-nav">
+                <button class="win-nav-item active" data-target="win-sec-system">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                  <span>Server &amp; Network</span>
+                </button>
+
+                <button class="win-nav-item" data-target="win-sec-storage">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <span>Storage &amp; Folders</span>
+                </button>
+
+                <button class="win-nav-item" data-target="win-sec-security">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Security &amp; Alerts</span>
+                </button>
+
+                <button class="win-nav-item" data-target="win-sec-updates">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  <span>Update Hub</span>
+                </button>
+
+                <button class="win-nav-item" data-target="win-sec-creator">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span>Creator Profile</span>
+                </button>
+              </nav>
+            </div>
+            
+            <!-- Right Main Viewport Content Pane -->
+            <div class="win-settings-content">
+              
+              <!-- Section 1: Server & Network -->
+              <div class="win-section-group" id="win-sec-system">
+                <h3 class="win-section-title">Server &amp; Network Configuration</h3>
+                <p class="win-section-subtitle">Configure host PC identification and local network binding parameters.</p>
+                
+                <div class="win-card">
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Device Name</span>
+                      <span class="win-setting-desc">Visible to mobile devices on the network.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <input type="text" id="deviceNameInput" placeholder="My PC" class="win-input-text">
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Server Port</span>
+                      <span class="win-setting-desc">Port used for HTTPS local communication (Default: 3478). Requires restart.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" class="win-input-text" style="width: 100px;">
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row" id="desktopAppPreferencesCard" style="display: none;">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Launch on Startup</span>
+                      <span class="win-setting-desc">Automatically launch AiroDrop when Windows starts up.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="desktopAutoStart">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 2: Storage & Folders -->
+              <div class="win-section-group" id="win-sec-storage" style="display: none;">
+                <h3 class="win-section-title">Storage &amp; Directory Paths</h3>
+                <p class="win-section-subtitle">Manage download save paths, shared file browser roots, and file purge rules.</p>
+
+                <div class="win-card">
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Save Directory (Downloads)</span>
+                      <span class="win-setting-desc">Folder where incoming files from mobile are saved.</span>
+                    </div>
+                    <div class="win-setting-control" style="flex: 1; max-width: 320px;">
+                      <div style="display: flex; gap: 8px; width: 100%;">
+                        <input type="text" id="saveDirInput" placeholder="./received" class="win-input-text" style="flex: 1;">
+                        <button class="win-btn-secondary" id="browseDirBtn">Browse</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Shared Directory</span>
+                      <span class="win-setting-desc">Root folder accessible from mobile WebApp file manager.</span>
+                    </div>
+                    <div class="win-setting-control" style="flex: 1; max-width: 320px;">
+                      <div style="display: flex; gap: 8px; width: 100%;">
+                        <input type="text" id="shareDirInput" placeholder="./shared" class="win-input-text" style="flex: 1;">
+                        <button class="win-btn-secondary" id="browseShareDirBtn">Browse</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Temporary Auto-Delete Mode</span>
+                      <span class="win-setting-desc">Automatically delete files after specified retention period.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="tempModeInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">File Retention Duration</span>
+                      <span class="win-setting-desc">Time before temporary files are purged from PC.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <select id="tempModeHoursInput" class="win-select">
+                        <option value="1">1 Hour</option>
+                        <option value="2">2 Hours</option>
+                        <option value="6">6 Hours</option>
+                        <option value="12">12 Hours</option>
+                        <option value="24">24 Hours</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 3: Security & Alerts -->
+              <div class="win-section-group" id="win-sec-security" style="display: none;">
+                <h3 class="win-section-title">Security &amp; Automation</h3>
+                <p class="win-section-subtitle">Adjust privacy options, desktop notifications, and Windows shell integration.</p>
+                
+                <div class="win-card">
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Privacy Pause (Screencasting)</span>
+                      <span class="win-setting-desc">Pause active screen mirroring when PC user is inactive.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="privacyPauseInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Desktop Toast Notifications</span>
+                      <span class="win-setting-desc">Display native Windows notification popups for received transfers.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="notificationsInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Rate Limiting (DoS Protection)</span>
+                      <span class="win-setting-desc">Protect local server against rapid request floods.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="rateLimitInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Auto-Open Web Links</span>
+                      <span class="win-setting-desc">Automatically launch received URLs in default browser.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="autoOpenLinksInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row" id="contextMenuSettingRow" style="display: none;">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Windows Explorer Integration</span>
+                      <span class="win-setting-desc">Add "Send via AiroDrop" option to Windows right-click menu.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="contextMenuInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">HTTPS SSL/TLS Encryption</span>
+                      <span class="win-setting-desc">Enable secure self-signed TLS certificates for local network.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="httpsEnabledInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 4: Update Hub -->
+              <div class="win-section-group" id="win-sec-updates" style="display: none;">
+                <h3 class="win-section-title">AiroDrop Update Hub</h3>
+                <p class="win-section-subtitle">Check software updates and download executables directly within the app.</p>
+                
+                <div class="win-card">
+                  <div class="win-setting-row">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Automatic Update Checking</span>
+                      <span class="win-setting-desc">Periodically check GitHub Releases for software updates.</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <label class="win-switch">
+                        <input type="checkbox" id="autoUpdaterInput">
+                        <span class="win-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="win-setting-row" style="align-items: center;">
+                    <div class="win-setting-info">
+                      <span class="win-setting-title">Manual Version Check</span>
+                      <span class="win-setting-desc" id="updateStatusText">Status: Idle</span>
+                    </div>
+                    <div class="win-setting-control">
+                      <button class="win-btn-secondary" id="checkUpdatesManualBtn">Check for Updates</button>
+                    </div>
+                  </div>
+
+                  <!-- Action & Progress Panel -->
+                  <div id="updateActionContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(0, 120, 212, 0.08); border: 1px solid rgba(0, 120, 212, 0.25); border-radius: 8px;">
+                    <div id="updateNotesBox" style="font-size: 0.78rem; color: var(--text-primary); margin-bottom: 10px; max-height: 90px; overflow-y: auto; white-space: pre-wrap;"></div>
+                    <div style="display: flex; gap: 8px;">
+                      <button id="btnStartUpdateDownload" class="win-btn-primary" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Download &amp; Update Directly</span>
+                      </button>
+                      <button id="btnQuitAndInstallUpdate" class="win-btn-success" style="display: none; flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        <span>Restart Now to Install</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Download Progress UI -->
+                  <div id="updateProgressContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <span id="updateProgressLabel" style="font-size: 0.78rem; font-weight: 600; color: #60a5fa;">Downloading update...</span>
+                      <span id="updateProgressPercent" style="font-size: 0.78rem; font-weight: 700; color: #60a5fa;">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+                      <div id="updateProgressBarFill" style="width: 0%; height: 100%; background: #0078d4; border-radius: 99px; transition: width 0.2s ease;"></div>
+                    </div>
+                    <p id="updateProgressDetails" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 600;"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 5: Creator Profile -->
+              <div class="win-section-group" id="win-sec-creator" style="display: none;">
+                <h3 class="win-section-title">Creator Profile</h3>
+                <p class="win-section-subtitle">Developer information, primary expertise, and professional connections.</p>
+                
+                <div class="win-card" style="padding: 24px; border-radius: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));">
+                  
+                  <!-- Profile Header (Avatar + Info) -->
+                  <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="flex-shrink: 0;">
+                      <img src="profile.png" alt="Asep Sayyad" style="width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--accent, #ff6a00); object-fit: cover; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.4);">
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary, #ffffff); margin: 0; letter-spacing: -0.01em;">Asep Sayyad</h2>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--accent, #ff6a00); background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.3); padding: 3px 12px; border-radius: 20px;">Linux &amp; DevOps Engineer</span>
+                      </div>
+                      <p style="font-size: 0.76rem; color: var(--text-secondary, rgba(255, 255, 255, 0.6)); margin: 4px 0 0 0;">Creator &amp; Maintainer of AiroDrop</p>
+                    </div>
+                  </div>
+
+                  <!-- Quick Specs Grid -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 14px 16px; border-radius: 10px;">
+                      <div style="font-size: 0.68rem; color: var(--text-muted, rgba(255, 255, 255, 0.5)); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Primary Expertise</div>
+                      <div style="font-size: 0.84rem; color: var(--text-primary, #ffffff); font-weight: 600; line-height: 1.3;">Linux Administration, Cloud Infrastructure &amp; DevOps Pipelines</div>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 14px 16px; border-radius: 10px;">
+                      <div style="font-size: 0.68rem; color: var(--text-muted, rgba(255, 255, 255, 0.5)); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Supported Platforms</div>
+                      <div style="font-size: 0.84rem; color: var(--text-primary, #ffffff); font-weight: 600; line-height: 1.3;">Red Hat Enterprise Linux, Ubuntu Server &amp; Windows</div>
+                    </div>
+                  </div>
+
+                  <!-- Professional Connections -->
+                  <div style="display: flex; gap: 10px;">
+                    <a href="https://asepsayyad007.in/" target="_blank" style="flex: 1; height: 42px; background: linear-gradient(135deg, var(--accent, #ff6a00), #e05500); border: none; border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: #ffffff; box-shadow: 0 4px 14px rgba(255, 106, 0, 0.25); transition: opacity 0.2s;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                      <span>Portfolio Website</span>
+                    </a>
+
+                    <a href="https://www.linkedin.com/in/asepsayyad/" target="_blank" style="flex: 1; height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-primary, #ffffff); transition: background 0.2s;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0077b5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                      <span>LinkedIn</span>
+                    </a>
+
+                    <a href="https://github.com/asepsayyad007" target="_blank" style="flex: 1; height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-primary, #ffffff); transition: background 0.2s;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                      <span>GitHub</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Settings Command Footer Bar -->
+          <div class="win-app-footer" style="padding: 14px 24px; border-top: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: space-between;">
+            <div class="settings-status" id="settingsStatus"></div>
+            <div class="win-footer-actions">
+              <button class="win-btn-primary" id="saveDirBtn" style="padding: 8px 22px; font-size: 0.82rem; font-weight: 700; background: #ff5500; border: none; border-radius: 9px; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(255, 85, 0, 0.35);">Apply Settings</button>
+            </div>
+          </div>
+
         </div>
       </section>
     </main>
 
-    <!-- ─── Footer ────────────────────────────────────────── -->
-    <div class="web-footer" style="text-align: center; padding: 20px; font-size: 12px; color: var(--text-secondary); margin-top: auto; z-index: 10;">
-      Created by Asep with <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin: 0 2px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> | <a href="https://github.com/asepsayyad007" target="_blank" style="color: var(--accent-light); text-decoration: none; font-weight: 500;">github.com/asepsayyad007</a>
+    <!-- ─── 3. RIGHT INFORMATION PANEL ─── -->
+    <aside class="app-right-panel">
+      <!-- Card 1: Your Device -->
+      <div class="right-panel-card">
+        <div class="right-panel-title">
+          <span>Your Device</span>
+          <span style="color: #22c55e; font-size: 0.72rem; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Online
+          </span>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; min-width: 0;">
+            <span id="rightPanelDeviceName" style="font-size: 0.85rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Asep's PC</span>
+            <span id="rightPanelOsName" style="font-size: 0.72rem; color: #a0a0b8;">Windows 11 Pro</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Service Active (Redesigned UI with High-Contrast Crisp Colors) -->
+      <div class="right-panel-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.03)); border: 1px solid rgba(34, 197, 94, 0.25);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="status-indicator" id="ccIndicator" style="width: 9px; height: 9px; border-radius: 50%; background-color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.6); display: inline-block;"></span>
+            <div style="display: flex; flex-direction: column;">
+              <span id="ccText" style="font-size: 0.88rem; font-weight: 800; color: #00ff66; letter-spacing: 0.01em;">Service Active</span>
+              <span id="ccIPPort" style="font-family: 'Consolas', monospace; font-size: 0.78rem; font-weight: 600; color: #ffffff; margin-top: 1px;">192.168.1.120:5000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instant Server Action Buttons -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px;">
+          <button id="btnCcStart" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Start Server">Start</button>
+          <button id="btnCcRestart" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Restart Server">Restart</button>
+          <button id="btnCcStop" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Stop Server">Stop</button>
+          <button id="btnCcKillAll" style="padding: 6px 0; font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.3); color: #ff4d4d; border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s;" title="Kill All Server Processes">Kill</button>
+        </div>
+      </div>
+
+      <!-- Card 2: Connected Devices -->
+      <div class="right-panel-card">
+        <div class="right-panel-title">
+          <span>Connected Devices</span>
+          <svg id="btnRefreshDevices" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #a0a0b8; cursor: pointer; transition: transform 0.3s;" title="Refresh Connected Devices"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </div>
+
+        <div id="rightPanelDeviceList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+          <div style="text-align: center; padding: 14px 0; font-size: 0.74rem; color: #a0a0b8;">
+            Scanning for connected devices...
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Tips -->
+      <div class="right-panel-card">
+        <div class="right-panel-title">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A7 7 0 1 1 15.5 14.5A7 7 0 0 1 8.5 14.5z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+            <span>Tips</span>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <div style="width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff5500; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">1</div>
+            <div style="font-size: 0.75rem; color: #a0a0b8; line-height: 1.4;">Open AiroDrop in your phone browser</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <div style="width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff5500; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">2</div>
+            <div style="font-size: 0.75rem; color: #a0a0b8; line-height: 1.4;">Make sure both devices are on the same Wi-Fi</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <div style="width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff5500; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">3</div>
+            <div style="font-size: 0.75rem; color: #a0a0b8; line-height: 1.4;">Drop files or use send options above</div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ─── Creator Profile Overlay (Green Hacker / Cyber Terminal Portfolio Theme) ────────────────────────── -->
+  <div id="creatorLightbox" style="display: none; position: fixed; inset: 0; background: rgba(3, 10, 4, 0.88); z-index: 400; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+    <div id="creatorCard" style="width: 100%; max-width: 480px; background: rgba(4, 14, 6, 0.96); border: 1px solid rgba(0, 255, 102, 0.4); border-top: 2px solid #00ff66; border-radius: 20px; padding: 24px; box-sizing: border-box; box-shadow: 0 0 35px rgba(0, 255, 102, 0.22), inset 0 0 15px rgba(0, 255, 102, 0.05); transform: translateY(20px); transition: transform 0.3s ease; position: relative; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+      
+      <button id="btnCloseCreator" style="position: absolute; top: 16px; right: 16px; background: rgba(0, 255, 102, 0.08); border: 1px solid rgba(0, 255, 102, 0.3); color: #00ff66; font-size: 1.2rem; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; margin: 0; padding: 0;">&times;</button>
+      
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 24px;">
+        <div style="margin-bottom: 12px; position: relative;">
+          <img src="profile.png" alt="Asep Sayyad" style="width: 88px; height: 88px; border-radius: 50%; border: 2px solid #00ff66; object-fit: cover; display: block; box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);">
+          <span style="position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #00ff66; border-radius: 50%; border: 2px solid #040e06; box-shadow: 0 0 8px #00ff66;"></span>
+        </div>
+        
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #ffffff; text-shadow: 0 0 12px rgba(0, 255, 102, 0.6); margin: 0 0 6px 0; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">Asep Sayyad</h2>
+        <div style="font-size: 0.8rem; font-weight: 700; color: #00ff66; background: rgba(0, 255, 102, 0.1); border: 1px solid rgba(0, 255, 102, 0.35); padding: 4px 12px; border-radius: 20px; display: inline-block; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important; letter-spacing: 0.5px;">
+          <span style="color: #668866;">root@asep:~#</span> Linux &amp; DevOps Engineer
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+        <div style="background: rgba(0, 255, 102, 0.03); border: 1px solid rgba(0, 255, 102, 0.18); padding: 12px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 0.65rem; color: #00ff66; opacity: 0.8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">// Primary Expertise</div>
+          <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">Cloud Deployments &amp; Support</div>
+        </div>
+        <div style="background: rgba(0, 255, 102, 0.03); border: 1px solid rgba(0, 255, 102, 0.18); padding: 12px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 0.65rem; color: #00ff66; opacity: 0.8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">// Operating Systems</div>
+          <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700;">Redhat, Ubuntu &amp; Windows</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+        <a href="https://asepsayyad007.in/" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: rgba(0, 255, 102, 0.14) !important; border: 1px solid rgba(0, 255, 102, 0.5) !important; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #00ff66 !important; box-shadow: 0 0 15px rgba(0, 255, 102, 0.2); font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Visit Portfolio Website</span>
+        </a>
+
+        <a href="https://www.linkedin.com/in/asepsayyad/" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: rgba(0, 255, 102, 0.04) !important; border: 1px solid rgba(0, 255, 102, 0.22) !important; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #00ff66 !important; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          <span>Connect on LinkedIn</span>
+        </a>
+
+        <a href="https://github.com/asepsayyad007" target="_blank" class="btn" style="margin: 0; width: 100%; height: 46px; background: rgba(0, 255, 102, 0.04) !important; border: 1px solid rgba(0, 255, 102, 0.22) !important; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #00ff66 !important; font-family: 'Consolas', 'Fira Code', 'Courier New', monospace !important;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          <span>Follow on GitHub</span>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -710,379 +1378,7 @@
     </div>
   </div>
 
-  <!-- ─── Windows 11 Native GUI Settings Modal ────────────────── -->
-  <div id="settingsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow-y: auto; background-color: rgba(0, 0, 0, 0.75); align-items: center; justify-content: center; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 20px; box-sizing: border-box;">
-    
-    <!-- Native Windows Application Window -->
-    <div class="win-app-window">
-      
-      <!-- Windows App Title Bar -->
-      <div class="win-app-titlebar">
-        <div class="win-app-title-left">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          <span class="win-app-title-text">AiroDrop Settings</span>
-          <span id="appVersionTag" class="win-app-version-badge">v6.4.3</span>
-        </div>
-        <div class="win-app-controls">
-          <button class="win-app-close-btn" id="btnCloseSettings" title="Close Settings">✕</button>
-        </div>
-      </div>
-      
-      <!-- Windows Settings Body Layout -->
-      <div class="win-settings-body">
-        
-        <!-- Left Fluent Navigation Sidebar -->
-        <div class="win-settings-sidebar">
-          <!-- Navigation Menu Items -->
-          <nav class="win-sidebar-nav">
-            <button class="win-nav-item active" data-target="win-sec-system">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-              <span>Server &amp; Network</span>
-            </button>
 
-            <button class="win-nav-item" data-target="win-sec-storage">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-              <span>Storage &amp; Folders</span>
-            </button>
-
-            <button class="win-nav-item" data-target="win-sec-security">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>Security &amp; Alerts</span>
-            </button>
-
-            <button class="win-nav-item" data-target="win-sec-updates">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              <span>Update Hub</span>
-            </button>
-
-            <button class="win-nav-item" data-target="win-sec-creator">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span>Creator Profile</span>
-            </button>
-          </nav>
-        </div>
-        
-        <!-- Right Main Viewport Content Pane -->
-        <div class="win-settings-content">
-          
-          <!-- Section 1: Server & Network -->
-          <div class="win-section-group" id="win-sec-system">
-            <h3 class="win-section-title">Server &amp; Network Configuration</h3>
-            <p class="win-section-subtitle">Configure host PC identification and local network binding parameters.</p>
-            
-            <div class="win-card">
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Device Name</span>
-                  <span class="win-setting-desc">Visible to mobile devices on the network.</span>
-                </div>
-                <div class="win-setting-control">
-                  <input type="text" id="deviceNameInput" placeholder="My PC" class="win-input-text">
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Server Port</span>
-                  <span class="win-setting-desc">Port used for HTTPS local communication (Default: 3478). Requires restart.</span>
-                </div>
-                <div class="win-setting-control">
-                  <input type="number" id="portInput" placeholder="3478" min="1024" max="65535" class="win-input-text" style="width: 100px;">
-                </div>
-              </div>
-
-              <div class="win-setting-row" id="desktopAppPreferencesCard" style="display: none;">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Launch on Startup</span>
-                  <span class="win-setting-desc">Automatically launch AiroDrop when Windows starts up.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="desktopAutoStart">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 2: Storage & Folders -->
-          <div class="win-section-group" id="win-sec-storage" style="display: none;">
-            <h3 class="win-section-title">Storage &amp; Directory Paths</h3>
-            <p class="win-section-subtitle">Manage download save paths, shared file browser roots, and file purge rules.</p>
-
-            <div class="win-card">
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Save Directory (Downloads)</span>
-                  <span class="win-setting-desc">Folder where incoming files from mobile are saved.</span>
-                </div>
-                <div class="win-setting-control" style="flex: 1; max-width: 320px;">
-                  <div style="display: flex; gap: 8px; width: 100%;">
-                    <input type="text" id="saveDirInput" placeholder="./received" class="win-input-text" style="flex: 1;">
-                    <button class="win-btn-secondary" id="browseDirBtn">Browse</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Shared Directory</span>
-                  <span class="win-setting-desc">Root folder accessible from mobile WebApp file manager.</span>
-                </div>
-                <div class="win-setting-control" style="flex: 1; max-width: 320px;">
-                  <div style="display: flex; gap: 8px; width: 100%;">
-                    <input type="text" id="shareDirInput" placeholder="./shared" class="win-input-text" style="flex: 1;">
-                    <button class="win-btn-secondary" id="browseShareDirBtn">Browse</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Temporary Auto-Delete Mode</span>
-                  <span class="win-setting-desc">Automatically delete files after specified retention period.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="tempModeInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">File Retention Duration</span>
-                  <span class="win-setting-desc">Time before temporary files are purged from PC.</span>
-                </div>
-                <div class="win-setting-control">
-                  <select id="tempModeHoursInput" class="win-select">
-                    <option value="1">1 Hour</option>
-                    <option value="2">2 Hours</option>
-                    <option value="6">6 Hours</option>
-                    <option value="12">12 Hours</option>
-                    <option value="24">24 Hours</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 3: Security & Alerts -->
-          <div class="win-section-group" id="win-sec-security" style="display: none;">
-            <h3 class="win-section-title">Security &amp; Automation</h3>
-            <p class="win-section-subtitle">Adjust privacy options, desktop notifications, and Windows shell integration.</p>
-            
-            <div class="win-card">
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Privacy Pause (Screencasting)</span>
-                  <span class="win-setting-desc">Pause active screen mirroring when PC user is inactive.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="privacyPauseInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Desktop Toast Notifications</span>
-                  <span class="win-setting-desc">Display native Windows notification popups for received transfers.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="notificationsInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Rate Limiting (DoS Protection)</span>
-                  <span class="win-setting-desc">Protect local server against rapid request floods.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="rateLimitInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Auto-Open Web Links</span>
-                  <span class="win-setting-desc">Automatically launch received URLs in default browser.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="autoOpenLinksInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row" id="contextMenuSettingRow" style="display: none;">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Windows Explorer Integration</span>
-                  <span class="win-setting-desc">Add "Send via AiroDrop" option to Windows right-click menu.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="contextMenuInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">HTTPS SSL/TLS Encryption</span>
-                  <span class="win-setting-desc">Enable secure self-signed TLS certificates for local network.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="httpsEnabledInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 4: Update Hub -->
-          <div class="win-section-group" id="win-sec-updates" style="display: none;">
-            <h3 class="win-section-title">AiroDrop Update Hub</h3>
-            <p class="win-section-subtitle">Check software updates and download executables directly within the app.</p>
-            
-            <div class="win-card">
-              <div class="win-setting-row">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Automatic Update Checking</span>
-                  <span class="win-setting-desc">Periodically check GitHub Releases for software updates.</span>
-                </div>
-                <div class="win-setting-control">
-                  <label class="win-switch">
-                    <input type="checkbox" id="autoUpdaterInput">
-                    <span class="win-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="win-setting-row" style="align-items: center;">
-                <div class="win-setting-info">
-                  <span class="win-setting-title">Manual Version Check</span>
-                  <span class="win-setting-desc" id="updateStatusText">Status: Idle</span>
-                </div>
-                <div class="win-setting-control">
-                  <button class="win-btn-secondary" id="checkUpdatesManualBtn">Check for Updates</button>
-                </div>
-              </div>
-
-              <!-- Action & Progress Panel -->
-              <div id="updateActionContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(0, 120, 212, 0.08); border: 1px solid rgba(0, 120, 212, 0.25); border-radius: 8px;">
-                <div id="updateNotesBox" style="font-size: 0.78rem; color: var(--text-primary); margin-bottom: 10px; max-height: 90px; overflow-y: auto; white-space: pre-wrap;"></div>
-                <div style="display: flex; gap: 8px;">
-                  <button id="btnStartUpdateDownload" class="win-btn-primary" style="flex: 1;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>Download &amp; Update Directly</span>
-                  </button>
-                  <button id="btnQuitAndInstallUpdate" class="win-btn-success" style="display: none; flex: 1;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    <span>Restart Now to Install</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Download Progress UI -->
-              <div id="updateProgressContainer" style="display: none; margin-top: 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <span id="updateProgressLabel" style="font-size: 0.78rem; font-weight: 600; color: #60a5fa;">Downloading update...</span>
-                  <span id="updateProgressPercent" style="font-size: 0.78rem; font-weight: 700; color: #60a5fa;">0%</span>
-                </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
-                  <div id="updateProgressBarFill" style="width: 0%; height: 100%; background: #0078d4; border-radius: 99px; transition: width 0.2s ease;"></div>
-                </div>
-                <p id="updateProgressDetails" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 600;"></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 5: Creator Profile -->
-          <div class="win-section-group" id="win-sec-creator" style="display: none;">
-            <h3 class="win-section-title">Creator Profile</h3>
-            <p class="win-section-subtitle">Developer information, primary expertise, and professional connections.</p>
-            
-            <div class="win-card" style="padding: 24px; border-radius: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));">
-              
-              <!-- Profile Header (Avatar + Info) -->
-              <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                <!-- Avatar -->
-                <div style="flex-shrink: 0;">
-                  <img src="profile.png" alt="Asep Sayyad" style="width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--accent, #ff6a00); object-fit: cover; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.4);">
-                </div>
-                
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                  <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary, #ffffff); margin: 0; letter-spacing: -0.01em;">Asep Sayyad</h2>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--accent, #ff6a00); background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.3); padding: 3px 12px; border-radius: 20px;">Linux &amp; DevOps Engineer</span>
-                  </div>
-                  <p style="font-size: 0.76rem; color: var(--text-secondary, rgba(255, 255, 255, 0.6)); margin: 4px 0 0 0;">Creator &amp; Maintainer of AiroDrop</p>
-                </div>
-              </div>
-
-              <!-- Quick Specs Grid -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 14px 16px; border-radius: 10px;">
-                  <div style="font-size: 0.68rem; color: var(--text-muted, rgba(255, 255, 255, 0.5)); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Primary Expertise</div>
-                  <div style="font-size: 0.84rem; color: var(--text-primary, #ffffff); font-weight: 600; line-height: 1.3;">Linux Administration, Cloud Infrastructure &amp; DevOps Pipelines</div>
-                </div>
-                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); padding: 14px 16px; border-radius: 10px;">
-                  <div style="font-size: 0.68rem; color: var(--text-muted, rgba(255, 255, 255, 0.5)); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Supported Platforms</div>
-                  <div style="font-size: 0.84rem; color: var(--text-primary, #ffffff); font-weight: 600; line-height: 1.3;">Red Hat Enterprise Linux, Ubuntu Server &amp; Windows</div>
-                </div>
-              </div>
-
-              <!-- Professional Connections (Social Buttons Grid) -->
-              <div style="display: flex; gap: 10px;">
-                <a href="https://asepsayyad007.in/" target="_blank" style="flex: 1; height: 42px; background: linear-gradient(135deg, var(--accent, #ff6a00), #e05500); border: none; border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: #ffffff; box-shadow: 0 4px 14px rgba(255, 106, 0, 0.25); transition: opacity 0.2s;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  <span>Portfolio Website</span>
-                </a>
-
-                <a href="https://www.linkedin.com/in/asepsayyad/" target="_blank" style="flex: 1; height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-primary, #ffffff); transition: background 0.2s;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0077b5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-                  <span>LinkedIn</span>
-                </a>
-
-                <a href="https://github.com/asepsayyad007" target="_blank" style="flex: 1; height: 42px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-primary, #ffffff); transition: background 0.2s;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-                  <span>GitHub</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Windows App Command Bar / Footer -->
-      <div class="win-app-footer">
-        <div class="settings-status" id="settingsStatus"></div>
-        <div class="win-footer-actions">
-          <button class="win-btn-secondary" id="btnCancelSettings">Close</button>
-          <button class="win-btn-primary" id="saveDirBtn">Apply Settings</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
   <!-- ─── Global Image Lightbox Modal ────────────────────── -->
   <div id="globalImageLightbox" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(5, 5, 10, 0.94); align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 20px; box-sizing: border-box;">
