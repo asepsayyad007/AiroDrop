@@ -57,13 +57,16 @@ AiroDrop operates as a high-performance local HTTP/WebSocket gateway on your Win
 * **Smart URL Extraction:** Automatically extracts clean web links shared from Safari, Chrome, or social apps.
 * **Interactive Clipboard Inspector:** Fullscreen text view and editor modal with instant `Copied!` visual feedback.
 
-### 📁 Mobile File Manager & Browser (`/files`)
-* **Mobile-First HTTP File Portal:** Browse, upload (up to 4 GB per file), download, rename, delete, and create folders directly inside your PC shared storage.
+### 📁 Mobile File Manager & Browser
+* **Access Shared Directory in Mobile PWA App:** Access, browse, upload (up to 4 GB per file), download, rename, delete, and create folders directly inside your PC's shared storage directory straight from the mobile PWA app (`/files`).
 * **High-Speed Transfers:** Direct local network streaming with real-time transfer progress, speed metrics (`MB/s`), and iOS QuickLook compatibility.
+
+### 🖱️ Mouse Pad & Remote Keyboard
+* **Interactive Touchpad Mouse Pad:** Full multi-touch gesture support — smooth cursor navigation, tap-to-click, double-click, right-click, and 2-finger scroll directly on your phone screen.
+* **Real-Time Keyboard Typing Sync:** Virtual keyboard typing sync to type text directly onto your Windows PC in real time.
 
 ### 🖥️ Remote PC Control & Live Screencast
 * **Live PC Desktop Screencast:** Stream your PC monitor to mobile devices at ~15fps with pinch-to-zoom (up to 5×) and touch panning.
-* **Interactive Touchpad & Keyboard:** Multi-touch gesture control (cursor navigation, tap-to-click, right-click, 2-finger scroll) and real-time keyboard typing sync.
 * **VLC Media Player Remote:** Full control over VLC media playback (play/pause, seek, volume, subtitles, audio tracks) with automatic active title detection.
 * **System Power Utilities:** Remote Lock, Sleep, and Power Off controls directly from your mobile device.
 
