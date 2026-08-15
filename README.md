@@ -39,23 +39,19 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
 ## Core Features
 
-* **Visual PWA & Shortcuts Guides:** Step-by-step visual installation guides with high-res screenshots for installing the Safari iOS PWA and configuring dynamic PC IP/Port (`http://<PC-IP>:3479`) in Apple Shortcuts.
-* **Mobile App Setup Glass Button:** Distinct faded red glassmorphism button on the dashboard header to guide new users through pairing and installation.
-* **Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
-* **Interactive Text Edit Modal:** Fullscreen text view and editor for received text snippets and clipboards with instant copy feedback (`Copied!`).
-* **Standalone Device Security Manager:** Dedicated settings pane to manage Security Modes, PIN Authorization, iOS Secret Access Keys, and Paired Mobile Devices.
-* **Quick Pairing QR Lightbox:** Tap the QR code on the dashboard to open a full-size modal for instant camera pairing.
-* **HTTP File Browser:** Mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
-* **Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
-* **Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
-* **Universal Connection:** Unified connection state management. Connect on portal load, with auto-reconnect fallback and status indicators.
-* **PC Remote Control Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your phone.
-* **Statistics & Storage Metrics:** Monitor total uploads, file counts, server uptime, and storage limits.
-* **Security PIN Lock:** Optional Access PIN lock screen to protect your sharing dashboard on shared local networks.
-* **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
-* **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
-* **VLC Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s), volume, mute, fullscreen, subtitles, and audio track switching. Auto-detects when VLC is running and displays the current media title.
-* **Sober Dark Glass Aesthetics:** Unified dark glass theme across all modals, cards, and buttons with HSL tailored monochromatic styling.
+* **Auto Clipboard Sync (iPhone/Android ↔ PC):** Copying text or images on your phone automatically syncs with your PC clipboard. Just send on phone and paste (`Ctrl+V`) on PC.
+* **HTTP File Browser & Manager (`/files`):** Mobile-first file manager to browse, upload (up to 4 GB), download, rename, delete, and create folders on your PC shared storage — no app required.
+* **Live PC Screencast & Interactive Remote Control:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap, drag, and pinch-to-zoom (up to 5×) directly on the stream.
+* **Remote Trackpad & Keyboard:** Full touchpad gesture support (cursor move, left/right click, double-click, 2-finger scroll) and real-time keyboard typing sync.
+* **VLC Media Player Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s/5min), volume, mute, fullscreen, subtitles, and audio track selection with live active title detection.
+* **iOS Shortcuts Integration:** Seamlessly share photos, files, links, and clipboards from iOS Share Sheet or Home Screen widgets directly to PC (`http://<PC-IP>:3479`).
+* **In-App Download Progress Engine:** Real-time transfer speed (`MB/s`) and percentage progress overlays for large downloads with iOS QuickLook black-screen prevention.
+* **Interactive Text Edit Modal:** Fullscreen text view and editor for received text snippets and clipboards with instant copy feedback.
+* **Standalone Security Manager:** Dedicated security pane to manage PIN authorization, Security Modes, and iOS Secret Access Keys (`X-AiroDrop-Token`).
+* **PC Remote Power & System Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your mobile portal.
+* **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received on PC.
+* **Native-grade PWA (Progressive Web App):** Installable Add-to-Home-Screen app for iOS Safari and Android Chrome with offline service worker caching.
+* **Sober Dark Glass Aesthetics:** Unified dark glass visual theme across all modals, cards, and portals with clean monochromatic typography.
 
 ---
 
