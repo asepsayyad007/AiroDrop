@@ -10,11 +10,11 @@ const { getLogger } = require('../logger');
 const logger = getLogger();
 
 function safePath(relPath) {
-  if (!relPath) return null;
+  const cleanRel = (typeof relPath === 'string') ? relPath : '';
 
   // Handle __received__/ prefix for files received from PC
-  if (relPath.startsWith('__received__/')) {
-    const fn = relPath.replace(/^__received__\//, '');
+  if (cleanRel.startsWith('__received__/')) {
+    const fn = cleanRel.replace(/^__received__\//, '');
     const saveCheck = validatePath(fn, state.SAVE_DIR);
     if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
     if (state.TEMP_DIR) {
@@ -23,18 +23,25 @@ function safePath(relPath) {
     }
   }
 
+  // Ensure SHARE_DIR exists
+  if (state.SHARE_DIR && !fs.existsSync(state.SHARE_DIR)) {
+    try { fs.mkdirSync(state.SHARE_DIR, { recursive: true }); } catch (_) {}
+  }
+
   // Check default SHARE_DIR
-  const shareResult = validatePath(relPath, state.SHARE_DIR);
+  const shareResult = validatePath(cleanRel, state.SHARE_DIR);
   if (shareResult.valid && fs.existsSync(shareResult.resolved)) {
     return shareResult.resolved;
   }
 
   // Fallback: check SAVE_DIR and TEMP_DIR for bare filenames
-  const saveCheck = validatePath(relPath, state.SAVE_DIR);
-  if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
-  if (state.TEMP_DIR) {
-    const tempCheck = validatePath(relPath, state.TEMP_DIR);
-    if (tempCheck.valid && fs.existsSync(tempCheck.resolved)) return tempCheck.resolved;
+  if (cleanRel) {
+    const saveCheck = validatePath(cleanRel, state.SAVE_DIR);
+    if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
+    if (state.TEMP_DIR) {
+      const tempCheck = validatePath(cleanRel, state.TEMP_DIR);
+      if (tempCheck.valid && fs.existsSync(tempCheck.resolved)) return tempCheck.resolved;
+    }
   }
 
   return shareResult.valid ? shareResult.resolved : null;

@@ -644,14 +644,27 @@
     updateSelectionBar();
   }
 
-  // Get the stored device auth token from localStorage (works in iframe too via parent)
+  // Get the stored device auth token (checks URL query params, localStorage, and parent iframe)
   function getDeviceToken() {
     try {
-      // Try local storage first (direct)
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = urlParams.get('token');
+      if (tokenFromUrl) return tokenFromUrl;
       const t = localStorage.getItem('deviceToken');
       if (t) return t;
+      if (window.parent && window.parent !== window) {
+        try {
+          const parentToken = window.parent.localStorage ? window.parent.localStorage.getItem('deviceToken') : null;
+          if (parentToken) return parentToken;
+        } catch (_) {}
+      }
     } catch(e) {}
     return null;
+  }
+
+  function getTokenQueryParam() {
+    const t = getDeviceToken();
+    return t ? `&token=${encodeURIComponent(t)}` : '';
   }
 
   // Build a download page URL with auth token embedded
@@ -737,7 +750,8 @@
     document.getElementById('fileContainer').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:0.86rem">Loading...</div>';
     renderBreadcrumb();
     try {
-      const res = await fetch(`/files/browse?path=${encodeURIComponent(currentPath)}&t=${Date.now()}`);
+      const tokenParam = getTokenQueryParam();
+      const res = await fetch(`/files/browse?path=${encodeURIComponent(currentPath)}&t=${Date.now()}${tokenParam}`);
       const data = await res.json();
       if (!res.ok) { toast(data.error||'Error loading directory', true); return; }
       renderEntries(data.entries);
