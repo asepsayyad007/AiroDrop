@@ -5,6 +5,19 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.6] - 2026-08-15
+
+### Added
+- **Live In-App Download Progress Overlay (`#mobileDownloadProgressModal`)** — Displays real-time download progress (`%`, `MB / Total MB`) and real-time transfer speed (`⚡ MB/s`) right inside the Mobile PWA app for 300MB+ transfers.
+- **Master Modal Sweep (`closeAllMobileModals`)** — Automatically dismisses all underlying preview lightboxes (video, image, music player) when starting downloads or completing file saves in the iOS Share Sheet.
+
+### Fixed
+- **iOS PWA QuickLook Black Screen Prevention** — Routed file attachments through invisible iframe triggers (`#hiddenDownloadIframe`) to prevent iOS WebKit from navigating top-level PWA windows to Apple's black QuickLook screen (`Open in "VLC"`).
+- **Video Player Lightbox Download Action** — Resolved nested URL path parsing (`path=...`) so tapping download in the video player lightbox smoothly launches the live download progress overlay.
+- **Icon-Only Round Action Buttons** — Redesigned lightbox modal action buttons into clean, uncluttered round icon buttons (`48px × 48px`).
+
+---
+
 ## [6.4.5] - 2026-08-15
 
 ### Fixed

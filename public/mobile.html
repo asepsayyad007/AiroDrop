@@ -1620,8 +1620,8 @@
 
 
 
-  <script src="mobile-app.js?v=6.2.16"></script>
-  <script src="keyboard.js?v=6.4.1"></script>
+  <script src="mobile-app.js?v=6.4.5.2"></script>
+  <script src="keyboard.js?v=6.4.5.2"></script>
   <script>
     // Timeout fallback: if app doesn't initialize within 8s, show error state
     setTimeout(function() {
@@ -2143,14 +2143,12 @@
 
     <!-- Actions Footer -->
     <div style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; padding: 0 20px; box-sizing: border-box; z-index: 100000;" onclick="event.stopPropagation();">
-      <button id="btnMobileVideoFullscreen" onclick="toggleMobileVideoFullscreen();" class="btn" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px 24px; font-size: 0.88rem; font-weight: 700; border-radius: 100px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-        <span>Fullscreen</span>
+      <button id="btnMobileVideoFullscreen" onclick="toggleMobileVideoFullscreen();" class="btn" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3);" title="Fullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
       </button>
 
-      <button id="btnMobileVideoDownload" onclick="downloadVideoDirectly(document.getElementById('mobileVideoEl').src, document.getElementById('mobileVideoTitle').textContent);" class="btn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; padding: 12px 28px; font-size: 0.88rem; font-weight: 700; border-radius: 100px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px var(--accent-glow);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Download Video</span>
+      <button id="btnMobileVideoDownload" onclick="downloadVideoDirectly(document.getElementById('mobileVideoEl').src, document.getElementById('mobileVideoTitle').textContent);" class="btn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px var(--accent-glow);" title="Download Video">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
     </div>
   </div>
@@ -2172,9 +2170,8 @@
 
       <audio id="mobileAudioEl" controls autoplay style="width: 100%; max-width: 360px; outline: none; border-radius: 30px;"></audio>
 
-      <button id="btnMobileAudioDownload" onclick="downloadAudioDirectly();" class="btn" style="margin-top: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; padding: 12px 28px; font-size: 0.88rem; font-weight: 700; border-radius: 100px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px var(--accent-glow);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Download Audio</span>
+      <button id="btnMobileAudioDownload" onclick="downloadAudioDirectly();" class="btn" style="margin-top: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px var(--accent-glow);" title="Download Audio">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
     </div>
   </div>
@@ -2186,16 +2183,16 @@
       <button onclick="closeMobileNoPreview();" style="background: linear-gradient(135deg, #ff5500, #ff2200); border: 2px solid rgba(255,255,255,0.4); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(255,85,0,0.6); outline: none;" title="Close">✕</button>
     </div>
 
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; max-width: 320px; margin-top: 40px;">
-      <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; max-width: 380px; margin-top: 40px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px;">
+      <div style="width: 70px; height: 70px; border-radius: 18px; background: rgba(255,85,0,0.15); border: 1px solid rgba(255,85,0,0.3); display: flex; align-items: center; justify-content: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </div>
-      <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin: 0;">Cannot preview this file type</h3>
-      <p style="color: var(--text2); font-size: 0.85rem; line-height: 1.5; margin: 0;">Preview is available for Images, Videos, and Music. Download instead to view this file on your device.</p>
-      
-      <button id="btnMobileNoPreviewDownload" onclick="downloadNoPreviewFile();" class="btn" style="margin-top: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; padding: 12px 28px; font-size: 0.9rem; font-weight: 700; border-radius: 100px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px var(--accent-glow);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Download Instead</span>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <p style="margin: 0; color: #fff; font-weight: 700; font-size: 1rem;">Cannot preview this file type</p>
+        <p style="margin: 0; color: var(--text3); font-size: 0.8rem;">Download the file to view it on your device.</p>
+      </div>
+      <button id="btnMobileNoPreviewDownload" onclick="downloadNoPreviewFile();" class="btn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px var(--accent-glow);" title="Download File">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
     </div>
   </div>
@@ -2215,9 +2212,8 @@
 
     <!-- Floating Actions Footer -->
     <div style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; padding: 0 20px; box-sizing: border-box; z-index: 100000;" onclick="event.stopPropagation();">
-      <button id="btnMobileLightboxDownload" onclick="downloadPhotoDirectly(document.getElementById('mobileLightboxImg').src, document.getElementById('mobileLightboxTitle').textContent);" class="btn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; padding: 12px 28px; font-size: 0.88rem; font-weight: 700; border-radius: 100px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px var(--accent-glow);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Download Photo</span>
+      <button id="btnMobileLightboxDownload" onclick="downloadPhotoDirectly(document.getElementById('mobileLightboxImg').src, document.getElementById('mobileLightboxTitle').textContent);" class="btn" style="background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px var(--accent-glow);" title="Download Photo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
     </div>
   </div>
@@ -2232,8 +2228,9 @@
       <button onclick="closeDownloadLinkModal();" style="background: linear-gradient(135deg, #ff5500, #ff2200); border: 2px solid rgba(255,255,255,0.4); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(255,85,0,0.6); outline: none;" title="Close Modal">✕</button>
     </div>
 
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; width: 100%; max-width: 360px; margin-top: 30px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
-      <div style="background: rgba(255,85,0,0.12); border: 1px solid rgba(255,85,0,0.3); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; color: #ffaa88; line-height: 1.45; text-align: left;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; width: 100%; max-width: 360px; margin-top: 30px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;">
+      <button onclick="closeDownloadLinkModal();" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; cursor: pointer; outline: none; z-index: 10;" title="Close">✕</button>
+      <div style="background: rgba(255,85,0,0.12); border: 1px solid rgba(255,85,0,0.3); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; color: #ffaa88; line-height: 1.45; text-align: left; margin-top: 10px;">
         <strong>PWA Direct Download Restricted</strong><br/>
         Copy the link below and paste it into Safari or Chrome to open the download page.
       </div>
@@ -2252,6 +2249,47 @@
           </a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Live Download Progress & Transfer Overlay -->
+  <div id="mobileDownloadProgressModal" style="display: none; position: fixed; inset: 0; background: rgba(4, 4, 8, 0.96); z-index: 9999999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+    <div style="background: rgba(20, 20, 30, 0.95); border: 1px solid rgba(255, 85, 0, 0.3); border-radius: 24px; padding: 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 18px; position: relative; box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255,85,0,0.15);">
+      
+      <!-- Top Close / Cancel Button -->
+      <button onclick="cancelDownloadWithProgress();" style="position: absolute; top: 14px; right: 14px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; cursor: pointer; outline: none; z-index: 10;" title="Cancel / Close">✕</button>
+
+      <!-- File Header -->
+      <div style="display: flex; align-items: center; gap: 14px; padding-right: 36px;">
+        <div id="downloadProgressFileIcon" style="width: 44px; height: 44px; background: linear-gradient(135deg, rgba(255,85,0,0.2), rgba(255,170,0,0.1)); border: 1px solid rgba(255,85,0,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-size: 1.2rem; flex-shrink: 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+          <span id="downloadProgressFileName" style="color: #ffffff; font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Download File</span>
+          <span id="downloadProgressSubtitle" style="color: var(--text3, #888); font-size: 0.76rem; margin-top: 3px;">Connecting...</span>
+        </div>
+      </div>
+
+      <!-- Live Transfer Progress Bar -->
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.08); border-radius: 100px; overflow: hidden; position: relative;">
+          <div id="downloadProgressBarInner" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff5500, #ffaa00); border-radius: 100px; transition: width 0.15s ease-out;"></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: #bbb;">
+          <span id="downloadProgressTransferred">0 MB / 0 MB (0%)</span>
+          <span id="downloadProgressSpeed" style="color: var(--accent-light, #ffaa88); font-weight: 700; font-family: monospace;">⚡ 0.0 MB/s</span>
+        </div>
+      </div>
+
+      <!-- Completion Actions -->
+      <div id="downloadProgressActionBox" style="display: none; flex-direction: column; gap: 10px; margin-top: 4px;">
+        <button id="btnDownloadSaveLocal" onclick="saveDownloadedFileToDevice();" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; padding: 13px; border-radius: 100px; border: none; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(16,185,129,0.4);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Save / Share File</span>
+        </button>
+        <button onclick="closeDownloadProgressModal();" class="btn" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); color: #ffffff; padding: 11px; border-radius: 100px; font-weight: 600; font-size: 0.84rem; cursor: pointer;">Done</button>
+      </div>
+
     </div>
   </div>
   <!-- Fullscreen Apple iOS Setup Overlay -->

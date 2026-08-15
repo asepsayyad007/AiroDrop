@@ -726,7 +726,10 @@
           if (isImg) {
             clickHandler = `onclick="openMobileImageLightbox('${safeUrl}', '${safeTitle}')"`;
           } else if (isVid) {
-            clickHandler = `onclick="openMobileVideoPlayer('${safeUrl}?stream=true', '${safeTitle}')"`;
+            const vidStreamUrl = item.filename 
+              ? `/files/download?path=${encodeURIComponent('__received__/' + item.filename)}&stream=true`
+              : `${downloadUrl}?stream=true`;
+            clickHandler = `onclick="openMobileVideoPlayer('${escapeAttr(vidStreamUrl)}', '${safeTitle}')"`;
           } else if (isPdf) {
             clickHandler = `onclick="openMobilePdfViewer('${safeUrl}', '${safeTitle}')"`;
           } else {
@@ -3378,59 +3381,201 @@
       });
     }
 
-    window.triggerFrictionlessDownload = async function(rawUrl, name) {
+    let currentProgressXHR = null;
+    let completedDownloadedBlob = null;
+    let completedDownloadedName = '';
+
+    window.closeAllMobileModals = function() {
+      const modalIds = [
+        'mobileDownloadProgressModal',
+        'mobileVideoLightbox',
+        'mobileImageLightbox',
+        'mobileAudioLightbox',
+        'mobileNoPreviewLightbox',
+        'mobileDownloadLinkModal',
+        'videoPlayerOverlay'
+      ];
+      modalIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      
+      const video = document.getElementById('mobileVideoEl');
+      if (video) { try { video.pause(); video.removeAttribute('src'); video.load(); } catch(_) {} }
+      const audio = document.getElementById('mobileAudioEl');
+      if (audio) { try { audio.pause(); audio.removeAttribute('src'); audio.load(); } catch(_) {} }
+    };
+
+    window.closeDownloadProgressModal = function() {
+      window.closeAllMobileModals();
+    };
+
+    window.cancelDownloadWithProgress = function() {
+      if (currentProgressXHR) {
+        try { currentProgressXHR.abort(); } catch(_) {}
+        currentProgressXHR = null;
+      }
+      window.closeAllMobileModals();
+      if (typeof showToast === 'function') showToast('Download canceled', 'info');
+    };
+
+    window.saveDownloadedFileToDevice = async function() {
+      if (!completedDownloadedBlob) return;
+      const fileName = completedDownloadedName || 'file';
+      const fileBlob = completedDownloadedBlob;
+      completedDownloadedBlob = null; // Clear to prevent duplicate execution
+
+      const file = new File([fileBlob], fileName, { type: fileBlob.type || 'application/octet-stream' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: fileName
+          });
+          if (typeof showToast === 'function') showToast('File saved!', 'success');
+        } catch(e) {
+          console.log('[WEBSHARE] Share dismissed/cancelled:', e);
+        } finally {
+          window.closeAllMobileModals();
+        }
+        return;
+      }
+
+      // Fallback: Invisible iframe blob download (Prevents top-level iOS PWA navigation to black QuickLook screen!)
+      const objectUrl = URL.createObjectURL(fileBlob);
+      let iframe = document.getElementById('hiddenDownloadIframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hiddenDownloadIframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      iframe.src = objectUrl;
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 15000);
+      if (typeof showToast === 'function') showToast('File download saved!', 'success');
+      window.closeAllMobileModals();
+    };
+
+    window.triggerFrictionlessDownload = function(rawUrl, name) {
       if (!rawUrl || rawUrl === 'undefined' || rawUrl === 'null') return;
+
+      // Close and dismiss any open media preview lightboxes immediately
+      try { if (typeof window.closeMobileVideoPlayer === 'function') window.closeMobileVideoPlayer(); } catch(_) {}
+      try { if (typeof window.closeMobileLightbox === 'function') window.closeMobileLightbox(); } catch(_) {}
+      try { if (typeof window.closeMobileAudioPlayer === 'function') window.closeMobileAudioPlayer(); } catch(_) {}
+      try { if (typeof window.closeMobileNoPreview === 'function') window.closeMobileNoPreview(); } catch(_) {}
+
       const fileName = name || 'file';
       
       let relPath = rawUrl;
-      if (rawUrl.includes('/received/')) {
+      if (rawUrl.includes('path=')) {
+        const match = rawUrl.match(/path=([^&]+)/);
+        if (match) {
+          relPath = decodeURIComponent(match[1]);
+        }
+      } else if (rawUrl.includes('/received/')) {
         const fn = rawUrl.split('/received/').pop().split('?')[0];
-        relPath = '__received__/' + fn;
+        relPath = '__received__/' + decodeURIComponent(fn);
       }
       
       const token = (typeof getDeviceToken === 'function' ? getDeviceToken() : (localStorage.getItem('deviceToken') || ''));
       const tokenSuffix = token ? `&token=${encodeURIComponent(token)}` : '';
       const downloadApiUrl = `/files/download?path=${encodeURIComponent(relPath)}${tokenSuffix}`;
 
-      // 1. Try WebShare API first (Native Apple iOS / Android Share Sheet)
-      if (navigator.canShare) {
-        try {
-          if (typeof showToast === 'function') showToast('Preparing download...', 'info');
-          const response = await fetch(downloadApiUrl);
-          if (response.ok) {
-            const blob = await response.blob();
-            const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
-            if (navigator.canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: fileName
-              });
-              if (typeof showToast === 'function') showToast('File saved!', 'success');
-              return;
-            }
-          }
-        } catch (e) {
-          console.log('[WEBSHARE] Share dismissed or unsupported, falling back:', e);
+      // Show live download progress modal
+      const modal = document.getElementById('mobileDownloadProgressModal');
+      const fileNameEl = document.getElementById('downloadProgressFileName');
+      const subtitleEl = document.getElementById('downloadProgressSubtitle');
+      const progressBarInner = document.getElementById('downloadProgressBarInner');
+      const transferredEl = document.getElementById('downloadProgressTransferred');
+      const speedEl = document.getElementById('downloadProgressSpeed');
+      const actionBox = document.getElementById('downloadProgressActionBox');
+
+      if (modal) modal.style.display = 'flex';
+      if (fileNameEl) fileNameEl.textContent = fileName;
+      if (subtitleEl) subtitleEl.textContent = 'Connecting...';
+      if (progressBarInner) progressBarInner.style.width = '0%';
+      if (transferredEl) transferredEl.textContent = '0 MB / 0 MB (0%)';
+      if (speedEl) speedEl.textContent = '⚡ 0.0 MB/s';
+      if (actionBox) actionBox.style.display = 'none';
+
+      completedDownloadedBlob = null;
+      completedDownloadedName = fileName;
+
+      if (currentProgressXHR) {
+        try { currentProgressXHR.abort(); } catch(_) {}
+      }
+
+      const xhr = new XMLHttpRequest();
+      currentProgressXHR = xhr;
+      xhr.open('GET', downloadApiUrl, true);
+      xhr.responseType = 'blob';
+
+      let startTime = Date.now();
+      let lastLoaded = 0;
+      let lastTime = startTime;
+
+      xhr.onprogress = (e) => {
+        const now = Date.now();
+        const timeDeltaSec = (now - lastTime) / 1000;
+        const loaded = e.loaded || 0;
+        const total = e.total || 0;
+
+        if (total > 0) {
+          const pct = Math.min(100, Math.round((loaded / total) * 100));
+          if (progressBarInner) progressBarInner.style.width = `${pct}%`;
+          
+          const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+          const totalMb = (total / (1024 * 1024)).toFixed(1);
+          if (transferredEl) transferredEl.textContent = `${loadedMb} MB / ${totalMb} MB (${pct}%)`;
+          if (subtitleEl) subtitleEl.textContent = `Downloading (${pct}%)`;
+        } else {
+          const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+          if (transferredEl) transferredEl.textContent = `${loadedMb} MB downloaded`;
+          if (subtitleEl) subtitleEl.textContent = `Downloading...`;
         }
-      }
 
-      // 2. Try direct attachment anchor trigger
-      const a = document.createElement('a');
-      a.href = downloadApiUrl;
-      a.download = fileName;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+        if (timeDeltaSec >= 0.3) {
+          const loadedDelta = loaded - lastLoaded;
+          const speedMBps = (loadedDelta / (1024 * 1024)) / timeDeltaSec;
+          if (speedEl) speedEl.textContent = `⚡ ${speedMBps.toFixed(1)} MB/s`;
+          lastLoaded = loaded;
+          lastTime = now;
+        }
+      };
 
-      // 3. Fallback: If in PWA standalone mode and anchor didn't dismiss frame, open modal after brief delay
-      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-      if (isStandalone) {
-        setTimeout(() => {
-          window.openDownloadLinkModal(downloadApiUrl, fileName);
-        }, 500);
-      }
+      xhr.onload = () => {
+        currentProgressXHR = null;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          completedDownloadedBlob = xhr.response;
+          const totalSizeMb = (completedDownloadedBlob.size / (1024 * 1024)).toFixed(1);
+          
+          if (progressBarInner) progressBarInner.style.width = '100%';
+          if (transferredEl) transferredEl.textContent = `${totalSizeMb} MB / ${totalSizeMb} MB (100%)`;
+          if (subtitleEl) subtitleEl.textContent = `Download Complete (${totalSizeMb} MB)`;
+          if (speedEl) speedEl.textContent = `✓ Complete`;
+          if (actionBox) actionBox.style.display = 'flex';
+
+          // Automatically trigger file save / share options
+          window.saveDownloadedFileToDevice();
+        } else {
+          if (subtitleEl) subtitleEl.textContent = `Download failed (Status ${xhr.status})`;
+          if (typeof showToast === 'function') showToast(`Download failed (Status ${xhr.status})`, 'error');
+        }
+      };
+
+      xhr.onerror = () => {
+        currentProgressXHR = null;
+        if (subtitleEl) subtitleEl.textContent = 'Network error during download';
+        if (typeof showToast === 'function') showToast('Network error during download', 'error');
+      };
+
+      xhr.onabort = () => {
+        currentProgressXHR = null;
+      };
+
+      xhr.send();
     };
 
     window.downloadPhotoDirectly = function(url, name) {
