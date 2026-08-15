@@ -729,10 +729,12 @@
             clickHandler = `onclick="openMobileVideoPlayer('${safeUrl}?stream=true', '${safeTitle}')"`;
           } else if (isPdf) {
             clickHandler = `onclick="openMobilePdfViewer('${safeUrl}', '${safeTitle}')"`;
+          } else {
+            clickHandler = `onclick="triggerFrictionlessDownload('${safeUrl}', '${safeTitle}')"`;
           }
 
           return `
-            <div class="receive-item" ${clickHandler} style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px; ${(isImg || isVid || isPdf) ? 'cursor: pointer;' : 'cursor: default;'}">
+            <div class="receive-item" ${clickHandler} style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 14px; margin-bottom: 8px; cursor: pointer;">
               <span style="font-size: 1.1rem; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px; overflow: hidden;">${icon}</span>
               <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
                 <span class="receive-content" style="font-weight: 600; color: var(--text); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(displayName)}</span>
@@ -740,7 +742,7 @@
               </div>
               <span class="receive-time" style="font-size: 0.72rem; color: var(--text3); flex-shrink: 0; margin-right: 8px;">${timeAgo(item.timestamp)}</span>
               <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;" onclick="event.stopPropagation();">
-                <button onclick="downloadPhotoDirectly('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Download</button>
+                <button onclick="triggerFrictionlessDownload('${downloadUrl}', '${escapeAttr(displayName)}')" style="background:none; border:none; color:var(--accent-light); font-size:0.76rem; font-weight:600; cursor:pointer; padding:2px 6px;">Download</button>
                 <button class="delete-btn" onclick="deletePendingItem('${escapeAttr(item.id)}')" style="background:none; border:none; color:var(--text3); font-size:0.9rem; cursor:pointer; padding:2px; display:inline-flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
             </div>
@@ -3376,9 +3378,63 @@
       });
     }
 
+    window.triggerFrictionlessDownload = async function(rawUrl, name) {
+      if (!rawUrl || rawUrl === 'undefined' || rawUrl === 'null') return;
+      const fileName = name || 'file';
+      
+      let relPath = rawUrl;
+      if (rawUrl.includes('/received/')) {
+        const fn = rawUrl.split('/received/').pop().split('?')[0];
+        relPath = '__received__/' + fn;
+      }
+      
+      const token = (typeof getDeviceToken === 'function' ? getDeviceToken() : (localStorage.getItem('deviceToken') || ''));
+      const tokenSuffix = token ? `&token=${encodeURIComponent(token)}` : '';
+      const downloadApiUrl = `/files/download?path=${encodeURIComponent(relPath)}${tokenSuffix}`;
+
+      // 1. Try WebShare API first (Native Apple iOS / Android Share Sheet)
+      if (navigator.canShare) {
+        try {
+          if (typeof showToast === 'function') showToast('Preparing download...', 'info');
+          const response = await fetch(downloadApiUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: fileName
+              });
+              if (typeof showToast === 'function') showToast('File saved!', 'success');
+              return;
+            }
+          }
+        } catch (e) {
+          console.log('[WEBSHARE] Share dismissed or unsupported, falling back:', e);
+        }
+      }
+
+      // 2. Try direct attachment anchor trigger
+      const a = document.createElement('a');
+      a.href = downloadApiUrl;
+      a.download = fileName;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // 3. Fallback: If in PWA standalone mode and anchor didn't dismiss frame, open modal after brief delay
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      if (isStandalone) {
+        setTimeout(() => {
+          window.openDownloadLinkModal(downloadApiUrl, fileName);
+        }, 500);
+      }
+    };
+
     window.downloadPhotoDirectly = function(url, name) {
-      if (!url || url === 'undefined' || url === 'null') return;
-      window.openDownloadLinkModal(url, name || 'photo.jpg');
+      window.triggerFrictionlessDownload(url, name);
     };
 
     window.openMobileImageLightbox = function(src, title) {
@@ -3531,7 +3587,7 @@
     window.downloadVideoDirectly = function(url, name) {
       if (!url || url === 'undefined' || url === 'null') return;
       const cleanUrl = url.replace('&stream=true', '');
-      window.openDownloadLinkModal(cleanUrl, name || 'video.mp4');
+      window.triggerFrictionlessDownload(cleanUrl, name || 'video.mp4');
     };
 
     // Intercept messages from iframe (e.g. File Manager requesting image/video/audio/no-preview/download-modal)
@@ -3590,7 +3646,7 @@
       const titleEl = document.getElementById('mobileAudioTitle');
       if (audio && audio.src) {
         const cleanUrl = audio.src.replace('&stream=true', '');
-        downloadPhotoDirectly(cleanUrl, titleEl ? titleEl.textContent : 'music.mp3');
+        window.triggerFrictionlessDownload(cleanUrl, titleEl ? titleEl.textContent : 'music.mp3');
       }
     };
 
@@ -3617,7 +3673,7 @@
 
     window.downloadNoPreviewFile = function() {
       if (noPreviewDownloadUrl) {
-        downloadPhotoDirectly(noPreviewDownloadUrl, noPreviewDownloadName);
+        window.triggerFrictionlessDownload(noPreviewDownloadUrl, noPreviewDownloadName);
       }
     };
 
