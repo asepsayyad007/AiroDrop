@@ -5,6 +5,15 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.5] - 2026-08-15
+
+### Fixed
+- **Auto-Updater Release Asset Alignment** — Explicitly configured `"artifactName": "${productName}.Setup.${version}.${ext}"` in `package.json` to guarantee that GitHub `latest.yml` manifests match release installer names (`AiroDrop.Setup.6.4.5.exe`) on GitHub Releases.
+- **Multi-Candidate Asset Probing** — Added `resolveDirectAssetFallback` with fast HTTP `HEAD` probing across candidate filenames to ensure update downloads succeed cleanly across all previous client versions (`v6.4.3`, `v6.4.4`).
+- **Relative Redirect Downloader Fix** — Enhanced `src/directDownloader.js` to resolve relative redirect headers and cap redirect depth to 10.
+
+---
+
 ## [6.4.4] - 2026-08-15
 
 ### Added
