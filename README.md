@@ -27,7 +27,7 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## ⚡ How It Works
+## How It Works
 
 AiroDrop operates as a high-performance local HTTP/WebSocket gateway on your Windows PC. Mobile devices connect over your local Wi-Fi subnet without third-party cloud servers or user registration.
 
@@ -50,27 +50,27 @@ AiroDrop operates as a high-performance local HTTP/WebSocket gateway on your Win
 
 ---
 
-## 🚀 Core Capabilities
+## Core Capabilities
 
-### 📋 Universal Clipboard & Instant Transfer
+### Universal Clipboard & Instant Transfer
 * **Bi-Directional Auto Sync:** Automatically syncs copied text and images between mobile devices and Windows clipboard (`Ctrl+V`) instantly.
 * **Smart URL Extraction:** Automatically extracts clean web links shared from Safari, Chrome, or social apps.
 * **Interactive Clipboard Inspector:** Fullscreen text view and editor modal with instant `Copied!` visual feedback.
 
-### 📁 Mobile File Manager & Browser
+### Mobile File Manager & Browser
 * **Access Shared Directory in Mobile PWA App:** Access, browse, upload (up to 4 GB per file), download, rename, delete, and create folders directly inside your PC's shared storage directory straight from the mobile PWA app (`/files`).
 * **High-Speed Transfers:** Direct local network streaming with real-time transfer progress, speed metrics (`MB/s`), and iOS QuickLook compatibility.
 
-### 🖱️ Mouse Pad & Remote Keyboard
+### Mouse Pad & Remote Keyboard
 * **Interactive Touchpad Mouse Pad:** Full multi-touch gesture support — smooth cursor navigation, tap-to-click, double-click, right-click, and 2-finger scroll directly on your phone screen.
 * **Real-Time Keyboard Typing Sync:** Virtual keyboard typing sync to type text directly onto your Windows PC in real time.
 
-### 🖥️ Remote PC Control & Live Screencast
+### Remote PC Control & Live Screencast
 * **Live PC Desktop Screencast:** Stream your PC monitor to mobile devices at ~15fps with pinch-to-zoom (up to 5×) and touch panning.
 * **VLC Media Player Remote:** Full control over VLC media playback (play/pause, seek, volume, subtitles, audio tracks) with automatic active title detection.
 * **System Power Utilities:** Remote Lock, Sleep, and Power Off controls directly from your mobile device.
 
-### 🛡️ Security & Privacy Architecture
+### Security & Privacy Architecture
 * **100% Local Subnet Privacy:** Zero cloud routing, zero data retention, and zero external tracking.
 * **Granular Security Controls:** Security Modes, optional Access PIN lock, and iOS Secret Access Key verification (`X-AiroDrop-Token`).
 * **Standalone Port Allocation:** Dual-port architecture separating HTTPS web portal (`3478`) and HTTP iOS Shortcut API (`3479`) for zero-friction setup.
