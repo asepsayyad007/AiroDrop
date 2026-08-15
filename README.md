@@ -2,14 +2,14 @@
 
 ![AiroDrop Banner](banner.png)
 
-A beautiful, self-hosted local network alternative to Apple's AirDrop and Universal Clipboard. AiroDrop allows you to seamlessly transfer text, links, images, and files between iOS/Android devices and your Windows PC over Wi-Fi — plus remote control your PC and stream your screen directly to your mobile webapp.
+> **AiroDrop** is a lightweight, self-hosted local network companion app designed to bring seamless AirDrop-like cross-device file sharing, Universal Clipboard synchronization, remote PC control, and desktop screencasting to iOS, Android, and Windows — with zero cloud dependency and complete privacy.
 
 ---
 
-Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayyad](https://asepsayyad007.in/)**
+Official Website **[AiroDrop Hub](https://airodrop.site/)** | Developer **[Asep Sayyad](https://asepsayyad007.in/)**
 
 ![Version](https://img.shields.io/badge/version-6.4.70-orange.svg?style=flat-square)
-![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
+![Privacy](https://img.shields.io/badge/Privacy-100%25_Local_Network-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows-blue.svg?style=flat-square&logo=windows)
 ![iOS Shortcuts](https://img.shields.io/badge/iOS%20Shortcuts-Supported-red.svg?style=flat-square&logo=shortcuts)
@@ -27,31 +27,50 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## How It Works
+## ⚡ How It Works
 
-* **Instant Clipboard Sync:** Copying text or sharing images on your phone pushes them to your PC's clipboard (Ctrl+V) instantly. Shared links from Safari/Chrome have clean URLs extracted automatically.
-* **Bi-directional Queue:** Push links or text snippets from your PC dashboard to the mobile portal inbox, or download files directly onto your phone.
-* **File Browser:** Open `http://<PC-IP>:<PORT>/files` in Safari to browse, upload, download, and manage files on your PC's shared folder.
-* **Live Screencast:** Tap "Open Live Screen" on the mobile portal to stream your PC desktop at ~15fps with optional interactive mouse control.
-* **Visual Installation Guides:** Interactive 6-step Safari PWA installation walkthrough and 2-step iOS Shortcuts setup guide with embedded screenshots.
+AiroDrop operates as a high-performance local HTTP/WebSocket gateway on your Windows PC. Mobile devices connect over your local Wi-Fi subnet without third-party cloud servers or user registration.
+
+```
+┌─────────────────────────┐               Local Wi-Fi Subnet               ┌─────────────────────────┐
+│     iOS / Android       │ ─────────────────────────────────────────────── │       Windows PC        │
+│  (Safari PWA / Chrome)  │  ◄───────────── WebSocket / HTTP ─────────────► │   (AiroDrop Core Server) │
+└─────────────────────────┘                                                └─────────────────────────┘
+            │                                                                           │
+   ┌────────┴────────┐                                                         ┌────────┴────────┐
+   │ iOS Shortcuts   │ ────────────── POST http://<PC-IP>:3479/api/send ──────► │ Windows Clipboard│
+   │  & Share Sheet  │                                                         │    (Ctrl + V)   │
+   └─────────────────┘                                                         └─────────────────┘
+```
+
+1. **Instant Pairing**: Scan the dynamic QR code on the PC dashboard or navigate to `https://<PC-IP>:3478/m` on your mobile device.
+2. **Seamless Transfer**: Copy text, photos, or files on mobile and send via 1-Tap iOS Share Sheet or PWA portal. Text immediately lands on your PC clipboard (`Ctrl+V`).
+3. **Local Shared Storage**: Transferred files automatically land in your designated PC downloads folder with full HTTP File Manager access at `http://<PC-IP>:3478/files`.
+4. **Low-Latency Streaming**: Real-time WebSocket connections stream desktop displays (~15fps) and input control events (touchpad, keyboard, system power commands).
 
 ---
 
-## Core Features
+## 🚀 Core Capabilities
 
-* **Auto Clipboard Sync (iPhone/Android ↔ PC):** Copying text or images on your phone automatically syncs with your PC clipboard. Just send on phone and paste (`Ctrl+V`) on PC.
-* **HTTP File Browser & Manager (`/files`):** Mobile-first file manager to browse, upload (up to 4 GB), download, rename, delete, and create folders on your PC shared storage — no app required.
-* **Live PC Screencast & Interactive Remote Control:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap, drag, and pinch-to-zoom (up to 5×) directly on the stream.
-* **Remote Trackpad & Keyboard:** Full touchpad gesture support (cursor move, left/right click, double-click, 2-finger scroll) and real-time keyboard typing sync.
-* **VLC Media Player Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s/5min), volume, mute, fullscreen, subtitles, and audio track selection with live active title detection.
-* **iOS Shortcuts Integration:** Seamlessly share photos, files, links, and clipboards from iOS Share Sheet or Home Screen widgets directly to PC (`http://<PC-IP>:3479`).
-* **In-App Download Progress Engine:** Real-time transfer speed (`MB/s`) and percentage progress overlays for large downloads with iOS QuickLook black-screen prevention.
-* **Interactive Text Edit Modal:** Fullscreen text view and editor for received text snippets and clipboards with instant copy feedback.
-* **Standalone Security Manager:** Dedicated security pane to manage PIN authorization, Security Modes, and iOS Secret Access Keys (`X-AiroDrop-Token`).
-* **PC Remote Power & System Utilities:** Lock your PC, trigger Sleep mode, or perform a clean Power Off directly from your mobile portal.
-* **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received on PC.
-* **Native-grade PWA (Progressive Web App):** Installable Add-to-Home-Screen app for iOS Safari and Android Chrome with offline service worker caching.
-* **Sober Dark Glass Aesthetics:** Unified dark glass visual theme across all modals, cards, and portals with clean monochromatic typography.
+### 📋 Universal Clipboard & Instant Transfer
+* **Bi-Directional Auto Sync:** Automatically syncs copied text and images between mobile devices and Windows clipboard (`Ctrl+V`) instantly.
+* **Smart URL Extraction:** Automatically extracts clean web links shared from Safari, Chrome, or social apps.
+* **Interactive Clipboard Inspector:** Fullscreen text view and editor modal with instant `Copied!` visual feedback.
+
+### 📁 Mobile File Manager & Browser (`/files`)
+* **Mobile-First HTTP File Portal:** Browse, upload (up to 4 GB per file), download, rename, delete, and create folders directly inside your PC shared storage.
+* **High-Speed Transfers:** Direct local network streaming with real-time transfer progress, speed metrics (`MB/s`), and iOS QuickLook compatibility.
+
+### 🖥️ Remote PC Control & Live Screencast
+* **Live PC Desktop Screencast:** Stream your PC monitor to mobile devices at ~15fps with pinch-to-zoom (up to 5×) and touch panning.
+* **Interactive Touchpad & Keyboard:** Multi-touch gesture control (cursor navigation, tap-to-click, right-click, 2-finger scroll) and real-time keyboard typing sync.
+* **VLC Media Player Remote:** Full control over VLC media playback (play/pause, seek, volume, subtitles, audio tracks) with automatic active title detection.
+* **System Power Utilities:** Remote Lock, Sleep, and Power Off controls directly from your mobile device.
+
+### 🛡️ Security & Privacy Architecture
+* **100% Local Subnet Privacy:** Zero cloud routing, zero data retention, and zero external tracking.
+* **Granular Security Controls:** Security Modes, optional Access PIN lock, and iOS Secret Access Key verification (`X-AiroDrop-Token`).
+* **Standalone Port Allocation:** Dual-port architecture separating HTTPS web portal (`3478`) and HTTP iOS Shortcut API (`3479`) for zero-friction setup.
 
 ---
 
@@ -84,27 +103,6 @@ To run or modify the app locally:
 
 ---
 
-## Using the File Browser
-
-1. Open the AiroDrop PC dashboard &rarr; click **"Setup / Connect"** &rarr; go to the **"Files App / Browser"** tab to see your URL.
-2. On your iPhone/Android, open **Safari or Chrome** and navigate to: `http://<YOUR-PC-IP>:<PORT>/files`
-3. Browse your PC's shared folder, tap any file to **download** it to your phone, or tap **＋** to **upload** files.
-4. Long-press any file/folder for rename and delete options.
-
----
-
-## Using Live Screencast
-
-1. On your phone, open the mobile portal → scroll to **PC Live Screen** → tap **"Open Live Screen"**.
-2. If PC services are not connected, the page will auto-connect for you in the background.
-3. The fullscreen overlay opens with a live ~15fps stream of your PC desktop.
-4. Toggle **"View Only"** → **"Interactive"** to enable tap-to-click and drag-to-move-mouse control.
-5. **Pinch to zoom** with 2 fingers (up to 5×). Drag with 1 finger to pan when zoomed in. Tap "Reset Zoom" button to restore.
-6. **Landscape mode:** Rotate your phone for a wider view — the screencast fills the full screen with no UI bleed-through.
-7. **Typing on your PC:** Tap the keyboard icon to open the text sync panel. In landscape mode, the QWERTY rows auto-hide so the video stays visible while you type.
-
----
-
 ## iOS Shortcuts & REST API Configuration
 
 Easily share content directly from any iOS App Share Sheet or Home Screen widget, or integrate via REST API.
@@ -112,19 +110,10 @@ Easily share content directly from any iOS App Share Sheet or Home Screen widget
 > **Authentication & Secret Key:**
 > If Security Mode is enabled or an **iOS Shortcut Secret** is configured on PC, pass your secret in every HTTP request as a header: `X-AiroDrop-Token: <your_secret>` or append `?token=<your_secret>` to the URL. Use port `3479` (HTTP fallback port) for iOS Shortcuts to bypass self-signed SSL warnings.
 
-### Shortcut 1: "Send to PC" (Share Sheet)
-**Quick Install Link:** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8)
-
-### Shortcut 2: "Send Clipboard" (Home Screen Widget)
-**Quick Install Link:** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6)
-
-### Shortcut 3: "Get From PC" (Receive Text & Files)
-**Quick Install Link:** [Get From PC Shortcut](https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac)
-
-### Quick Install QR Codes
-| 1. Share to PC | 2. Send Clipboard | 3. Get From PC |
-| :-: | :-: | :-: |
-| ![Share to PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8) | ![Send Clipboard](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6) | ![Get From PC](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac) |
+### Shortcut Installation Links
+* **1. Share to PC (Share Sheet):** [Get Share to PC Shortcut](https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8)
+* **2. Send Clipboard (Widget):** [Get Clipboard Shortcut](https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6)
+* **3. Get From PC (Receive Files):** [Get From PC Shortcut](https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac)
 
 ### REST API Endpoints
 * **`POST /api/send`**: Send form text (`content=hello`) or raw binary file body. Header: `X-AiroDrop-Token`.
