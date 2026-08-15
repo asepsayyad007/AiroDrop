@@ -1,4 +1,4 @@
-# AiroDrop v6.4.6
+# AiroDrop v6.4.70
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@ A beautiful, self-hosted local network alternative to Apple's AirDrop and Univer
 
 Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayyad](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.4.6-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.4.70-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-Zero_Data_Retention-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows-blue.svg?style=flat-square&logo=windows)
@@ -17,11 +17,11 @@ Official Website **[AiroDrop](https://airodrop.site/)** | Portfolio **[Asep Sayy
 
 ---
 
-## Downloads (v6.4.6)
+## Downloads (v6.4.70)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.4.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.6/AiroDrop.Setup.6.4.6.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.4.6)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.6/AiroDrop-Portable-6.4.6.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.4.70)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.70/AiroDrop.Setup.6.4.70.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.4.70)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.70/AiroDrop-Portable-6.4.70.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
@@ -33,11 +33,14 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 * **Bi-directional Queue:** Push links or text snippets from your PC dashboard to the mobile portal inbox, or download files directly onto your phone.
 * **File Browser:** Open `http://<PC-IP>:<PORT>/files` in Safari to browse, upload, download, and manage files on your PC's shared folder.
 * **Live Screencast:** Tap "Open Live Screen" on the mobile portal to stream your PC desktop at ~15fps with optional interactive mouse control.
+* **Visual Installation Guides:** Interactive 6-step Safari PWA installation walkthrough and 2-step iOS Shortcuts setup guide with embedded screenshots.
 
 ---
 
 ## Core Features
 
+* **Visual PWA & Shortcuts Guides:** Step-by-step visual installation guides with high-res screenshots for installing the Safari iOS PWA and configuring dynamic PC IP/Port (`http://<PC-IP>:3479`) in Apple Shortcuts.
+* **Mobile App Setup Glass Button:** Distinct faded red glassmorphism button on the dashboard header to guide new users through pairing and installation.
 * **Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
 * **Interactive Text Edit Modal:** Fullscreen text view and editor for received text snippets and clipboards with instant copy feedback (`Copied!`).
 * **Standalone Device Security Manager:** Dedicated settings pane to manage Security Modes, PIN Authorization, iOS Secret Access Keys, and Paired Mobile Devices.
@@ -52,8 +55,7 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 * **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
 * **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
 * **VLC Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s), volume, mute, fullscreen, subtitles, and audio track switching. Auto-detects when VLC is running and displays the current media title.
-* **Smooth Zero-Flicker Feed:** Instant card clearing and deleting with smooth height-collapse animations.
-* **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
+* **Sober Dark Glass Aesthetics:** Unified dark glass theme across all modals, cards, and buttons with HSL tailored monochromatic styling.
 
 ---
 

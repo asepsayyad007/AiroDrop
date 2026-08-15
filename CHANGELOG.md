@@ -5,6 +5,26 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.70] - 2026-08-15
+
+### Added
+- **Visual 6-Step Safari iOS PWA Installation Guide** — Integrated 6 high-resolution step-by-step screenshots (`pwa_step1.jpg` to `pwa_step6.jpg`) into `Setup Guide ➔ iPhone ➔ Safari WebApp (PWA)` walking users through opening Safari, tapping three dots, selecting share, expanding menu, adding to home screen, and launching AiroDrop directly from their iPhone Home Screen.
+- **Visual 2-Step iPhone Shortcuts Setup Guide** — Added an interactive 2-step setup guide with embedded screenshots (`shortcut_step1.png` and `shortcut_step2.png`) detailing how to edit imported Apple Shortcuts and update the dynamic IP & Port address field (`http://<PC-IP>:3479`).
+- **1-Tap Phone Install Warning Alert Banner** — Prominent warm amber warning callout (`#facc15`) positioned above the `Official iOS Shortcuts QR` header instructing users on 1-tap phone installation (`Settings ➔ iPhone Setup`).
+- **Faded Red Glassmorphism Setup Button (`#btnDashSetupGuide`)** — Renamed dashboard header button to **Mobile App Setup** with a subtle faded red glassmorphism aesthetic (`background: rgba(239, 68, 68, 0.12)`, `border: 1px solid rgba(248, 113, 113, 0.35)`, `color: #fca5a5`, `box-shadow: 0 4px 18px rgba(239, 68, 68, 0.18)`) to attract new users.
+
+### Changed
+- **Trademark Icon Replacement (Zero Legal Risk)** — Replaced all trademarked Apple logo vectors across the app with generic open-source smartphone outline SVGs (`<rect x="6" y="2" width="12" height="20" rx="2"/>`) to ensure zero trademark or copyright liabilities for commercial distribution.
+- **Shortcuts Port & HTTP Target Protocol Sync** — Corrected shortcut target URL protocol to `http://` and port to `3479` (`http://<PC-IP>:3479`) to bypass self-signed SSL warnings. Dynamically bound `$$('.infoShortcutUrlText')` in `public/app.js` to populate the user's active IP and port `3479` at runtime.
+- **Unified Sober Dark Glass Aesthetics** — Streamlined all setup modals, cards, and buttons into a clean monochromatic dark glass palette (`#ffffff` typography and `#94a3b8` muted labels), reserving amber highlighting exclusively for security certificate warnings.
+- **QR Cards Clean Grid Display** — Removed paragraph subtext descriptions and redundant buttons from shortcut QR cards for a clean, distraction-free layout.
+- **Pairing & Fallback `/m` Path Suffix** — Appended `/m` path suffix to fallback link banner and pairing address (`https://<PC-IP>:<PORT>/m`) in HTML and dynamic JS binders.
+
+### Fixed
+- **App Version Sync Discrepancy** — Resolved root causes where Settings panels displayed outdated version strings (`v6.4.3` / `v6.2.16`). Added `id="appVersionTag"` in `public/index.html` and `id="mobileInfoAppVersion"` in `public/mobile.html` with dynamic JS DOM binding to ensure 100% accurate sync with `package.json` (`6.4.70`).
+
+---
+
 ## [6.4.6] - 2026-08-15
 
 ### Added

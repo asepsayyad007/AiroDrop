@@ -81,9 +81,9 @@
           </div>
 
           <div class="dashboard-actions-group">
-            <button class="btn btn-primary" id="btnDashSetupGuide" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.22); color: #ffffff; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); transition: transform 0.2s, background 0.2s;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-              <span>Setup Guide</span>
+            <button class="btn" id="btnDashSetupGuide" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; background: rgba(239, 68, 68, 0.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(248, 113, 113, 0.35); color: #fca5a5; cursor: pointer; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.18); transition: all 0.25s ease;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              <span>Mobile App Setup</span>
             </button>
           </div>
         </div>
@@ -596,7 +596,7 @@
                 <span>AiroDrop Settings &amp; Preferences</span>
               </h2>
             </div>
-            <span class="win-app-version-badge">v6.4.3</span>
+            <span class="win-app-version-badge" id="appVersionTag">v6.4.70</span>
           </div>
 
           <!-- Windows Settings Body Layout -->
@@ -1100,242 +1100,444 @@
     </div>
   </div>
 
-  <div id="shortcutsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(6, 6, 10, 0.85); align-items: center; justify-content: center; backdrop-filter: blur(12px);">
-    <div class="modal-content" style="background: linear-gradient(135deg, rgba(20, 20, 28, 0.98), rgba(10, 10, 15, 0.99)); border: 1px solid rgba(255, 85, 0, 0.22); border-radius: var(--radius-xl); padding: 0; max-width: 900px; width: 95%; height: 80vh; max-height: 650px; display: flex; flex-direction: column; overflow: hidden; color: var(--text-primary); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 40px rgba(255, 85, 0, 0.1), inset 0 1px 1px rgba(255,255,255,0.05);">
+  <div id="shortcutsModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(6, 6, 10, 0.85); align-items: center; justify-content: center; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+    <div class="modal-content" style="background: #0b0e14; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 0; max-width: 940px; width: 95%; height: 86vh; max-height: 740px; display: flex; flex-direction: column; overflow: hidden; color: #ffffff; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5);">
       
-      <!-- Modal Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
-        <div>
-          <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-            iPhone Setup
-          </h2>
-          <p style="margin: 4px 0 0 0; font-size: 0.76rem; color: var(--text-secondary);">Set up your iPhone or iOS device to connect with AiroDrop</p>
+      <!-- Modal Header Bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: #080a0f; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; color: #ffffff; box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">AiroDrop</h2>
+            <span style="font-size: 0.88rem; color: #94a3b8; font-weight: 500;">Device Setup</span>
+          </div>
         </div>
-        <span class="close-modal" id="closeModal" style="font-size: 24px; cursor: pointer; color: var(--text-secondary); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); transition: all 0.2s;">&times;</span>
+        <span class="close-modal" id="closeModal" style="font-size: 18px; cursor: pointer; color: #94a3b8; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease;">&times;</span>
       </div>
 
-      <!-- Main Layout Body (Split Pane) -->
-      <div style="display: flex; flex: 1; overflow: hidden;">
-        <!-- Sidebar Navigation -->
-        <div style="width: 220px; border-right: 1px solid var(--glass-border); background: rgba(0,0,0,0.08); display: flex; flex-direction: column; padding: 16px 0; gap: 6px; flex-shrink: 0; overflow-y: auto;">
-          <button class="setup-tab-btn active" data-target="setup-security">
-            <span class="icon" style="display:inline-flex; align-items:center;"><svg class="icon-svg sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Quick Connect &amp; Device Security
-          </button>
-          <button class="setup-tab-btn" data-target="setup-shortcuts">
-            <span class="icon" style="display:inline-flex; align-items:center;"><svg class="icon-svg sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> iOS Shortcuts
-          </button>
-          <button class="setup-tab-btn" data-target="setup-manual">
-            <span class="icon" style="display:inline-flex; align-items:center;"><svg class="icon-svg sm" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span> Manual Setup
-          </button>
-        </div>
-
-        <!-- Detail Tab Contents -->
-        <div style="flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;">
+      <!-- Main Wizard Body Container -->
+      <div style="flex: 1; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- STEP 1 VIEW: QR Code, PIN Code & Platform Chooser (Initial View) -->
+        <div id="flowStep1" style="display: flex; flex-direction: column; gap: 14px;">
           
-          <!-- Tab 1: Manage Devices (QR + lists) -->
-          <!-- Tab 2: iOS Shortcuts -->
-          <div id="setup-shortcuts" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
-            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Apple Shortcuts Integration</h3>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-              Download pre-configured iOS shortcuts to integrate AiroDrop directly into your native Share Sheet and widget screen.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
-              
-              <!-- Shortcut Card 1 -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
-                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">1. Share to PC Shortcut</h4>
-                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">Sends selected files, photos, web links, or text from any iOS Share Sheet directly to AiroDrop.</p>
-                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
-                  <img id="imgShareToPC" alt="Share to PC QR" width="110" height="110" style="display: block;">
-                </div>
-                <a href="https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
-              </div>
-
-              <!-- Shortcut Card 2 -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
-                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">2. Send Clipboard Widget</h4>
-                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">One-click widget or home button to instantly sync your iPhone's active clipboard to your computer.</p>
-                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
-                  <img id="imgClipboardToPC" alt="Clipboard to PC QR" width="110" height="110" style="display: block;">
-                </div>
-                <a href="https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
-              </div>
-
-              <!-- Shortcut Card 3 -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
-                <h4 style="margin: 0; font-size: 0.88rem; color: var(--text-primary);">3. Get PC Text &amp; Files</h4>
-                <p style="margin: 0; font-size: 0.72rem; color: var(--text-secondary); height: 36px; overflow: hidden;">Separate widgets to instantly get copied text/links or download queued files from your PC onto your iPhone.</p>
-                <div style="background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 6px; border-radius: var(--radius-md); width: 110px; height: 110px; display: flex; align-items: center; justify-content: center;">
-                  <img id="imgGetPCClipboard" alt="Get PC Clipboard QR" width="110" height="110" style="display: block;">
-                </div>
-                <a href="https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac" target="_blank" class="btn btn-primary" style="margin: 0; font-size: 0.74rem; padding: 6px 12px; border-radius: 8px;">Get Shortcut Link</a>
-              </div>
-
-            </div>
+          <!-- Step 1 Header -->
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.3); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; background: rgba(255, 255, 255, 0.06);">1</div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">Pair Your Device</h3>
           </div>
 
-          <!-- Tab 4: Device Security & Access Control -->
-          <div id="setup-security" class="setup-tab-content" style="display: flex; flex-direction: column; gap: 16px;">
-            <!-- Quick Start Banner -->
-            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;">
-              <span style="display:inline-flex; align-items:center; color:var(--accent);"><svg class="icon-svg lg" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-3.05 11a22.35 22.35 0 0 1-3.95 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></span>
-              <div>
-                <strong style="font-size: 0.84rem; color: var(--text-primary); display: block; margin-bottom: 4px;">Quick Start — 3 Steps</strong>
-                <ol style="font-size: 0.74rem; color: var(--text-secondary); margin: 0; padding-left: 16px; line-height: 1.7;">
-                  <li>Scan the QR code below with your phone camera</li>
-                  <li>Enter the PIN shown below to pair your device</li>
-                  <li>Install iOS Shortcuts from the next tab for 1-tap sharing</li>
-                </ol>
+          <!-- Hero Grid Container (Left Details Card + Right QR Box + Instructions inside) -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+            
+            <!-- 2-Column Row: Left Details + Right QR Code -->
+            <div style="display: grid; grid-template-columns: 1fr 230px; gap: 18px; align-items: stretch;">
+              
+              <!-- Left Details Box -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+                
+                <!-- Row 1: Pairing Address -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </div>
+                    <div>
+                      <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-bottom: 2px;">Pairing Address</span>
+                      <strong style="color: #ffffff; font-family: monospace; font-size: 1.05rem; font-weight: 800;" class="infoIPSetupText">https://192.168.1.120:3478/m</strong>
+                    </div>
+                  </div>
+                  <button id="btnCopyPairAddress" class="btn glass-btn" style="margin: 0; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;" title="Copy Address">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+
+                <!-- Row 2: Authorization PIN -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div>
+                      <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-bottom: 2px;">Authorization PIN</span>
+                      <strong id="quickPairPinCode" style="color: #ffffff; font-family: monospace; font-size: 1.05rem; font-weight: 800;">1405</strong>
+                    </div>
+                  </div>
+                  <button id="btnOpenPinInSettings" class="btn glass-btn" style="margin: 0; padding: 6px 12px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; outline: none;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>Change PIN</span>
+                  </button>
+                </div>
+
+                <!-- Row 3: Fallback Port -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                    </div>
+                    <div>
+                      <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-bottom: 2px;">Fallback Port</span>
+                      <strong style="color: #ffffff; font-family: monospace; font-size: 1.05rem; font-weight: 800;" class="infoPortSetupText">3479</strong>
+                    </div>
+                  </div>
+                  <button id="btnCopyFallbackPort" class="btn glass-btn" style="margin: 0; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none;" title="Copy Port">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Right QR Box -->
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 14px;">
+                <div style="background: #ffffff; padding: 10px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+                  <img id="imgQuickPairHostQr" alt="Scan to Pair" width="140" height="140" style="display: block; border-radius: 6px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 10px; color: #94a3b8; font-size: 0.76rem; font-weight: 500;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  <span>Scan with your phone camera</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Fallback Link Banner (Inside Box) -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span style="font-size: 0.78rem; color: #94a3b8;">If the QR code isn't working, open this link in your phone browser:</span>
+                <strong style="color: #ffffff; font-family: monospace; font-size: 0.88rem; font-weight: 800;" class="infoIPSetupText">https://192.168.1.120:3478/m</strong>
+              </div>
+              <button id="btnCopyFallbackUrl" class="btn glass-btn" style="margin: 0; padding: 5px 8px; border-radius: 6px; cursor: pointer; outline: none;" title="Copy Link">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+
+            <!-- Expected SSL Certificate Warning Callout Card (IMPORTANT WARNING WITH DISTINCT AMBER HIGHLIGHT) -->
+            <div style="background: rgba(234, 179, 8, 0.07); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 4px 16px rgba(234, 179, 8, 0.08);">
+              <div style="width: 30px; height: 30px; border-radius: 8px; background: rgba(234, 179, 8, 0.18); border: 1px solid rgba(234, 179, 8, 0.4); display: flex; align-items: center; justify-content: center; color: #facc15; flex-shrink: 0; margin-top: 1px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <strong style="font-size: 0.85rem; font-weight: 800; color: #facc15; letter-spacing: 0.01em;">Expected Warning: "Certificate Not Valid" or "Not Secure"</strong>
+                <p style="margin: 0; font-size: 0.75rem; color: #d1d5db; line-height: 1.4;">
+                  AiroDrop operates privately on local Wi-Fi without public cloud certificates. Phone browsers display an expected security warning.
+                </p>
+                <div style="font-size: 0.74rem; color: #d1d5db; line-height: 1.4; margin-top: 2px;">
+                  <strong style="color: #ffffff;">How to proceed:</strong> Tap <code style="color: #facc15; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(250,204,21,0.3); font-weight: 700;">"Advanced"</code> or <code style="color: #facc15; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(250,204,21,0.3); font-weight: 700;">"More Options"</code> ➔ Tap <code style="color: #facc15; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(250,204,21,0.3); font-weight: 700;">"Proceed to IP Address (unsafe)"</code> or <code style="color: #facc15; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(250,204,21,0.3); font-weight: 700;">"Accept Risk &amp; Continue"</code>.
+                </div>
               </div>
             </div>
 
-            <h3>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Device Security &amp; Authorization
-            </h3>
+          </div>
+
+          <!-- Step 2 Header -->
+          <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.3); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; background: rgba(255, 255, 255, 0.06);">2</div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">Choose Your Device Platform</h3>
+          </div>
+
+          <!-- Two Platform Selector Cards (GLASS EFFECT BUTTONS) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <!-- iPhone / iPad (iOS) Card -->
+            <button id="btnFlowSelectIOS" class="btn glass-btn-card" style="margin: 0; padding: 16px 18px; border-radius: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; text-align: left; outline: none;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2" ry="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+                </div>
+                <div>
+                  <strong style="font-size: 0.94rem; color: #ffffff; display: block; font-weight: 700;">iPhone / iPad (iOS)</strong>
+                  <span style="font-size: 0.74rem; color: #94a3b8; line-height: 1.3; display: block; margin-top: 2px;">Setup Safari WebApp &amp; Shortcuts</span>
+                </div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; opacity: 0.8;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <!-- Android Device Card -->
+            <button id="btnFlowSelectAndroid" class="btn glass-btn-card" style="margin: 0; padding: 16px 18px; border-radius: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; text-align: left; outline: none;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-4.19l1.45-1.45a.49.49 0 0 0 0-.7.49.49 0 0 0-.7 0l-1.63 1.63A7.546 7.546 0 0 0 12 3c-1.02 0-1.99.2-2.88.57L7.49 1.94a.49.49 0 0 0-.7 0c-.19.19-.19.51 0 .7l1.45 1.45C6.46 5.24 5.26 6.98 5.04 9h13.92c-.22-2.02-1.42-3.76-3.19-4.94zM9 6.5c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75-.75zm6 0c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75-.75z"/></svg>
+                </div>
+                <div>
+                  <strong style="font-size: 0.94rem; color: #ffffff; display: block; font-weight: 700;">Android Device</strong>
+                </div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; opacity: 0.8;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- STEP 2-ANDROID VIEW: Android WebApp (PWA) Setup -->
+        <div id="flowStepAndroidPWA" style="display: none; flex-direction: column; gap: 20px;">
+          <!-- Navigation Breadcrumb -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <button class="btnBackToStep1 btn" style="margin: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              ← Back to Scan &amp; Pair
+            </button>
+            <span style="font-size: 0.8rem; color: #4ade80; font-weight: 700;">Android Setup Guide</span>
+          </div>
+
+          <div style="background: rgba(18, 18, 26, 0.6); border: 1px solid rgba(74, 222, 128, 0.25); border-radius: 16px; padding: 22px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#4ade80"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-4.19l1.45-1.45a.49.49 0 0 0 0-.7.49.49 0 0 0-.7 0l-1.63 1.63A7.546 7.546 0 0 0 12 3c-1.02 0-1.99.2-2.88.57L7.49 1.94a.49.49 0 0 0-.7 0c-.19.19-.19.51 0 .7l1.45 1.45C6.46 5.24 5.26 6.98 5.04 9h13.92c-.22-2.02-1.42-3.76-3.19-4.94zM9 6.5c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75zm6 0c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z"/></svg>
+              <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #ffffff;">How to Install AiroDrop App on Android (Chrome / Browser)</h3>
+            </div>
             
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px;">
-              <p style="margin: 0; font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5;">
-                Security Mode, Host Authorization PIN, iOS Secret Keys, and Paired Devices are managed in the <strong>Settings Page</strong>.
-              </p>
-              <button class="win-btn-primary" id="btnOpenSecurityInSettings" style="padding: 10px 22px; font-size: 0.84rem; font-weight: 700; border-radius: 9px; background: #ff5500; border: none; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(255, 85, 0, 0.35);">
-                Open Security Settings
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="color: #4ade80; font-size: 0.75rem; font-weight: 800;">STEP 1</span>
+                <strong style="font-size: 0.85rem; color: #ffffff;">Open in Chrome</strong>
+                <p style="margin: 0; font-size: 0.74rem; color: #a0a0b8; line-height: 1.45;">Open Chrome or default Android browser &amp; go to <code class="infoIPSetupText" style="color: #4ade80;">https://192.168.1.120:3478/m</code>.</p>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="color: #4ade80; font-size: 0.75rem; font-weight: 800;">STEP 2</span>
+                <strong style="font-size: 0.85rem; color: #ffffff;">Tap Three Dots (⋮)</strong>
+                <p style="margin: 0; font-size: 0.74rem; color: #a0a0b8; line-height: 1.45;">Tap the <strong>Three-Dot Menu icon (⋮)</strong> at top right of Chrome.</p>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="color: #4ade80; font-size: 0.75rem; font-weight: 800;">STEP 3</span>
+                <strong style="font-size: 0.85rem; color: #ffffff;">Tap "Install App"</strong>
+                <p style="margin: 0; font-size: 0.74rem; color: #a0a0b8; line-height: 1.45;">Select <strong>"Install App"</strong> or <strong>"Add to Home Screen"</strong>.</p>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="color: #4ade80; font-size: 0.75rem; font-weight: 800;">STEP 4</span>
+                <strong style="font-size: 0.85rem; color: #ffffff;">Launch Standalone</strong>
+                <p style="margin: 0; font-size: 0.74rem; color: #a0a0b8; line-height: 1.45;">Confirm prompt. AiroDrop icon will appear on your Android Home Screen!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2-IPHONE STEP A VIEW: Safari PWA Setup (iPhone Step 1) -->
+        <div id="flowStepIosPWA" style="display: none; flex-direction: column; gap: 20px;">
+          <!-- Navigation Breadcrumb -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <button class="btnBackToStep1 btn" style="margin: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              ← Back to Scan &amp; Pair
+            </button>
+            <span style="font-size: 0.8rem; color: #ffaa44; font-weight: 700;">iPhone Setup — Step 1 of 2: WebApp (PWA)</span>
+          </div>
+
+          <div style="background: rgba(18, 18, 26, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2" ry="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #ffffff;">How to Install WebApp from Safari (iOS PWA)</h3>
+              </div>
+              <span style="font-size: 0.72rem; color: #ffffff; font-weight: 800; background: rgba(255, 255, 255, 0.1); padding: 4px 12px; border-radius: 99px;">Step 1 of 2</span>
+            </div>
+            
+            <!-- 6 Visual Step-by-Step Installation Cards -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+              
+              <!-- STEP 1 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #94a3b8; font-size: 0.72rem; font-weight: 800; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 6px;">STEP 1</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Tap Three Dots (...)</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Open AiroDrop in iPhone Safari and tap the <strong>three dots (…)</strong> button on the bottom bar.
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step1.jpg" alt="Step 1: Tap Three Dots in Safari" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+              <!-- STEP 2 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #94a3b8; font-size: 0.72rem; font-weight: 800; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 6px;">STEP 2</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Select Share</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Select <strong>Share</strong> from the Safari options menu.
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step2.jpg" alt="Step 2: Select Share Option" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+              <!-- STEP 3 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #94a3b8; font-size: 0.72rem; font-weight: 800; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 6px;">STEP 3</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Expand Menu</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Tap the <strong>down arrow (∨)</strong> or swipe up on the Share Sheet to expand options.
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step3.jpg" alt="Step 3: Expand Share Sheet" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+              <!-- STEP 4 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #94a3b8; font-size: 0.72rem; font-weight: 800; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 6px;">STEP 4</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Add to Home Screen</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Scroll down and tap <strong>Add to Home Screen (+)</strong>.
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step4.jpg" alt="Step 4: Tap Add to Home Screen" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+              <!-- STEP 5 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #94a3b8; font-size: 0.72rem; font-weight: 800; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 6px;">STEP 5</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Tap Add to Confirm</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Tap <strong>Add</strong> in the top right corner of the confirmation screen.
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step5.jpg" alt="Step 5: Tap Add to Confirm" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+              <!-- STEP 6 -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #4ade80; font-size: 0.72rem; font-weight: 800; background: rgba(74, 222, 128, 0.15); padding: 2px 8px; border-radius: 6px;">STEP 6</span>
+                  <strong style="font-size: 0.82rem; color: #ffffff;">Launch AiroDrop</strong>
+                </div>
+                <p style="margin: 0; font-size: 0.73rem; color: #94a3b8; line-height: 1.35; min-height: 32px;">
+                  Open <strong>AiroDrop</strong> from your iPhone Home Screen like a native app!
+                </p>
+                <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                  <img src="pwa_step6.jpg" alt="Step 6: Launch WebApp from Home Screen" style="width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; display: block;">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Next Step Action Button -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+              <button id="btnGoToIosShortcuts" class="btn glass-btn" style="padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 0.84rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span>Next Step: Setup Official iOS Shortcuts →</span>
               </button>
             </div>
           </div>
+        </div>
 
-          <!-- Tab 3: Manual Instructions & REST API -->
-          <div id="setup-manual" class="setup-tab-content" style="display: none; flex-direction: column; gap: 16px;">
-            <h3 style="margin: 0; font-size: 1.1rem; color: var(--accent-light);">Manual Setup &amp; REST API</h3>
-            <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-              <strong>Easy Tip:</strong> Use <strong>Tab 1</strong> for 1-tap download links! If you prefer creating shortcuts manually in the Apple Shortcuts App or writing custom code, follow these simple steps:
-            </p>
+        <!-- STEP 2-IPHONE STEP B VIEW: Official iOS Shortcuts & Dynamic IP -->
+        <div id="flowStepIosShortcuts" style="display: none; flex-direction: column; gap: 20px;">
+          <!-- Navigation Breadcrumb -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <button id="btnBackToIosPWA" class="btn glass-btn" style="margin: 0; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              ← Back to Safari WebApp (PWA)
+            </button>
+            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">iPhone Setup — Step 2 of 2: Apple Shortcuts</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
             
-            <!-- Auth Token Alert Banner -->
-            <div style="background: rgba(var(--accent-rgb, 99, 102, 241), 0.1); border: 1px solid var(--accent); border-radius: var(--radius-md); padding: 10px 14px;">
-              <strong style="color: var(--accent-light); font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Pass Your Secret Key (If Security is On)
-              </strong>
-              <p style="margin: 4px 0 0 0; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.45;">
-                If you created a <strong>Secret Key</strong> above, add it to your HTTP request:<br>
-                • <strong>Header:</strong> Key: <code style="color: var(--accent);">X-AiroDrop-Token</code> | Value: <code style="color: var(--accent);">&lt;Your Secret Key&gt;</code><br>
-                • <strong>Or URL:</strong> <code style="color: var(--accent);">http://&lt;PC-IP&gt;:3479/api/send?token=&lt;Your Secret Key&gt;</code>
-              </p>
+            <!-- 1-Tap Solution Warning Alert Card (Above QR Section) -->
+            <div style="background: rgba(234, 179, 8, 0.07); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 12px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 4px 16px rgba(234, 179, 8, 0.08);">
+              <div style="width: 30px; height: 30px; border-radius: 8px; background: rgba(234, 179, 8, 0.18); border: 1px solid rgba(234, 179, 8, 0.4); display: flex; align-items: center; justify-content: center; color: #facc15; flex-shrink: 0; margin-top: 1px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                <strong style="font-size: 0.85rem; font-weight: 800; color: #facc15; letter-spacing: 0.01em;">1-Tap Phone Install Alternative</strong>
+                <p style="margin: 0; font-size: 0.75rem; color: #d1d5db; line-height: 1.4;">
+                  Open AiroDrop WebApp on iPhone ➔ Go to <strong style="color: #ffffff;">Settings ➔ iPhone Setup</strong> to tap 1-click installation links directly on your phone.
+                </p>
+              </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; padding-right: 6px;">
-              <!-- Shortcut 1 Manual Instructions -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">1. "Send to PC" Shortcut (Share Sheet)</h4>
-                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
-                  <li>Open <strong>Shortcuts App</strong> on iPhone &rarr; tap <strong>+</strong></li>
-                  <li>Tap shortcut settings (top) &rarr; turn on <strong>"Show in Share Sheet"</strong></li>
-                  <li>Add action: <strong>"If"</strong> &rarr; set input to <strong>Shortcut Input</strong> &rarr; choose attribute <strong>"File Extension"</strong> &rarr; condition: <strong>"has any value"</strong></li>
-                  <li>Under <strong>Then</strong> (for Photos &amp; Files):
-                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add action: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
-                      <li>Method: <strong>POST</strong> &rarr; Body: <strong>File</strong> &rarr; File: <strong>Shortcut Input</strong></li>
-                      <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
-                    </ul>
-                  </li>
-                  <li>Under <strong>Else</strong> (for Copied Text &amp; Web Links):
-                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add action: <strong>"Get Contents of URL"</strong></li>
-                      <li>URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
-                      <li>Method: <strong>POST</strong> &rarr; Body: <strong>Form</strong> &rarr; Key <code>content</code>, Value: <strong>Shortcut Input</strong></li>
-                      <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
-                    </ul>
-                  </li>
-                </ol>
+            <!-- Section Header & QR Grid -->
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff;">Official iOS Shortcuts QR</h3>
+                <span style="font-size: 0.74rem; color: #94a3b8;">Scan with iPhone camera to import shortcuts</span>
               </div>
-
-              <!-- Shortcut 2 Manual Instructions -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">2. "Send Clipboard" Shortcut (Home Widget)</h4>
-                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0;">
-                  <li>Open <strong>Shortcuts App</strong> &rarr; tap <strong>+</strong></li>
-                  <li>Add action: <strong>"Get Clipboard"</strong></li>
-                  <li>Add action: <strong>"If"</strong> &rarr; set input to <strong>Clipboard</strong> &rarr; attribute <strong>"File Extension"</strong> &rarr; condition: <strong>"has any value"</strong></li>
-                  <li>Under <strong>Then</strong> (Files/Images):
-                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
-                      <li>Method: <strong>POST</strong> &rarr; Body: <strong>File</strong> &rarr; File: <strong>Clipboard</strong></li>
-                      <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
-                    </ul>
-                  </li>
-                  <li>Under <strong>Else</strong> (Text):
-                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/send</code></li>
-                      <li>Method: <strong>POST</strong> &rarr; Body: <strong>Form</strong> &rarr; Key <code>content</code>, Value: <strong>Clipboard</strong></li>
-                      <li>Header (if secret set): Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong></li>
-                    </ul>
-                  </li>
-                </ol>
-              </div>
-
-              <!-- Shortcut 3 Manual Instructions -->
-              <div style="background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 14px;">
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem;">3. "Get From PC" Shortcut (Receive Text &amp; Files)</h4>
-                <ol style="margin-left: 16px; font-size: 0.74rem; line-height: 1.5; color: var(--text-secondary); padding: 0; display: flex; flex-direction: column; gap: 4px;">
-                  <li>Open <strong>Shortcuts App</strong> &rarr; tap <strong>+</strong></li>
-                  <li>Add action: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/clipboard</code> &rarr; Method: <strong>GET</strong> (Header if secret set: Key <code>X-AiroDrop-Token</code>, Value: <strong>Your Secret Key</strong>)</li>
-                  <li>Add action: <strong>"Get Dictionary from Input"</strong> &rarr; set input to <strong>Contents of URL</strong></li>
-                  <li>Add action: <strong>"Get Dictionary Value"</strong> &rarr; set key to <code>success</code></li>
-                  <li>Add action: <strong>"If"</strong> &rarr; set condition to <code>is true</code>:
-                    <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                      <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; set key to <code>type</code></li>
-                      <li>Add: <strong>"If"</strong> &rarr; set condition to <code>is text</code>:
-                        <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
-                          <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>text</code> &rarr; <strong>"Copy to Clipboard"</strong></li>
-                          <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> &rarr; Method: <strong>POST</strong></li>
-                          <li>Add: <strong>"Show Notification"</strong> &rarr; <em>"Text copied to clipboard"</em></li>
-                        </ul>
-                      </li>
-                      <li>Under <strong>Otherwise</strong> (If File):
-                        <ul style="margin-left: 12px; margin-top: 2px; list-style-type: square;">
-                          <li>Add: <strong>"Choose from Menu"</strong> &rarr; Prompt: <em>Download File?</em> &rarr; Options: Download / Cancel</li>
-                          <li>Under Download:
-                            <ul style="margin-left: 12px; margin-top: 2px; list-style-type: circle;">
-                              <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>url</code> &rarr; <strong>"Get Contents of URL"</strong></li>
-                              <li>Add: <strong>"Get Dictionary Value"</strong> &rarr; key <code>mimeType</code></li>
-                              <li>Add: <strong>"If"</strong> &rarr; starts with <code>image/</code> or <code>video/</code> &rarr; <strong>"Save to Photo Album"</strong>; Else &rarr; <strong>"Save File"</strong></li>
-                              <li>Add: <strong>"Get Contents of URL"</strong> &rarr; URL: <code style="color: var(--accent);">http://<span class="infoIPSetupText">...</span>:<span class="infoPortSetupText">3479</span>/api/pending/&lt;id&gt;/ack</code> &rarr; Method: <strong>POST</strong></li>
-                              <li>Add: <strong>"Show Notification"</strong> &rarr; <em>"File downloaded"</em></li>
-                            </ul>
-                          </li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                </ol>
-              </div>
-
-                <h4 style="margin: 0 0 6px 0; color: var(--accent-light); font-size: 0.82rem; display:flex; align-items:center; gap:6px;">
-                  <svg class="icon-svg sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  <span>REST API Endpoint Reference</span>
-                </h4>
-                <div style="font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5; display: flex; flex-direction: column; gap: 8px;">
-                  <div>
-                    <code style="color: var(--accent); font-weight: bold;">POST /api/send</code>
-                    <div>Send text or files to PC. For form text: <code>content=hello</code>. For raw binary file: send file stream in body. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
-                  </div>
-                  <div>
-                    <code style="color: var(--accent); font-weight: bold;">GET /api/clipboard</code>
-                    <div>Fetch current active text or pending transfer item queued from PC to mobile. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
-                  </div>
-                  <div>
-                    <code style="color: var(--accent); font-weight: bold;">POST /api/pending/:id/ack</code>
-                    <div>Acknowledge receipt of a queued item from PC to clear it from queue. Pass <code>X-AiroDrop-Token</code> header if secret set.</div>
+              
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                <!-- Card 1 -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                  <h4 style="margin: 0; font-size: 0.88rem; font-weight: 700; color: #ffffff;">1. Share to PC</h4>
+                  <div style="background: #ffffff; padding: 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);">
+                    <img id="imgShareToPC" alt="Share to PC QR" width="105" height="105" style="display: block;">
                   </div>
                 </div>
+
+                <!-- Card 2 -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                  <h4 style="margin: 0; font-size: 0.88rem; font-weight: 700; color: #ffffff;">2. Send Clipboard</h4>
+                  <div style="background: #ffffff; padding: 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);">
+                    <img id="imgClipboardToPC" alt="Send Clipboard QR" width="105" height="105" style="display: block;">
+                  </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+                  <h4 style="margin: 0; font-size: 0.88rem; font-weight: 700; color: #ffffff;">3. Get PC Clipboard</h4>
+                  <div style="background: #ffffff; padding: 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);">
+                    <img id="imgGetPCClipboard" alt="Get PC Clipboard QR" width="105" height="105" style="display: block;">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Step-by-Step Shortcuts Setup & IP Configuration Guide -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+              
+              <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;">
+                <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <div>
+                  <h4 style="margin: 0; font-size: 0.98rem; font-weight: 800; color: #ffffff;">Configure Shortcuts with Dynamic PC IP</h4>
+                  <span style="font-size: 0.74rem; color: #94a3b8;">Update the URL field in each shortcut so it points to your PC's active IP</span>
+                </div>
+              </div>
+
+              <!-- 2-Step Visual Flow Cards -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                
+                <!-- STEP 1 CARD -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.78rem; flex-shrink: 0;">1</span>
+                    <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #ffffff;">Step 1: Edit Shortcut</h5>
+                  </div>
+                  <p style="margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.4;">
+                    Open <strong>Shortcuts App</strong> on iPhone. Tap <strong>three dots (…)</strong> on any added shortcut (e.g. <strong>GetFromPc</strong>).
+                  </p>
+                  <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 6px;">
+                    <img src="shortcut_step1.png" alt="Step 1: Open Shortcuts app and tap three dots to edit shortcut" style="width: 100%; max-height: 250px; object-fit: contain; border-radius: 6px; display: block;">
+                  </div>
+                </div>
+
+                <!-- STEP 2 CARD -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.78rem; flex-shrink: 0;">2</span>
+                    <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #ffffff;">Step 2: Update IP &amp; Port</h5>
+                  </div>
+                  <p style="margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.4;">
+                    On each field with preset IP, change to your PC's active IP &amp; Port: Your IP: <code class="infoShortcutUrlText" style="color: #ffffff; font-family: monospace; font-weight: 700; background: rgba(0,0,0,0.4); padding: 1px 5px; border-radius: 4px;">http://192.168.1.120:3479</code>
+                  </p>
+                  <div style="background: #000000; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 6px;">
+                    <img src="shortcut_step2.png" alt="Step 2: Change preset IP address field to active dynamic IP and port" style="width: 100%; max-height: 250px; object-fit: contain; border-radius: 6px; display: block;">
+                  </div>
+                </div>
+
               </div>
 
             </div>
           </div>
-
         </div>
 
       </div>

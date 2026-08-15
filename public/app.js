@@ -1232,7 +1232,7 @@
 
 
 
-  // ─── PWA Config ─────────────────────────────────────────────
+  // ─── Quick Pairing Setup Modal Manager ─────────────────────
   function openSetupModal() {
     const shortcutsModal = $('#shortcutsModal');
     if (!shortcutsModal) return;
@@ -1240,8 +1240,7 @@
     const imgShareToPC = $('#imgShareToPC');
     const imgClipboardToPC = $('#imgClipboardToPC');
     const imgGetPCClipboard = $('#imgGetPCClipboard');
-    const tabBtns = $$('.setup-tab-btn');
-    const tabContents = $$('.setup-tab-content');
+    const imgQuickPairHostQr = $('#imgQuickPairHostQr');
 
     if (imgShareToPC) {
       imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8');
@@ -1252,27 +1251,39 @@
     if (imgGetPCClipboard) {
       imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
     }
+
     if (serverInfo) {
       const infoIPSetup = $('#infoIPSetup');
       if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
-      $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
-      $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port, 10) + 1);
+      $$('.infoIPSetupText').forEach(el => el.textContent = `https://${serverInfo.ip}:${serverInfo.port || 3478}/m`);
+      $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port || 3478, 10) + 1);
+      $$('.infoShortcutUrlText').forEach(el => el.textContent = `http://${serverInfo.ip}:${parseInt(serverInfo.port || 3478, 10) + 1}`);
+
+      const infoHostDeviceName = $('#infoHostDeviceName');
+      if (infoHostDeviceName && serverInfo.deviceName) {
+        infoHostDeviceName.textContent = serverInfo.deviceName;
+      }
+      const quickPairPinCode = $('#quickPairPinCode');
+      if (quickPairPinCode) {
+        quickPairPinCode.textContent = serverInfo.pinCode || '1405';
+      }
+
+      if (imgQuickPairHostQr) {
+        const pairUrl = `https://${serverInfo.ip}:${serverInfo.port || 3478}/m`;
+        imgQuickPairHostQr.src = getThemedQrUrl(pairUrl);
+      }
     }
-    
-    tabBtns.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(c => c.style.display = 'none');
-    const defaultBtn = $('.setup-tab-btn[data-target="setup-security"]');
-    if (defaultBtn) defaultBtn.classList.add('active');
-    const defaultContent = $('#setup-security');
-    if (defaultContent) defaultContent.style.display = 'flex';
-    const btnOpenSecurityInSettings = $('#btnOpenSecurityInSettings');
-    if (btnOpenSecurityInSettings) {
-      btnOpenSecurityInSettings.addEventListener('click', () => {
-        closeSetupModal();
-        openSettingsModal();
-        switchDesktopTab('win-sec-device-security');
-      });
-    }
+
+    // Reset Wizard to Step 1 (QR Code, PIN & Platform Chooser)
+    const flowStep1 = $('#flowStep1');
+    const flowStepAndroidPWA = $('#flowStepAndroidPWA');
+    const flowStepIosPWA = $('#flowStepIosPWA');
+    const flowStepIosShortcuts = $('#flowStepIosShortcuts');
+
+    if (flowStep1) flowStep1.style.display = 'flex';
+    if (flowStepAndroidPWA) flowStepAndroidPWA.style.display = 'none';
+    if (flowStepIosPWA) flowStepIosPWA.style.display = 'none';
+    if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'none';
 
     shortcutsModal.style.display = 'flex';
   }
@@ -3051,68 +3062,120 @@
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // ─── iOS Shortcuts Modal Setup ─────────────────────────────
+  // ─── Quick Device Pairing & Setup Modal ──────────────────
   function setupShortcutsModal() {
     const btnHeaderSetup = $('#btnHeaderSetup');
     const shortcutsModal = $('#shortcutsModal');
     const closeModal = $('#closeModal');
-    const imgShareToPC = $('#imgShareToPC');
-    const imgClipboardToPC = $('#imgClipboardToPC');
-    const imgGetPCClipboard = $('#imgGetPCClipboard');
-    const tabBtns = $$('.setup-tab-btn');
-    const tabContents = $$('.setup-tab-content');
 
     if (btnHeaderSetup && shortcutsModal) {
       btnHeaderSetup.addEventListener('click', () => {
-        if (imgShareToPC) {
-          imgShareToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/bd3ef813f57d435e8e7d3d1823b13ad8');
-        }
-        if (imgClipboardToPC) {
-          imgClipboardToPC.src = getThemedQrUrl('https://www.icloud.com/shortcuts/3e39fa6cad3147019dc905e96994b1e6');
-        }
-        if (imgGetPCClipboard) {
-          imgGetPCClipboard.src = getThemedQrUrl('https://www.icloud.com/shortcuts/1698d917c5a3447abea2fa506d7b1dac');
-        }
-        if (serverInfo) {
-          const infoIPSetup = $('#infoIPSetup');
-          if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
-          $$('.infoIPSetupText').forEach(el => el.textContent = serverInfo.ip);
-          $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port, 10) + 1);
-
-
-
-
-        }
-        
-        // Reset tabs to default (Device Security) on modal open
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.style.display = 'none');
-        const defaultBtn = $('.setup-tab-btn[data-target="setup-security"]');
-        if (defaultBtn) defaultBtn.classList.add('active');
-        const defaultContent = $('#setup-security');
-        if (defaultContent) defaultContent.style.display = 'flex';
-        fetchPairedDevicesCount();
-
-
-        shortcutsModal.style.display = 'flex';
+        openSetupModal();
       });
     }
 
-    // Modal tabs logic
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.style.display = 'none');
-        
-        btn.classList.add('active');
-        const targetId = btn.getAttribute('data-target');
-        const targetContent = $(`#${targetId}`);
-        if (targetContent) {
-          targetContent.style.display = 'flex';
-        }
+    const flowStep1 = $('#flowStep1');
+    const flowStepAndroidPWA = $('#flowStepAndroidPWA');
+    const flowStepIosPWA = $('#flowStepIosPWA');
+    const flowStepIosShortcuts = $('#flowStepIosShortcuts');
+
+    const btnFlowSelectIOS = $('#btnFlowSelectIOS');
+    const btnFlowSelectAndroid = $('#btnFlowSelectAndroid');
+    const btnGoToIosShortcuts = $('#btnGoToIosShortcuts');
+    const btnBackToIosPWA = $('#btnBackToIosPWA');
+    const backBtns = $$('.btnBackToStep1');
+
+    // Step 1 -> iPhone Flow (Step 1: Safari PWA)
+    if (btnFlowSelectIOS) {
+      btnFlowSelectIOS.addEventListener('click', () => {
+        if (flowStep1) flowStep1.style.display = 'none';
+        if (flowStepIosPWA) flowStepIosPWA.style.display = 'flex';
+        if (flowStepAndroidPWA) flowStepAndroidPWA.style.display = 'none';
+        if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'none';
+      });
+    }
+
+    // Step 1 -> Android Flow (PWA)
+    if (btnFlowSelectAndroid) {
+      btnFlowSelectAndroid.addEventListener('click', () => {
+        if (flowStep1) flowStep1.style.display = 'none';
+        if (flowStepAndroidPWA) flowStepAndroidPWA.style.display = 'flex';
+        if (flowStepIosPWA) flowStepIosPWA.style.display = 'none';
+        if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'none';
+      });
+    }
+
+    // iPhone PWA -> iPhone Shortcuts
+    if (btnGoToIosShortcuts) {
+      btnGoToIosShortcuts.addEventListener('click', () => {
+        if (flowStepIosPWA) flowStepIosPWA.style.display = 'none';
+        if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'flex';
+      });
+    }
+
+    // iPhone Shortcuts -> iPhone PWA
+    if (btnBackToIosPWA) {
+      btnBackToIosPWA.addEventListener('click', () => {
+        if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'none';
+        if (flowStepIosPWA) flowStepIosPWA.style.display = 'flex';
+      });
+    }
+
+    // Back to Step 1
+    backBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (flowStep1) flowStep1.style.display = 'flex';
+        if (flowStepAndroidPWA) flowStepAndroidPWA.style.display = 'none';
+        if (flowStepIosPWA) flowStepIosPWA.style.display = 'none';
+        if (flowStepIosShortcuts) flowStepIosShortcuts.style.display = 'none';
       });
     });
+
+    // Change PIN button -> redirect to Settings -> Device Security
+    const btnOpenPinInSettings = $('#btnOpenPinInSettings');
+    if (btnOpenPinInSettings) {
+      btnOpenPinInSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        shortcutsModal.style.display = 'none';
+        switchDesktopTab('settings');
+        const secNav = document.querySelector('.win-nav-item[data-target="win-sec-device-security"]');
+        if (secNav) secNav.click();
+      });
+    }
+
+    // Copy Address / Port / Link Buttons
+    const btnCopyPairAddress = $('#btnCopyPairAddress');
+    if (btnCopyPairAddress) {
+      btnCopyPairAddress.addEventListener('click', () => {
+        const text = $('.infoIPSetupText')?.textContent || '';
+        if (text) {
+          navigator.clipboard.writeText(text);
+          if (typeof showToast === 'function') showToast('Pairing address copied!');
+        }
+      });
+    }
+
+    const btnCopyFallbackPort = $('#btnCopyFallbackPort');
+    if (btnCopyFallbackPort) {
+      btnCopyFallbackPort.addEventListener('click', () => {
+        const text = $('.infoPortSetupText')?.textContent || '3479';
+        if (text) {
+          navigator.clipboard.writeText(text);
+          if (typeof showToast === 'function') showToast('Fallback port copied!');
+        }
+      });
+    }
+
+    const btnCopyFallbackUrl = $('#btnCopyFallbackUrl');
+    if (btnCopyFallbackUrl) {
+      btnCopyFallbackUrl.addEventListener('click', () => {
+        const text = $('.infoIPSetupText')?.textContent || '';
+        if (text) {
+          navigator.clipboard.writeText(text);
+          if (typeof showToast === 'function') showToast('Fallback URL copied!');
+        }
+      });
+    }
 
     if (closeModal && shortcutsModal) {
       closeModal.addEventListener('click', () => {

@@ -371,7 +371,8 @@ function getReleaseAssetUrl(version, isPortable) {
 }
 
 ipcMain.on('start-download-update', async (event, targetVersion) => {
-  const versionToUse = targetVersion || latestReleaseVersion || '6.4.0';
+  const currentPkgVersion = require('./package.json').version;
+  const versionToUse = targetVersion || latestReleaseVersion || currentPkgVersion;
   const isPortable = isPortableBuild();
 
   server.writeLog(`[AutoUpdater] Resolving asset download URL for v${versionToUse}...`);
@@ -538,7 +539,8 @@ function setupAutoUpdater() {
         autoUpdater.downloadUpdate().catch(async (dlErr) => {
           server.writeLog(`[AutoUpdater] electron-updater download failed (${dlErr.message}). Switching to direct stream downloader...`);
           try {
-            const versionToUse = info.version || latestReleaseVersion || '6.4.4';
+            const currentPkgVersion = require('./package.json').version;
+            const versionToUse = info.version || latestReleaseVersion || currentPkgVersion;
             const isPortable = isPortableBuild();
             const downloadUrl = await getReleaseAssetUrl(versionToUse, isPortable);
             const fileName = isPortable ? `AiroDrop-Portable-${versionToUse}.exe` : `AiroDrop.Setup.${versionToUse}.exe`;

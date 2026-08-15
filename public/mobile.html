@@ -1406,7 +1406,7 @@
           
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="color: var(--text3); font-weight: 500;">App Version</span>
-            <strong style="color: #a1a1aa; font-weight: 600;">v6.4.3</strong>
+            <strong style="color: #a1a1aa; font-weight: 600;" id="mobileInfoAppVersion">v6.4.70</strong>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 8px; margin-top: 2px;">
@@ -2333,31 +2333,47 @@
         </div>
       </div>
 
-      <!-- Apple PWA Installation Guide -->
-      <div class="sender-card" style="margin-bottom: 0; padding: 16px; border-radius: 18px;">
-        <h3 style="display: flex; align-items: center; gap: 8px; color: var(--accent-light); margin-bottom: 12px; font-size: 0.92rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          Add to iOS Home Screen (PWA)
+      <!-- Detailed Apple iOS PWA Installation Guide -->
+      <div class="sender-card" style="margin-bottom: 0; padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(255, 85, 0, 0.08), rgba(255, 136, 0, 0.03)); border: 1px solid rgba(255, 136, 0, 0.25);">
+        <h3 style="display: flex; align-items: center; gap: 8px; color: #ffaa44; margin-bottom: 8px; font-size: 0.95rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Add AiroDrop to iOS Home Screen (PWA)
         </h3>
-        <p style="font-size: 0.78rem; color: var(--text3); margin: 0 0 14px 0; line-height: 1.45;">
-          Run AiroDrop in standalone fullscreen mode like a native iOS application.
+        <p style="font-size: 0.8rem; color: var(--text2); margin: 0 0 16px 0; line-height: 1.5;">
+          Install AiroDrop as a standalone web application to launch in fullscreen mode with zero Safari address bar, faster loading, and native iPhone gesture support.
         </p>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">1</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Open AiroDrop Dashboard URL in the native <strong>Safari Browser</strong> on iOS.</div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ff5500, #ff8800); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(255,85,0,0.4);">1</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Open in Safari Browser</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Make sure you are viewing AiroDrop in native <strong>Safari</strong> on your iPhone or iPad (Chrome/Firefox on iOS do not support PWA installation).</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">2</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Tap the <strong>Share button</strong> (the square icon with an upward arrow) in Safari's toolbar.</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ff5500, #ff8800); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(255,85,0,0.4);">2</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Tap Safari Share Button [↑]</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Tap the <strong>Share icon [↑]</strong> (the square box with an arrow pointing up) at the bottom center of Safari's toolbar.</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">3</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Scroll down the share sheet options and tap <strong>"Add to Home Screen"</strong>.</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ff5500, #ff8800); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(255,85,0,0.4);">3</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Select "Add to Home Screen" [+]</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Scroll down the Share Sheet menu options and tap <strong>"Add to Home Screen"</strong> (indicated by a plus icon).</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">4</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Confirm the app name as "AiroDrop" and tap <strong>"Add"</strong> in the top right. Launch the icon from your Home Screen!</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #4ade80, #16a34a); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,222,128,0.4);">4</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Confirm &amp; Launch Native App</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Tap <strong>"Add"</strong> in the top right corner. Launch the AiroDrop app icon directly from your iPhone Home Screen!</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2380,42 +2396,57 @@
     <!-- Scrollable Body Content -->
     <div style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; -webkit-overflow-scrolling: touch; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));">
       
-      <!-- Android PWA Installation Guide -->
-      <div class="sender-card" style="margin-bottom: 0; padding: 16px; border-radius: 18px;">
-        <h3 style="display: flex; align-items: center; gap: 8px; color: #4ade80; margin-bottom: 12px; font-size: 0.92rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          Add to Android Home Screen (PWA)
+      <!-- Detailed Android PWA Installation Guide -->
+      <div class="sender-card" style="margin-bottom: 0; padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.03)); border: 1px solid rgba(34, 197, 94, 0.25);">
+        <h3 style="display: flex; align-items: center; gap: 8px; color: #4ade80; margin-bottom: 8px; font-size: 0.95rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Add AiroDrop to Android Home Screen (PWA)
         </h3>
 
         <!-- 1-Tap Direct Install Button -->
-        <button id="btnTriggerPwaInstall" class="btn" style="margin: 0 0 14px 0; width: 100%; height: 46px; background: linear-gradient(135deg, #22c55e, #16a34a) !important; border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; color: #ffffff; font-size: 0.88rem; font-weight: 700; box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35); outline: none;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Install App Now (1-Tap)</span>
+        <button id="btnTriggerPwaInstall" class="btn" style="margin: 0 0 16px 0; width: 100%; height: 48px; background: linear-gradient(135deg, #22c55e, #16a34a) !important; border-radius: 14px; border: none; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; color: #ffffff; font-size: 0.9rem; font-weight: 800; box-shadow: 0 4px 18px rgba(34, 197, 94, 0.4); outline: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Install App Now (1-Tap Automatic)</span>
         </button>
 
         <p style="font-size: 0.78rem; color: var(--text3); margin: 0 0 14px 0; line-height: 1.45;">
-          Or follow standard Chrome manual installation steps below:
+          Or follow standard manual installation steps for Chrome / Samsung Internet:
         </p>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">1</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Open AiroDrop Dashboard URL in the <strong>Google Chrome Browser</strong> on Android.</div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(34,197,94,0.4);">1</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Open in Chrome / Android Browser</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Open Google Chrome or your default Android browser to the AiroDrop mobile portal URL.</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">2</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Tap the <strong>Three-Dot Menu icon</strong> at the top right of Chrome's header.</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(34,197,94,0.4);">2</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Tap Three-Dot Menu (⋮)</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Tap the <strong>Three-Dot Menu icon (⋮)</strong> located at the top right of Chrome's header bar.</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">3</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Tap <strong>"Install App"</strong> (or <strong>"Add to Home Screen"</strong> if installation prompt is loading).</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(34,197,94,0.4);">3</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Tap "Install App" or "Add to Home Screen"</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Select <strong>"Install App"</strong> (or <strong>"Add to Home Screen"</strong> if the installation prompt is still initializing).</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;">4</div>
-            <div style="font-size: 0.8rem; color: var(--text2); line-height: 1.45;">Follow the prompt confirmation. A shortcut and fullscreen PWA icon will be added to your home screen!</div>
+
+          <div style="display: flex; gap: 12px; align-items: flex-start; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #4ade80, #16a34a); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,222,128,0.4);">4</div>
+            <div>
+              <strong style="font-size: 0.84rem; color: #ffffff; display: block; margin-bottom: 2px;">Confirm &amp; Launch Standalone App</strong>
+              <span style="font-size: 0.78rem; color: var(--text3); line-height: 1.45;">Tap <strong>"Install"</strong> in the confirmation popup. AiroDrop will appear on your Android home screen and app drawer!</span>
+            </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 

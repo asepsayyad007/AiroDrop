@@ -414,6 +414,8 @@
         if (ipEl) ipEl.textContent = info.ip || '...';
         const nameEl = document.getElementById('mobileInfoDeviceName');
         if (nameEl) nameEl.textContent = info.deviceName || 'PC';
+        const verEl = document.getElementById('mobileInfoAppVersion');
+        if (verEl && info.version) verEl.textContent = `v${info.version}`;
         const folderEl = document.getElementById('mobileInfoSharedFolder');
         if (folderEl) folderEl.textContent = info.saveDir || info.shareDir || 'Downloads/AiroDrop';
         document.querySelectorAll('.mobileSetupIpCode').forEach(el => el.textContent = info.ip || '...');
