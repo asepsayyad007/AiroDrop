@@ -856,7 +856,17 @@
     }
 
     // ─── Utilities ────────────────────────────────────────────
+    const mobileRecentToasts = new Map();
+
     function showToast(msg) {
+      if (!msg) return;
+      const key = msg.toLowerCase().trim();
+      const now = Date.now();
+      if (mobileRecentToasts.has(key) && (now - mobileRecentToasts.get(key) < 1500)) {
+        return;
+      }
+      mobileRecentToasts.set(key, now);
+
       let t = document.getElementById('toast');
       if (!t) {
         t = document.createElement('div');

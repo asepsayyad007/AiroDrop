@@ -180,26 +180,68 @@ router.get('/paired-devices', (req, res) => {
 });
 
 router.get('/devices', (req, res) => {
-  const devicesMap = new Map();
+  const mergedByIp = new Map();
+  const pcIp = utils.getLocalIP ? utils.getLocalIP() : '127.0.0.1';
 
-  // 1. First add paired devices from state.pairedDevices
+  function processDevice(dev) {
+    if (!dev) return;
+    const ip = (dev.ip || '').trim();
+
+    // 1. Remove Host Windows PC / Localhost machine
+    if (!ip || ip === '127.0.0.1' || ip === '::1' || ip === 'localhost' || ip === pcIp) {
+      return;
+    }
+    if ((dev.platform || '').toLowerCase().includes('windows') && !dev.isMobile) {
+      return;
+    }
+
+    // 2. Key strictly by IP (or token/name fallback if no IP) to guarantee 1 device entry per phone
+    const key = ip !== 'Wi-Fi Client' ? ip : (dev.token || dev.deviceName);
+    
+    if (mergedByIp.has(key)) {
+      const existing = mergedByIp.get(key);
+      existing.isOnline = existing.isOnline || dev.isOnline;
+      // WebRTC is highest priority service protocol
+      if (dev.service === 'WebRTC Direct' || dev.service === 'WebRTC' || existing.service === 'WebRTC') {
+        existing.service = 'WebRTC';
+      } else if (dev.service === 'Clipboard Sync' || dev.service === 'PWA Sync' || dev.service === 'Web/PWA') {
+        if (existing.service !== 'WebRTC') existing.service = 'PWA';
+      }
+      if (dev.deviceName && !dev.deviceName.includes('Client') && !dev.deviceName.includes('Unknown')) {
+        existing.deviceName = dev.deviceName;
+      }
+      if (dev.platform) existing.platform = dev.platform;
+      existing.isMobile = existing.isMobile || dev.isMobile;
+    } else {
+      const serviceName = (dev.service === 'WebRTC Direct' || dev.service === 'WebRTC') ? 'WebRTC' : 'PWA';
+      mergedByIp.set(key, { ...dev, service: serviceName });
+    }
+  }
+
+  // Add HTTP/PWA active devices
+  const activeTracked = utils.getActiveDevices();
+  for (const dev of activeTracked) {
+    processDevice(dev);
+  }
+
+  // Add paired devices
   for (const [token, d] of state.pairedDevices.entries()) {
-    devicesMap.set(token, {
+    processDevice({
       token: d.token,
-      deviceName: d.deviceName || d.name || 'Authorized Device',
-      platform: d.platform || 'Mobile',
+      deviceName: d.deviceName || d.name || 'iPhone',
+      platform: d.platform || 'iOS',
+      isMobile: true,
       ip: d.ip || 'Wi-Fi Client',
       pairedAt: d.pairedAt,
       isOnline: false,
-      service: 'Paired'
+      service: 'PWA'
     });
   }
 
-  // 2. Cross-reference active WebSocket & WebRTC connections in state.wss.clients
+  // Cross-reference active WebSocket & WebRTC connections
   if (state.wss && state.wss.clients) {
     for (const ws of state.wss.clients) {
       if (ws.readyState === 1 /* OPEN */) {
-        const token = ws.deviceToken;
         let rawIp = ws._remoteIp;
         if (!rawIp && ws._socket && ws._socket.remoteAddress) {
           rawIp = ws._socket.remoteAddress;
@@ -207,37 +249,23 @@ router.get('/devices', (req, res) => {
         if (!rawIp && ws._req && ws._req.socket && ws._req.socket.remoteAddress) {
           rawIp = ws._req.socket.remoteAddress;
         }
-        const cleanIp = rawIp ? String(rawIp).replace(/^.*:/, '') : 'Wi-Fi Client';
+        const cleanIp = rawIp ? String(rawIp).replace(/^.*:/, '') : '';
 
-        if (token && devicesMap.has(token)) {
-          const existing = devicesMap.get(token);
-          existing.isOnline = true;
-          existing.service = 'WebRTC Direct';
-          if (ws.deviceName) existing.deviceName = ws.deviceName;
-          if (ws.platform) existing.platform = ws.platform;
-        } else {
-          const devKey = token || cleanIp || ('ws-client-' + Math.random().toString(36).slice(2, 7));
-          if (devicesMap.has(devKey)) {
-            const existing = devicesMap.get(devKey);
-            existing.isOnline = true;
-            existing.service = 'WebRTC Direct';
-          } else {
-            devicesMap.set(devKey, {
-              token: devKey,
-              deviceName: ws.deviceName || 'Mobile Phone (WebRTC)',
-              platform: ws.platform || 'Mobile',
-              ip: cleanIp,
-              pairedAt: ws.connectedAt || Date.now(),
-              isOnline: true,
-              service: 'WebRTC Direct'
-            });
-          }
-        }
+        processDevice({
+          token: ws.deviceToken || cleanIp,
+          deviceName: ws.deviceName || 'iPhone',
+          platform: ws.platform || 'iOS',
+          isMobile: true,
+          ip: cleanIp,
+          isOnline: true,
+          service: 'WebRTC'
+        });
       }
     }
   }
 
-  const devices = Array.from(devicesMap.values());
+  // 3. Remove offline devices & return clean list
+  const devices = Array.from(mergedByIp.values()).filter(d => d.isOnline);
   res.json({ success: true, devices });
 });
 

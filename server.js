@@ -31,6 +31,12 @@ const app = express();
 // Register all global middlewares (Rate Limit, CORS, Parsers, Auth stubs)
 registerMiddleware(app);
 
+// Active device tracker middleware
+app.use((req, res, next) => {
+  utils.trackActiveDevice(req);
+  next();
+});
+
 // Register feature-based routers
 app.use('/files', filesRouter);
 app.use('/api', clipboardRouter);
@@ -464,9 +470,16 @@ function stopServer(callback) {
     logger.error('Failed to save state during shutdown', { error: err.message });
   }
 
-  // 4. Close HTTP servers with connection draining timeout
+  // 4. Close HTTP servers with immediate socket cleanup
   let closed = 0;
   const totalServers = (state.serverInstance ? 1 : 0) + (state.httpFallbackInstance ? 1 : 0);
+
+  if (state.serverInstance && typeof state.serverInstance.closeAllConnections === 'function') {
+    try { state.serverInstance.closeAllConnections(); } catch (_) {}
+  }
+  if (state.httpFallbackInstance && typeof state.httpFallbackInstance.closeAllConnections === 'function') {
+    try { state.httpFallbackInstance.closeAllConnections(); } catch (_) {}
+  }
   
   const onClosed = () => {
     closed++;
@@ -477,16 +490,17 @@ function stopServer(callback) {
     }
   };
 
-  // Force-close after 5 seconds if connections won't drain
+  // Force-close after 1.5 seconds if connections won't drain
   const forceTimer = setTimeout(() => {
     logger.warn('Force-closing servers after timeout');
     if (state.serverInstance) { try { state.serverInstance.close(); } catch(_) {} state.serverInstance = null; }
     if (state.httpFallbackInstance) { try { state.httpFallbackInstance.close(); } catch(_) {} state.httpFallbackInstance = null; }
     if (callback) callback();
-  }, 5000);
+  }, 1500);
 
   if (state.serverInstance) {
     state.serverInstance.close(() => {
+      clearTimeout(forceTimer);
       state.serverInstance = null;
       onClosed();
     });
@@ -494,6 +508,7 @@ function stopServer(callback) {
 
   if (state.httpFallbackInstance) {
     state.httpFallbackInstance.close(() => {
+      clearTimeout(forceTimer);
       state.httpFallbackInstance = null;
       onClosed();
     });

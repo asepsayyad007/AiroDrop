@@ -131,10 +131,18 @@
     runSetup('ShortcutsModal', setupShortcutsModal);
     runSetup('SettingsModal', setupSettingsModal);
     runSetup('LogsModal', setupLogsModal);
+    runSetup('TextModal', setupTextModal);
     runSetup('ServiceDropdown', setupServiceDropdown);
     runSetup('ControlCenter', setupControlCenter);
     runSetup('UniversalRefresh', setupUniversalRefresh);
     runSetup('PCWebRTCScreencast', setupPCWebRTCScreencast);
+    runSetup('QuickPairQrModal', setupQuickPairQrModal);
+
+    // Immediate initial fallback QR code for right panel pairing card
+    const rightPanelQrImg = $('#rightPanelQrImg');
+    if (rightPanelQrImg) {
+      rightPanelQrImg.src = getThemedQrUrl(window.location.origin + '/m');
+    }
 
     // Server may still be starting – retry fetchServerInfo up to 5 times with 800ms delay
     let infoLoaded = false;
@@ -275,6 +283,7 @@
     // 1. Mobile setup portal QR
     const qrContainer = $('#mobileQrContainer');
     const homepageQr = $('#homepageQrContainer');
+    const rightPanelQrImg = $('#rightPanelQrImg');
     if (serverInfo) {
       const baseUrl = serverInfo.url;
       const urlWithToken = `${baseUrl}/m`;
@@ -283,6 +292,9 @@
       }
       if (homepageQr) {
         homepageQr.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Quick Connect QR Code" width="80" height="80" style="display: block; border-radius: 4px;">`;
+      }
+      if (rightPanelQrImg) {
+        rightPanelQrImg.src = getThemedQrUrl(urlWithToken);
       }
     }
 
@@ -413,6 +425,8 @@
     if ($('#rightPanelDeviceName')) $('#rightPanelDeviceName').textContent = info.deviceName || 'Asep\'s PC';
     if ($('#rightPanelOsName')) $('#rightPanelOsName').textContent = info.osName || 'Windows 11 Home';
     if ($('#rightPanelIp')) $('#rightPanelIp').textContent = info.ip || '192.168.1.120';
+    if ($('#sysSecNetworkIp')) $('#sysSecNetworkIp').textContent = info.ip || '127.0.0.1';
+    if ($('#sysSecNetworkPort')) $('#sysSecNetworkPort').textContent = info.port ? (parseInt(info.port, 10) + 1) : '3479';
     if (info.drives) renderSidebarStorage(info.drives);
     const ccPortalLink = $('#ccPortalLink');
     if (ccPortalLink) {
@@ -423,6 +437,7 @@
     // Setup QR code for mobile
     const qrContainer = $('#mobileQrContainer');
     const homepageQr = $('#homepageQrContainer');
+    const rightPanelQrImg = $('#rightPanelQrImg');
     const urlWithToken = `${baseUrl}/m`;
     
     if (qrContainer) {
@@ -430,6 +445,9 @@
     }
     if (homepageQr) {
       homepageQr.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Quick Connect QR Code" width="80" height="80" style="display: block; border-radius: 4px;">`;
+    }
+    if (rightPanelQrImg) {
+      rightPanelQrImg.src = getThemedQrUrl(urlWithToken);
     }
 
     // Update temporary mode badge on dashboard
@@ -897,6 +915,9 @@
             </div>
             <div class="item-actions">
               <div class="action-btn-group" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary btn-icon view-text-btn" data-id="${item.id}" title="View / Edit Full Text">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
                 <button class="btn btn-secondary btn-icon copy-btn" data-text="${escapeAttr(item.content)}" title="Copy Text to Clipboard">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 01-2-2h9a2 2 0 012 2v1"/></svg>
                 </button>
@@ -1098,6 +1119,18 @@
       return '';
     }).join('');
 
+    // Bind view/edit text modal events
+    $$('.view-text-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const item = allItems.find(i => i.id == id);
+        if (item && window.openTextEditModal) {
+          window.openTextEditModal(item);
+        }
+      });
+    });
+
     // Bind dynamic copy events
     $$('.copy-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1232,9 +1265,71 @@
     if (defaultBtn) defaultBtn.classList.add('active');
     const defaultContent = $('#setup-security');
     if (defaultContent) defaultContent.style.display = 'flex';
-    fetchPairedDevicesCount();
+    const btnOpenSecurityInSettings = $('#btnOpenSecurityInSettings');
+    if (btnOpenSecurityInSettings) {
+      btnOpenSecurityInSettings.addEventListener('click', () => {
+        closeSetupModal();
+        openSettingsModal();
+        switchDesktopTab('win-sec-device-security');
+      });
+    }
 
     shortcutsModal.style.display = 'flex';
+  }
+
+  function setupQuickPairQrModal() {
+    const trigger = $('#rightPanelQrContainer');
+    const modal = $('#quickPairQrModal');
+    const card = $('#quickPairQrCard');
+    const btnClose = $('#btnCloseQuickPairQr');
+    const enlargedQrImg = $('#enlargedQrImg');
+    const enlargedPinDisplay = $('#enlargedPinDisplay');
+    const enlargedQrUrlText = $('#enlargedQrUrlText');
+
+    if (!trigger || !modal) return;
+
+    async function openModal() {
+      const baseUrl = serverInfo ? serverInfo.url : window.location.origin;
+      const urlWithToken = `${baseUrl}/m`;
+      if (enlargedQrImg) enlargedQrImg.src = getThemedQrUrl(urlWithToken);
+      if (enlargedQrUrlText) enlargedQrUrlText.textContent = `${baseUrl}/m`;
+      
+      const pinCodeEl = $('#pinDisplayCode');
+      if (enlargedPinDisplay && pinCodeEl && pinCodeEl.textContent.trim()) {
+        enlargedPinDisplay.textContent = pinCodeEl.textContent.trim();
+      } else if (enlargedPinDisplay) {
+        try {
+          const res = await doFetch('/api/auth/status');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.pin) enlargedPinDisplay.textContent = data.pin;
+          }
+        } catch (_) {}
+      }
+
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+        if (card) card.style.transform = 'translateY(0)';
+      });
+    }
+
+    function closeModal() {
+      modal.style.opacity = '0';
+      if (card) card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
+
+    trigger.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+    });
   }
 
   function openSettingsModal() {
@@ -1394,11 +1489,13 @@
 
     try {
       const res = await doFetch('/api/auth/devices');
-      if (res && res.success && Array.isArray(res.devices)) {
-        const devices = res.devices;
+      if (res && res.ok) {
+        const data = await res.json();
+        const devices = data.devices || [];
+
         if (devices.length === 0) {
           listContainer.innerHTML = `
-            <div style="text-align: center; padding: 14px 0; font-size: 0.74rem; color: #a0a0b8;">
+            <div style="text-align: center; padding: 18px 0; font-size: 0.76rem; color: #8a8a9e;">
               No devices connected
             </div>
           `;
@@ -1407,34 +1504,40 @@
 
         let html = '';
         devices.forEach(dev => {
-          const name = dev.deviceName || dev.platform || 'Connected Device';
-          const ip = dev.ip || dev.lastIp || 'Wi-Fi Client';
-          const isOnline = dev.isOnline !== false;
-          const isMobile = (dev.platform || name || '').toLowerCase().includes('iphone') || 
-                           (dev.platform || name || '').toLowerCase().includes('android') || 
-                           (dev.platform || name || '').toLowerCase().includes('ios') || 
-                           (dev.platform || name || '').toLowerCase().includes('mobile') ||
-                           (dev.platform || name || '').toLowerCase().includes('phone');
-          
-          let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #a0a0b8; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
-          if (isMobile) {
-            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+          let name = dev.deviceName || dev.platform || 'iPhone';
+          if (name.toLowerCase().includes('authorized') || name.toLowerCase().includes('connected') || name.toLowerCase().includes('device')) {
+            name = 'iPhone';
           }
-
-          const dotColor = isOnline ? '#22c55e' : '#6b7280';
-          const statusShadow = isOnline ? 'box-shadow: 0 0 6px #22c55e;' : '';
-          const serviceText = dev.service ? escapeHtml(dev.service) : (isOnline ? 'WebRTC Active' : 'Offline');
+          const ip = dev.ip || 'Wi-Fi Client';
+          const isWebRTC = dev.service === 'WebRTC' || dev.service === 'WebRTC Direct';
+          const badgeLabel = isWebRTC ? 'WebRTC' : 'PWA';
+          const badgeStyle = isWebRTC 
+            ? 'background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35);'
+            : 'background: rgba(0, 170, 255, 0.14); color: #38bdf8; border: 1px solid rgba(0, 170, 255, 0.35);';
+          
+          const dotColor = isWebRTC ? '#4ade80' : '#38bdf8';
+          const dotGlow = isWebRTC ? 'box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);' : 'box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);';
 
           html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03);">
-              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                ${iconSvg}
-                <div style="display: flex; flex-direction: column; min-width: 0;">
-                  <span style="font-size: 0.78rem; font-weight: 600; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(name)}</span>
-                  <span style="font-family: monospace; font-size: 0.68rem; color: #a0a0b8;">${escapeHtml(ip)}</span>
+            <div style="display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 136, 0, 0.2); transition: all 0.2s ease; gap: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(255, 85, 0, 0.2), rgba(255, 170, 0, 0.08)); border: 1px solid rgba(255, 136, 0, 0.35); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #ff6a00;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </div>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.2px;">${escapeHtml(name)}</span>
+                </div>
+                
+                <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; ${badgeStyle} flex-shrink: 0;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor}; ${dotGlow}"></span>
+                  <span style="font-size: 0.68rem; font-weight: 700; font-family: var(--font-mono, monospace); white-space: nowrap;">${badgeLabel}</span>
                 </div>
               </div>
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; flex-shrink: 0;"></span>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06);">
+                <span style="font-size: 0.68rem; font-weight: 600; color: #8a8a9e; letter-spacing: 0.3px; text-transform: uppercase;">IP Address</span>
+                <span style="font-family: var(--font-mono, monospace); font-size: 0.74rem; font-weight: 600; color: rgba(255, 255, 255, 0.75); letter-spacing: 0.4px;">${escapeHtml(ip)}</span>
+              </div>
             </div>
           `;
         });
@@ -1446,7 +1549,7 @@
     }
 
     listContainer.innerHTML = `
-      <div style="text-align: center; padding: 14px 0; font-size: 0.74rem; color: #a0a0b8;">
+      <div style="text-align: center; padding: 18px 0; font-size: 0.76rem; color: #8a8a9e;">
         No devices connected
       </div>
     `;
@@ -1549,19 +1652,30 @@
     // Refresh devices list buttons
     const btnRefDev = $('#btnRefreshDevices');
     if (btnRefDev) {
-      btnRefDev.addEventListener('click', () => {
-        btnRefDev.style.transform = 'rotate(360deg)';
-        setTimeout(() => btnRefDev.style.transform = 'none', 500);
-        renderRightPanelConnectedDevices();
+      btnRefDev.addEventListener('click', async (e) => {
+        e.preventDefault();
+        btnRefDev.classList.add('spinning-icon');
+        try {
+          await renderRightPanelConnectedDevices();
+          showToast('Connected devices refreshed', 'info');
+        } finally {
+          setTimeout(() => btnRefDev.classList.remove('spinning-icon'), 600);
+        }
       });
     }
 
     const btnRefDevTab = $('#btnRefreshDevicesTab');
     if (btnRefDevTab) {
-      btnRefDevTab.addEventListener('click', () => {
-        renderPairedDevicesTab();
-        renderRightPanelConnectedDevices();
-        showToast('Devices list refreshed', 'info');
+      btnRefDevTab.addEventListener('click', async (e) => {
+        e.preventDefault();
+        btnRefDevTab.classList.add('spinning-icon');
+        try {
+          await renderPairedDevicesTab();
+          await renderRightPanelConnectedDevices();
+          showToast('Devices list refreshed', 'info');
+        } finally {
+          setTimeout(() => btnRefDevTab.classList.remove('spinning-icon'), 600);
+        }
       });
     }
 
@@ -1595,12 +1709,20 @@
     // Refresh Received Feed Button
     const btnRefreshFeed = $('#btnRefreshFeed');
     if (btnRefreshFeed) {
-      btnRefreshFeed.addEventListener('click', async () => {
-        const icon = $('#refreshFeedIcon');
-        if (icon) icon.style.transform = 'rotate(360deg)';
-        setTimeout(() => { if (icon) icon.style.transform = 'none'; }, 500);
-        await loadHistory();
-        showToast('Received Feed refreshed', 'info');
+      btnRefreshFeed.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const icon = $('#refreshFeedIcon') || btnRefreshFeed;
+        btnRefreshFeed.classList.add('spinning-icon');
+        if (icon) icon.classList.add('spinning-icon');
+        try {
+          await loadHistory();
+          showToast('Received Feed refreshed', 'info');
+        } finally {
+          setTimeout(() => {
+            btnRefreshFeed.classList.remove('spinning-icon');
+            if (icon) icon.classList.remove('spinning-icon');
+          }, 600);
+        }
       });
     }
 
@@ -1839,6 +1961,56 @@
 
 
     // Single item delete (using delegation)
+    // Smooth single card removal helper (No full feed re-render = No flickering!)
+    function removeCardSmoothly(id, isKeepFile = true, successMessage = null) {
+      const card = document.getElementById(`item-${id}`);
+      if (!card) {
+        allItems = allItems.filter(item => item.id !== id);
+        renderFeed();
+        updateStats();
+        if (successMessage) showToast(successMessage, 'info');
+        return;
+      }
+
+      // Lock exact height for smooth CSS collapse transition
+      const height = card.offsetHeight;
+      card.style.height = height + 'px';
+      card.style.opacity = '1';
+      card.style.transform = 'scale(1)';
+      card.style.transition = 'all 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      card.style.overflow = 'hidden';
+
+      // Force layout reflow
+      void card.offsetHeight;
+
+      // Trigger smooth fade & collapse
+      requestAnimationFrame(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.92) translateY(-6px)';
+        card.style.height = '0px';
+        card.style.paddingTop = '0px';
+        card.style.paddingBottom = '0px';
+        card.style.marginTop = '0px';
+        card.style.marginBottom = '0px';
+        card.style.borderWidth = '0px';
+      });
+
+      setTimeout(() => {
+        if (card.parentNode) {
+          card.parentNode.removeChild(card);
+        }
+        allItems = allItems.filter(item => item.id !== id);
+        updateStats();
+        renderDashboardRecentActivity();
+        if (successMessage) showToast(successMessage, 'info');
+
+        // If feed becomes empty, re-render empty state
+        if (!allItems || allItems.length === 0) {
+          renderFeed();
+        }
+      }, 280);
+    }
+
     const feedEl = $('#feed');
     if (feedEl) {
       // Clear card from UI feed only (does NOT delete physical file from disk)
@@ -1849,36 +2021,17 @@
         e.stopPropagation();
         e.preventDefault();
         const id = clearBtn.getAttribute('data-id');
-        const card = $(`#item-${id}`);
-        
-        if (card) {
-          card.style.opacity = '0';
-          card.style.transform = 'scale(0.95)';
-          card.style.transition = 'all 0.25s ease';
-        }
-        
+        if (!id) return;
+
         try {
           const res = await doFetch(`/api/history/${id}?keepFile=true`, { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.success) {
-            setTimeout(() => {
-              allItems = allItems.filter(item => item.id !== id);
-              renderFeed();
-              updateStats();
-              showToast('Card cleared from feed', 'info');
-            }, 250);
+            removeCardSmoothly(id, true, 'Card cleared from feed');
           } else {
-            if (card) {
-              card.style.opacity = '1';
-              card.style.transform = 'scale(1)';
-            }
             showToast(data.error || 'Failed to clear card', 'error');
           }
         } catch {
-          if (card) {
-            card.style.opacity = '1';
-            card.style.transform = 'scale(1)';
-          }
           showToast('Network error', 'error');
         }
       });
@@ -1888,36 +2041,20 @@
         const deleteBtn = e.target.closest('.delete-btn');
         if (!deleteBtn || e.target.closest('.clear-card-btn')) return;
         
+        e.stopPropagation();
+        e.preventDefault();
         const id = deleteBtn.getAttribute('data-id');
-        const card = $(`#item-${id}`);
-        
-        if (card) {
-          card.style.opacity = '0';
-          card.style.transform = 'scale(0.95)';
-          card.style.transition = 'all 0.35s ease';
-        }
-        
+        if (!id) return;
+
         try {
           const res = await doFetch(`/api/history/${id}`, { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.success) {
-            setTimeout(() => {
-              allItems = allItems.filter(item => item.id !== id);
-              renderFeed();
-              updateStats();
-            }, 350);
+            removeCardSmoothly(id, false, 'Item deleted');
           } else {
-            if (card) {
-              card.style.opacity = '1';
-              card.style.transform = 'scale(1)';
-            }
             showToast(data.error || 'Failed to delete item', 'error');
           }
         } catch {
-          if (card) {
-            card.style.opacity = '1';
-            card.style.transform = 'scale(1)';
-          }
           showToast('Network error', 'error');
         }
       });
@@ -2286,13 +2423,13 @@
           });
           const data = await res.json();
           if (res.ok && data.success) {
-            showToast(`Temporary Mode turned ${checked ? 'On' : 'Off'}`, 'info');
+            showToast(`Auto-Clear Temp turned ${checked ? 'On' : 'Off'}`, 'info');
             const tempModeInput = $('#tempModeInput');
             if (tempModeInput) tempModeInput.checked = checked;
             updateTemporaryModeBadge(checked);
           }
         } catch (err) {
-          showToast('Failed to toggle Temporary Mode', 'error');
+          showToast('Failed to toggle Auto-Clear Temp', 'error');
           e.target.checked = !checked; // revert
         }
       });
@@ -2362,13 +2499,12 @@
       const electronSettingsCard = $('#electronSettingsCard');
       const webSettingsCard = $('#webSettingsCard');
       const desktopAppPreferencesCard = $('#desktopAppPreferencesCard');
+      if (desktopAppPreferencesCard) desktopAppPreferencesCard.style.display = 'flex';
       if (isElectron) {
         if (electronSettingsCard) electronSettingsCard.style.display = 'flex';
-        if (desktopAppPreferencesCard) desktopAppPreferencesCard.style.display = 'block';
         if (webSettingsCard) webSettingsCard.style.display = 'none';
       } else {
         if (electronSettingsCard) electronSettingsCard.style.display = 'none';
-        if (desktopAppPreferencesCard) desktopAppPreferencesCard.style.display = 'none';
         if (webSettingsCard) webSettingsCard.style.display = 'flex';
         setupWebUpdater();
       }
@@ -2379,7 +2515,9 @@
         const res = await doFetch('/api/auth/status');
         if (res.ok) {
           const data = await res.json();
+          const rightPanelPinDisplay = $('#rightPanelPinDisplay');
           if (pinDisplayCode && data.pin) pinDisplayCode.textContent = data.pin;
+          if (rightPanelPinDisplay && data.pin) rightPanelPinDisplay.textContent = `PIN: ${data.pin}`;
           if (pairedDevicesStatusText) {
             pairedDevicesStatusText.textContent = `${data.pairedCount || 0} device(s) currently paired`;
           }
@@ -2707,9 +2845,21 @@
         settingsStatus.style.display = 'none';
         return;
       }
+      let icon = '';
+      if (type === 'success') icon = '✓ ';
+      else if (type === 'error') icon = '✕ ';
+      else if (type === 'info') icon = 'ℹ ';
+
       settingsStatus.className = `settings-status ${type}`;
-      settingsStatus.textContent = text;
-      settingsStatus.style.display = 'block';
+      settingsStatus.innerHTML = `<span style="font-weight: 800; font-size: 0.85rem;">${icon}</span><span>${text}</span>`;
+      settingsStatus.style.display = 'inline-flex';
+
+      if (window._settingsToastTimer) clearTimeout(window._settingsToastTimer);
+      if (type === 'success' || type === 'info') {
+        window._settingsToastTimer = setTimeout(() => {
+          if (settingsStatus) settingsStatus.style.display = 'none';
+        }, 3500);
+      }
     }
   }
 
@@ -2740,14 +2890,25 @@
       if (btnElement) {
         btnElement.classList.add('copied');
         const oldHtml = btnElement.innerHTML;
-        btnElement.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>`;
+        const textLabel = btnElement.innerText ? btnElement.innerText.trim() : '';
+
+        if (textLabel && textLabel.length > 0) {
+          btnElement.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span style="color: #4ade80; font-weight: 700;">Copied!</span>`;
+        } else {
+          btnElement.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>`;
+        }
+
         setTimeout(() => {
           btnElement.classList.remove('copied');
           btnElement.innerHTML = oldHtml;
-        }, 1500);
+        }, 1800);
       }
       showToast('Copied to clipboard!', 'success');
     }
@@ -3002,6 +3163,86 @@
     });
   }
 
+  // ─── Interactive Text Edit & Full View Modal Manager ─────────
+  function setupTextModal() {
+    const textEditModal = $('#textEditModal');
+    const textModalArea = $('#textModalArea');
+    const textModalCharCount = $('#textModalCharCount');
+    const btnCloseTextModal = $('#btnCloseTextModal');
+    const btnCopyTextModal = $('#btnCopyTextModal');
+    const btnSaveTextModal = $('#btnSaveTextModal');
+
+    if (!textEditModal || !textModalArea) return;
+
+    let currentItem = null;
+
+    function openTextEditModal(item) {
+      if (!item) return;
+      currentItem = item;
+      textModalArea.value = item.content || '';
+      if (textModalCharCount) {
+        textModalCharCount.textContent = `${(item.content || '').length} characters`;
+      }
+      textEditModal.style.display = 'flex';
+      setTimeout(() => {
+        textModalArea.focus();
+        textModalArea.setSelectionRange(textModalArea.value.length, textModalArea.value.length);
+      }, 50);
+    }
+
+    function closeTextEditModal() {
+      textEditModal.style.display = 'none';
+      currentItem = null;
+    }
+
+    textModalArea.addEventListener('input', () => {
+      if (textModalCharCount) {
+        textModalCharCount.textContent = `${textModalArea.value.length} characters`;
+      }
+    });
+
+    if (btnCloseTextModal) {
+      btnCloseTextModal.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTextEditModal();
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && textEditModal.style.display === 'flex') {
+        closeTextEditModal();
+      }
+    });
+
+    if (btnCopyTextModal) {
+      btnCopyTextModal.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = textModalArea.value;
+        if (!text) return;
+        copyToClipboard(text, btnCopyTextModal);
+      });
+    }
+
+    if (btnSaveTextModal) {
+      btnSaveTextModal.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const newText = textModalArea.value;
+        if (currentItem) {
+          currentItem.content = newText;
+          copyToClipboard(newText);
+          renderFeed();
+          showToast('Text content updated!', 'success');
+        }
+        closeTextEditModal();
+      });
+    }
+
+    window.openTextEditModal = openTextEditModal;
+    window.closeTextEditModal = closeTextEditModal;
+  }
+
   // ─── System Activity Logs ─────────────────────────────────────
   function setupLogsModal() {
     const btnHeaderLogs = $('#btnHeaderLogs');
@@ -3084,122 +3325,213 @@
 
 
 
-  // ─── Control Center Controller ──────────────────────────────
+  // ─── Control Center Controller (Universal Special Pipeline) ──────────────────────────────
   function setupControlCenter() {
-    if (!isElectron || !ipcRenderer) return;
-
     const ccActionsGroup = $('#ccActionsGroup');
     const ccIndicator = $('#ccIndicator');
     const ccText = $('#ccText');
     const ccIPPort = $('#ccIPPort');
     const ccDirPath = $('#ccDirPath');
     const btnCcChangeDir = $('#btnCcChangeDir');
-    const btnCcStart = $('#btnCcStart');
+    const btnCcToggle = $('#btnCcToggle');
     const btnCcRestart = $('#btnCcRestart');
-    const btnCcStop = $('#btnCcStop');
     const btnCcKillAll = $('#btnCcKillAll');
+    let isCcServerRunning = true;
+    let isCcServerRestarting = false;
 
-    // Show control center on home page inside Electron
+    // Show control center action bar
     if (ccActionsGroup) ccActionsGroup.style.display = 'flex';
 
-    // IPC Status Listeners
-    ipcRenderer.on('server-status', (event, status) => {
-      updateControlCenterStatus(status);
-      
-      // Also update desktop settings modal UI elements if open
-      const destStatusIndicator = $('#desktopStatusIndicator');
-      const destStatusText = $('#desktopStatusText');
-      const destBtnStart = $('#btnDesktopStart');
-      const destBtnStop = $('#btnDesktopStop');
-      
-      if (status.running) {
-        if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#00d26a';
-        if (destStatusText) destStatusText.textContent = 'Server Running';
-        if (destBtnStart) destBtnStart.disabled = true;
-        if (destBtnStop) destBtnStop.disabled = false;
-      } else {
-        if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#ff3b30';
-        if (destStatusText) destStatusText.textContent = status.error ? `Error: ${status.error}` : 'Server Stopped';
-        if (destBtnStart) destBtnStart.disabled = false;
-        if (destBtnStop) destBtnStop.disabled = true;
-      }
-    });
-
-    ipcRenderer.on('dir-updated', (event, dir) => {
-      if (ccDirPath) {
-        ccDirPath.textContent = dir;
-        ccDirPath.title = dir;
-      }
-      // Also update settings form saveDirInput
-      const saveDirInput = $('#saveDirInput');
-      if (saveDirInput) {
-        saveDirInput.value = dir;
-      }
-    });
-
-    ipcRenderer.on('receive-file-completed', (event, { token, filename }) => {
-      for (const [t, r] of activeShares.entries()) {
-        if (r.files && r.files[token]) {
-          r.files[token].savedFilename = filename;
-          updateOverallShareStatus(t);
-          break;
+    // 1. IPC Status Listeners (when running inside Electron Desktop App)
+    if (isElectron && ipcRenderer) {
+      ipcRenderer.on('server-status', (event, status) => {
+        isCcServerRunning = !!status.running;
+        if (isCcServerRestarting && status.running) {
+          isCcServerRestarting = false;
+          if (btnCcRestart) {
+            btnCcRestart.disabled = false;
+            btnCcRestart.style.opacity = '1';
+            btnCcRestart.classList.remove('spinning-icon');
+          }
+          if (btnCcToggle) {
+            btnCcToggle.disabled = false;
+            btnCcToggle.style.opacity = '1';
+          }
         }
-      }
-    });
+        updateControlCenterStatus(status);
+        
+        // Update desktop settings modal UI elements if open
+        const destStatusIndicator = $('#desktopStatusIndicator');
+        const destStatusText = $('#desktopStatusText');
+        const destBtnStart = $('#btnDesktopStart');
+        const destBtnStop = $('#btnDesktopStop');
+        
+        if (status.running) {
+          if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#00d26a';
+          if (destStatusText) destStatusText.textContent = 'Server Running';
+          if (destBtnStart) destBtnStart.disabled = true;
+          if (destBtnStop) destBtnStop.disabled = false;
+        } else {
+          if (destStatusIndicator) destStatusIndicator.style.backgroundColor = '#ff3b30';
+          if (destStatusText) destStatusText.textContent = status.error ? `Error: ${status.error}` : 'Server Stopped';
+          if (destBtnStart) destBtnStart.disabled = false;
+          if (destBtnStop) destBtnStop.disabled = true;
+        }
+      });
 
-    // Request directory path (status is pushed by main process on did-finish-load)
-    ipcRenderer.send('get-dir');
+      ipcRenderer.on('dir-updated', (event, dir) => {
+        if (ccDirPath) {
+          ccDirPath.textContent = dir;
+          ccDirPath.title = dir;
+        }
+        const saveDirInput = $('#saveDirInput');
+        if (saveDirInput) saveDirInput.value = dir;
+      });
+
+      ipcRenderer.on('receive-file-completed', (event, { token, filename }) => {
+        for (const [t, r] of activeShares.entries()) {
+          if (r.files && r.files[token]) {
+            r.files[token].savedFilename = filename;
+            updateOverallShareStatus(t);
+            break;
+          }
+        }
+      });
+
+      ipcRenderer.send('get-dir');
+    }
 
     // Change Directory button
     if (btnCcChangeDir) {
       btnCcChangeDir.addEventListener('click', () => {
-        ipcRenderer.send('change-dir');
-      });
-    }
-
-    // Start Server button
-    if (btnCcStart) {
-      btnCcStart.addEventListener('click', () => {
-        btnCcStart.disabled = true;
-        btnCcStart.style.opacity = '0.35';
-        if (ccText) ccText.textContent = 'Starting...';
-        ipcRenderer.send('start-server');
-      });
-    }
-
-    // Restart Server button
-    if (btnCcRestart) {
-      btnCcRestart.addEventListener('click', () => {
-        btnCcRestart.disabled = true;
-        btnCcRestart.style.opacity = '0.35';
-        if (btnCcStart) {
-          btnCcStart.disabled = true;
-          btnCcStart.style.opacity = '0.35';
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('change-dir');
+        } else {
+          showToast('Directory selection is managed via Settings in Web mode', 'info');
         }
-        if (btnCcStop) {
-          btnCcStop.disabled = true;
-          btnCcStop.style.opacity = '0.35';
+      });
+    }
+
+    // Dynamic Start/Stop Toggle Button
+    if (btnCcToggle) {
+      btnCcToggle.addEventListener('click', async () => {
+        btnCcToggle.disabled = true;
+        btnCcToggle.style.opacity = '0.4';
+        
+        const nextAction = isCcServerRunning ? 'stop' : 'start';
+        if (ccText) ccText.textContent = isCcServerRunning ? 'Stopping...' : 'Starting...';
+
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send(isCcServerRunning ? 'stop-server' : 'start-server');
+        } else {
+          try {
+            await doFetch('/api/settings/server-control', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: nextAction })
+            });
+            showToast(`Server ${nextAction} command sent`, 'info');
+            if (nextAction === 'stop') {
+              isCcServerRunning = false;
+              updateControlCenterStatus({ running: false });
+            } else {
+              isCcServerRunning = true;
+              updateControlCenterStatus({ running: true, port: window.location.port || 5000, ip: window.location.hostname });
+            }
+          } catch (err) {
+            showToast('Control command failed: ' + err.message, 'error');
+            btnCcToggle.disabled = false;
+            btnCcToggle.style.opacity = '1';
+          }
+        }
+      });
+    }
+
+    // Restart Server Button — UNIVERSAL SPECIAL PIPELINE
+    if (btnCcRestart) {
+      btnCcRestart.addEventListener('click', async () => {
+        isCcServerRestarting = true;
+        btnCcRestart.disabled = true;
+        btnCcRestart.style.opacity = '0.8';
+        btnCcRestart.classList.add('spinning-icon');
+        if (btnCcToggle) {
+          btnCcToggle.disabled = true;
+          btnCcToggle.style.opacity = '0.4';
         }
         if (ccText) ccText.textContent = 'Restarting...';
-        ipcRenderer.send('restart-server');
+
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('restart-server');
+        } else {
+          try {
+            await doFetch('/api/settings/server-control', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'restart' })
+            });
+            showToast('Server restart initiated', 'info');
+          } catch (e) {
+            showToast('Restart failed: ' + e.message, 'error');
+          }
+        }
+
+        // Dedicated Liveness Polling Pipeline during Restart
+        let attempts = 0;
+        const maxAttempts = 15;
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          try {
+            const res = await fetch('/api/settings/server-status', { cache: 'no-store' });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.running) {
+                clearInterval(pollInterval);
+                isCcServerRestarting = false;
+                btnCcRestart.classList.remove('spinning-icon');
+                btnCcRestart.disabled = false;
+                btnCcRestart.style.opacity = '1';
+                if (btnCcToggle) {
+                  btnCcToggle.disabled = false;
+                  btnCcToggle.style.opacity = '1';
+                }
+                updateControlCenterStatus({ running: true, port: data.port, ip: data.ip });
+                showToast('Server restarted successfully', 'success');
+              }
+            }
+          } catch (_) {
+            // Server offline while restarting; keep polling until back online!
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            isCcServerRestarting = false;
+            btnCcRestart.classList.remove('spinning-icon');
+            btnCcRestart.disabled = false;
+            btnCcRestart.style.opacity = '1';
+            if (btnCcToggle) btnCcToggle.disabled = false;
+          }
+        }, 1000);
       });
     }
 
-    // Stop Server button
-    if (btnCcStop) {
-      btnCcStop.addEventListener('click', () => {
-        btnCcStop.disabled = true;
-        btnCcStop.style.opacity = '0.35';
-        if (ccText) ccText.textContent = 'Stopping...';
-        ipcRenderer.send('stop-server');
-      });
-    }
-
-    // Kill all processes button
+    // Force Kill All Processes Button
     if (btnCcKillAll) {
-      btnCcKillAll.addEventListener('click', () => {
+      btnCcKillAll.addEventListener('click', async () => {
         if (confirm("Are you sure you want to force close AiroDrop and all background processes?")) {
-          ipcRenderer.send('force-kill-all');
+          if (isElectron && ipcRenderer) {
+            ipcRenderer.send('force-kill-all');
+          } else {
+            try {
+              await doFetch('/api/settings/server-control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'kill' })
+              });
+              showToast('Server processes terminated', 'warning');
+            } catch (err) {
+              showToast('Kill process failed', 'error');
+            }
+          }
         }
       });
     }
@@ -3469,32 +3801,35 @@
       const serviceStatusSubtitle = $('#serviceStatusSubtitle');
 
       if (status.running) {
+        isCcServerRestarting = false;
         if (ccIndicator) {
-          ccIndicator.style.backgroundColor = '#22c55e';
-          ccIndicator.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.6)';
+          ccIndicator.style.backgroundColor = '#4ade80';
+          ccIndicator.style.boxShadow = '0 0 8px rgba(74, 222, 128, 0.6)';
         }
         if (ccText) {
           ccText.textContent = 'Service Active';
-          ccText.style.color = '#ffffff';
+          ccText.style.color = 'rgba(255, 255, 255, 0.78)';
+          ccText.style.opacity = '1';
         }
         if (ccIPPort) {
           ccIPPort.textContent = `${status.ip}:${status.port}`;
-          ccIPPort.style.color = '#ffffff';
+          ccIPPort.style.color = '#a0a0b8';
         }
-        if (btnCcStart) {
-          btnCcStart.disabled = true;
-          btnCcStart.style.opacity = '0.35';
-          btnCcStart.style.pointerEvents = 'none';
+        const btnCcToggle = $('#btnCcToggle');
+        if (btnCcToggle) {
+          btnCcToggle.disabled = false;
+          btnCcToggle.style.opacity = '1';
+          btnCcToggle.style.pointerEvents = 'auto';
+          btnCcToggle.title = 'Stop Server';
+          btnCcToggle.classList.add('btn-running');
+          btnCcToggle.classList.remove('btn-stopped');
+          btnCcToggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
         }
         if (btnCcRestart) {
           btnCcRestart.disabled = false;
           btnCcRestart.style.opacity = '1';
           btnCcRestart.style.pointerEvents = 'auto';
-        }
-        if (btnCcStop) {
-          btnCcStop.disabled = false;
-          btnCcStop.style.opacity = '1';
-          btnCcStop.style.pointerEvents = 'auto';
+          btnCcRestart.classList.remove('spinning-icon');
         }
 
         if (servicePulseRing) servicePulseRing.style.display = 'block';
@@ -3505,48 +3840,68 @@
           serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><polyline points="20 6 9 17 4 12"/></svg>`;
         }
         if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Active';
-        if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = 'Synchronization engine running smoothly.';
+        if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = '';
 
         setConnectionStatus(true);
       } else {
-        if (ccIndicator) {
-          ccIndicator.style.backgroundColor = '#ff3b30';
-          ccIndicator.style.boxShadow = '0 0 8px rgba(255, 59, 48, 0.5)';
-        }
-        if (ccText) {
-          ccText.textContent = 'Service Inactive';
-          ccText.style.color = '#ff3b30';
-        }
-        if (ccIPPort) {
-          ccIPPort.textContent = 'Offline';
-          ccIPPort.style.color = '#a0a0b8';
-        }
-        if (btnCcStart) {
-          btnCcStart.disabled = false;
-          btnCcStart.style.opacity = '1';
-          btnCcStart.style.pointerEvents = 'auto';
-        }
-        if (btnCcRestart) {
-          btnCcRestart.disabled = true;
-          btnCcRestart.style.opacity = '0.35';
-          btnCcRestart.style.pointerEvents = 'none';
-        }
-        if (btnCcStop) {
-          btnCcStop.disabled = true;
-          btnCcStop.style.opacity = '0.35';
-          btnCcStop.style.pointerEvents = 'none';
-        }
+        if (isCcServerRestarting) {
+          if (ccIndicator) {
+            ccIndicator.style.backgroundColor = '#facc15';
+            ccIndicator.style.boxShadow = '0 0 8px rgba(250, 204, 21, 0.6)';
+          }
+          if (ccText) {
+            ccText.textContent = 'Restarting...';
+            ccText.style.color = 'rgba(250, 204, 21, 0.85)';
+            ccText.style.opacity = '1';
+          }
+          if (btnCcRestart) {
+            btnCcRestart.disabled = true;
+            btnCcRestart.style.opacity = '0.8';
+            btnCcRestart.style.pointerEvents = 'none';
+            btnCcRestart.classList.add('spinning-icon');
+          }
+        } else {
+          if (ccIndicator) {
+            ccIndicator.style.backgroundColor = '#f87171';
+            ccIndicator.style.boxShadow = '0 0 8px rgba(248, 113, 113, 0.5)';
+          }
+          if (ccText) {
+            ccText.textContent = 'Service Inactive';
+            ccText.style.color = 'rgba(255, 255, 255, 0.6)';
+            ccText.style.opacity = '1';
+          }
+          if (ccIPPort) {
+            ccIPPort.textContent = 'Offline';
+            ccIPPort.style.color = '#8a8a9e';
+          }
+          const btnCcToggle = $('#btnCcToggle');
+          if (btnCcToggle) {
+            btnCcToggle.disabled = false;
+            btnCcToggle.style.opacity = '1';
+            btnCcToggle.style.pointerEvents = 'auto';
+            btnCcToggle.title = 'Start Server';
+            btnCcToggle.classList.add('btn-stopped');
+            btnCcToggle.classList.remove('btn-running');
+            btnCcToggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+          }
+          if (btnCcRestart) {
+            btnCcRestart.disabled = true;
+            btnCcRestart.style.opacity = '0.35';
+            btnCcRestart.style.pointerEvents = 'none';
+            btnCcRestart.classList.remove('spinning-icon');
+          }
 
-        if (servicePulseRing) servicePulseRing.style.display = 'none';
-        if (serviceStatusIcon) {
-          serviceStatusIcon.style.background = 'linear-gradient(135deg, #ff3b30, #c0241b)';
-          serviceStatusIcon.style.boxShadow = '0 0 10px rgba(255,59,48,0.35)';
-          serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-        }
-        if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Inactive';
-        if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = 'Synchronization engine is stopped.';
+          if (servicePulseRing) servicePulseRing.style.display = 'none';
+          if (serviceStatusIcon) {
+            serviceStatusIcon.style.background = 'linear-gradient(135deg, #ff3b30, #c0241b)';
+            serviceStatusIcon.style.boxShadow = '0 0 10px rgba(255,59,48,0.35)';
+            serviceStatusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width: 8px; height: 8px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+          }
+          if (serviceStatusTitle) serviceStatusTitle.textContent = 'AiroDrop Service Inactive';
+          if (serviceStatusSubtitle) serviceStatusSubtitle.textContent = '';
 
-        setConnectionStatus(false);
+          setConnectionStatus(false);
+        }
       }
     }
   }
@@ -5649,8 +6004,21 @@
     });
   }
 
-  // Universal Click Trigger for Media Items (Photos, Videos, Music, PDFs)
+  // Universal Click Trigger for Media Items (Photos, Videos, Music, PDFs) & Text Items
   document.addEventListener('click', (e) => {
+    // 1. Text Card Click / Text Item Body Click
+    const textCard = e.target.closest('.feed-item.type-text');
+    if (textCard && !e.target.closest('.btn, .delete-btn, .copy-btn, .clear-card-btn, a')) {
+      const id = textCard.getAttribute('id') ? textCard.getAttribute('id').replace('item-', '') : null;
+      const item = allItems.find(i => i.id == id);
+      if (item && window.openTextEditModal) {
+        e.stopPropagation();
+        window.openTextEditModal(item);
+        return;
+      }
+    }
+
+    // 2. Media Preview Click
     const cardEl = e.target.closest('.feed-item');
     const target = e.target.closest('img, .lightbox-trigger, .file-card-box, [data-preview-img]');
     if (target && target.id !== 'lightboxImage' && cardEl) {

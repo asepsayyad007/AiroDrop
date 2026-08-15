@@ -326,6 +326,68 @@ function updateWindowsContextMenu(enable) {
   });
 }
 
+const activeDevicesMap = new Map();
+
+function parseDevicePlatform(ua = '') {
+  const s = ua.toLowerCase();
+  if (s.includes('iphone')) return { name: 'iPhone', platform: 'iOS', isMobile: true };
+  if (s.includes('ipad')) return { name: 'iPad', platform: 'iOS', isMobile: true };
+  if (s.includes('android')) return { name: 'Android Phone', platform: 'Android', isMobile: true };
+  if (s.includes('macintosh') || s.includes('mac os')) return { name: 'Mac Device', platform: 'macOS', isMobile: false };
+  if (s.includes('windows')) return { name: 'Windows PC', platform: 'Windows', isMobile: false };
+  if (s.includes('linux')) return { name: 'Linux Device', platform: 'Linux', isMobile: false };
+  return { name: 'Mobile Device', platform: 'Mobile', isMobile: true };
+}
+
+function trackActiveDevice(req) {
+  if (!req) return;
+  const p = req.path || '';
+  if (p.startsWith('/received/') || p.endsWith('.png') || p.endsWith('.jpg') || p.endsWith('.css') || p.endsWith('.js') || p.endsWith('.ico') || p.endsWith('.woff2')) {
+    return;
+  }
+
+  let rawIp = req.headers['x-forwarded-for'] || req.ip || (req.socket && req.socket.remoteAddress) || '';
+  if (Array.isArray(rawIp)) rawIp = rawIp[0];
+  const cleanIp = String(rawIp).replace(/^.*:/, '') || '127.0.0.1';
+  const ua = req.headers['user-agent'] || '';
+  const parsed = parseDevicePlatform(ua);
+  const deviceToken = req.headers['x-device-token'] || req.query.token || cleanIp;
+
+  const key = deviceToken || cleanIp;
+  const existing = activeDevicesMap.get(key) || {};
+
+  activeDevicesMap.set(key, {
+    token: key,
+    deviceName: existing.deviceName || parsed.name,
+    platform: parsed.platform,
+    isMobile: parsed.isMobile,
+    ip: cleanIp,
+    lastSeen: Date.now(),
+    userAgent: ua,
+    service: p.startsWith('/api/clipboard') ? 'Clipboard Sync' : (p.startsWith('/api/events') ? 'SSE Stream' : 'Web/PWA')
+  });
+}
+
+function getActiveDevices() {
+  const now = Date.now();
+  const devices = [];
+  for (const [key, d] of activeDevicesMap.entries()) {
+    if (now - d.lastSeen < 900000) {
+      devices.push({
+        token: d.token,
+        deviceName: d.deviceName,
+        platform: d.platform,
+        isMobile: d.isMobile,
+        ip: d.ip,
+        isOnline: (now - d.lastSeen < 45000),
+        lastSeen: d.lastSeen,
+        service: d.service
+      });
+    }
+  }
+  return devices.sort((a, b) => b.lastSeen - a.lastSeen);
+}
+
 module.exports = {
   saveHistory,
   notifyText,
@@ -339,5 +401,7 @@ module.exports = {
   tryExtractUrlFromHtmlFile,
   extractUrlFromHtml,
   handleIncomingText,
-  updateWindowsContextMenu
+  updateWindowsContextMenu,
+  trackActiveDevice,
+  getActiveDevices
 };

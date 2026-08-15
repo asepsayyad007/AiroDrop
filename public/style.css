@@ -526,13 +526,91 @@ button.btn-primary:hover {
 }
 
 .right-panel-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: linear-gradient(135deg, rgba(255, 85, 0, 0.08), rgba(255, 170, 0, 0.03));
+  border: 1px solid rgba(255, 136, 0, 0.22);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 8px 32px rgba(0, 0, 0, 0.25);
   border-radius: 14px;
   padding: 14px;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.right-panel-card:hover {
+  border-color: rgba(255, 136, 0, 0.35);
+  background: linear-gradient(135deg, rgba(255, 85, 0, 0.11), rgba(255, 170, 0, 0.05));
+}
+
+/* ─── Quick Pairing QR Container & Hover Effects ───────── */
+#rightPanelQrContainer {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  background: #ffffff;
+  padding: 4px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#rightPanelQrImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}
+
+#qrBlurOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 18, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transition: background 0.2s ease;
+}
+
+#rightPanelQrContainer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+#rightPanelQrContainer:hover #rightPanelQrImg {
+  filter: blur(5px);
+}
+
+#rightPanelQrContainer:hover #qrBlurOverlay {
+  background: rgba(10, 10, 18, 0.55);
+}
+
+/* ─── Infinite Spin Animation for Restart Button ───────── */
+@keyframes spin-inf {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinning-icon {
+  pointer-events: none !important;
+}
+
+.spinning-icon svg,
+svg.spinning-icon {
+  animation: spin-inf 0.7s linear infinite !important;
+  transform-origin: center center !important;
+  display: inline-block !important;
 }
 
 .right-panel-title {
@@ -543,6 +621,135 @@ button.btn-primary:hover {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
+}
+
+/* ─── Liquid Glass Action Control Buttons ─────────────────── */
+.glass-action-btn {
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #a0a0b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+/* Faded Hover Colors for specific actions */
+#btnCcToggle.btn-running:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+#btnCcToggle.btn-stopped:hover {
+  background: rgba(34, 197, 94, 0.15) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #4ade80 !important;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+#btnCcRestart:hover {
+  background: rgba(234, 179, 8, 0.15) !important;
+  border-color: rgba(234, 179, 8, 0.35) !important;
+  color: #facc15 !important;
+  box-shadow: 0 0 14px rgba(234, 179, 8, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+#btnCcKillAll:hover {
+  background: rgba(225, 29, 72, 0.18) !important;
+  border-color: rgba(225, 29, 72, 0.38) !important;
+  color: #fb7185 !important;
+  box-shadow: 0 0 14px rgba(225, 29, 72, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Micro-press Click / Active Effect */
+.glass-action-btn:active,
+.glass-action-btn.active-click {
+  transform: scale(0.93) translateY(1px) !important;
+  opacity: 0.8 !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+  transition: transform 0.08s ease, background 0.15s ease !important;
+}
+
+/* ─── Global Liquid Glass Hover & Click Rules for All Control Buttons ─── */
+#clearFeed:hover,
+#deleteAllFiles:hover,
+.clear-btn:hover,
+.view-btn:hover,
+.filter-btn:hover,
+#btnOpenSaveDir:hover,
+#btnViewList:hover,
+#btnViewGrid:hover,
+#btnOpenCreatorProfileModal:hover {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#clearFeed:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+#deleteAllFiles:hover {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+.view-btn:hover,
+#btnOpenSaveDir:hover,
+#btnViewList:hover,
+#btnViewGrid:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+#btnOpenCreatorProfileModal:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+#clearFeed:active,
+#deleteAllFiles:active,
+.clear-btn:active,
+.view-btn:active,
+.filter-btn:active,
+#btnOpenCreatorProfileModal:active {
+  transform: scale(0.93) translateY(1px) !important;
+  opacity: 0.8 !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* ─── Dashboard Specific Components ────────────────────── */
@@ -1165,9 +1372,12 @@ button.btn-primary:hover {
 }
 
 .tab.active {
-  color: white;
-  background: var(--accent);
-  box-shadow: 0 2px 10px var(--accent-glow);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .tab svg {
@@ -1261,9 +1471,12 @@ button.btn-primary:hover {
 }
 
 .filter-btn.active {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 2px 8px var(--accent-glow);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
 }
 
 .feed-controls-right {
@@ -2839,11 +3052,47 @@ button.btn-primary:hover {
 }
 
 .settings-status {
-  font-size: 0.86rem;
-  margin-top: 16px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 99px;
   display: none;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25 ease;
+  animation: settingsToastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes settingsToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.settings-status.success {
+  background: linear-gradient(135deg, rgba(255, 85, 0, 0.16), rgba(255, 136, 0, 0.08));
+  border: 1px solid rgba(255, 136, 0, 0.35);
+  color: #ffaa44;
+  box-shadow: 0 4px 16px rgba(255, 85, 0, 0.2);
+}
+
+.settings-status.error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(239, 68, 68, 0.06));
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.15);
+}
+
+.settings-status.info {
+  background: linear-gradient(135deg, rgba(0, 120, 212, 0.14), rgba(0, 120, 212, 0.06));
+  border: 1px solid rgba(0, 120, 212, 0.35);
+  color: #60a5fa;
+  box-shadow: 0 4px 14px rgba(0, 120, 212, 0.15);
 }
 
 /* Storage indicator */
@@ -4345,21 +4594,11 @@ textarea:focus-visible {
 }
 
 .win-nav-item.active {
-  background: rgba(255, 85, 0, 0.12);
-  color: var(--accent-light, #ff8833);
+  background: linear-gradient(135deg, rgba(255, 85, 0, 0.16), rgba(255, 136, 0, 0.08));
+  border: 1px solid rgba(255, 136, 0, 0.28);
+  color: #ffffff;
   font-weight: 700;
-}
-
-.win-nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  background: var(--accent, #ff5500);
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(255, 85, 0, 0.6);
+  box-shadow: 0 4px 14px rgba(255, 85, 0, 0.15);
 }
 
 /* Right Content Viewport */

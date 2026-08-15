@@ -829,21 +829,22 @@ ipcMain.on('stop-server', (event) => {
 });
 
 ipcMain.on('restart-server', (event) => {
-  server.stopServer();
-  serverRunning = false;
-  serverPort = null;
-  updateTrayMenu(false);
-  if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
+  server.stopServer(() => {
+    serverRunning = false;
+    serverPort = null;
+    updateTrayMenu(false);
+    if (mainWindow) mainWindow.webContents.send('server-status', { running: false });
 
-  setTimeout(() => {
-    server.startServer((port, err) => {
-      serverRunning = !err;
-      serverPort = port || server.getPort();
-      updateTrayMenu(serverRunning);
-      const status = { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message };
-      if (mainWindow) mainWindow.webContents.send('server-status', status);
-    });
-  }, 1000);
+    setTimeout(() => {
+      server.startServer((port, err) => {
+        serverRunning = !err;
+        serverPort = port || server.getPort();
+        updateTrayMenu(serverRunning);
+        const status = { running: serverRunning, port: serverPort, ip: server.getLocalIP(), error: err?.message };
+        if (mainWindow) mainWindow.webContents.send('server-status', status);
+      });
+    }, 200);
+  });
 });
 
 ipcMain.on('get-status', (event) => {

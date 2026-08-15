@@ -1042,4 +1042,25 @@ async function handleTextSend(text, res) {
   return res.json({ success: true, id: item.id, type: 'text', message: 'Text synced' });
 }
 
+// PUT /api/history/:id — Update text item content
+router.put('/history/:id', express.json(), (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body || {};
+  if (typeof content !== 'string') {
+    return res.status(400).json({ error: 'Content string required' });
+  }
+
+  const history = utils.getHistory();
+  const item = history.find(i => i.id === id);
+  if (!item) {
+    return res.status(404).json({ error: 'Item not found' });
+  }
+
+  item.content = content;
+  item.preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
+  utils.saveHistory(history);
+
+  return res.json({ success: true, item });
+});
+
 module.exports = router;

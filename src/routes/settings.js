@@ -144,6 +144,74 @@ router.post('/check-update/trigger', (req, res) => {
   res.json({ success: true, message: 'Update check triggered on PC' });
 });
 
+// POST /api/settings/server-control — Special control pipeline for server start/stop/restart/kill
+router.post('/server-control', asyncHandler(async (req, res) => {
+  const { action } = req.body || {};
+  let serverModule = null;
+  try { serverModule = require('../../server'); } catch (_) {}
+  
+  if (action === 'stop') {
+    res.json({ success: true, message: 'Server stopping...' });
+    setTimeout(() => {
+      if (serverModule && typeof serverModule.stopServer === 'function') {
+        serverModule.stopServer();
+      }
+    }, 100);
+    return;
+  }
+  
+  if (action === 'start') {
+    res.json({ success: true, message: 'Server starting...' });
+    setTimeout(() => {
+      if (serverModule && typeof serverModule.startServer === 'function') {
+        serverModule.startServer();
+      }
+    }, 100);
+    return;
+  }
+  
+  if (action === 'restart') {
+    res.json({ success: true, message: 'Server restarting...' });
+    setTimeout(() => {
+      if (serverModule && typeof serverModule.stopServer === 'function') {
+        serverModule.stopServer(() => {
+          setTimeout(() => {
+            if (typeof serverModule.startServer === 'function') {
+              serverModule.startServer();
+            }
+          }, 400);
+        });
+      } else if (serverModule && typeof serverModule.startServer === 'function') {
+        serverModule.startServer();
+      }
+    }, 100);
+    return;
+  }
+  
+  if (action === 'kill') {
+    res.json({ success: true, message: 'Server terminating...' });
+    setTimeout(() => {
+      process.exit(0);
+    }, 200);
+    return;
+  }
+  
+  res.status(400).json({ error: 'Invalid action parameter' });
+}));
+
+// GET /api/settings/server-status — Universal status API endpoint
+router.get('/server-status', (req, res) => {
+  let serverModule = null;
+  try { serverModule = require('../../server'); } catch (_) {}
+  
+  res.json({
+    running: true,
+    port: (serverModule && serverModule.getPort) ? serverModule.getPort() : state.PORT,
+    ip: (serverModule && serverModule.getLocalIP) ? serverModule.getLocalIP() : utils.getLocalIP(),
+    https: (serverModule && serverModule.getHttpsEnabled) ? serverModule.getHttpsEnabled() : state.HTTPS_ENABLED
+  });
+});
+
 /**
  * Compare two semver strings (major.minor.patch).
  * Returns: 1 if a > b, -1 if a < b, 0 if equal.
@@ -476,7 +544,13 @@ router.post('/settings', async (req, res) => {
       shortcutSecret: state.SHORTCUT_SECRET
     }, null, 2));
 
-    utils.writeLog(`Configurations updated: SaveFolder="${state.SAVE_DIR}", Port=${state.PORT}, DeviceName="${state.DEVICE_NAME}"`);
+    const logStr = `Configurations updated: SaveFolder="${state.SAVE_DIR}", Port=${state.PORT}, DeviceName="${state.DEVICE_NAME}"`;
+    const now = Date.now();
+    if (global._lastConfigLog !== logStr || (now - (global._lastConfigLogTime || 0)) > 3000) {
+      global._lastConfigLog = logStr;
+      global._lastConfigLogTime = now;
+      utils.writeLog(logStr);
+    }
     res.json({
       success: true,
       saveDir: state.SAVE_DIR,

@@ -39,6 +39,9 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 ## Core Features
 
 * **Auto Clipboard Sync (iPhone → PC):** Text or images sent from your iPhone Shortcut are automatically synced with your PC clipboard. Just send on iPhone and paste (Ctrl+V) where you want.
+* **Interactive Text Edit Modal:** Fullscreen text view and editor for received text snippets and clipboards with instant copy feedback (`Copied!`).
+* **Standalone Device Security Manager:** Dedicated settings pane to manage Security Modes, PIN Authorization, iOS Secret Access Keys, and Paired Mobile Devices.
+* **Quick Pairing QR Lightbox:** Tap the QR code on the dashboard to open a full-size modal for instant camera pairing.
 * **HTTP File Browser:** Mobile-first file manager served at `/files`. Browse, upload (up to 4 GB), download, rename, delete, create folders. Works in any browser — no app required.
 * **Remote Trackpad & Keyboard:** Full touchpad gesture support: move cursor, left/right click, double-click, 2-finger scroll, and real-time keyboard typing sync.
 * **Live PC Screencast:** Stream your PC desktop to your phone at ~15fps. Interactive mode lets you tap and drag directly on the stream to control your PC.
@@ -49,6 +52,7 @@ For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 * **Desktop Notifications:** Native bubble/banner notifications alert you when text, links, or images are received.
 * **Native-grade PWA (Progressive Web App):** Add to Home Screen on iOS and Android. Offline fallback and service worker caching.
 * **VLC Remote Controller:** Control VLC Media Player directly from your phone — play/pause, seek (10s/60s), volume, mute, fullscreen, subtitles, and audio track switching. Auto-detects when VLC is running and displays the current media title.
+* **Smooth Zero-Flicker Feed:** Instant card clearing and deleting with smooth height-collapse animations.
 * **5 Distinct Themes:** Sunset (default), Dark, AMOLED, Nord, and Dracula.
 
 ---
