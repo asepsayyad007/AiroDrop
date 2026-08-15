@@ -273,21 +273,82 @@ ipcMain.on('manual-check-update', () => {
   checkUpdatesManually();
 });
 
+function resolveDirectAssetFallback(version, isPortable) {
+  return new Promise((resolve) => {
+    if (isPortable) {
+      return resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/AiroDrop-Portable-${version}.exe`);
+    }
+
+    const candidates = [
+      `AiroDrop.Setup.${version}.exe`,
+      `AiroDrop Setup ${version}.exe`,
+      `AiroDrop-Setup-${version}.exe`
+    ];
+
+    const https = require('https');
+    let index = 0;
+
+    function checkCandidate() {
+      if (index >= candidates.length) {
+        return resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/AiroDrop.Setup.${version}.exe`);
+      }
+      const fname = candidates[index];
+      const testUrl = `https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/${encodeURIComponent(fname)}`;
+      let parsed;
+      try {
+        parsed = new URL(testUrl);
+      } catch (e) {
+        index++;
+        return checkCandidate();
+      }
+
+      const req = https.request({
+        hostname: parsed.hostname,
+        path: parsed.pathname + parsed.search,
+        method: 'HEAD',
+        headers: { 'User-Agent': 'AiroDrop-Downloader/6.4.4' },
+        timeout: 5000
+      }, (res) => {
+        if ([200, 301, 302, 303, 307, 308].includes(res.statusCode)) {
+          return resolve(testUrl);
+        }
+        index++;
+        checkCandidate();
+      });
+
+      req.on('error', () => {
+        index++;
+        checkCandidate();
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        index++;
+        checkCandidate();
+      });
+      req.end();
+    }
+
+    checkCandidate();
+  });
+}
+
 function getReleaseAssetUrl(version, isPortable) {
   return new Promise((resolve) => {
     const https = require('https');
+    const apiPath = version ? `/repos/asepsayyad007/AiroDrop/releases/tags/v${version}` : `/repos/asepsayyad007/AiroDrop/releases/latest`;
+
     https.get({
       hostname: 'api.github.com',
-      path: `/repos/asepsayyad007/AiroDrop/releases/latest`,
-      headers: { 'User-Agent': 'AiroDrop-Downloader/6.4.0' },
+      path: apiPath,
+      headers: { 'User-Agent': 'AiroDrop-Downloader/6.4.4 (Mozilla/5.0 Windows NT 10.0; Win64; x64)' },
       timeout: 10000
     }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => {
+      res.on('end', async () => {
         try {
           const rel = JSON.parse(data);
-          if (rel && Array.isArray(rel.assets)) {
+          if (rel && Array.isArray(rel.assets) && rel.assets.length > 0) {
             const exeAsset = rel.assets.find(a => {
               const name = (a.name || '').toLowerCase();
               if (isPortable) return name.includes('portable') && name.endsWith('.exe');
@@ -299,12 +360,12 @@ function getReleaseAssetUrl(version, isPortable) {
             }
           }
         } catch(e) {}
-        const fname = isPortable ? `AiroDrop-Portable-${version}.exe` : `AiroDrop.Setup.${version}.exe`;
-        resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/${encodeURIComponent(fname)}`);
+        const fallbackUrl = await resolveDirectAssetFallback(version, isPortable);
+        resolve(fallbackUrl);
       });
-    }).on('error', () => {
-      const fname = isPortable ? `AiroDrop-Portable-${version}.exe` : `AiroDrop.Setup.${version}.exe`;
-      resolve(`https://github.com/asepsayyad007/AiroDrop/releases/download/v${version}/${encodeURIComponent(fname)}`);
+    }).on('error', async () => {
+      const fallbackUrl = await resolveDirectAssetFallback(version, isPortable);
+      resolve(fallbackUrl);
     });
   });
 }
@@ -474,15 +535,19 @@ function setupAutoUpdater() {
       cancelId: 2
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.downloadUpdate().catch((dlErr) => {
-          server.writeLog(`[AutoUpdater] Download failed: ${dlErr.message}`);
-          safeMainWindowSend('update-status', 'error', dlErr.message);
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            dialog.showMessageBox(mainWindow, {
-              type: 'warning',
-              title: 'Download Failed',
-              message: `Failed to download update: ${dlErr.message}\n\nPlease try again later.`
-            });
+        autoUpdater.downloadUpdate().catch(async (dlErr) => {
+          server.writeLog(`[AutoUpdater] electron-updater download failed (${dlErr.message}). Switching to direct stream downloader...`);
+          try {
+            const versionToUse = info.version || latestReleaseVersion || '6.4.4';
+            const isPortable = isPortableBuild();
+            const downloadUrl = await getReleaseAssetUrl(versionToUse, isPortable);
+            const fileName = isPortable ? `AiroDrop-Portable-${versionToUse}.exe` : `AiroDrop.Setup.${versionToUse}.exe`;
+            const destPath = path.join(app.getPath('temp'), fileName);
+            safeMainWindowSend('update-status', 'downloading');
+            performDirectDownload(downloadUrl, destPath, versionToUse);
+          } catch(err) {
+            server.writeLog(`[AutoUpdater] Direct download fallback also failed: ${err.message}`);
+            safeMainWindowSend('update-status', 'error', err.message);
           }
         });
         server.writeLog(`[AutoUpdater] Downloading v${info.version}...`);
