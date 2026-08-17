@@ -128,6 +128,7 @@ function initAuth() {
           state.pairedDevices.clear();
           list.forEach(dev => {
             if (dev.token) {
+              dev.lastSeen = dev.lastSeen || dev.pairedAt || new Date().toISOString();
               state.pairedDevices.set(dev.token, dev);
             }
           });
@@ -138,6 +139,8 @@ function initAuth() {
     }
   }
 }
+
+let savePairedDebounce = null;
 
 /**
  * Persist paired devices to disk.
@@ -153,18 +156,50 @@ function savePairedDevices() {
 }
 
 /**
+ * Update active device lastSeen timestamp and persist.
+ */
+function updateDeviceActivity(tokenOrIp, ip, name) {
+  if (!tokenOrIp && !ip) return;
+  const now = new Date().toISOString();
+  let found = false;
+
+  for (const [token, dev] of state.pairedDevices.entries()) {
+    if (token === tokenOrIp || dev.ip === ip || dev.ip === tokenOrIp || (name && dev.deviceName === name)) {
+      dev.lastSeen = now;
+      if (ip && ip !== '127.0.0.1' && ip !== '::1' && ip !== 'Wi-Fi Client') {
+        dev.ip = ip;
+      }
+      if (name && !dev.deviceName) {
+        dev.deviceName = name;
+      }
+      found = true;
+      break;
+    }
+  }
+
+  if (found) {
+    if (savePairedDebounce) clearTimeout(savePairedDebounce);
+    savePairedDebounce = setTimeout(() => {
+      savePairedDevices();
+    }, 2000);
+  }
+}
+
+/**
  * Pair a new device and persist to disk.
  * @param {string} deviceName - Human-readable device name
  * @param {string} ip - IP address of the device
- * @returns {{ token: string, deviceName: string, ip: string, pairedAt: string }}
+ * @returns {{ token: string, deviceName: string, ip: string, pairedAt: string, lastSeen: string }}
  */
 function pairDevice(deviceName, ip) {
   const token = crypto.randomBytes(24).toString('hex');
+  const now = new Date().toISOString();
   const deviceObj = {
     token,
     deviceName: deviceName || 'Mobile Device',
     ip: ip || 'Unknown IP',
-    pairedAt: new Date().toISOString()
+    pairedAt: now,
+    lastSeen: now
   };
   state.pairedDevices.set(token, deviceObj);
   savePairedDevices();
@@ -339,6 +374,7 @@ module.exports = {
   generatePin,
   initAuth,
   savePairedDevices,
+  updateDeviceActivity,
   pairDevice,
   unpairDevice,
   clearAllPairedDevices,

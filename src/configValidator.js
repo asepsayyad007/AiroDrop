@@ -5,6 +5,7 @@
 
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const C = require('./constants');
 const { getLogger } = require('./logger');
 
@@ -108,7 +109,16 @@ function validateConfig(raw, baseDir) {
  * @returns {string} Resolved absolute path
  */
 function resolveDir(value, baseDir, fallbackName, logger) {
-  if (!value) return path.join(baseDir, fallbackName);
+  if (!value) {
+    try {
+      const home = (process.env.USERPROFILE || os.homedir()) || baseDir;
+      const userDownloadsDir = path.join(home, 'Downloads', 'AiroDrop_Downloads');
+      if (fs.existsSync(userDownloadsDir)) {
+        return userDownloadsDir;
+      }
+    } catch (_) {}
+    return path.join(baseDir, fallbackName);
+  }
   
   try {
     const resolved = path.isAbsolute(value) ? value : path.resolve(baseDir, value);

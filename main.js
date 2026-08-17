@@ -902,12 +902,67 @@ ipcMain.on('get-protocol-sync', (event) => {
 });
 
 ipcMain.on('open-file-folder', (event, filename) => {
-  const filePath = path.join(server.getSaveDir(), filename);
-  shell.showItemInFolder(filePath);
+  const state = require('./src/state');
+  const activeBase = state.SHARE_DIR || state.SAVE_DIR || server.getSaveDir();
+  const targetPath = (typeof filename === 'string' && path.isAbsolute(filename))
+    ? filename
+    : path.join(activeBase, filename || '');
+
+  if (fs.existsSync(targetPath)) {
+    try {
+      const stats = fs.statSync(targetPath);
+      if (stats.isDirectory()) {
+        shell.openPath(targetPath);
+      } else {
+        shell.showItemInFolder(targetPath);
+      }
+    } catch (_) {
+      shell.openPath(targetPath);
+    }
+  } else {
+    const fallback = path.join(server.getSaveDir(), filename || '');
+    if (fs.existsSync(fallback)) {
+      try {
+        const stats = fs.statSync(fallback);
+        if (stats.isDirectory()) {
+          shell.openPath(fallback);
+        } else {
+          shell.showItemInFolder(fallback);
+        }
+      } catch (_) {
+        shell.openPath(fallback);
+      }
+    } else if (fs.existsSync(activeBase)) {
+      shell.openPath(activeBase);
+    }
+  }
+});
+
+ipcMain.on('open-file', (event, filename) => {
+  const state = require('./src/state');
+  const activeBase = state.SHARE_DIR || state.SAVE_DIR || server.getSaveDir();
+  const targetPath = (typeof filename === 'string' && path.isAbsolute(filename))
+    ? filename
+    : path.join(activeBase, filename || '');
+
+  if (fs.existsSync(targetPath)) {
+    shell.openPath(targetPath);
+  } else {
+    const fallback = path.join(server.getSaveDir(), filename || '');
+    if (fs.existsSync(fallback)) {
+      shell.openPath(fallback);
+    }
+  }
 });
 
 ipcMain.on('open-save-directory', () => {
-  shell.openPath(server.getSaveDir());
+  const state = require('./src/state');
+  const dir = state.SHARE_DIR || state.SAVE_DIR || server.getSaveDir();
+  if (fs.existsSync(dir)) {
+    shell.openPath(dir);
+  } else {
+    shell.openPath(server.getSaveDir());
+  }
 });
 
 

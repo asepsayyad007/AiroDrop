@@ -531,6 +531,7 @@ router.post('/save-file', express.json(), (req, res) => {
 
 // GET /api/history — Return received items list
 router.get('/history', (req, res) => {
+  utils.purgeExpiredHistory();
   let changed = false;
   for (let i = state.history.length - 1; i >= 0; i--) {
     const item = state.history[i];
@@ -1050,17 +1051,140 @@ router.put('/history/:id', express.json(), (req, res) => {
     return res.status(400).json({ error: 'Content string required' });
   }
 
-  const history = utils.getHistory();
-  const item = history.find(i => i.id === id);
-  if (!item) {
+  const item = state.history.find(i => String(i.id) === String(id));
+  if (item) {
+    item.content = content;
+    item.text = content;
+    item.preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
+    item.lastModified = new Date().toISOString();
+    utils.saveHistory();
+    utils.broadcastSSE('history-update', state.history);
+  }
+
+  // Also update in Clipboard Vault if present
+  const vaultItem = state.clipboardVault.find(i => String(i.id) === String(id));
+  if (vaultItem) {
+    vaultItem.content = content;
+    vaultItem.text = content;
+    vaultItem.lastModified = new Date().toISOString();
+    utils.saveClipboardVault();
+    utils.broadcastSSE('clipboard-vault-update', { count: state.clipboardVault.length });
+  }
+
+  if (!item && !vaultItem) {
     return res.status(404).json({ error: 'Item not found' });
   }
 
-  item.content = content;
-  item.preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
-  utils.saveHistory(history);
+  return res.json({ success: true, item: item || vaultItem });
+});
 
-  return res.json({ success: true, item });
+// ─── Dedicated Clipboard Vault Endpoints ──────────────────
+
+// GET /api/clipboard/vault — Return list of vault items
+router.get('/clipboard/vault', (req, res) => {
+  // If vault is empty but history has text items, seed vault from history
+  if (state.clipboardVault.length === 0 && state.history.length > 0) {
+    const textItems = state.history.filter(i => i.type === 'text' || i.type === 'url' || i.content || i.text);
+    if (textItems.length > 0) {
+      state.clipboardVault.push(...textItems);
+      utils.saveClipboardVault();
+    }
+  }
+
+  const since = req.query.since;
+  let items = state.clipboardVault;
+  if (since) {
+    items = state.clipboardVault.filter(item => item.timestamp > since);
+  }
+  res.json({ success: true, items, total: state.clipboardVault.length });
+});
+
+// POST /api/clipboard/vault — Add new snippet directly to vault
+router.post('/clipboard/vault', express.json(), (req, res) => {
+  const { text, content } = req.body || {};
+  const rawText = content || text || '';
+  if (!rawText || typeof rawText !== 'string') {
+    return res.status(400).json({ error: 'Text content is required' });
+  }
+
+  const isUrl = /^https?:\/\//i.test(rawText.trim());
+  const item = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    type: isUrl ? 'url' : 'text',
+    content: rawText,
+    text: rawText,
+    timestamp: new Date().toISOString(),
+    deviceName: 'PC Host',
+    ip: '127.0.0.1'
+  };
+
+  utils.addToClipboardVault(item);
+  res.json({ success: true, item });
+});
+
+// PUT /api/clipboard/vault/:id — Update a vault snippet
+router.put('/clipboard/vault/:id', express.json(), (req, res) => {
+  const { id } = req.params;
+  const { content, text } = req.body || {};
+  const rawText = content !== undefined ? content : text;
+  if (typeof rawText !== 'string') {
+    return res.status(400).json({ error: 'Content string required' });
+  }
+
+  const vaultItem = state.clipboardVault.find(i => String(i.id) === String(id));
+  if (!vaultItem) {
+    return res.status(404).json({ error: 'Vault item not found' });
+  }
+
+  const isUrl = /^https?:\/\//i.test(rawText.trim());
+  vaultItem.content = rawText;
+  vaultItem.text = rawText;
+  vaultItem.type = isUrl ? 'url' : 'text';
+  vaultItem.lastModified = new Date().toISOString();
+  utils.saveClipboardVault();
+
+  // Also update in history if present
+  const historyItem = state.history.find(i => String(i.id) === String(id));
+  if (historyItem) {
+    historyItem.content = rawText;
+    historyItem.text = rawText;
+    historyItem.type = isUrl ? 'url' : 'text';
+    historyItem.preview = rawText.length > 200 ? rawText.substring(0, 200) + '...' : rawText;
+    utils.saveHistory();
+    utils.broadcastSSE('history-update', state.history);
+  }
+
+  utils.broadcastSSE('clipboard-vault-update', { count: state.clipboardVault.length });
+  return res.json({ success: true, item: vaultItem });
+});
+
+// DELETE /api/clipboard/vault/:id — Delete a snippet from vault (and from history if present)
+router.delete('/clipboard/vault/:id', (req, res) => {
+  const { id } = req.params;
+  const vaultIndex = state.clipboardVault.findIndex(i => String(i.id) === String(id));
+  if (vaultIndex !== -1) {
+    state.clipboardVault.splice(vaultIndex, 1);
+    utils.saveClipboardVault();
+  }
+
+  // Also delete from history if present
+  const historyIndex = state.history.findIndex(i => String(i.id) === String(id));
+  if (historyIndex !== -1) {
+    state.history.splice(historyIndex, 1);
+    utils.saveHistory();
+    utils.broadcastSSE('history-update', state.history);
+  }
+
+  utils.broadcastSSE('clipboard-vault-update', { count: state.clipboardVault.length });
+  return res.json({ success: true, message: 'Snippet deleted' });
+});
+
+// DELETE /api/clipboard/vault — Clear entire vault
+router.delete('/clipboard/vault', (req, res) => {
+  state.clipboardVault.length = 0;
+  utils.saveClipboardVault();
+  utils.broadcastSSE('clipboard-vault-update', { count: 0 });
+  return res.json({ success: true, message: 'Clipboard vault cleared' });
 });
 
 module.exports = router;

@@ -5,6 +5,25 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.8] - 2026-08-17
+
+### Added
+- **Decoupled Persistent Clipboard Vault Subsystem** — Created an independent persistent storage engine (`state.clipboardVault` ⇄ `clipboard_vault.json`) that safely preserves text snippets, code, and web links indefinitely even when the live Dashboard activity queue is cleared.
+- **Dedicated Clipboard Vault Endpoints** — Added `GET /api/clipboard/vault`, `POST /api/clipboard/vault`, `PUT /api/clipboard/vault/:id`, `DELETE /api/clipboard/vault/:id`, and `DELETE /api/clipboard/vault` for isolated snippet management.
+- **10-Item Clipboard Vault Pagination** — Configured a clean 10-item limit per page (`CLIPBOARD_PAGE_SIZE = 10`) with dynamic `Page X of Y (Z total)` pagination controls.
+- **Remote Studio "Feature Will Come Soon" Redesign** — Transformed the Remote Studio tab into a futuristic "Feature Will Come Soon" hub showcasing upcoming modular capabilities (*Pointer & Speed Tuner*, *Mobile Shortcut Studio*, and *Presentation Remote*).
+- **Persistent Device Last-Seen Telemetry** — Device `lastSeen` timestamps now persist to disk (`paired_devices.json`) on every incoming request, retaining connection history accurately across Windows app restarts.
+
+### Changed
+- **Relative "Last Active" Status Formatting** — Completely removed static "Paired Yesterday" text in favor of real-time relative indicators (`Active now` when online, and `Last active 5 mins ago` / `Last active 1 hour ago` / `Last active 1 day ago` when offline).
+- **Feed Clear vs Delete Isolation** — Clicking "Clear Feed" on Dashboard clears only the active transmission queue without affecting the permanent Clipboard Vault. Clicking "Delete" inside the Vault permanently removes the snippet from disk.
+- **Multi-Device Pairing Support** — Preserved concurrent multi-device pairing and WebSocket connections.
+
+### Fixed
+- **Clipboard Vault Feed-Wipe Bug** — Resolved bug where clearing the Dashboard feed mistakenly purged all synced clipboard text.
+
+---
+
 ## [6.4.70] - 2026-08-15
 
 ### Added

@@ -24,6 +24,52 @@ function saveHistory() {
   }, 500);
 }
 
+let _saveVaultTimer = null;
+
+function saveClipboardVault() {
+  if (!state.CLIPBOARD_VAULT_FILE) return;
+  if (_saveVaultTimer) clearTimeout(_saveVaultTimer);
+  _saveVaultTimer = setTimeout(() => {
+    try {
+      const payload = JSON.stringify(state.clipboardVault, null, 2);
+      fs.writeFile(state.CLIPBOARD_VAULT_FILE, payload, 'utf8', (err) => {
+        if (err) console.error('[VAULT] Failed to save clipboard vault:', err.message);
+      });
+    } catch (err) {
+      console.error('[VAULT] Error writing clipboard vault:', err.message);
+    }
+  }, 300);
+}
+
+function addToClipboardVault(item) {
+  if (!item) return;
+  const content = item.content || item.text || '';
+  if (!content && item.type !== 'text' && item.type !== 'url') return;
+
+  const existingIdx = state.clipboardVault.findIndex(v => v.id === item.id || (v.content === content && content.length > 0));
+  if (existingIdx !== -1) {
+    state.clipboardVault.splice(existingIdx, 1);
+  }
+
+  state.clipboardVault.unshift({
+    id: item.id || String(Date.now()),
+    type: item.type || (content.startsWith('http') ? 'url' : 'text'),
+    content: content,
+    text: content,
+    timestamp: item.timestamp || new Date().toISOString(),
+    deviceName: item.deviceName || 'Device',
+    ip: item.ip || ''
+  });
+
+  const MAX_VAULT = 300;
+  if (state.clipboardVault.length > MAX_VAULT) {
+    state.clipboardVault.length = MAX_VAULT;
+  }
+
+  saveClipboardVault();
+  broadcastSSE('clipboard-vault-update', { count: state.clipboardVault.length });
+}
+
 function notifyText(text) {
   if (state.NOTIFICATIONS_ENABLED) notifier.notifyText(text);
 }
@@ -55,8 +101,50 @@ function broadcastSSE(event, data) {
   }
 }
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_HISTORY = 100;
+
+function purgeExpiredHistory() {
+  const now = Date.now();
+  let changed = false;
+
+  // 1. Purge items older than 30 days
+  for (let i = state.history.length - 1; i >= 0; i--) {
+    const item = state.history[i];
+    const itemTime = item.timestamp ? new Date(item.timestamp).getTime() : 0;
+    if (itemTime && (now - itemTime > THIRTY_DAYS_MS)) {
+      const removed = state.history.splice(i, 1)[0];
+      changed = true;
+      if (removed && removed.filename) {
+        const fullPath = path.isAbsolute(removed.path) ? removed.path : path.resolve(__dirname, '..', removed.path);
+        try {
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch {}
+      }
+    }
+  }
+
+  // 2. Enforce maximum 100 items limit
+  if (state.history.length > MAX_HISTORY) {
+    const excess = state.history.splice(MAX_HISTORY);
+    changed = true;
+    for (const popped of excess) {
+      if (popped && popped.filename) {
+        const fullPath = path.isAbsolute(popped.path) ? popped.path : path.resolve(__dirname, '..', popped.path);
+        try {
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch {}
+      }
+    }
+  }
+
+  if (changed) {
+    saveHistory();
+  }
+}
+
 function addToHistory(item) {
-  const MAX_HISTORY = 100;
+  purgeExpiredHistory();
   state.history.unshift(item);
   if (state.history.length > MAX_HISTORY) {
     const popped = state.history.pop();
@@ -68,6 +156,12 @@ function addToHistory(item) {
     }
   }
   saveHistory();
+
+  // Safely preserve text & links permanently in the dedicated Clipboard Vault
+  if (item.type === 'text' || item.type === 'url' || item.content || item.text) {
+    addToClipboardVault(item);
+  }
+
   broadcastSSE('new-item', item);
 }
 
@@ -366,6 +460,13 @@ function trackActiveDevice(req) {
     userAgent: ua,
     service: p.startsWith('/api/clipboard') ? 'Clipboard Sync' : (p.startsWith('/api/events') ? 'SSE Stream' : 'Web/PWA')
   });
+
+  try {
+    const auth = require('./auth');
+    if (auth && auth.updateDeviceActivity) {
+      auth.updateDeviceActivity(deviceToken, cleanIp, parsed.name);
+    }
+  } catch (_) {}
 }
 
 function getActiveDevices() {
@@ -390,11 +491,15 @@ function getActiveDevices() {
 
 module.exports = {
   saveHistory,
+  saveClipboardVault,
+  addToClipboardVault,
   notifyText,
   notifyImage,
   writeLog,
   broadcastSSE,
   addToHistory,
+  purgeExpiredHistory,
+  getHistory: () => state.history,
   getLocalIP,
   getAllIPs,
   isBufferImage,

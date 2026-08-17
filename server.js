@@ -39,6 +39,7 @@ app.use((req, res, next) => {
 
 // Register feature-based routers
 app.use('/files', filesRouter);
+app.use('/api/files', filesRouter);
 app.use('/api', clipboardRouter);
 app.use('/api', settingsRouter);
 app.use('/api/auth', authRouter);
@@ -87,7 +88,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     const ext = path.extname(filePath).toLowerCase();
     const basename = path.basename(filePath).toLowerCase();
     const cacheable = ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
-    const noStoreFiles = ['sw.js', 'mobile-app.js', 'mobile.html', 'index.html', 'app.js', 'files.html'];
+    const noStoreFiles = ['sw.js', 'mobile-app.js', 'mobile.html', 'index.html', 'app.js', 'files.html', 'style.css'];
     if (noStoreFiles.includes(basename)) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     } else if (cacheable.includes(ext)) {
@@ -185,6 +186,7 @@ function init(userDataPath) {
 
   state.CONFIG_FILE = path.join(userDataPath, 'config.json');
   state.HISTORY_FILE = path.join(userDataPath, 'history.json');
+  state.CLIPBOARD_VAULT_FILE = path.join(userDataPath, 'clipboard_vault.json');
   state.SCRATCHPAD_FILE = path.join(userDataPath, 'scratchpad.txt');
   state.SAVE_DIR = path.join(userDataPath, 'received');
   state.SHARE_DIR = path.join(userDataPath, 'shared');
@@ -207,7 +209,7 @@ function init(userDataPath) {
   state.PORT = config.port;
   state.DEVICE_NAME = config.deviceName;
   state.SAVE_DIR = config.saveDir;
-  state.SHARE_DIR = config.shareDir;
+  state.SHARE_DIR = config.shareDir || config.saveDir;
   state.TEMPORARY_MODE = config.temporaryMode;
   state.RATE_LIMIT_ENABLED = config.rateLimitEnabled;
   state.NOTIFICATIONS_ENABLED = config.notificationsEnabled;
@@ -235,6 +237,19 @@ function init(userDataPath) {
   if (process.env.TEMPORARY_MODE) state.TEMPORARY_MODE = process.env.TEMPORARY_MODE === 'true';
   if (process.env.TEMPORARY_MODE_HOURS) state.TEMPORARY_MODE_HOURS = parseFloat(process.env.TEMPORARY_MODE_HOURS) || state.TEMPORARY_MODE_HOURS;
 
+  // Auto-persist resolved config on first run so state stays synchronized
+  if (!fs.existsSync(state.CONFIG_FILE)) {
+    try {
+      const initCfg = {
+        saveDir: state.SAVE_DIR,
+        shareDir: state.SHARE_DIR,
+        port: state.PORT,
+        deviceName: state.DEVICE_NAME
+      };
+      fs.writeFileSync(state.CONFIG_FILE, JSON.stringify(initCfg, null, 2));
+    } catch (_) {}
+  }
+
   state.PAIRED_DEVICES_FILE = path.join(userDataPath, 'paired_devices.json');
   auth.initAuth();
 
@@ -249,6 +264,10 @@ function init(userDataPath) {
     if (!fs.existsSync(state.SAVE_DIR)) {
       fs.mkdirSync(state.SAVE_DIR, { recursive: true });
     }
+  }
+
+  if (!state.SHARE_DIR) {
+    state.SHARE_DIR = state.SAVE_DIR;
   }
 
   try {
@@ -300,6 +319,26 @@ function init(userDataPath) {
     }
   } catch (err) {
     logger.error('Failed to load scratchpad', { error: err.message });
+  }
+
+  // Load clipboard vault
+  try {
+    if (fs.existsSync(state.CLIPBOARD_VAULT_FILE)) {
+      const vaultData = JSON.parse(fs.readFileSync(state.CLIPBOARD_VAULT_FILE, 'utf8'));
+      state.clipboardVault.length = 0;
+      state.clipboardVault.push(...(Array.isArray(vaultData) ? vaultData : []));
+    }
+  } catch (err) {
+    logger.error('Failed to load clipboard vault', { error: err.message });
+  }
+
+  // Seed clipboard vault from history if vault is empty on upgrade
+  if (state.clipboardVault.length === 0 && state.history.length > 0) {
+    const textItems = state.history.filter(i => i.type === 'text' || i.type === 'url' || i.content || i.text);
+    if (textItems.length > 0) {
+      state.clipboardVault.push(...textItems);
+      utils.saveClipboardVault();
+    }
   }
 }
 

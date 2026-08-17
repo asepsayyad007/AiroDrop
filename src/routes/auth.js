@@ -174,7 +174,8 @@ router.get('/paired-devices', (req, res) => {
     deviceName: d.deviceName || d.name || 'Authorized Device',
     platform: d.platform || 'Mobile',
     ip: d.ip || 'Wi-Fi Client',
-    pairedAt: d.pairedAt
+    pairedAt: d.pairedAt,
+    lastSeen: d.lastSeen || d.pairedAt || new Date().toISOString()
   }));
   res.json({ success: true, devices });
 });

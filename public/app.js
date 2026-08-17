@@ -21,6 +21,18 @@
     }
   }
 
+  function resolveMediaUrl(src) {
+    if (!src) return '';
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('blob:') || src.startsWith('data:')) {
+      return src;
+    }
+    if ((isElectron || (typeof window !== 'undefined' && window.location.protocol === 'file:')) && apiBase) {
+      return `${apiBase}${src.startsWith('/') ? '' : '/'}${src}`;
+    }
+    return src;
+  }
+  window.resolveMediaUrl = resolveMediaUrl;
+
   // ─── Enhanced Fetch with Retry & Error Handling ─────────────
   const MAX_RETRIES = 2;
   const RETRY_DELAY_MS = 1000;
@@ -543,6 +555,11 @@
         showToast(`New ${item.type === 'text' ? 'text' : 'file'} received!`, 'success');
         updateStats();
 
+        // 🌟 Instant live updates for Recents, Files shelf, Dashboard and Clipboard Vault
+        renderFilesTab();
+        renderDashboardRecentActivity();
+        renderClipboardVaultTab();
+
         // Browser HTML5 notification for system-wide alerts
         if (!isElectron && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           const title = 'com.asep-ios-integration.airodrop';
@@ -571,7 +588,14 @@
       allItems = [];
       renderFeed();
       updateStats();
+      renderFilesTab();
+      renderDashboardRecentActivity();
+      renderClipboardVaultTab();
       showToast('Dashboard feed cleared.', 'info');
+    });
+
+    sseSource.addEventListener('clipboard-vault-update', () => {
+      renderClipboardVaultTab();
     });
 
     sseSource.addEventListener('history-update', (e) => {
@@ -579,6 +603,8 @@
         allItems = JSON.parse(e.data) || [];
         renderFeed();
         updateStats();
+        renderFilesTab();
+        renderDashboardRecentActivity();
       } catch (err) {
         console.error(err);
       }
@@ -765,7 +791,7 @@
       return;
     }
 
-    const recentItems = allItems.slice(0, 4);
+    const recentItems = allItems.slice(0, 5);
     let html = '';
 
     recentItems.forEach(item => {
@@ -1376,8 +1402,14 @@
       initRelayWebSocket();
     } else if (tabName === 'dashboard') {
       renderDashboardRecentActivity();
+    } else if (tabName === 'files') {
+      renderFilesTab();
     } else if (tabName === 'devices') {
       renderPairedDevicesTab();
+    } else if (tabName === 'clipboard') {
+      renderClipboardVaultTab();
+    } else if (tabName === 'remote') {
+      renderRemoteStudioTab();
     }
   }
 
@@ -1387,111 +1419,1337 @@
     if (!container) return;
 
     try {
-      const res = await doFetch('/api/auth/paired-devices');
-      if (res && Array.isArray(res.devices)) {
-        const devices = res.devices;
-        
-        if (badge) {
-          badge.textContent = devices.length;
-          badge.style.display = devices.length > 0 ? 'inline-block' : 'none';
+      const [pairedRes, activeRes] = await Promise.all([
+        doFetch('/api/auth/paired-devices').catch(() => null),
+        doFetch('/api/auth/devices').catch(() => null)
+      ]);
+
+      let pairedList = [];
+      if (pairedRes && pairedRes.ok) {
+        const pData = await pairedRes.json();
+        if (Array.isArray(pData.devices)) pairedList = pData.devices;
+      }
+
+      let activeList = [];
+      if (activeRes && activeRes.ok) {
+        const aData = await activeRes.json();
+        if (Array.isArray(aData.devices)) activeList = aData.devices;
+      }
+
+      // Merge active devices with paired devices
+      const mergedMap = new Map();
+
+      // 1. Process all paired devices
+      pairedList.forEach(dev => {
+        let name = dev.deviceName || dev.name || dev.platform || 'iPhone';
+        if (name.toLowerCase().includes('authorized') || name.toLowerCase().includes('connected') || name.toLowerCase().includes('device')) {
+          name = 'iPhone';
         }
+        const ip = dev.ip || 'Wi-Fi Client';
+        const key = (ip && ip !== 'Wi-Fi Client') ? ip : (dev.token || name);
 
-        if (devices.length === 0) {
-          container.innerHTML = `
-            <div class="empty-state" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: 16px; padding: 32px 20px; text-align: center;">
-              <div class="empty-icon" style="margin-bottom: 12px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#a0a0b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-              </div>
-              <h3 style="margin: 0 0 6px 0; font-size: 1.05rem; font-weight: 700; color: #ffffff;">No Authorized Devices</h3>
-              <p style="margin: 0 0 16px 0; font-size: 0.8rem; color: #a0a0b8; max-width: 360px; margin-left: auto; margin-right: auto;">Scan the QR Code on your mobile phone to authorize a device connection.</p>
-              <button id="btnOpenSetupQrFromDevices" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem; font-weight: 700; background: #ff5500; border: none; border-radius: 10px; cursor: pointer;">
-                Show Setup QR Code
-              </button>
-            </div>
-          `;
+        // Check if device is actively online in activeList
+        const activeMatch = activeList.find(a => 
+          (a.ip && a.ip !== 'Wi-Fi Client' && a.ip === dev.ip) ||
+          (a.token && a.token === dev.token) ||
+          (a.deviceName && a.deviceName === dev.deviceName)
+        );
 
-          const btnQr = $('#btnOpenSetupQrFromDevices');
-          if (btnQr) btnQr.addEventListener('click', () => openSetupModal());
-          return;
-        }
+        const isActive = !!activeMatch;
+        const service = activeMatch ? (activeMatch.service || 'WebRTC') : (dev.service || 'PWA');
+        const lastSeen = (activeMatch && activeMatch.lastSeen) ? activeMatch.lastSeen : (dev.lastSeen || dev.pairedAt);
 
-        let html = '';
-        devices.forEach(dev => {
-          const name = dev.deviceName || 'Authorized Mobile Device';
-          const ip = dev.ip || 'Connected Wi-Fi';
-          const tokenSnippet = dev.token ? `${dev.token.slice(0, 8)}…` : 'Token Active';
-          const isMobile = (dev.deviceName || '').toLowerCase().includes('iphone') || (dev.deviceName || '').toLowerCase().includes('android');
-
-          let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
-          if (!isMobile) {
-            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
-          }
-
-          html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);">
-              <div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 85, 0, 0.1); border: 1px solid rgba(255, 85, 0, 0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                  ${iconSvg}
-                </div>
-                <div style="display: flex; flex-direction: column; min-width: 0;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.9rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(name)}</span>
-                    <span style="font-size: 0.65rem; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 2px 8px; border-radius: 12px;">Paired</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 3px; font-size: 0.74rem; color: #a0a0b8;">
-                    <span style="font-family: monospace; color: #ffffff;">IP: ${escapeHtml(ip)}</span>
-                    <span>•</span>
-                    <span style="font-family: monospace;">Token: ${escapeHtml(tokenSnippet)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button class="btn btn-unpair-device" data-token="${escapeHtml(dev.token)}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-                Unpair Device
-              </button>
-            </div>
-          `;
+        mergedMap.set(key, {
+          ...dev,
+          deviceName: name,
+          ip,
+          isActive,
+          isPaired: true,
+          service,
+          pairedAt: dev.pairedAt,
+          lastSeen
         });
+      });
 
-        container.innerHTML = html;
+      // 2. Process all actively connected devices (even if not yet permanently paired)
+      activeList.forEach(dev => {
+        let name = dev.deviceName || dev.platform || 'iPhone';
+        if (name.toLowerCase().includes('authorized') || name.toLowerCase().includes('connected') || name.toLowerCase().includes('device')) {
+          name = 'iPhone';
+        }
+        const ip = dev.ip || 'Wi-Fi Client';
+        const key = (ip && ip !== 'Wi-Fi Client') ? ip : (dev.token || name);
 
-        // Bind Unpair Device buttons
-        $$('.btn-unpair-device').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const token = btn.getAttribute('data-token');
-            if (!token) return;
-            if (confirm("Revoke access for this device?")) {
-              try {
-                const res = await doFetch('/api/auth/unpair', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token })
-                });
-                if (res && res.success) {
-                  showToast('Device unpaired successfully', 'success');
-                  renderPairedDevicesTab();
-                  renderRightPanelConnectedDevices();
-                } else {
-                  showToast('Failed to unpair device', 'error');
-                }
-              } catch {
-                showToast('Network error while unpairing', 'error');
-              }
-            }
+        if (mergedMap.has(key)) {
+          const existing = mergedMap.get(key);
+          existing.isActive = true;
+          existing.lastSeen = dev.lastSeen || new Date().toISOString();
+          if (dev.service === 'WebRTC' || dev.service === 'WebRTC Direct') existing.service = 'WebRTC';
+          if (dev.deviceName && !dev.deviceName.includes('Client')) existing.deviceName = dev.deviceName;
+        } else {
+          mergedMap.set(key, {
+            ...dev,
+            deviceName: name,
+            ip,
+            isActive: true,
+            isPaired: false,
+            service: (dev.service === 'WebRTC Direct' || dev.service === 'WebRTC') ? 'WebRTC' : 'PWA',
+            pairedAt: dev.pairedAt || null,
+            lastSeen: dev.lastSeen || new Date().toISOString()
           });
-        });
+        }
+      });
 
+      const allDevices = Array.from(mergedMap.values());
+      // Sort: Active devices on top, then newest
+      allDevices.sort((a, b) => {
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return (new Date(b.pairedAt || 0).getTime() - new Date(a.pairedAt || 0).getTime());
+      });
+
+      const activeCount = allDevices.filter(d => d.isActive).length;
+
+      if (badge) {
+        badge.textContent = activeCount > 0 ? `${activeCount} Active` : `${allDevices.length}`;
+        badge.style.display = allDevices.length > 0 ? 'inline-block' : 'none';
+      }
+
+      if (allDevices.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); border-radius: 16px; padding: 40px 20px; text-align: center;">
+            <div class="empty-icon" style="margin-bottom: 12px; color: #a0a0b8;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+            <h3 style="margin: 0 0 6px 0; font-size: 1.05rem; font-weight: 700; color: #ffffff;">No Active or Authorized Devices</h3>
+            <p style="margin: 0 0 16px 0; font-size: 0.8rem; color: #a0a0b8; max-width: 360px; margin-left: auto; margin-right: auto;">Open AiroDrop on your phone to connect and authorize instantly.</p>
+            <button id="btnOpenSetupQrFromDevices" class="btn btn-primary" style="padding: 8px 18px; font-size: 0.8rem; font-weight: 700; background: #ff5500; border: none; border-radius: 10px; cursor: pointer;">
+              Show Setup QR Code
+            </button>
+          </div>
+        `;
+
+        const btnQr = $('#btnOpenSetupQrFromDevices');
+        if (btnQr) btnQr.addEventListener('click', () => openSetupModal());
         return;
       }
+
+      let html = '';
+      allDevices.forEach(dev => {
+        const name = dev.deviceName || 'iPhone';
+        const ip = dev.ip || 'Wi-Fi Client';
+        const isWebRTC = dev.service === 'WebRTC' || dev.service === 'WebRTC Direct';
+        const isActive = !!dev.isActive;
+        const isPaired = !!dev.isPaired;
+
+        let iconBg = isActive 
+          ? (isWebRTC ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.06))' : 'linear-gradient(135deg, rgba(0, 170, 255, 0.2), rgba(0, 170, 255, 0.06))')
+          : 'rgba(255, 255, 255, 0.04)';
+        let iconBorder = isActive
+          ? (isWebRTC ? 'rgba(34, 197, 94, 0.4)' : 'rgba(0, 170, 255, 0.4)')
+          : 'rgba(255, 255, 255, 0.1)';
+        let iconColor = isActive
+          ? (isWebRTC ? '#4ade80' : '#38bdf8')
+          : '#a0a0b8';
+
+        let badgeLabel = '';
+        let badgeStyle = '';
+        let dotColor = '';
+        let dotGlow = '';
+
+        if (isActive) {
+          badgeLabel = isWebRTC ? 'Active • WebRTC' : 'Active • PWA';
+          badgeStyle = isWebRTC 
+            ? 'background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35);'
+            : 'background: rgba(0, 170, 255, 0.14); color: #38bdf8; border: 1px solid rgba(0, 170, 255, 0.35);';
+          dotColor = isWebRTC ? '#4ade80' : '#38bdf8';
+          dotGlow = isWebRTC ? 'box-shadow: 0 0 8px rgba(74, 222, 128, 0.7);' : 'box-shadow: 0 0 8px rgba(56, 189, 248, 0.7);';
+        } else {
+          badgeLabel = 'Saved • Offline';
+          badgeStyle = 'background: rgba(255, 255, 255, 0.04); color: #8a8a9e; border: 1px solid rgba(255, 255, 255, 0.1);';
+          dotColor = '#71717a';
+          dotGlow = 'none';
+        }
+
+        let timeAgoStr = '';
+        if (isActive) {
+          timeAgoStr = '<span style="color: #4ade80; font-weight: 600;">Active now</span>';
+        } else {
+          const timestamp = dev.lastSeen || dev.pairedAt;
+          if (timestamp) {
+            timeAgoStr = `Last active ${escapeHtml(formatTimeAgo(timestamp))}`;
+          } else {
+            timeAgoStr = 'Offline';
+          }
+        }
+
+        html += `
+          <div class="paired-device-card" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px; background: rgba(255,255,255,0.025); border: 1px solid ${isActive ? 'rgba(255, 106, 0, 0.25)' : 'var(--glass-border)'}; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: all 0.2s ease; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 280px;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: ${iconBg}; border: 1px solid ${iconBorder}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: ${iconColor};">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div style="display: flex; flex-direction: column; min-width: 0; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 0.92rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.2px;">${escapeHtml(name)}</span>
+                  <div style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 20px; ${badgeStyle} flex-shrink: 0;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor}; ${dotGlow}"></span>
+                    <span style="font-size: 0.68rem; font-weight: 700; font-family: var(--font-mono, monospace);">${badgeLabel}</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.73rem; color: #a0a0b8; flex-wrap: wrap;">
+                  <span style="font-family: var(--font-mono, monospace); color: #cbd5e1;">IP: ${escapeHtml(ip)}</span>
+                  <span>•</span>
+                  <span>Protocol: <strong style="color: ${isActive ? '#ffffff' : '#a0a0b8'};">${isActive ? (isWebRTC ? 'WebRTC Direct' : 'PWA Sync') : 'Offline'}</strong></span>
+                  <span>•</span>
+                  <span>${timeAgoStr}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              ${isPaired ? `
+                <button class="btn btn-unpair-device" data-token="${escapeAttr(dev.token || '')}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                  Unpair Device
+                </button>
+              ` : `
+                <button class="btn btn-unpair-device" data-token="${escapeAttr(dev.token || dev.ip || '')}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Disconnect
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      $$('.btn-unpair-device').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const token = btn.getAttribute('data-token');
+          if (confirm("Revoke access for this device?")) {
+            try {
+              const res = await doFetch('/api/auth/unpair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+              });
+              if (res && res.ok) {
+                showToast('Device access revoked', 'success');
+                renderPairedDevicesTab();
+                renderRightPanelConnectedDevices();
+              } else {
+                showToast('Device connection reset', 'info');
+                renderPairedDevicesTab();
+                renderRightPanelConnectedDevices();
+              }
+            } catch {
+              showToast('Network error while unpairing', 'error');
+            }
+          }
+        });
+      });
     } catch (e) {
       console.warn('Error fetching paired devices:', e);
     }
+  }
 
-    container.innerHTML = `
-      <div style="text-align: center; padding: 20px; font-size: 0.8rem; color: #a0a0b8;">
-        Could not load paired devices.
-      </div>
-    `;
+  let currentFilesTabSubPath = '';
+  let currentFilesViewMode = (typeof localStorage !== 'undefined' && localStorage.getItem('airodrop_files_view_mode')) || 'list';
+
+  function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const val = bytes / Math.pow(1024, i);
+    return (i === 0 ? val : val.toFixed(1)) + ' ' + units[i];
+  }
+
+  function formatTimeAgo(date) {
+    if (!date) return 'just now';
+    const now = new Date();
+    const d = (date instanceof Date) ? date : new Date(date);
+    if (isNaN(d.getTime())) return 'just now';
+    const diffSec = Math.max(0, Math.floor((now.getTime() - d.getTime()) / 1000));
+    if (diffSec < 45) return 'just now';
+    if (diffSec < 90) return '1 min ago';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} mins ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours === 1) return '1 hour ago';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks === 1) return '1 week ago';
+    if (diffWeeks < 5) return `${diffWeeks} weeks ago`;
+    return `${diffDays} days ago`;
+  }
+
+  async function renderFilesTab(subPath) {
+    if (subPath !== undefined && subPath !== null) {
+      currentFilesTabSubPath = subPath;
+    }
+    const container = $('#filesTabListContainer');
+    const breadcrumb = $('#filesTabBreadcrumb');
+    const btnUp = $('#btnFilesTabUp');
+    const btnList = $('#btnFilesViewList');
+    const btnGrid = $('#btnFilesViewGrid');
+    if (!container) return;
+
+    // Update view mode toggle active classes
+    if (btnList && btnGrid) {
+      if (currentFilesViewMode === 'grid') {
+        btnGrid.classList.add('active');
+        btnList.classList.remove('active');
+        btnGrid.style.background = 'rgba(255, 106, 0, 0.25)';
+        btnGrid.style.color = '#ff6a00';
+        btnList.style.background = 'transparent';
+        btnList.style.color = '#a0a0b8';
+      } else {
+        btnList.classList.add('active');
+        btnGrid.classList.remove('active');
+        btnList.style.background = 'rgba(255, 106, 0, 0.25)';
+        btnList.style.color = '#ff6a00';
+        btnGrid.style.background = 'transparent';
+        btnGrid.style.color = '#a0a0b8';
+      }
+
+      btnList.onclick = () => {
+        if (currentFilesViewMode !== 'list') {
+          currentFilesViewMode = 'list';
+          try { localStorage.setItem('airodrop_files_view_mode', 'list'); } catch (_) {}
+          renderFilesTab();
+        }
+      };
+
+      btnGrid.onclick = () => {
+        if (currentFilesViewMode !== 'grid') {
+          currentFilesViewMode = 'grid';
+          try { localStorage.setItem('airodrop_files_view_mode', 'grid'); } catch (_) {}
+          renderFilesTab();
+        }
+      };
+    }
+
+    let rootPath = 'Shared Directory';
+    try {
+      const sRes = await doFetch('/api/settings');
+      if (sRes && sRes.ok) {
+        const sData = await sRes.json();
+        rootPath = sData.shareDir || sData.saveDir || 'Shared Directory';
+      }
+    } catch (e) {
+      console.warn('Error fetching settings for files tab:', e);
+    }
+
+    const currentFullPath = currentFilesTabSubPath
+      ? `${rootPath}\\${currentFilesTabSubPath.replace(/\//g, '\\')}`
+      : rootPath;
+
+    // Copy Path Button handler
+    const btnCopyPath = $('#btnCopySharedPath');
+    if (btnCopyPath) {
+      btnCopyPath.onclick = () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(currentFullPath).then(() => {
+            showToast('Shared folder path copied to clipboard!', 'success');
+          }).catch(() => {
+            showToast(`Path: ${currentFullPath}`, 'info');
+          });
+        } else {
+          showToast(`Path: ${currentFullPath}`, 'info');
+        }
+      };
+    }
+
+    // Render Redesigned Cyber-Glassmorphic Path Bar with FULL visible path
+    if (breadcrumb) {
+      const subParts = currentFilesTabSubPath ? currentFilesTabSubPath.split('/').filter(Boolean) : [];
+      let bHtml = '';
+
+      if (subParts.length === 0) {
+        // At Root: display full root path so user sees the complete location
+        bHtml = `<span class="cyber-path-pill active" data-path="" title="${escapeAttr(rootPath)}">${escapeHtml(rootPath)}</span>`;
+      } else {
+        // In subfolder: full root path pill + subfolder pills
+        bHtml = `<span class="cyber-path-pill" data-path="" title="${escapeAttr(rootPath)}">${escapeHtml(rootPath)}</span>`;
+        let runningSub = '';
+        subParts.forEach((part, idx) => {
+          runningSub += (runningSub ? '/' : '') + part;
+          const isLast = idx === subParts.length - 1;
+          bHtml += `<span class="cyber-path-divider">\\</span>`;
+          if (isLast) {
+            bHtml += `<span class="cyber-path-pill active" data-path="${escapeAttr(runningSub)}">${escapeHtml(part)}</span>`;
+          } else {
+            bHtml += `<span class="cyber-path-pill" data-path="${escapeAttr(runningSub)}">${escapeHtml(part)}</span>`;
+          }
+        });
+      }
+
+      breadcrumb.innerHTML = bHtml;
+
+      $$('.cyber-path-pill', breadcrumb).forEach(el => {
+        el.addEventListener('click', () => {
+          renderFilesTab(el.getAttribute('data-path') || '');
+        });
+      });
+    }
+
+    if (btnUp) {
+      if (currentFilesTabSubPath) {
+        btnUp.style.display = 'inline-flex';
+        const parts = currentFilesTabSubPath.split('/').filter(Boolean);
+        parts.pop();
+        const parentPath = parts.join('/');
+        btnUp.onclick = () => renderFilesTab(parentPath);
+      } else {
+        btnUp.style.display = 'none';
+      }
+    }
+
+    try {
+      let entries = [];
+      const queryParam = currentFilesTabSubPath ? '?path=' + encodeURIComponent(currentFilesTabSubPath) : '';
+      let bRes = await doFetch(`/api/files/browse${queryParam}`);
+      if (!bRes || !bRes.ok) {
+        bRes = await doFetch(`/files/browse${queryParam}`);
+      }
+
+      if (bRes && bRes.ok) {
+        const bData = await bRes.json();
+        if (Array.isArray(bData.entries)) {
+          entries = bData.entries;
+        } else if (Array.isArray(bData.files)) {
+          entries = bData.files;
+        }
+      } else {
+        let errText = 'Unknown error';
+        try {
+          if (bRes) {
+            const errData = await bRes.clone().json().catch(() => null);
+            errText = (errData && errData.error) ? errData.error : `HTTP ${bRes.status}`;
+          }
+        } catch (_) {}
+        container.className = 'file-list-view';
+        container.innerHTML = `
+          <div style="text-align: center; padding: 24px 16px; background: rgba(239,68,68,0.08); border: 1px dashed rgba(239,68,68,0.4); border-radius: 14px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div style="font-size: 0.88rem; color: #ef4444; font-weight: 700;">Failed to load files</div>
+            <div style="font-size: 0.76rem; color: #a0a0b8; margin-top: 6px; font-family: monospace;">${escapeHtml(errText)}</div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!currentFilesTabSubPath) {
+        try {
+          const hRes = await doFetch('/api/history');
+          if (hRes && hRes.ok) {
+            const hData = await hRes.json();
+            const items = hData.items || hData.history || [];
+            items.forEach(item => {
+              const fn = item.filename || (item.type === 'file' || item.type === 'image' ? item.name : null);
+              if (fn && !entries.some(e => e.name === fn)) {
+                entries.push({ name: fn, type: 'file', size: item.size || 0, mtime: item.timestamp });
+              }
+            });
+          }
+        } catch (_) {}
+      }
+
+      // ─── Recent Additions Shelf ──────────────────────────────
+      const recentsSection = $('#filesRecentsSection');
+      const recentsShelf = $('#filesRecentsShelf');
+      const searchInput = $('#fileSearchInput');
+      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      if (recentsSection && recentsShelf) {
+        if (!searchTerm && entries.length > 0) {
+          let dismissedRecents = [];
+          try {
+            dismissedRecents = JSON.parse(localStorage.getItem('airodrop_dismissed_recents') || '[]');
+            if (!Array.isArray(dismissedRecents)) dismissedRecents = [];
+          } catch (_) {
+            dismissedRecents = [];
+          }
+
+          const fileOnlyEntries = entries.filter(e => {
+            if (e.type !== 'file') return false;
+            const rel = currentFilesTabSubPath ? `${currentFilesTabSubPath}/${e.name}` : e.name;
+            return !dismissedRecents.includes(rel) && !dismissedRecents.includes(e.name);
+          });
+          // Sort newest files first
+          fileOnlyEntries.sort((a, b) => new Date(b.mtime || 0).getTime() - new Date(a.mtime || 0).getTime());
+          const recentTop = fileOnlyEntries.slice(0, 5);
+
+          if (recentTop.length > 0) {
+            let rHtml = '';
+            recentTop.forEach(rItem => {
+              const rName = rItem.name || 'File';
+              const rExt = rName.split('.').pop().toLowerCase();
+              const rRelPath = currentFilesTabSubPath ? `${currentFilesTabSubPath}/${rName}` : rName;
+              const rDownloadUrl = `/api/files/download?path=${encodeURIComponent(rRelPath)}`;
+              
+              let rIconBg = 'rgba(59, 130, 246, 0.15)';
+              let rIconBorder = 'rgba(59, 130, 246, 0.4)';
+              let rIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+              let rMediaType = 'file';
+
+              if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'bmp'].includes(rExt)) {
+                rIconBg = 'rgba(34, 197, 94, 0.15)';
+                rIconBorder = 'rgba(34, 197, 94, 0.4)';
+                rIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+                rMediaType = 'image';
+              } else if (['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'].includes(rExt)) {
+                rIconBg = 'rgba(168, 85, 247, 0.15)';
+                rIconBorder = 'rgba(168, 85, 247, 0.4)';
+                rIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+                rMediaType = 'video';
+              } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(rExt)) {
+                rIconBg = 'rgba(236, 72, 153, 0.15)';
+                rIconBorder = 'rgba(236, 72, 153, 0.4)';
+                rIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+                rMediaType = 'audio';
+              } else if (['pdf'].includes(rExt)) {
+                rIconBg = 'rgba(239, 68, 68, 0.15)';
+                rIconBorder = 'rgba(239, 68, 68, 0.4)';
+                rIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+                rMediaType = 'pdf';
+              }
+
+              const rSize = formatFileSize(rItem.size);
+              const rArrivalTag = rItem.mtime ? formatTimeAgo(rItem.mtime) : 'Just now';
+              const rFullDateStr = rItem.mtime ? new Date(rItem.mtime).toLocaleString() : '';
+
+              const isPlayable = rMediaType === 'video' || rMediaType === 'audio';
+              const rPreviewBtnText = isPlayable ? 'Play' : 'Preview';
+              const rPreviewBtnIcon = isPlayable 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+              let rIconMarkup = '';
+              if (rMediaType === 'image') {
+                const thumbUrl = resolveMediaUrl(rDownloadUrl);
+                rIconMarkup = `
+                  <div class="recent-file-icon file-grid-icon-wrap has-thumb" style="width: 100%; height: 74px; border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 4px 14px rgba(0,0,0,0.35); position: relative; margin-bottom: 6px;">
+                    <img src="${thumbUrl}" alt="${escapeAttr(rName)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: ${rIconBg}; border: 1px solid ${rIconBorder};">
+                      ${rIconSvg}
+                    </div>
+                  </div>
+                `;
+              } else {
+                rIconMarkup = `
+                  <div class="recent-file-icon file-grid-icon-wrap non-thumb" style="background: ${rIconBg}; border: 1px solid ${rIconBorder}; margin-bottom: 6px;">
+                    ${rIconSvg}
+                  </div>
+                `;
+              }
+
+              rHtml += `
+                <div class="recent-file-card file-grid-card btn-preview-action" data-relpath="${escapeAttr(rRelPath)}" data-mediatype="${rMediaType}" data-downloadurl="${escapeAttr(rDownloadUrl)}" title="Play / Preview ${escapeAttr(rName)}">
+                  <button class="btn-recent-clear-card" data-relpath="${escapeAttr(rRelPath)}" title="Clear card from Recents (file remains on disk)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                  ${rIconMarkup}
+                  <div class="recent-file-name file-grid-name">${escapeHtml(rName)}</div>
+                  <div class="recent-file-meta file-grid-meta">
+                    <span>${rSize}</span>
+                    <span class="recent-meta-divider">•</span>
+                    <span class="recent-card-arrival-tag" title="Arrived: ${escapeAttr(rFullDateStr)}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span>${escapeHtml(rArrivalTag)}</span>
+                    </span>
+                  </div>
+                  <div class="recent-file-actions" style="width: 100%; margin-top: 5px;" onclick="event.stopPropagation()">
+                    <button class="btn-file-preview btn-preview-action" data-relpath="${escapeAttr(rRelPath)}" data-mediatype="${rMediaType}" style="width: 100%; justify-content: center; padding: 4px 8px; font-size: 0.72rem;">
+                      ${rPreviewBtnIcon} <span>${rPreviewBtnText}</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            });
+            recentsShelf.innerHTML = rHtml;
+            recentsSection.style.display = 'flex';
+
+            // Bind clear dismiss button on recents cards
+            $$('.btn-recent-clear-card', recentsShelf).forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const relPath = btn.getAttribute('data-relpath');
+                if (!relPath) return;
+
+                let list = [];
+                try {
+                  list = JSON.parse(localStorage.getItem('airodrop_dismissed_recents') || '[]');
+                  if (!Array.isArray(list)) list = [];
+                } catch (_) {
+                  list = [];
+                }
+
+                if (!list.includes(relPath)) {
+                  list.push(relPath);
+                  if (list.length > 200) list = list.slice(-200);
+                  try {
+                    localStorage.setItem('airodrop_dismissed_recents', JSON.stringify(list));
+                  } catch (_) {}
+                }
+
+                const card = btn.closest('.recent-file-card');
+                if (card) {
+                  card.style.transform = 'scale(0.85)';
+                  card.style.opacity = '0';
+                  card.style.pointerEvents = 'none';
+                  card.style.transition = 'all 0.2s ease';
+                }
+
+                showToast('Cleared card from Recents', 'info');
+                setTimeout(() => {
+                  renderFilesTab();
+                }, 220);
+              });
+            });
+
+            // Collapsible dropdown toggle handler for Recents
+            const btnToggleRecents = $('#btnToggleRecents');
+            if (btnToggleRecents && !btnToggleRecents._bound) {
+              btnToggleRecents._bound = true;
+              try {
+                if (localStorage.getItem('airodrop_recents_collapsed') === '1') {
+                  recentsSection.classList.add('collapsed');
+                }
+              } catch (_) {}
+              btnToggleRecents.addEventListener('click', (e) => {
+                e.preventDefault();
+                recentsSection.classList.toggle('collapsed');
+                const isCollapsed = recentsSection.classList.contains('collapsed');
+                try {
+                  localStorage.setItem('airodrop_recents_collapsed', isCollapsed ? '1' : '0');
+                } catch (_) {}
+              });
+            }
+
+            // Bind click on recents cards
+            $$('.recent-file-card', recentsShelf).forEach(card => {
+              card.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-recent-clear-card')) return;
+                const relPath = card.getAttribute('data-relpath');
+                const mediatype = card.getAttribute('data-mediatype') || 'file';
+                const downloadUrl = card.getAttribute('data-downloadurl') || `/api/files/download?path=${encodeURIComponent(relPath)}`;
+                const fileName = relPath ? relPath.split('/').pop() : 'File';
+
+                if (mediatype === 'image' || mediatype === 'video' || mediatype === 'audio' || mediatype === 'pdf') {
+                  if (typeof window.openMediaPreview === 'function') {
+                    window.openMediaPreview(downloadUrl, fileName, mediatype);
+                    return;
+                  }
+                }
+                if (isElectron && ipcRenderer) {
+                  ipcRenderer.send('open-file', relPath);
+                } else {
+                  window.open(downloadUrl, '_blank');
+                }
+              });
+            });
+          } else {
+            recentsSection.style.display = 'none';
+          }
+        } else {
+          recentsSection.style.display = 'none';
+        }
+      }
+
+      // Filter search
+      if (searchTerm) {
+        entries = entries.filter(item => (item.name || '').toLowerCase().includes(searchTerm));
+      }
+
+      // ─── Sort Entries: Folders First, then Newest Files Top ───
+      entries.sort((a, b) => {
+        if (a.type === 'dir' && b.type !== 'dir') return -1;
+        if (a.type !== 'dir' && b.type === 'dir') return 1;
+        if (a.type === 'dir' && b.type === 'dir') return (a.name || '').localeCompare(b.name || '');
+        // For files: sort newest modified first
+        return new Date(b.mtime || 0).getTime() - new Date(a.mtime || 0).getTime();
+      });
+
+      const subParts = currentFilesTabSubPath ? currentFilesTabSubPath.split('/').filter(Boolean) : [];
+      const parentSubParts = [...subParts];
+      parentSubParts.pop();
+      const parentPath = parentSubParts.join('/');
+
+      if (entries.length === 0) {
+        container.className = 'file-list-view';
+        let emptyHtml = '';
+        if (currentFilesTabSubPath && !searchTerm) {
+          emptyHtml += `
+            <div class="file-list-card dir-item btn-back-parent" data-relpath="${escapeAttr(parentPath)}" title="Go back to parent directory (..) ">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.35); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                </div>
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 0.88rem; font-weight: 700; color: #ff8533;">← Back to Parent Folder</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 0.72rem; color: #a0a0b8; font-family: monospace;">
+                    <span>.. (Up Directory)</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;" onclick="event.stopPropagation()">
+                <button class="btn btn-secondary btn-open-dir" data-relpath="${escapeAttr(parentPath)}" style="padding: 6px 14px; font-size: 0.76rem; font-weight: 700; cursor: pointer; color: #ff8533;">← Go Back</button>
+              </div>
+            </div>
+          `;
+        }
+        emptyHtml += `
+          <div style="text-align: center; padding: 36px 16px; background: rgba(12,13,18,0.4); border: 1px dashed var(--glass-border); border-radius: 14px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#a0a0b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <div style="font-size: 0.88rem; color: #ffffff; font-weight: 700;">Folder is Empty</div>
+            <div style="font-size: 0.76rem; color: #a0a0b8; margin-top: 4px;">No files or subdirectories found in this folder</div>
+          </div>
+        `;
+        container.innerHTML = emptyHtml;
+        $$('.dir-item', container).forEach(item => {
+          item.addEventListener('click', () => {
+            const relPath = item.getAttribute('data-relpath');
+            renderFilesTab(relPath || '');
+          });
+        });
+        $$('.btn-open-dir', container).forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const relPath = btn.getAttribute('data-relpath');
+            renderFilesTab(relPath || '');
+          });
+        });
+        return;
+      }
+
+      const isGrid = currentFilesViewMode === 'grid';
+      container.className = isGrid ? 'file-grid-view' : 'file-list-view';
+
+      let html = '';
+
+      // Dedicated Easy-Access Back Card at Index 0 inside File Explorer
+      if (currentFilesTabSubPath && !searchTerm) {
+        if (isGrid) {
+          html += `
+            <div class="file-grid-card dir-item btn-back-parent" data-relpath="${escapeAttr(parentPath)}" title="Go back to parent directory (..) ">
+              <div class="file-grid-icon-wrap" style="background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.35);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+              </div>
+              <div class="file-grid-name" style="color: #ff8533;">← Back to Parent</div>
+              <div class="file-grid-meta"><span>.. (Up Directory)</span></div>
+              <div class="file-grid-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-secondary btn-open-dir" data-relpath="${escapeAttr(parentPath)}" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 700; width: 100%; color: #ff8533;">← Go Back</button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="file-list-card dir-item btn-back-parent" data-relpath="${escapeAttr(parentPath)}" title="Go back to parent directory (..) ">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.35); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                </div>
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 0.88rem; font-weight: 700; color: #ff8533;">← Back to Parent Folder</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 0.72rem; color: #a0a0b8; font-family: monospace;">
+                    <span>.. (Up Directory)</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;" onclick="event.stopPropagation()">
+                <button class="btn btn-secondary btn-open-dir" data-relpath="${escapeAttr(parentPath)}" style="padding: 6px 14px; font-size: 0.76rem; font-weight: 700; cursor: pointer; color: #ff8533;">← Go Back</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+      entries.forEach(entry => {
+        const isDir = entry.type === 'dir';
+        const name = entry.name || 'File';
+        const sizeFormatted = isDir ? 'Folder' : (entry.size ? formatFileSize(entry.size) : '0 B');
+        const mtimeFormatted = entry.mtime ? new Date(entry.mtime).toLocaleDateString() : '';
+        const itemRelPath = currentFilesTabSubPath ? `${currentFilesTabSubPath}/${name}` : name;
+        const downloadUrl = `/api/files/download?path=${encodeURIComponent(itemRelPath)}`;
+
+        let iconSvg = isDir 
+          ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+        let iconBg = isDir ? 'rgba(255, 106, 0, 0.12)' : 'rgba(59, 130, 246, 0.12)';
+        let iconBorder = isDir ? 'rgba(255, 106, 0, 0.3)' : 'rgba(59, 130, 246, 0.3)';
+        let mediaTypeHint = 'file';
+
+        if (!isDir) {
+          const ext = name.split('.').pop().toLowerCase();
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'bmp'].includes(ext)) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+            iconBg = 'rgba(34, 197, 94, 0.12)';
+            iconBorder = 'rgba(34, 197, 94, 0.3)';
+            mediaTypeHint = 'image';
+          } else if (['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'].includes(ext)) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+            iconBg = 'rgba(168, 85, 247, 0.12)';
+            iconBorder = 'rgba(168, 85, 247, 0.3)';
+            mediaTypeHint = 'video';
+          } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(ext)) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+            iconBg = 'rgba(236, 72, 153, 0.12)';
+            iconBorder = 'rgba(236, 72, 153, 0.3)';
+            mediaTypeHint = 'audio';
+          } else if (['pdf'].includes(ext)) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+            iconBg = 'rgba(239, 68, 68, 0.12)';
+            iconBorder = 'rgba(239, 68, 68, 0.3)';
+            mediaTypeHint = 'pdf';
+          } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`;
+            iconBg = 'rgba(234, 179, 8, 0.12)';
+            iconBorder = 'rgba(234, 179, 8, 0.3)';
+          }
+        }
+
+        const isPlayable = mediaTypeHint === 'video' || mediaTypeHint === 'audio';
+        const previewBtnText = isPlayable ? 'Play' : 'Preview';
+        const previewBtnIcon = isPlayable 
+          ? `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+        if (isGrid) {
+          html += `
+            <div class="file-grid-card ${isDir ? 'dir-item' : 'file-item'}" data-relpath="${escapeAttr(itemRelPath)}" data-isdir="${isDir}" data-mediatype="${mediaTypeHint}" data-downloadurl="${escapeAttr(downloadUrl)}" title="${escapeAttr(name)} (Click to view)">
+              <div class="file-grid-icon-wrap" style="background: ${iconBg}; border: 1px solid ${iconBorder};">
+                ${iconSvg}
+              </div>
+              <div class="file-grid-name">${escapeHtml(name)}</div>
+              <div class="file-grid-meta">
+                <span>${sizeFormatted}</span>${mtimeFormatted ? ` • <span>${mtimeFormatted}</span>` : ''}
+              </div>
+              <div class="file-grid-actions" onclick="event.stopPropagation()">
+                ${isDir 
+                  ? `<button class="btn btn-secondary btn-open-dir" data-relpath="${escapeAttr(itemRelPath)}" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 600; width: 100%;">Open Folder</button>` 
+                  : `<div style="display: flex; gap: 6px; width: 100%;">
+                       <button class="btn-file-preview btn-preview-action" data-relpath="${escapeAttr(itemRelPath)}" data-mediatype="${mediaTypeHint}" style="flex: 1; justify-content: center; padding: 5px 8px; font-size: 0.72rem;">${previewBtnIcon} <span>${previewBtnText}</span></button>
+                       <button class="btn btn-secondary open-folder-btn" data-relpath="${escapeAttr(itemRelPath)}" style="flex: 1; justify-content: center; padding: 5px 8px; font-size: 0.72rem;">Location</button>
+                     </div>`
+                }
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="file-list-card ${isDir ? 'dir-item' : 'file-item'}" data-relpath="${escapeAttr(itemRelPath)}" data-isdir="${isDir}" data-mediatype="${mediaTypeHint}" data-downloadurl="${escapeAttr(downloadUrl)}" title="${escapeAttr(name)} (Click to view)">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: ${iconBg}; border: 1px solid ${iconBorder}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  ${iconSvg}
+                </div>
+                <div style="display: flex; flex-direction: column; min-width: 0;">
+                  <span style="font-size: 0.88rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(name)}</span>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 0.74rem; color: #a0a0b8; font-family: monospace;">
+                    <span>${sizeFormatted}</span>
+                    ${mtimeFormatted ? `<span>•</span><span>${mtimeFormatted}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;" onclick="event.stopPropagation()">
+                ${isDir 
+                  ? `<button class="btn btn-secondary btn-open-dir" data-relpath="${escapeAttr(itemRelPath)}" style="padding: 6px 12px; font-size: 0.76rem; font-weight: 600; cursor: pointer;">Open Folder</button>` 
+                  : `<button class="btn-file-preview btn-preview-action" data-relpath="${escapeAttr(itemRelPath)}" data-mediatype="${mediaTypeHint}" style="cursor: pointer;">${previewBtnIcon} <span>${previewBtnText}</span></button>
+                     <button class="btn btn-secondary open-folder-btn" data-relpath="${escapeAttr(itemRelPath)}" style="padding: 6px 12px; font-size: 0.76rem; font-weight: 600; cursor: pointer;">Show Location</button>`
+                }
+              </div>
+            </div>
+          `;
+        }
+      });
+      container.innerHTML = html;
+
+      // Click on Directory item -> navigate into directory
+      $$('.dir-item', container).forEach(item => {
+        item.addEventListener('click', () => {
+          const relPath = item.getAttribute('data-relpath');
+          if (relPath !== null && relPath !== undefined) renderFilesTab(relPath);
+        });
+      });
+
+      // Click on File item -> Click to view file (supports all file types)
+      const triggerFileView = (relPath, mediatype) => {
+        const downloadUrl = resolveMediaUrl(`/api/files/download?path=${encodeURIComponent(relPath)}`);
+        const fileName = relPath ? relPath.split('/').pop() : 'File';
+
+        if (mediatype === 'image' || mediatype === 'video' || mediatype === 'audio' || mediatype === 'pdf') {
+          if (typeof window.openMediaPreview === 'function') {
+            window.openMediaPreview(downloadUrl, fileName, mediatype);
+            return;
+          }
+        }
+
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('open-file', relPath);
+        } else {
+          window.open(downloadUrl, '_blank');
+        }
+      };
+
+      $$('.file-item', container).forEach(item => {
+        item.addEventListener('click', () => {
+          const relPath = item.getAttribute('data-relpath');
+          const mediatype = item.getAttribute('data-mediatype') || 'file';
+          triggerFileView(relPath, mediatype);
+        });
+      });
+
+      // Button: Play / Preview Action
+      $$('.btn-preview-action', container).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const relPath = btn.getAttribute('data-relpath');
+          const mediatype = btn.getAttribute('data-mediatype') || 'file';
+          triggerFileView(relPath, mediatype);
+        });
+      });
+
+      // Button: Open Folder
+      $$('.btn-open-dir', container).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const relPath = btn.getAttribute('data-relpath');
+          if (relPath !== null && relPath !== undefined) renderFilesTab(relPath);
+        });
+      });
+
+      // Button: Show Location in File Explorer (selects the file in Windows Explorer)
+      $$('.open-folder-btn', container).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const relPath = btn.getAttribute('data-relpath') || btn.getAttribute('data-fn');
+          if (isElectron && ipcRenderer) {
+            ipcRenderer.send('open-file-folder', relPath);
+          } else {
+            showToast(`Location in shared directory: ${relPath}`, 'info');
+          }
+        });
+      });
+
+    } catch (e) {
+      console.warn('Error rendering files tab:', e);
+    }
+  }
+
+  let clipboardCurrentPage = 1;
+  const CLIPBOARD_PAGE_SIZE = 10;
+  let activeEditingClipboardId = null;
+  let currentClipboardViewMode = 'list';
+  try {
+    const savedClipMode = localStorage.getItem('airodrop_clipboard_view_mode');
+    if (savedClipMode === 'grid' || savedClipMode === 'list') {
+      currentClipboardViewMode = savedClipMode;
+    }
+  } catch (_) {}
+
+  function closeClipboardEditModal() {
+    const modal = $('#clipboardEditModal');
+    if (modal) modal.style.display = 'none';
+    activeEditingClipboardId = null;
+  }
+
+  function openClipboardEditModal(item) {
+    activeEditingClipboardId = item.id;
+    const modal = $('#clipboardEditModal');
+    const textarea = $('#clipboardModalTextarea');
+    const meta = $('#clipboardModalMeta');
+    const stats = $('#clipboardModalStats');
+
+    if (!modal || !textarea) return;
+
+    const contentText = item.content || item.text || '';
+    textarea.value = contentText;
+
+    const updateStats = () => {
+      const v = textarea.value;
+      const cCount = v.length;
+      const wCount = v.trim() ? v.trim().split(/\s+/).length : 0;
+      if (stats) stats.textContent = `${cCount.toLocaleString()} characters • ${wCount.toLocaleString()} words`;
+    };
+    updateStats();
+    textarea.oninput = updateStats;
+
+    if (meta) {
+      const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recent';
+      const isUrl = item.type === 'url' || /^https?:\/\//i.test(contentText.trim());
+      meta.textContent = `${isUrl ? 'Web Link' : 'Text Snippet'} • Synced ${dateStr}`;
+    }
+
+    modal.style.display = 'flex';
+    setTimeout(() => textarea.focus(), 60);
+  }
+
+  async function renderClipboardVaultTab() {
+    const container = $('#clipboardVaultContainer');
+    if (!container) return;
+
+    // Update view mode toggle active classes
+    const btnClipList = $('#btnClipboardViewList');
+    const btnClipGrid = $('#btnClipboardViewGrid');
+    if (btnClipList && btnClipGrid) {
+      if (currentClipboardViewMode === 'grid') {
+        btnClipGrid.classList.add('active');
+        btnClipList.classList.remove('active');
+        btnClipGrid.style.background = 'rgba(255, 106, 0, 0.25)';
+        btnClipGrid.style.color = '#ff6a00';
+        btnClipList.style.background = 'transparent';
+        btnClipList.style.color = '#a0a0b8';
+      } else {
+        btnClipList.classList.add('active');
+        btnClipGrid.classList.remove('active');
+        btnClipList.style.background = 'rgba(255, 106, 0, 0.25)';
+        btnClipList.style.color = '#ff6a00';
+        btnClipGrid.style.background = 'transparent';
+        btnClipGrid.style.color = '#a0a0b8';
+      }
+
+      btnClipList.onclick = () => {
+        if (currentClipboardViewMode !== 'list') {
+          currentClipboardViewMode = 'list';
+          try { localStorage.setItem('airodrop_clipboard_view_mode', 'list'); } catch (_) {}
+          renderClipboardVaultTab();
+        }
+      };
+
+      btnClipGrid.onclick = () => {
+        if (currentClipboardViewMode !== 'grid') {
+          currentClipboardViewMode = 'grid';
+          try { localStorage.setItem('airodrop_clipboard_view_mode', 'grid'); } catch (_) {}
+          renderClipboardVaultTab();
+        }
+      };
+    }
+
+    container.className = currentClipboardViewMode === 'grid' ? 'vault-items-container grid-mode' : 'vault-items-container list-mode';
+
+    try {
+      let items = [];
+      try {
+        const res = await doFetch('/api/clipboard/vault');
+        if (res && res.ok) {
+          const data = await res.json();
+          items = data.items || [];
+        }
+      } catch (_) {}
+
+      // Fallback if vault was empty or legacy endpoint
+      if (items.length === 0) {
+        try {
+          const hRes = await doFetch('/api/history');
+          if (hRes && hRes.ok) {
+            const hData = await hRes.json();
+            const raw = hData.items || hData.history || [];
+            items = raw.filter(item => item.type === 'text' || item.type === 'url' || item.content || item.text);
+          }
+        } catch (_) {}
+      }
+
+      // Sort newest first
+      items.sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      // Update count badge
+      const countBadge = $('#clipboardVaultCountBadge');
+      if (countBadge) {
+        countBadge.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
+      }
+
+      const searchInput = $('#clipboardSearchInput');
+      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      if (searchTerm) {
+        items = items.filter(i => (i.content || i.text || '').toLowerCase().includes(searchTerm));
+      }
+
+      const paginationContainer = $('#clipboardPaginationContainer');
+      const prevBtn = $('#btnClipboardPrevPage');
+      const nextBtn = $('#btnClipboardNextPage');
+      const pageIndicator = $('#clipboardPageIndicator');
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px 16px; background: rgba(12,13,18,0.4); border: 1px solid var(--glass-border); border-radius: 14px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255, 106, 0, 0.12); border: 1px solid rgba(255, 106, 0, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: #ff6a00;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+            </div>
+            <div style="font-size: 0.9rem; color: #ffffff; font-weight: 700;">${searchTerm ? 'No matching clipboard snippets' : 'Clipboard vault is empty'}</div>
+            <div style="font-size: 0.76rem; color: #a0a0b8; margin-top: 4px;">${searchTerm ? 'Try searching for different keywords' : 'Synced text snippets and links from your devices will appear here'}</div>
+          </div>
+        `;
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        return;
+      }
+
+      // Pagination Calculation (Max 20 items per page)
+      const totalPages = Math.max(1, Math.ceil(items.length / CLIPBOARD_PAGE_SIZE));
+      if (clipboardCurrentPage > totalPages) clipboardCurrentPage = totalPages;
+      if (clipboardCurrentPage < 1) clipboardCurrentPage = 1;
+
+      const startIndex = (clipboardCurrentPage - 1) * CLIPBOARD_PAGE_SIZE;
+      const pageItems = items.slice(startIndex, startIndex + CLIPBOARD_PAGE_SIZE);
+
+      let html = '';
+      pageItems.forEach(item => {
+        const contentText = item.content || item.text || '';
+        const isUrl = item.type === 'url' || /^https?:\/\//i.test(contentText.trim());
+        const dateObj = item.timestamp ? new Date(item.timestamp) : null;
+        const fullDateStr = dateObj ? dateObj.toLocaleString() : 'Recent';
+        const timeAgoStr = dateObj ? formatTimeAgo(dateObj) : 'Recent';
+        const charCount = contentText.length;
+        const wordCount = contentText.trim() ? contentText.trim().split(/\s+/).length : 0;
+
+        html += `
+          <div class="vault-card" data-id="${escapeAttr(item.id)}">
+            <div class="vault-card-header">
+              <div class="vault-card-meta">
+                <span class="vault-type-badge ${isUrl ? 'url' : 'text'}">${isUrl ? 'URL' : 'TEXT'}</span>
+                <span class="vault-card-time" title="Synced: ${escapeAttr(fullDateStr)}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  ${escapeHtml(timeAgoStr)}
+                </span>
+              </div>
+              <div class="vault-card-stats">
+                ${charCount.toLocaleString()} chars • ${wordCount.toLocaleString()} words
+              </div>
+            </div>
+
+            <div class="vault-card-body btn-open-edit-modal" data-id="${escapeAttr(item.id)}" title="Click to view and edit snippet">${escapeHtml(contentText)}</div>
+
+            <div class="vault-card-actions">
+              ${isUrl ? `
+                <a href="${escapeHtml(contentText)}" target="_blank" rel="noopener noreferrer" class="btn-vault-action" title="Open link in browser">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Open Link
+                </a>
+              ` : ''}
+              <button class="btn-vault-action primary btn-open-edit-modal" data-id="${escapeAttr(item.id)}" title="View and edit snippet">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                View / Edit
+              </button>
+              <button class="btn-vault-action btn-vault-copy" data-content="${escapeAttr(contentText)}" title="Copy text to clipboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+              <button class="btn-vault-action danger btn-vault-delete" data-id="${escapeAttr(item.id)}" title="Delete snippet from vault">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+
+      // Update Pagination UI
+      if (paginationContainer) {
+        if (items.length > CLIPBOARD_PAGE_SIZE) {
+          paginationContainer.style.display = 'flex';
+          if (pageIndicator) pageIndicator.textContent = `Page ${clipboardCurrentPage} of ${totalPages} (${items.length} total)`;
+          if (prevBtn) prevBtn.disabled = (clipboardCurrentPage <= 1);
+          if (nextBtn) nextBtn.disabled = (clipboardCurrentPage >= totalPages);
+        } else {
+          paginationContainer.style.display = 'none';
+        }
+      }
+
+      // Bind Card Actions
+      $$('.btn-vault-copy', container).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const txt = btn.getAttribute('data-content');
+          if (txt) {
+            try {
+              await navigator.clipboard.writeText(txt);
+              showToast('Copied snippet to clipboard!', 'success');
+            } catch {
+              showToast('Failed to copy', 'error');
+            }
+          }
+        });
+      });
+
+      $$('.btn-vault-delete', container).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          if (!id) return;
+          try {
+            const delRes = await doFetch(`/api/clipboard/vault/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (delRes && delRes.ok) {
+              showToast('Snippet deleted from vault', 'info');
+              renderClipboardVaultTab();
+            }
+          } catch {
+            showToast('Failed to delete snippet', 'error');
+          }
+        });
+      });
+
+      $$('.btn-open-edit-modal', container).forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = el.getAttribute('data-id');
+          const item = items.find(i => String(i.id) === String(id));
+          if (item) {
+            openClipboardEditModal(item);
+          }
+        });
+      });
+
+      // Wire Pagination Buttons once
+      if (prevBtn && !prevBtn._wired) {
+        prevBtn._wired = true;
+        prevBtn.addEventListener('click', () => {
+          if (clipboardCurrentPage > 1) {
+            clipboardCurrentPage--;
+            renderClipboardVaultTab();
+          }
+        });
+      }
+
+      if (nextBtn && !nextBtn._wired) {
+        nextBtn._wired = true;
+        nextBtn.addEventListener('click', () => {
+          clipboardCurrentPage++;
+          renderClipboardVaultTab();
+        });
+      }
+
+      // Wire Modal Controls once
+      const btnModalClose = $('#btnCloseClipboardModal');
+      const btnModalCancel = $('#btnModalCancelClipboard');
+      const btnModalCopy = $('#btnModalCopyClipboard');
+      const btnModalSave = $('#btnModalSaveClipboard');
+      const editModal = $('#clipboardEditModal');
+
+      if (btnModalClose && !btnModalClose._wired) {
+        btnModalClose._wired = true;
+        btnModalClose.addEventListener('click', closeClipboardEditModal);
+      }
+
+      if (btnModalCancel && !btnModalCancel._wired) {
+        btnModalCancel._wired = true;
+        btnModalCancel.addEventListener('click', closeClipboardEditModal);
+      }
+
+      if (editModal && !editModal._wired) {
+        editModal._wired = true;
+        editModal.addEventListener('click', (e) => {
+          if (e.target === editModal) closeClipboardEditModal();
+        });
+      }
+
+      if (btnModalCopy && !btnModalCopy._wired) {
+        btnModalCopy._wired = true;
+        btnModalCopy.addEventListener('click', async () => {
+          const textarea = $('#clipboardModalTextarea');
+          if (textarea && textarea.value) {
+            try {
+              await navigator.clipboard.writeText(textarea.value);
+              showToast('Copied to clipboard!', 'success');
+            } catch {
+              showToast('Failed to copy text', 'error');
+            }
+          }
+        });
+      }
+
+      if (btnModalSave && !btnModalSave._wired) {
+        btnModalSave._wired = true;
+        btnModalSave.addEventListener('click', async () => {
+          if (!activeEditingClipboardId) return;
+          const textarea = $('#clipboardModalTextarea');
+          const newContent = textarea ? textarea.value : '';
+          btnModalSave.disabled = true;
+          try {
+            const saveRes = await doFetch(`/api/clipboard/vault/${encodeURIComponent(activeEditingClipboardId)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content: newContent })
+            });
+            if (saveRes && saveRes.ok) {
+              showToast('Clipboard snippet saved!', 'success');
+              closeClipboardEditModal();
+              renderClipboardVaultTab();
+            } else {
+              showToast('Failed to save changes', 'error');
+            }
+          } catch {
+            showToast('Network error saving snippet', 'error');
+          } finally {
+            btnModalSave.disabled = false;
+          }
+        });
+      }
+
+      // Wire Clear Vault button once
+      const btnClearVault = $('#btnClearClipboardVault');
+      if (btnClearVault && !btnClearVault._wired) {
+        btnClearVault._wired = true;
+        btnClearVault.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to clear all clipboard snippets from the vault?')) {
+            return;
+          }
+          try {
+            const clearRes = await doFetch('/api/clipboard/vault', { method: 'DELETE' });
+            if (clearRes && clearRes.ok) {
+              showToast('All clipboard vault history cleared', 'success');
+              clipboardCurrentPage = 1;
+              renderClipboardVaultTab();
+            } else {
+              showToast('Failed to clear vault', 'error');
+            }
+          } catch {
+            showToast('Error clearing clipboard vault', 'error');
+          }
+        });
+      }
+
+    } catch (e) {
+      console.warn('Error rendering clipboard vault:', e);
+    }
+  }
+
+  function renderRemoteStudioTab() {
+    const lockBtn = $('#btnRemoteLockPC');
+    const sleepBtn = $('#btnRemoteSleepPC');
+
+    if (lockBtn && !lockBtn._wired) {
+      lockBtn._wired = true;
+      lockBtn.addEventListener('click', async () => {
+        try {
+          await doFetch('/api/system/lock', { method: 'POST' });
+          showToast('Locking PC...', 'info');
+        } catch {
+          showToast('Failed to lock PC', 'error');
+        }
+      });
+    }
+
+    if (sleepBtn && !sleepBtn._wired) {
+      sleepBtn._wired = true;
+      sleepBtn.addEventListener('click', async () => {
+        try {
+          await doFetch('/api/system/sleep', { method: 'POST' });
+          showToast('Putting PC to sleep...', 'info');
+        } catch {
+          showToast('Failed to put PC to sleep', 'error');
+        }
+      });
+    }
   }
 
   async function renderRightPanelConnectedDevices() {
@@ -1710,6 +2968,86 @@
       });
     }
 
+    const btnFilesBrowse = $('#btnFilesTabBrowse');
+    if (btnFilesBrowse) {
+      btnFilesBrowse.addEventListener('click', async () => {
+        btnFilesBrowse.disabled = true;
+        try {
+          const res = await doFetch('/api/settings/browse', { method: 'POST' });
+          if (res && res.ok) {
+            const data = await res.json();
+            if (data.path) {
+              await doFetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shareDir: data.path, saveDir: data.path })
+              });
+              showToast('Shared directory updated!', 'success');
+              renderFilesTab('');
+            }
+          }
+        } catch {
+          showToast('Failed to pick folder', 'error');
+        } finally {
+          btnFilesBrowse.disabled = false;
+        }
+      });
+    }
+
+    const btnRefFilesTab = $('#btnRefreshFilesTab');
+    if (btnRefFilesTab) {
+      btnRefFilesTab.addEventListener('click', async (e) => {
+        e.preventDefault();
+        btnRefFilesTab.classList.add('spinning-icon');
+        try {
+          await renderFilesTab();
+          showToast('Files list refreshed', 'info');
+        } finally {
+          setTimeout(() => btnRefFilesTab.classList.remove('spinning-icon'), 600);
+        }
+      });
+    }
+
+    const btnOpenExpFiles = $('#btnOpenExplorerFiles');
+    if (btnOpenExpFiles) {
+      btnOpenExpFiles.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const sub = currentFilesTabSubPath || '';
+        if (isElectron && ipcRenderer) {
+          ipcRenderer.send('open-file-folder', sub);
+        } else {
+          try {
+            const res = await doFetch('/api/open-directory', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ path: sub })
+            });
+            if (res && res.ok) {
+              showToast('Opened shared directory in File Explorer', 'info');
+            } else {
+              showToast('Could not open directory', 'error');
+            }
+          } catch (_) {
+            showToast('Failed to open directory', 'error');
+          }
+        }
+      });
+    }
+
+    const fileSearchInp = $('#fileSearchInput');
+    if (fileSearchInp) {
+      fileSearchInp.addEventListener('input', () => {
+        renderFilesTab();
+      });
+    }
+
+    const clipboardSearchInp = $('#clipboardSearchInput');
+    if (clipboardSearchInp) {
+      clipboardSearchInp.addEventListener('input', () => {
+        renderClipboardVaultTab();
+      });
+    }
+
     // Setup Guide button
     const btnDashSetup = $('#btnDashSetupGuide');
     if (btnDashSetup) btnDashSetup.addEventListener('click', () => openSetupModal());
@@ -1763,7 +3101,13 @@
     // Setup Creator Profile Modal & Connected Devices Telemetry
     setupCreatorProfileModal();
     renderRightPanelConnectedDevices();
-    setInterval(renderRightPanelConnectedDevices, 5000);
+    setInterval(() => {
+      renderRightPanelConnectedDevices();
+      const devTab = $('#tab-devices');
+      if (devTab && devTab.classList.contains('active')) {
+        renderPairedDevicesTab();
+      }
+    }, 4000);
 
     // Dashboard Central Dropzone
     const dashDrop = $('#dashDropzone');
@@ -5853,7 +7197,9 @@
     const downloadText = document.getElementById('btnLightboxDownloadText');
     if (!modal || !src) return;
 
-    const fn = src.split('/').pop();
+    const resolvedSrc = resolveMediaUrl(src);
+    const cleanPath = (src.includes('?path=') ? decodeURIComponent(src.split('?path=')[1]) : src).split('?')[0];
+    const fn = cleanPath.split('/').pop();
     const item = allItems.find(i => i.filename === fn || (i.originalName && i.originalName === fn));
 
     if (item && item.fileDeletedOnDisk) {
@@ -5861,10 +7207,10 @@
       return;
     }
 
-    if (fn) {
+    if (item && !src.includes('/files/download') && fn) {
       checkFileOnDisk(fn).then(exists => {
         if (!exists) {
-          if (item) item.fileDeletedOnDisk = true;
+          item.fileDeletedOnDisk = true;
           renderFeed();
           showToast('This file was deleted from your saved folder on disk. Please save it again or send a new copy.', 'warning');
           modal.style.display = 'none';
@@ -5875,7 +7221,7 @@
 
     resetMediaLightbox();
 
-    const urlPath = src.split('?')[0].toLowerCase();
+    const urlPath = cleanPath.toLowerCase();
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg|heic|bmp)$/i.test(urlPath) || fileTypeHint === 'image';
     const isVideo = /\.(mp4|mov|m4v|webm|ogv|avi|mkv)$/i.test(urlPath) || fileTypeHint === 'video';
     const isAudio = /\.(mp3|wav|m4a|ogg|flac|aac)$/i.test(urlPath) || fileTypeHint === 'audio';
@@ -5918,7 +7264,7 @@
     if (isImage) {
       const img = document.getElementById('lightboxImage');
       if (img) {
-        img.src = src;
+        img.src = resolvedSrc;
         img.alt = name || 'Photo';
         img.style.display = 'block';
       }
@@ -5928,7 +7274,7 @@
     } else if (isVideo) {
       const video = document.getElementById('lightboxVideo');
       if (video) {
-        video.src = src;
+        video.src = resolvedSrc;
         video.style.display = 'block';
         video.play().catch(() => {});
       }
@@ -5939,7 +7285,7 @@
       const audioBox = document.getElementById('lightboxAudioBox');
       const trackName = document.getElementById('lightboxAudioTrackName');
       if (audio && audioBox) {
-        audio.src = src;
+        audio.src = resolvedSrc;
         if (trackName) trackName.textContent = name || 'Audio Track';
         audioBox.style.display = 'flex';
         audio.play().catch(() => {});
@@ -5949,7 +7295,7 @@
     } else if (isPdf) {
       const pdfFrame = document.getElementById('lightboxPdfFrame');
       if (pdfFrame) {
-        pdfFrame.src = src;
+        pdfFrame.src = resolvedSrc;
         pdfFrame.style.display = 'block';
       }
       if (zoomControls) zoomControls.style.display = 'none';
@@ -5958,7 +7304,7 @@
       // Fallback to Image
       const img = document.getElementById('lightboxImage');
       if (img) {
-        img.src = src;
+        img.src = resolvedSrc;
         img.style.display = 'block';
       }
       if (zoomControls) zoomControls.style.display = 'flex';
@@ -6109,6 +7455,11 @@
   const btnCloseLight = document.getElementById('btnCloseLightbox');
   if (btnCloseLight) {
     btnCloseLight.addEventListener('click', closeLightboxModal);
+  }
+
+  const btnLightboxBackClose = document.getElementById('btnLightboxBackClose');
+  if (btnLightboxBackClose) {
+    btnLightboxBackClose.addEventListener('click', closeLightboxModal);
   }
 
   const modalLight = document.getElementById('globalImageLightbox');

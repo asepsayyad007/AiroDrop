@@ -15,27 +15,32 @@ function safePath(relPath) {
   // Handle __received__/ prefix for files received from PC
   if (cleanRel.startsWith('__received__/')) {
     const fn = cleanRel.replace(/^__received__\//, '');
-    const saveCheck = validatePath(fn, state.SAVE_DIR);
-    if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
+    if (state.SAVE_DIR) {
+      const saveCheck = validatePath(fn, state.SAVE_DIR);
+      if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
+    }
     if (state.TEMP_DIR) {
       const tempCheck = validatePath(fn, state.TEMP_DIR);
       if (tempCheck.valid && fs.existsSync(tempCheck.resolved)) return tempCheck.resolved;
     }
   }
 
-  // Ensure SHARE_DIR exists
-  if (state.SHARE_DIR && !fs.existsSync(state.SHARE_DIR)) {
-    try { fs.mkdirSync(state.SHARE_DIR, { recursive: true }); } catch (_) {}
+  const activeDir = state.SHARE_DIR || state.SAVE_DIR;
+
+  // Ensure activeDir exists
+  if (activeDir && !fs.existsSync(activeDir)) {
+    try { fs.mkdirSync(activeDir, { recursive: true }); } catch (_) {}
   }
 
-  // Check default SHARE_DIR
-  const shareResult = validatePath(cleanRel, state.SHARE_DIR);
-  if (shareResult.valid && fs.existsSync(shareResult.resolved)) {
-    return shareResult.resolved;
+  if (activeDir) {
+    const shareResult = validatePath(cleanRel, activeDir);
+    if (shareResult.valid && fs.existsSync(shareResult.resolved)) {
+      return shareResult.resolved;
+    }
   }
 
   // Fallback: check SAVE_DIR and TEMP_DIR for bare filenames
-  if (cleanRel) {
+  if (cleanRel && state.SAVE_DIR) {
     const saveCheck = validatePath(cleanRel, state.SAVE_DIR);
     if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
     if (state.TEMP_DIR) {
@@ -44,7 +49,7 @@ function safePath(relPath) {
     }
   }
 
-  return shareResult.valid ? shareResult.resolved : null;
+  return (activeDir && fs.existsSync(activeDir)) ? activeDir : null;
 }
 
 // Serve file browser html
@@ -85,7 +90,46 @@ router.get('/browse', (req, res) => {
   }
 });
 
-// Download a file
+// MIME type dictionary for universal streaming and inline rendering
+const FILE_MIME_TYPES = {
+  // Images
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.bmp': 'image/bmp',
+  '.heic': 'image/heic',
+  // Audio
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.flac': 'audio/flac',
+  '.weba': 'audio/webm',
+  // Video
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska',
+  '.avi': 'video/x-msvideo',
+  // Documents & text
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8'
+};
+
+// Download or stream a file (supports instant HTTP 206 Range scrubbing & playback)
 router.get('/download', (req, res) => {
   const rel = req.query.path || '';
   const target = safePath(rel);
@@ -94,50 +138,45 @@ router.get('/download', (req, res) => {
   const stat = fs.statSync(target);
   if (stat.isDirectory()) return res.status(400).json({ error: 'Cannot download a folder' });
   
-  const isStream = req.query.stream === 'true';
+  const ext = path.extname(target).toLowerCase();
+  const filename = path.basename(target);
+  const contentType = FILE_MIME_TYPES[ext] || 'application/octet-stream';
+  const isAttachment = req.query.download === 'true';
   const range = req.headers.range;
 
-  if (isStream) {
-    const ext = path.extname(target).toLowerCase();
-    const mimeTypes = {
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.ogg': 'video/ogg',
-      '.mov': 'video/quicktime',
-      '.m4v': 'video/x-m4v',
-      '.mkv': 'video/x-matroska',
-      '.avi': 'video/x-msvideo'
-    };
-    const contentType = mimeTypes[ext] || 'video/mp4';
-
-    if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-      const chunksize = (end - start) + 1;
-      
-      const fileStream = fs.createReadStream(target, { start, end });
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunksize,
-        'Content-Type': contentType,
-        'Content-Disposition': 'inline'
+  if (range) {
+    // 206 Partial Content Range Streaming for Video/Audio Scrubbing
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+    
+    if (start >= stat.size || end >= stat.size) {
+      res.writeHead(416, {
+        'Content-Range': `bytes */${stat.size}`
       });
-      fileStream.pipe(res);
-    } else {
-      res.writeHead(200, {
-        'Content-Length': stat.size,
-        'Content-Type': contentType,
-        'Content-Disposition': 'inline'
-      });
-      fs.createReadStream(target).pipe(res);
+      return res.end();
     }
+
+    const chunksize = (end - start) + 1;
+    const fileStream = fs.createReadStream(target, { start, end });
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': contentType,
+      'Content-Disposition': isAttachment ? `attachment; filename="${encodeURIComponent(filename)}"` : 'inline'
+    });
+    fileStream.pipe(res);
   } else {
-    const filename = path.basename(target);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-    res.sendFile(target, { acceptRanges: true });
+    // Full File Streaming / Serving with Accept-Ranges
+    res.writeHead(200, {
+      'Content-Length': stat.size,
+      'Content-Type': contentType,
+      'Accept-Ranges': 'bytes',
+      'Content-Disposition': isAttachment ? `attachment; filename="${encodeURIComponent(filename)}"` : 'inline',
+      'Cache-Control': 'no-cache'
+    });
+    fs.createReadStream(target).pipe(res);
   }
 });
 

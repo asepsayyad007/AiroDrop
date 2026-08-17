@@ -421,6 +421,9 @@ router.post('/settings', async (req, res) => {
       fs.unlinkSync(tempFile);
       
       state.SAVE_DIR = resolvedPath;
+      if (!shareDir) {
+        state.SHARE_DIR = resolvedPath;
+      }
     }
 
     let resolvedSharePath = state.SHARE_DIR;
@@ -438,6 +441,9 @@ router.post('/settings', async (req, res) => {
       fs.unlinkSync(tempFile);
       
       state.SHARE_DIR = resolvedSharePath;
+      if (!saveDir) {
+        state.SAVE_DIR = resolvedSharePath;
+      }
     }
 
     if (deviceName !== undefined) {
@@ -846,13 +852,25 @@ router.post('/open-url', express.json(), async (req, res) => {
   }
 });
 
-// POST /api/open-directory — Open the AiroDrop download directory in File Explorer / OS File Manager
-router.post('/open-directory', (req, res) => {
+// POST /api/open-directory — Open the AiroDrop download/shared directory in File Explorer / OS File Manager
+router.post('/open-directory', express.json(), (req, res) => {
   try {
-    const dirPath = state.SAVE_DIR;
+    const activeBase = state.SHARE_DIR || state.SAVE_DIR;
+    let dirPath = (req.body && typeof req.body.path === 'string' && req.body.path.trim())
+      ? path.join(activeBase, req.body.path.trim())
+      : activeBase;
+
+    if (!fs.existsSync(dirPath)) {
+      dirPath = activeBase;
+    }
+
     try {
       const { shell } = require('electron');
-      shell.openPath(dirPath);
+      if (shell && shell.openPath) {
+        shell.openPath(dirPath);
+      } else {
+        throw new Error('No electron shell');
+      }
     } catch (_) {
       const { execFile } = require('child_process');
       if (process.platform === 'win32') {
@@ -863,7 +881,7 @@ router.post('/open-directory', (req, res) => {
         execFile('xdg-open', [dirPath]);
       }
     }
-    utils.writeLog(`Opened download directory: ${dirPath}`);
+    utils.writeLog(`Opened shared directory: ${dirPath}`);
     res.json({ success: true, path: dirPath });
   } catch (err) {
     res.status(500).json({ error: err.message });

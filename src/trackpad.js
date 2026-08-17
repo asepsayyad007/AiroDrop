@@ -117,6 +117,13 @@ function setupWebSocket(serverInstance, serverEvents) {
       if (req && req.socket && req.socket.remoteAddress) {
         ws._remoteIp = req.socket.remoteAddress;
       }
+      try {
+        const auth = require('./auth');
+        const cleanIp = ws._remoteIp ? String(ws._remoteIp).replace(/^.*:/, '') : '';
+        if (auth && auth.updateDeviceActivity) {
+          auth.updateDeviceActivity(ws.deviceToken, cleanIp);
+        }
+      } catch (_) {}
       ws._isAlive = true;
       ws.on('pong', () => { ws._isAlive = true; });
       serverEvents.emit('phone_connected', ws);

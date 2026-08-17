@@ -5,6 +5,7 @@ const ALLOWED_SEND_CHANNELS = [
   'get-protocol-sync',
   'restore-window',
   'open-file-folder',
+  'open-file',
   'open-save-directory',
   'get-dir',
   'change-dir',

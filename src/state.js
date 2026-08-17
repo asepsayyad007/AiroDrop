@@ -8,6 +8,7 @@ const state = {
   KEY_FILE: '',
   CERT_FILE: '',
   PAIRED_DEVICES_FILE: '',
+  CLIPBOARD_VAULT_FILE: '',
 
   // Server Settings
   PORT: 3478,
@@ -35,6 +36,7 @@ const state = {
 
   // In-Memory Data Stores
   history: [],
+  clipboardVault: [],
   scratchpadText: '',
   bookmarks: [],
   pendingForPhone: [],
