@@ -703,9 +703,8 @@
           const isImg = item.type === 'image' || ['jpg','jpeg','png','gif','webp','svg','heic','bmp'].includes(ext);
           const isVid = item.type === 'video' || ['mp4','mov','m4v','webm','ogv','avi','mkv'].includes(ext);
           const isPdf = ext === 'pdf' || (item.mimeType && item.mimeType.includes('pdf'));
-          const downloadUrl = (isImg || isVid || isPdf) 
-            ? (item.filename ? `/received/${item.filename}` : item.url)
-            : `/received/${item.filename}`;
+          const folder = item.isOutgoing ? 'shared' : 'received';
+          const downloadUrl = (item.filename ? `/${folder}/${item.filename}` : item.url);
           const displayName = isImg ? (item.filename || 'Image') : (isVid ? (item.filename || 'Video') : (isPdf ? (item.filename || 'PDF Document') : (item.originalName || item.filename || 'File')));
           const mime = item.mimeType || item.mimetype || (isImg ? 'image/jpeg' : (isVid ? 'video/mp4' : (isPdf ? 'application/pdf' : '')));
           
@@ -720,7 +719,7 @@
 
           const safeUrl = escapeAttr(downloadUrl);
           const safeTitle = escapeAttr(displayName);
-          const direction = item.direction || 'Received';
+          const direction = item.direction || (item.isOutgoing ? 'From PC' : 'Received');
           const formattedSize = item.size ? formatFileSize(item.size) : 'File';
           const subtitle = `${direction} · ${formattedSize}`;
 
@@ -728,8 +727,9 @@
           if (isImg) {
             clickHandler = `onclick="openMobileImageLightbox('${safeUrl}', '${safeTitle}')"`;
           } else if (isVid) {
+            const vidPrefix = item.isOutgoing ? '__shared__/' : '__received__/';
             const vidStreamUrl = item.filename 
-              ? `/files/download?path=${encodeURIComponent('__received__/' + item.filename)}&stream=true`
+              ? `/files/download?path=${encodeURIComponent(vidPrefix + item.filename)}&stream=true`
               : `${downloadUrl}?stream=true`;
             clickHandler = `onclick="openMobileVideoPlayer('${escapeAttr(vidStreamUrl)}', '${safeTitle}')"`;
           } else if (isPdf) {
@@ -804,34 +804,143 @@
       }
     }
 
-    // ─── PWA Install Banner ───────────────────────────────────
+    // ─── PWA Detection & OS-Aware Install Engine ──────────────
+    function isRunningInPWA() {
+      try {
+        return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+               window.navigator.standalone === true ||
+               (document.referrer && document.referrer.includes('android-app://')) ||
+               (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) ||
+               (window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isAndroidDevice() {
+      return /Android/.test(navigator.userAgent);
+    }
+
+    function updatePwaVisibility() {
+      const inPwa = isRunningInPWA();
+      const browserOnlyEls = document.querySelectorAll('.pwa-browser-only');
+      browserOnlyEls.forEach(el => {
+        if (inPwa) {
+          el.style.setProperty('display', 'none', 'important');
+        } else {
+          el.style.removeProperty('display');
+          if (!el.style.display || el.style.display === 'none') {
+            el.style.display = el.dataset.displayStyle || (el.tagName === 'BUTTON' ? 'inline-flex' : 'flex');
+          }
+        }
+      });
+
+      const pwaBanner = document.getElementById('pwaBanner');
+      if (pwaBanner) {
+        if (inPwa) {
+          pwaBanner.classList.remove('show');
+          pwaBanner.style.setProperty('display', 'none', 'important');
+        } else {
+          // Configure OS-aware text & icon
+          const pwaIcon = pwaBanner.querySelector('.pwa-icon');
+          const pwaTitle = pwaBanner.querySelector('.pwa-text strong');
+          const pwaSubtitle = pwaBanner.querySelector('.pwa-text span');
+          const pwaBtn = document.getElementById('pwaAdd');
+
+          if (isIOSDevice()) {
+            if (pwaIcon) {
+              pwaIcon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`;
+            }
+            if (pwaTitle) pwaTitle.textContent = 'Add to Home Screen';
+            if (pwaSubtitle) pwaSubtitle.textContent = 'Tap Share \u2192 "Add to Home Screen"';
+            if (pwaBtn) pwaBtn.textContent = 'Guide';
+          } else {
+            if (pwaIcon) {
+              pwaIcon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+            }
+            if (pwaTitle) pwaTitle.textContent = 'Install App (PWA)';
+            if (pwaSubtitle) pwaSubtitle.textContent = 'Fast 1-tap installation';
+            if (pwaBtn) pwaBtn.textContent = 'Install';
+          }
+        }
+      }
+    }
+
     function setupPWA() {
       let deferredPrompt = null;
+
+      // Update UI visibility and OS styling immediately
+      updatePwaVisibility();
+
+      // Show floating banner if running in browser and not dismissed
+      if (!isRunningInPWA() && sessionStorage.getItem('pwa_dismissed') !== '1') {
+        setTimeout(() => {
+          if (!isRunningInPWA() && sessionStorage.getItem('pwa_dismissed') !== '1') {
+            const pwaBanner = document.getElementById('pwaBanner');
+            if (pwaBanner) pwaBanner.classList.add('show');
+          }
+        }, 1200);
+      }
 
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
         window._pwaDeferredPrompt = e;
-        const pwaBanner = document.getElementById('pwaBanner');
-        if (pwaBanner) {
-          setTimeout(() => {
+        
+        if (!isRunningInPWA() && sessionStorage.getItem('pwa_dismissed') !== '1') {
+          const pwaBanner = document.getElementById('pwaBanner');
+          if (pwaBanner) {
             pwaBanner.classList.add('show');
-          }, 1500);
+            const pwaBtn = document.getElementById('pwaAdd');
+            if (pwaBtn) pwaBtn.textContent = 'Install';
+          }
         }
       });
 
       const handleInstallTrigger = async () => {
+        triggerHaptic(20);
         const promptEvent = deferredPrompt || window._pwaDeferredPrompt;
         if (promptEvent) {
-          promptEvent.prompt();
-          const result = await promptEvent.userChoice;
-          if (result.outcome === 'accepted') {
-            showToast('AiroDrop added to Home Screen!', 'success');
+          try {
+            promptEvent.prompt();
+            const result = await promptEvent.userChoice;
+            if (result && result.outcome === 'accepted') {
+              showToast('AiroDrop added to Home Screen!', 'success');
+              sessionStorage.setItem('pwa_dismissed', '1');
+              updatePwaVisibility();
+            }
+          } catch (err) {
+            console.error('[PWA] Prompt error:', err);
           }
           deferredPrompt = null;
           window._pwaDeferredPrompt = null;
         } else {
-          showToast('To install, open Chrome menu (⋮) and tap "Install app" or "Add to Home screen"', 'info', 5000);
+          if (isIOSDevice()) {
+            const modalApple = document.getElementById('mobileAppleSetupOverlay');
+            if (modalApple) modalApple.style.display = 'flex';
+          } else {
+            const modalAndroid = document.getElementById('mobileAndroidSetupOverlay');
+            if (modalAndroid) {
+              modalAndroid.style.display = 'flex';
+              showToast('In Chrome menu (\u22EE) at top right, tap "Add to Home screen"', 'info');
+              const btn = document.getElementById('btnTriggerPwaInstall');
+              if (btn) {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg><span>Tap Chrome Menu (\u22EE) \u2794 Add to Home screen</span>`;
+                btn.style.boxShadow = '0 0 20px rgba(34, 197, 94, 0.7)';
+                setTimeout(() => {
+                  if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.style.boxShadow = '';
+                  }
+                }, 4500);
+              }
+            }
+          }
         }
         const pwaBanner = document.getElementById('pwaBanner');
         if (pwaBanner) pwaBanner.classList.remove('show');
@@ -846,9 +955,22 @@
       const pwaClose = document.getElementById('pwaClose');
       if (pwaClose) {
         pwaClose.addEventListener('click', () => {
+          sessionStorage.setItem('pwa_dismissed', '1');
           const pwaBanner = document.getElementById('pwaBanner');
           if (pwaBanner) pwaBanner.classList.remove('show');
         });
+      }
+
+      window.addEventListener('appinstalled', () => {
+        showToast('AiroDrop PWA installed successfully!', 'success');
+        sessionStorage.setItem('pwa_dismissed', '1');
+        updatePwaVisibility();
+      });
+
+      if (window.matchMedia) {
+        try {
+          window.matchMedia('(display-mode: standalone)').addEventListener('change', updatePwaVisibility);
+        } catch (e) {}
       }
 
       // Register service worker
@@ -1095,6 +1217,7 @@
       const sseUrl = `/api/events?token=${token}`;
       const sse = new EventSource(sseUrl);
       _mobileSSE = sse;
+
       sse.addEventListener('scratchpad', (e) => {
         const data = JSON.parse(e.data);
         const scratchpad = document.getElementById('mobileScratchpad');
@@ -1107,6 +1230,31 @@
           scratchpadStatus.style.color = 'var(--success)';
         }
       });
+
+      // Real-time transfer notification from PC to Phone
+      sse.addEventListener('phone-queued', (e) => {
+        try {
+          const item = JSON.parse(e.data);
+          triggerHaptic(25);
+          playPingSound();
+          const label = item.type === 'text' 
+            ? 'New text from PC' 
+            : `New file: ${item.originalName || item.filename || 'File'}`;
+          showToast(label, 'success', 3500);
+          fetchPending(true);
+        } catch (err) {
+          fetchPending(true);
+        }
+      });
+
+      sse.addEventListener('phone-ack', () => {
+        fetchPending(true);
+      });
+
+      sse.addEventListener('new-item', () => {
+        fetchPending(true);
+      });
+
       sse.onerror = () => {
         sse.close();
         _mobileSSE = null;
@@ -1872,6 +2020,17 @@
           if (data.type === 'ping') {
             playPingSound();
             showToast('Device Pinged by PC!');
+            return;
+          }
+          if (data.type === 'phone_queued') {
+            triggerHaptic(25);
+            playPingSound();
+            const item = data.item;
+            const label = item && item.type === 'text' 
+              ? 'New text from PC' 
+              : `New file: ${(item && (item.originalName || item.filename)) || 'File'}`;
+            showToast(label, 'success', 3500);
+            fetchPending(true);
             return;
           }
           if (data.type === 'privacy_pause') {
@@ -3454,18 +3613,23 @@
         return;
       }
 
-      // Fallback: Invisible iframe blob download (Prevents top-level iOS PWA navigation to black QuickLook screen!)
-      const objectUrl = URL.createObjectURL(fileBlob);
-      let iframe = document.getElementById('hiddenDownloadIframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'hiddenDownloadIframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+      // Robust fallback: Direct Blob Download via Anchor Click
+      try {
+        const objectUrl = URL.createObjectURL(fileBlob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          try { document.body.removeChild(a); } catch(_) {}
+          URL.revokeObjectURL(objectUrl);
+        }, 15000);
+        if (typeof showToast === 'function') showToast('File download started!', 'success');
+      } catch (err) {
+        console.error('[Download] Anchor download fallback failed:', err);
       }
-      iframe.src = objectUrl;
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 15000);
-      if (typeof showToast === 'function') showToast('File download saved!', 'success');
       window.closeAllMobileModals();
     };
 
@@ -3489,6 +3653,9 @@
       } else if (rawUrl.includes('/received/')) {
         const fn = rawUrl.split('/received/').pop().split('?')[0];
         relPath = '__received__/' + decodeURIComponent(fn);
+      } else if (rawUrl.includes('/shared/')) {
+        const fn = rawUrl.split('/shared/').pop().split('?')[0];
+        relPath = '__shared__/' + decodeURIComponent(fn);
       }
       
       const token = (typeof getDeviceToken === 'function' ? getDeviceToken() : (localStorage.getItem('deviceToken') || ''));
@@ -3766,6 +3933,10 @@
         const url = e.data.url || e.data.src;
         const name = e.data.name || e.data.title || 'File Preview';
         if (url) window.openMobileNoPreview(url, name);
+      } else if (e.data.type === 'direct-download') {
+        const url = e.data.url || e.data.src;
+        const name = e.data.name || e.data.title || 'Download File';
+        if (url) window.triggerFrictionlessDownload(url, name);
       } else if (e.data.type === 'open-download-modal') {
         const url = e.data.url || e.data.src;
         const name = e.data.name || e.data.title || 'Download File';

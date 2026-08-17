@@ -73,9 +73,6 @@ self.addEventListener('fetch', (event) => {
       url.pathname.startsWith('/trackpad') ||
       url.pathname.startsWith('/files/') ||
       url.pathname.startsWith('/received/') ||
-      url.pathname === '/mobile-app.js' ||
-      url.pathname === '/mobile.html' ||
-      url.pathname === '/m' ||
       url.pathname === '/auth-pin' ||
       url.pathname === '/auth-pin.html' ||
       event.request.url.startsWith('ws') || 
@@ -83,10 +80,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Network-First for HTML page navigations
+  // 2. Network-First for HTML page navigations & app entry points
   const isDocument = event.request.mode === 'navigate' || 
                      url.pathname.endsWith('.html') || 
-                     url.pathname === '/';
+                     url.pathname === '/' ||
+                     url.pathname === '/m' ||
+                     url.pathname === '/mobile.html';
 
   if (isDocument) {
     event.respondWith(

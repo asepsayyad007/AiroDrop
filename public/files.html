@@ -678,6 +678,27 @@
 
   function openDownloadPage() {
     if (selectedFiles.size === 0) return;
+    if (selectedFiles.size === 1) {
+      const path = Array.from(selectedFiles.keys())[0];
+      const name = Array.from(selectedFiles.values())[0]?.name || path.split('/').pop();
+      const downloadUrl = `/files/download?path=${encodeURIComponent(path)}`;
+      if (window.self !== window.top) {
+        window.parent.postMessage({
+          type: 'direct-download',
+          url: downloadUrl,
+          name: name
+        }, '*');
+      } else {
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 1000);
+      }
+      exitSelectMode();
+      return;
+    }
     const paths = Array.from(selectedFiles.keys());
     const url = buildDownloadPageUrl(paths);
     if (window.self !== window.top) {
@@ -1000,13 +1021,22 @@
 
   function downloadFile(entry) {
     const rel = currentPath ? currentPath+'/'+entry.name : entry.name;
-    const pageUrl = buildDownloadPageUrl([rel]);
+    const downloadUrl = `/files/download?path=${encodeURIComponent(rel)}`;
 
     if (window.self !== window.top) {
-      // In PWA iframe — show QR/copy modal for the download page URL
-      window.parent.postMessage({ type: 'open-download-modal', url: pageUrl, name: entry.name }, '*');
+      // Delegate to parent's instant frictionless download engine
+      window.parent.postMessage({
+        type: 'direct-download',
+        url: downloadUrl,
+        name: entry.name
+      }, '*');
     } else {
-      window.open(pageUrl, '_blank');
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = entry.name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 1000);
     }
   }
 

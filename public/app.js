@@ -1280,8 +1280,8 @@
 
     if (serverInfo) {
       const infoIPSetup = $('#infoIPSetup');
-      if (infoIPSetup) infoIPSetup.textContent = serverInfo.ip;
-      $$('.infoIPSetupText').forEach(el => el.textContent = `https://${serverInfo.ip}:${serverInfo.port || 3478}/m`);
+      const proto = serverInfo.protocol || (serverInfo.https ? 'https' : 'http');
+      $$('.infoIPSetupText').forEach(el => el.textContent = `${proto}://${serverInfo.ip}:${serverInfo.port || 3478}/m`);
       $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port || 3478, 10) + 1);
       $$('.infoShortcutUrlText').forEach(el => el.textContent = `http://${serverInfo.ip}:${parseInt(serverInfo.port || 3478, 10) + 1}`);
 
@@ -1295,7 +1295,7 @@
       }
 
       if (imgQuickPairHostQr) {
-        const pairUrl = `https://${serverInfo.ip}:${serverInfo.port || 3478}/m`;
+        const pairUrl = `${proto}://${serverInfo.ip}:${serverInfo.port || 3478}/m`;
         imgQuickPairHostQr.src = getThemedQrUrl(pairUrl);
       }
     }

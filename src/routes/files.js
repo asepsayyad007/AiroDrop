@@ -10,15 +10,38 @@ const { getLogger } = require('../logger');
 const logger = getLogger();
 
 function safePath(relPath) {
-  const cleanRel = (typeof relPath === 'string') ? relPath : '';
+  let cleanRel = (typeof relPath === 'string') ? relPath.trim() : '';
 
-  // Handle __received__/ prefix for files received from PC
-  if (cleanRel.startsWith('__received__/')) {
-    const fn = cleanRel.replace(/^__received__\//, '');
+  // Strip query string if accidentally attached to path param
+  if (cleanRel.includes('?')) {
+    cleanRel = cleanRel.split('?')[0];
+  }
+
+  // Normalize path separators
+  cleanRel = cleanRel.replace(/\\/g, '/');
+
+  // Normalize folder prefixes
+  if (cleanRel.startsWith('/shared/')) {
+    cleanRel = '__shared__/' + cleanRel.slice(8);
+  } else if (cleanRel.startsWith('/received/')) {
+    cleanRel = '__received__/' + cleanRel.slice(10);
+  }
+
+  // Handle __received__/ or __shared__/ prefix for files
+  if (cleanRel.startsWith('__received__/') || cleanRel.startsWith('__shared__/')) {
+    const fn = cleanRel.replace(/^__(received|shared)__\//, '');
+    
+    // 1. Check SHARE_DIR (outgoing files queued for phone)
+    if (state.SHARE_DIR) {
+      const shareCheck = validatePath(fn, state.SHARE_DIR);
+      if (shareCheck.valid && fs.existsSync(shareCheck.resolved)) return shareCheck.resolved;
+    }
+    // 2. Check SAVE_DIR (received files)
     if (state.SAVE_DIR) {
       const saveCheck = validatePath(fn, state.SAVE_DIR);
       if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
     }
+    // 3. Check TEMP_DIR (temporary files)
     if (state.TEMP_DIR) {
       const tempCheck = validatePath(fn, state.TEMP_DIR);
       if (tempCheck.valid && fs.existsSync(tempCheck.resolved)) return tempCheck.resolved;
@@ -39,10 +62,16 @@ function safePath(relPath) {
     }
   }
 
-  // Fallback: check SAVE_DIR and TEMP_DIR for bare filenames
-  if (cleanRel && state.SAVE_DIR) {
-    const saveCheck = validatePath(cleanRel, state.SAVE_DIR);
-    if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
+  // Fallback: check SHARE_DIR, SAVE_DIR and TEMP_DIR for bare filenames or relative paths
+  if (cleanRel) {
+    if (state.SHARE_DIR) {
+      const shareCheck = validatePath(cleanRel, state.SHARE_DIR);
+      if (shareCheck.valid && fs.existsSync(shareCheck.resolved)) return shareCheck.resolved;
+    }
+    if (state.SAVE_DIR) {
+      const saveCheck = validatePath(cleanRel, state.SAVE_DIR);
+      if (saveCheck.valid && fs.existsSync(saveCheck.resolved)) return saveCheck.resolved;
+    }
     if (state.TEMP_DIR) {
       const tempCheck = validatePath(cleanRel, state.TEMP_DIR);
       if (tempCheck.valid && fs.existsSync(tempCheck.resolved)) return tempCheck.resolved;

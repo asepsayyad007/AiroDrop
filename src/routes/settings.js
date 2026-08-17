@@ -636,6 +636,11 @@ router.post('/send-to-phone', uploadOutgoing.single('file'), async (req, res) =>
         cleanupOutgoingFile(popped);
       }
       utils.broadcastSSE('phone-queued', item);
+      if (state.wss) {
+        for (const client of state.wss.clients) {
+          try { client.send(JSON.stringify({ type: 'phone_queued', item })); } catch (_) {}
+        }
+      }
       return res.json({ success: true, id: item.id, message: 'File queued for iPhone' });
     }
 
@@ -654,6 +659,11 @@ router.post('/send-to-phone', uploadOutgoing.single('file'), async (req, res) =>
         cleanupOutgoingFile(popped);
       }
       utils.broadcastSSE('phone-queued', item);
+      if (state.wss) {
+        for (const client of state.wss.clients) {
+          try { client.send(JSON.stringify({ type: 'phone_queued', item })); } catch (_) {}
+        }
+      }
       
       // Auto-copy to PC system clipboard
       try {
@@ -679,6 +689,11 @@ router.post('/send-to-phone', uploadOutgoing.single('file'), async (req, res) =>
         cleanupOutgoingFile(popped);
       }
       utils.broadcastSSE('phone-queued', item);
+      if (state.wss) {
+        for (const client of state.wss.clients) {
+          try { client.send(JSON.stringify({ type: 'phone_queued', item })); } catch (_) {}
+        }
+      }
       return res.json({ success: true, id: item.id, message: 'Image queued for iPhone' });
     }
 

@@ -59,7 +59,7 @@ app.get('/vendor/qrcode.min.js', (req, res) => {
   }
 });
 
-// Serve image and file downloads from the dynamic save directory or temporary received directory
+// Serve image and file downloads from the dynamic save directory, temporary received directory, or share directory
 app.use('/received', (req, res, next) => {
   const relPath = req.path;
   if (relPath && relPath !== '/') {
@@ -71,6 +71,12 @@ app.use('/received', (req, res, next) => {
       const targetTemp = path.join(state.TEMP_DIR, relPath);
       if (fs.existsSync(targetTemp)) {
         return express.static(state.TEMP_DIR, { acceptRanges: true })(req, res, next);
+      }
+    }
+    if (state.SHARE_DIR) {
+      const targetShare = path.join(state.SHARE_DIR, relPath);
+      if (fs.existsSync(targetShare)) {
+        return express.static(state.SHARE_DIR, { acceptRanges: true })(req, res, next);
       }
     }
   }
