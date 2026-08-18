@@ -856,7 +856,8 @@ ipcMain.on('get-status', (event) => {
 ipcMain.on('open-dashboard', () => {
   const port = server.getPort();
   if (port) {
-    shell.openExternal(`http://${server.getLocalIP()}:${port}`);
+    const proto = server.getHttpsEnabled() ? 'https' : 'http';
+    shell.openExternal(`${proto}://${server.getLocalIP()}:${port}`);
   }
 });
 

@@ -13,11 +13,11 @@
   if (isElectron && ipcRenderer) {
     try {
       const port = ipcRenderer.sendSync('get-port-sync') || 3478;
-      const protocol = ipcRenderer.sendSync('get-protocol-sync') || 'http';
+      const protocol = ipcRenderer.sendSync('get-protocol-sync') || 'https';
       apiBase = `${protocol}://localhost:${port}`;
     } catch (e) {
       console.error('IPC get-port-sync/get-protocol-sync failed:', e);
-      apiBase = `http://localhost:3478`;
+      apiBase = `https://localhost:3478`;
     }
   }
 
@@ -1280,7 +1280,7 @@
 
     if (serverInfo) {
       const infoIPSetup = $('#infoIPSetup');
-      const proto = serverInfo.protocol || (serverInfo.https ? 'https' : 'http');
+      const proto = serverInfo.protocol || (serverInfo.https !== false ? 'https' : 'http');
       $$('.infoIPSetupText').forEach(el => el.textContent = `${proto}://${serverInfo.ip}:${serverInfo.port || 3478}/m`);
       $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port || 3478, 10) + 1);
       $$('.infoShortcutUrlText').forEach(el => el.textContent = `http://${serverInfo.ip}:${parseInt(serverInfo.port || 3478, 10) + 1}`);
@@ -2954,10 +2954,11 @@
         if (confirm("Are you sure you want to unpair all authorized devices? All active mobile connections will be revoked.")) {
           try {
             const res = await doFetch('/api/auth/unpair-all', { method: 'POST' });
-            if (res && res.success) {
+            if (res && (res.ok || res.success)) {
               showToast('All devices unpaired', 'success');
-              renderPairedDevicesTab();
-              renderRightPanelConnectedDevices();
+              if (typeof renderPairedDevicesTab === 'function') renderPairedDevicesTab();
+              if (typeof renderRightPanelConnectedDevices === 'function') renderRightPanelConnectedDevices();
+              if (typeof fetchPairedDevicesCount === 'function') fetchPairedDevicesCount();
             } else {
               showToast('Failed to unpair all devices', 'error');
             }
@@ -3805,7 +3806,7 @@
     const shortcutSecretInput = $('#shortcutSecretInput');
     const pairedDevicesStatusText = $('#pairedDevicesStatusText');
     const btnRegeneratePin = $('#btnRegeneratePin');
-    const btnRevokeAllPaired = $('#btnRevokeAllPaired') || $('#btnUnpairAllDevices');
+    const btnRevokeAllPaired = $('#btnRevokeAllPaired');
 
     loadSettingsData();
 

@@ -23,7 +23,7 @@ const state = {
   AUTO_OPEN_LINKS: false,
   LAUNCH_ON_STARTUP: false,
   AUTO_UPDATE: true,
-  HTTPS_ENABLED: false,
+  HTTPS_ENABLED: true,
   CONTEXT_MENU_ENABLED: false,
 
   // Security & Authentication Settings

@@ -56,7 +56,7 @@ function validateConfig(raw, baseDir) {
   config.autoOpenLinks = toBool(raw.autoOpenLinks, false);
   config.launchOnStartup = toBool(raw.launchOnStartup, false);
   config.autoUpdate = toBool(raw.autoUpdate, true);
-  config.httpsEnabled = toBool(raw.httpsEnabled, false);
+  config.httpsEnabled = toBool(raw.httpsEnabled, true);
   config.contextMenuEnabled = toBool(raw.contextMenuEnabled, false);
 
   // ─── Numeric Settings ───────────────────────────────────────
