@@ -373,6 +373,12 @@ function startServer(portCallback) {
       console.log('');
 
       if (portCallback) portCallback(state.PORT);
+
+      // Announce presence on cloud radar beacon for instant 1-tap mobile pairing
+      try {
+        const radarBeacon = require('./src/radarBeacon');
+        radarBeacon.startBeacon();
+      } catch (_) {}
     });
 
     setupWebSocket(state.serverInstance, serverEvents);
@@ -491,6 +497,12 @@ function stopServer(callback) {
     state.wss.close();
     state.wss = null;
   }
+
+  // Stop cloud radar beacon
+  try {
+    const radarBeacon = require('./src/radarBeacon');
+    radarBeacon.stopBeacon();
+  } catch (_) {}
 
   // 2. Close SSE connections
   if (state.sseClients) {

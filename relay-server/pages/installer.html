@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AiroDrop</title>
+  <meta name="theme-color" content="#06060c">
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="alternate icon" type="image/png" href="/logo.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(16, 20, 30, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-highlight: rgba(255, 255, 255, 0.2);
+      --accent-gradient: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Aurora Glow */
+    .aurora-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .orb-1 {
+      position: absolute;
+      top: -15%;
+      left: 15%;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 106, 0, 0.15) 0%, transparent 70%);
+      filter: blur(60px);
+    }
+
+    .orb-2 {
+      position: absolute;
+      bottom: -15%;
+      right: 15%;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(238, 9, 121, 0.13) 0%, transparent 70%);
+      filter: blur(60px);
+    }
+
+    /* Main Responsive Card Container */
+    .installer-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-highlight);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(255, 106, 0, 0.35);
+    }
+
+    .brand-name {
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #4ade80;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Compact Sleek Radar Box */
+    .radar-box {
+      position: relative;
+      width: 100%;
+      height: 150px;
+      border-radius: 18px;
+      background: rgba(8, 11, 18, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .radar-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      pointer-events: none;
+    }
+
+    .ring-1 { width: 50px; height: 50px; }
+    .ring-2 { width: 100px; height: 100px; }
+    .ring-3 { width: 150px; height: 150px; }
+
+    .radar-pulse-wave {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 106, 0, 0.45);
+      animation: radarPulse 2.8s infinite ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes radarPulse {
+      0% { width: 30px; height: 30px; opacity: 0.9; }
+      100% { width: 180px; height: 180px; opacity: 0; }
+    }
+
+    .radar-center-node {
+      position: relative;
+      z-index: 2;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(255, 106, 0, 0.4);
+    }
+
+    /* Discovered Devices List */
+    .devices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .device-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .device-card:hover, .device-card:active {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .device-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .device-icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .device-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .device-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .device-meta {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ─── Pure Transparent Frosted Glass Buttons ─── */
+    .btn-primary, .connect-action-btn, #btnManualConnect {
+      position: relative;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      cursor: pointer;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .btn-primary::after, .connect-action-btn::after, #btnManualConnect::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 100%);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+    }
+
+    .btn-primary:hover, .connect-action-btn:hover, #btnManualConnect:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border-color: rgba(255, 255, 255, 0.35);
+      border-top-color: rgba(255, 255, 255, 0.55);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-primary:hover::after, .connect-action-btn:hover::after, #btnManualConnect:hover::after {
+      opacity: 1;
+    }
+
+    .btn-primary:active, .connect-action-btn:active, #btnManualConnect:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 14px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .connect-action-btn {
+      padding: 7px 13px;
+      border-radius: 9px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      position: relative;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      color: #cbd5e1;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      color: #ffffff;
+    }
+
+    .btn-secondary:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-glass-sm {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.2s;
+    }
+
+    .btn-glass-sm:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+
+    /* Minimal Step Hint Strip */
+    .step-hint-box {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.3;
+    }
+
+    .step-hint-badge {
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 6px;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    /* Minimal Manual Input Box */
+    .manual-input-box {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding-top: 12px;
+    }
+
+    .manual-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .manual-input:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Minimal Success Screen */
+    .success-check-badge {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(34, 197, 94, 0.4);
+      margin: 0 auto;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="aurora-bg">
+    <div class="orb-1"></div>
+    <div class="orb-2"></div>
+  </div>
+
+  <div class="installer-container">
+
+    <!-- ─── VIEW 1: RADAR DISCOVERY ─── -->
+    <div id="viewRadar" class="glass-card">
+      
+      <div class="header-bar">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <h1 class="brand-name">AiroDrop</h1>
+        </div>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>Radar Active</span>
+        </div>
+      </div>
+
+      <!-- Radar Animation Box -->
+      <div class="radar-box">
+        <div class="radar-ring ring-1"></div>
+        <div class="radar-ring ring-2"></div>
+        <div class="radar-ring ring-3"></div>
+        <div class="radar-pulse-wave"></div>
+        <div class="radar-center-node">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+        </div>
+      </div>
+
+      <!-- Discovered Devices List -->
+      <div id="discoveredDevicesList" class="devices-list"></div>
+
+      <!-- Manual IP Fallback -->
+      <div class="manual-input-box">
+        <input type="text" id="manualIpInput" class="manual-input" placeholder="Enter IP (e.g. 192.168.1.22:3478)">
+        <button id="btnManualConnect" class="connect-action-btn">Connect</button>
+      </div>
+
+    </div>
+
+    <!-- ─── VIEW 2: OS-AWARE PWA INSTALLATION ─── -->
+    <div id="viewInstall" class="glass-card hidden">
+      
+      <div class="header-bar">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <h1 class="brand-name">Install App</h1>
+        </div>
+        <button id="btnBackToRadar" class="btn-glass-sm">← Change PC</button>
+      </div>
+
+      <!-- Target Host Pill -->
+      <div style="background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="status-dot"></span>
+          <span style="font-size: 0.82rem; font-weight: 700; color: #ffffff;" id="targetDeviceName">AsepPC</span>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono);" id="targetDeviceHost">192.168.1.22:3478</span>
+      </div>
+
+      <!-- Android Flow -->
+      <div id="sectionAndroid" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnInstallPwaAndroid" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Install AiroDrop (1-Tap)</span>
+        </button>
+
+        <div class="step-hint-box">
+          <span class="step-hint-badge">Menu</span>
+          <span>Or tap Chrome (⋮) → <strong>Install app</strong></span>
+        </div>
+      </div>
+
+      <!-- Apple iOS Flow -->
+      <div id="sectionIos" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="step-hint-box">
+          <span class="step-hint-badge">Safari</span>
+          <span>Tap <strong>Share (⎋)</strong> → <strong>Add to Home Screen</strong></span>
+        </div>
+
+        <button id="btnConfirmIosInstall" class="btn-primary">
+          <span>I Added the App</span>
+        </button>
+      </div>
+
+      <!-- Fallback Launch in Browser -->
+      <button id="btnLaunchInBrowser" class="btn-secondary">
+        <span>Open in Browser</span>
+      </button>
+
+    </div>
+
+    <!-- ─── VIEW 3: SUCCESS GUIDANCE ─── -->
+    <div id="viewSuccess" class="glass-card hidden" style="text-align: center;">
+      
+      <div class="success-check-badge">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <h2 style="font-size: 1.05rem; font-weight: 800; color: #ffffff;">Ready on Home Screen</h2>
+        <p style="font-size: 0.78rem; color: var(--text-secondary);">Close this tab and open <strong>AiroDrop</strong> from your Home Screen.</p>
+      </div>
+
+      <button id="btnOpenWebPortalSuccess" class="btn-secondary">
+        <span>Open in Browser Anyway</span>
+      </button>
+
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      let targetHost = '';
+      let targetName = 'AsepPC';
+      let targetPin = '';
+      let deferredPrompt = null;
+
+      const viewRadar = document.getElementById('viewRadar');
+      const viewInstall = document.getElementById('viewInstall');
+      const viewSuccess = document.getElementById('viewSuccess');
+
+      const discoveredDevicesList = document.getElementById('discoveredDevicesList');
+      const manualIpInput = document.getElementById('manualIpInput');
+      const btnManualConnect = document.getElementById('btnManualConnect');
+
+      const targetDeviceName = document.getElementById('targetDeviceName');
+      const targetDeviceHost = document.getElementById('targetDeviceHost');
+      const btnBackToRadar = document.getElementById('btnBackToRadar');
+      const sectionAndroid = document.getElementById('sectionAndroid');
+      const sectionIos = document.getElementById('sectionIos');
+      const btnInstallPwaAndroid = document.getElementById('btnInstallPwaAndroid');
+      const btnConfirmIosInstall = document.getElementById('btnConfirmIosInstall');
+      const btnLaunchInBrowser = document.getElementById('btnLaunchInBrowser');
+      const btnOpenWebPortalSuccess = document.getElementById('btnOpenWebPortalSuccess');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (btnInstallPwaAndroid) {
+          btnInstallPwaAndroid.style.display = 'inline-flex';
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        showSuccessView();
+      });
+
+      const discoveredHostsMap = new Map();
+
+      function renderDiscoveredDevice(dev) {
+        if (!dev || !dev.host) return;
+        discoveredHostsMap.set(dev.host, dev);
+
+        let html = '';
+        discoveredHostsMap.forEach(d => {
+          html += `
+            <div class="device-card" onclick="selectDevice('${escapeAttr(d.host)}', '${escapeAttr(d.name)}', '${escapeAttr(d.pin || '')}')">
+              <div class="device-left">
+                <div class="device-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <div class="device-info">
+                  <span class="device-name">${escapeHtml(d.name)}</span>
+                  <span class="device-meta">
+                    <span style="width:5px; height:5px; border-radius:50%; background:#22c55e; display:inline-block;"></span>
+                    ${escapeHtml(d.host)}
+                  </span>
+                </div>
+              </div>
+              <button class="connect-action-btn">
+                <span>Connect</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          `;
+        });
+
+        discoveredDevicesList.innerHTML = html;
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramLan = urlParams.get('lan') || urlParams.get('ip') || '';
+      const paramName = urlParams.get('name') || '';
+      const paramPin = urlParams.get('pin') || '';
+
+      if (paramLan) {
+        targetHost = paramLan;
+        if (paramName) targetName = paramName;
+        if (paramPin) targetPin = paramPin;
+
+        renderDiscoveredDevice({
+          name: targetName,
+          host: targetHost,
+          pin: targetPin
+        });
+      }
+
+      startRadarScanning();
+
+      function startRadarScanning() {
+        let ws = null;
+        let probeInterval = null;
+
+        function connectWs() {
+          try {
+            const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${wsProto}//${window.location.host}/ws`);
+
+            ws.onopen = () => {
+              ws.send(JSON.stringify({ type: 'discover-radar-probe' }));
+              if (probeInterval) clearInterval(probeInterval);
+              probeInterval = setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ type: 'discover-radar-probe' }));
+                }
+              }, 2500);
+            };
+
+            ws.onmessage = (event) => {
+              try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'radar-beacon' && msg.host) {
+                  renderDiscoveredDevice({
+                    name: msg.name || 'AiroDrop PC',
+                    host: msg.host,
+                    pin: msg.pin || ''
+                  });
+                }
+              } catch (e) {}
+            };
+
+            ws.onclose = () => {
+              if (probeInterval) clearInterval(probeInterval);
+              setTimeout(connectWs, 4000);
+            };
+
+            ws.onerror = () => {
+              if (ws) ws.close();
+            };
+          } catch (e) {}
+        }
+
+        connectWs();
+      }
+
+      window.selectDevice = function(host, name, pin) {
+        targetHost = host;
+        targetName = name || 'AiroDrop PC';
+        targetPin = pin || '';
+
+        localStorage.setItem('airodrop_paired_host', targetHost);
+        localStorage.setItem('airodrop_paired_name', targetName);
+        if (targetPin) localStorage.setItem('airodrop_auth_pin', targetPin);
+
+        showInstallView();
+      };
+
+      btnManualConnect.addEventListener('click', () => {
+        const val = manualIpInput.value.trim();
+        if (val) {
+          const cleanHost = val.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+          selectDevice(cleanHost, 'Desktop PC', '');
+        }
+      });
+
+      btnBackToRadar.addEventListener('click', () => {
+        viewInstall.classList.add('hidden');
+        viewRadar.classList.remove('hidden');
+      });
+
+      function showInstallView() {
+        targetDeviceName.textContent = targetName;
+        targetDeviceHost.textContent = targetHost;
+
+        viewRadar.classList.add('hidden');
+        viewSuccess.classList.add('hidden');
+        viewInstall.classList.remove('hidden');
+
+        const ua = navigator.userAgent || '';
+        const isIos = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isIos) {
+          sectionIos.classList.remove('hidden');
+          sectionAndroid.classList.add('hidden');
+        } else {
+          sectionAndroid.classList.remove('hidden');
+          sectionIos.classList.add('hidden');
+        }
+      }
+
+      btnInstallPwaAndroid.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            showSuccessView();
+          }
+          deferredPrompt = null;
+        } else {
+          showSuccessView();
+        }
+      });
+
+      btnConfirmIosInstall.addEventListener('click', () => {
+        showSuccessView();
+      });
+
+      btnLaunchInBrowser.addEventListener('click', () => {
+        navigateToPortal();
+      });
+
+      btnOpenWebPortalSuccess.addEventListener('click', () => {
+        navigateToPortal();
+      });
+
+      function showSuccessView() {
+        viewRadar.classList.add('hidden');
+        viewInstall.classList.add('hidden');
+        viewSuccess.classList.remove('hidden');
+      }
+
+      function navigateToPortal() {
+        if (targetHost) {
+          const proto = targetHost.includes('3478') ? 'https:' : window.location.protocol;
+          window.location.href = `${proto}//${targetHost}/m`;
+        } else {
+          window.location.href = '/m';
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      function escapeAttr(str) {
+        if (!str) return '';
+        return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+    })();
+  </script>
+</body>
+</html>

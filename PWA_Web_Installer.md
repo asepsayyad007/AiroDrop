@@ -1,116 +1,90 @@
-# AiroDrop — PWA Web Installer (`airodrop.site/installer`) & Infrastructure Blueprint
+# Implementation Plan — AiroDrop OS-Aware PWA Web Installer (`https://airodrop.site/install`)
 
-This document specifies the architecture, OS-aware installer logic, container repurposing, and zero-downtime offline fallback for **`https://airodrop.site/installer`**.
+This document specifies the complete architectural design and implementation plan for the **AiroDrop PWA Web Installer** hosted at **`https://airodrop.site/install`**.
 
 ---
 
-## 1. 🎯 Executive Architecture: `airodrop.site/installer`
-
-The public gateway **`https://airodrop.site/installer`** is an **OS-Aware Web Installer** that provides 1-tap Progressive Web App (PWA) installation and peer-to-peer pairing for every mobile and desktop operating system with zero friction and zero cost.
+## 1. User Journey & Core Interaction Flow
 
 ```mermaid
 flowchart TD
-    subgraph Cloud ["Oracle Cloud (Always Free Tier)"]
-        NPM["Nginx Proxy Manager (Port 80/443)<br/>Let's Encrypt SSL (airodrop.site)"]
-        Container["Repurposed Container (Port 4000)<br/>• /installer (OS-Aware Web Installer)<br/>• /m (Standalone PWA Shell)<br/>• /ws (Real-Time Signaling)"]
-        NextJS["airodrop-landing-page (Port 3000)<br/>Main Landing Website (/)"]
-    end
-
-    subgraph UserLAN ["User Local Network (Home / Office Wi-Fi)"]
-        PC["AiroDrop PC App (Port 3478)<br/>Generates QR: https://airodrop.site/installer?lan=192.168.1.120:3478"]
-        Phone["Mobile Device (Android / iOS)"]
-    end
-
-    %% Flow
-    PC -- "1. Shows QR Code" --> Phone
-    Phone -- "2. Opens https://airodrop.site/installer" --> NPM
-    NPM --> Container
-    Phone -- "3. 1-Tap Installs PWA" --> Phone
-    Phone <== "4. Direct Local Wi-Fi Transfer (Gigabit Speeds)" ==> PC
+    A["1. User visits https://airodrop.site/install<br/>(or scans PC QR code)"] --> B["2. Discovery Radar View<br/>(Finds local AiroDrop PC on LAN)"]
+    B --> C["3. User Taps PC to Connect"]
+    C --> D{"4. OS Detection"}
+    
+    D -- "Android" --> E["Android 1-Tap Install View<br/>• 1-Tap Native PWA Install Button (beforeinstallprompt)<br/>• Fallback Chrome 3-Dot Guide"]
+    D -- "iOS / iPadOS" --> F["Apple iOS Safari Guide View<br/>• 3-Step Visual Animation: Share ➔ Add to Home Screen ➔ Add<br/>• Direct Web Portal Button"]
+    
+    E --> G["5. Post-Install Success View<br/>'Installation Complete!'<br/>Prompt: Close browser & open AiroDrop from Home Screen"]
+    F --> G
+    
+    G --> H["6. Standalone Launch from Home Screen<br/>Opens standalone PWA with cached PC LAN IP<br/>Direct Local Wi-Fi Gigabit Transfer"]
 ```
 
 ---
 
-## 2. 📱 OS-Aware Installer Capabilities (`/installer`)
+## 2. Key Modules to Implement
 
-When a visitor opens `https://airodrop.site/installer` (or scans the QR code from the PC app), the page dynamically detects their OS and adapts:
+### Module A: Radar Device Discovery (`pages/installer.html`)
+- **Discovery Engine**:
+  - Checks URL query parameters (`?lan=192.168.1.X:3478&name=MyPC&pin=1405`) when opened via PC QR code.
+  - If opened directly (`https://airodrop.site/install`), triggers a local network probe / WebRTC discovery or WebSocket room pairing over `wss://airodrop.site/ws`.
+  - Renders a clean, dynamic radar interface (AirDrop / Snapdrop style) displaying detected PC devices with name, IP, and live status.
+  - Manual IP entry fallback for custom subnet environments.
 
-### A. Android (Google Chrome, Samsung Internet, Brave, Firefox)
-- **1-Tap Automatic Install Button**:
-  - Captures the browser's `beforeinstallprompt` event.
-  - Clicking **"Install AiroDrop (1-Tap)"** triggers the native Android WebAPK installation prompt immediately.
-  - Automatically saves the target PC's LAN IP (`?lan=192.168.1.120:3478`) into `localStorage` so the installed app connects to the PC instantly upon launch.
-- **Visual Fallback Guide**:
-  - Highlights step-by-step visual instructions for Chrome's 3-dot menu (`⋮`) $\to$ **"Add to Home screen"**.
+### Module B: OS-Aware PWA Installation Screen
+- **Device Selection Action**:
+  - Tapping a detected device caches its target LAN address and authorization PIN in `localStorage` (`airodrop_paired_host`, `airodrop_auth_pin`).
+  - Smoothly transitions the interface to the OS-specific installation view.
+- **Android Flow**:
+  - Captures `beforeinstallprompt` event.
+  - Displays prominent **"Install AiroDrop (1-Tap)"** button with high-contrast styling.
+  - Includes an expandable visual guide for Chrome's 3-dot menu (`⋮` $\to$ **Add to Home screen**).
+- **iOS Safari Flow**:
+  - Automatically identifies iPhone and iPad Safari browsers.
+  - Displays a 3-step visual instruction card:
+    1. Tap **Share** (`⎋`) on Safari bottom navigation.
+    2. Tap **Add to Home Screen** (`➕`).
+    3. Tap **Add** in top right.
+  - Displays secondary **"Launch Web Portal Now"** action.
 
-### B. Apple iOS & iPadOS (Safari)
-- Detects iPhone / iPad user agents.
-- Renders an interactive animated 3-step guide:
-  1. Tap the **Share Button** (`⎋`) at the bottom of Safari.
-  2. Scroll down and tap **"Add to Home Screen"** (`➕`).
-  3. Tap **Add** in the top-right corner.
-- Provides a **"Launch Web Portal Now"** button for instant in-browser use.
+### Module C: Post-Installation Completion Guidance
+- **App Installed Event Handling**:
+  - Listens to `appinstalled` event on Android.
+  - When installed or confirmed, displays the completion screen:
+    - **Header**: *"AiroDrop App Installed!"*
+    - **Instructions**: *"Please close this browser tab and launch AiroDrop from your Home Screen. It will automatically connect to your PC."*
+    - Button: *"Launch Web Portal Now"* (for instant fallback).
 
-### C. Desktop (Windows / macOS / Linux)
-- Detects desktop environments and presents direct download options for the Windows companion desktop application.
-
----
-
-## 3. 🔄 Container Repurposing on Oracle Cloud
-
-We repurpose the existing `airodrop-relay` container (running on port 4000 in `nginx_default` network) into the unified **AiroDrop Gateway & Web Installer**:
-
-### Endpoints Hosted by the Container:
-1. **`GET /installer`**: Serves the OS-aware responsive PWA Web Installer (`pages/installer.html`).
-2. **`GET /m`**: Serves the standalone mobile PWA interface (`mobile.html` + `mobile-app.js`).
-3. **`GET /manifest.json`**: Serves the compliant PWA manifest with 192x192 & 512x512 PNG maskable icons.
-4. **`GET /sw.js`**: Serves the Service Worker with offline caching strategies.
-5. **`WebSocket /ws`**: Handles lightweight peer-to-peer signaling between PC and mobile.
-
-### Nginx Proxy Manager (NPM) Route Mapping on `airodrop.site`:
-| Path | Target Container | Purpose |
-| :--- | :--- | :--- |
-| **`/installer`** | `http://airodrop-relay:4000/installer` | OS-Aware Web Installer |
-| **`/m`** | `http://airodrop-relay:4000/m` | Mobile PWA Shell |
-| **`/manifest.json`** | `http://airodrop-relay:4000/manifest.json` | PWA Manifest |
-| **`/sw.js`** | `http://airodrop-relay:4000/sw.js` | Service Worker |
-| **`/ws`** | `http://airodrop-relay:4000/ws` | Signaling WebSocket |
-| **`/`** | `http://airodrop-nextjs:3000/` | Main Landing Website |
+### Module D: Standalone PWA Shell (`pages/mobile.html`, `public/mobile-app.js`, `public/sw.js`)
+- **Offline Caching & Standalone Launch**:
+  - Service worker caches all static assets (`mobile.html`, `mobile-app.js`, icons, CSS).
+  - Standalone PWA checks `localStorage.getItem('airodrop_paired_host')` on launch and immediately connects to the target PC over LAN without cloud dependency.
 
 ---
 
-## 4. 🛡️ Offline & Cloud-Down Resilience (Zero-Failure Fallback)
+## 3. Server-Side Integration (`relay-server` on Oracle Cloud)
 
-What happens if Oracle Cloud goes down, internet drops, or the user is in an isolated Wi-Fi environment?
-
-```mermaid
-flowchart TD
-    CloudState{"Is Oracle Cloud Online?"}
-    
-    CloudState -- "YES" --> A["PC generates QR: https://airodrop.site/installer?lan=IP:PORT<br/>Phone installs 1-Tap PWA with Let's Encrypt SSL"]
-    
-    CloudState -- "NO" --> B{"Is PWA already installed on phone?"}
-    
-    B -- "YES" --> C["PWA launches from Home Screen offline (Service Worker)<br/>Connects directly to PC over LAN at Gigabit Wi-Fi speeds"]
-    
-    B -- "NO" --> D["PC automatically switches QR to Local Mode (http://IP:PORT/m)<br/>Phone opens local portal directly<br/>Local shortcut guide guides 1-click homescreen bookmark"]
-```
-
-1. **Installed PWA Offline Launch**:
-   - The Service Worker pre-caches all HTML, JS, CSS, and SVG icons on the first visit.
-   - When the user taps the AiroDrop icon on their home screen, the app opens instantly **even in Airplane Mode**.
-   - The app reads the cached LAN host or scans the local network, communicating directly with the PC over Wi-Fi without needing internet access.
-
-2. **First-Time Offline User (Local Web Portal Fallback)**:
-   - The PC desktop app automatically pings the gateway. If unreachable, the PC dashboard automatically switches the QR code to:
-     `http://192.168.1.120:3478/m`
-   - All core capabilities (file sending/receiving, media streaming, clipboard vault, trackpad) operate 100% locally.
+- **Target Container**: `airodrop-relay` (Port 4000)
+- **Nginx Proxy Manager Route Mapping**:
+  - `https://airodrop.site/install` $\to$ `http://airodrop-relay:4000/install`
+  - `https://airodrop.site/installer` $\to$ `http://airodrop-relay:4000/installer`
+  - `https://airodrop.site/m` $\to$ `http://airodrop-relay:4000/m`
+  - `https://airodrop.site/manifest.json` $\to$ `http://airodrop-relay:4000/manifest.json`
+  - `https://airodrop.site/sw.js` $\to$ `http://airodrop-relay:4000/sw.js`
+  - `https://airodrop.site/ws` $\to$ `http://airodrop-relay:4000/ws`
 
 ---
 
-## 5. 🔒 Verification & Safety Standards
+## 4. Verification & Testing Plan
 
-- **Strict Media Preview Scoping**: Images, Videos, and Audio preview natively; all other files show the "Cannot preview this file type. Download instead" card.
-- **Non-Dismissable Native Video Playback**: Fullscreen native video player with touch event propagation protection and zero audio leakage.
-- **Frictionless Streamed Downloads**: All file downloads throughout the interface use direct streamed downloads with real-time progress bars.
-- **Immutable Git Push Policy**: Changes are committed locally; no `git push` is ever executed without explicit user confirmation.
+1. **Discovery Verification**:
+   - Test `https://airodrop.site/install?lan=192.168.1.22:3478&name=AsepPC` $\to$ Instantly discovers and displays `AsepPC`.
+   - Test visiting `https://airodrop.site/install` directly without query params $\to$ Shows radar discovery and manual IP option.
+2. **Android PWA Install Flow**:
+   - Verify `beforeinstallprompt` triggers native WebAPK installation prompt.
+   - Verify `appinstalled` triggers the completion screen.
+3. **iOS Safari Guide Flow**:
+   - Verify user-agent detection displays the 3-step visual Share Sheet guide on iOS devices.
+4. **Standalone Launch & LAN Connection**:
+   - Verify launching the installed PWA from home screen reads the cached PC host and establishes direct Wi-Fi communication with the desktop app.

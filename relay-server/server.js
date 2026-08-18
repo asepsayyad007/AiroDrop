@@ -33,6 +33,58 @@ const app = express();
 app.use(cors());
 app.set('trust proxy', true);
 
+// Serve static public assets
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ─── PWA & Web Installer Routes ─────────────────────────────
+app.get(['/install', '/installer'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  const pagePath = path.join(__dirname, 'pages', 'installer.html');
+  const fallbackPath = path.join(__dirname, 'public', 'installer.html');
+  if (fs.existsSync(pagePath)) {
+    res.sendFile(pagePath);
+  } else if (fs.existsSync(fallbackPath)) {
+    res.sendFile(fallbackPath);
+  } else {
+    res.status(404).send('Installer page not found.');
+  }
+});
+
+app.get('/m', (req, res) => {
+  const pagePath = path.join(__dirname, 'public', 'mobile.html');
+  const fallbackPath = path.join(__dirname, 'pages', 'mobile.html');
+  if (fs.existsSync(pagePath)) {
+    res.sendFile(pagePath);
+  } else if (fs.existsSync(fallbackPath)) {
+    res.sendFile(fallbackPath);
+  } else {
+    res.status(404).send('Mobile PWA shell not found.');
+  }
+});
+
+app.get('/manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  const manifestPath = path.join(__dirname, 'public', 'manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    res.sendFile(manifestPath);
+  } else {
+    res.status(404).send('Manifest not found.');
+  }
+});
+
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  const swPath = path.join(__dirname, 'public', 'sw.js');
+  if (fs.existsSync(swPath)) {
+    res.sendFile(swPath);
+  } else {
+    res.status(404).send('Service worker not found.');
+  }
+});
+
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
@@ -47,9 +99,24 @@ const pendingDownloads = new Map();
 const pendingUploads = new Map();
 // Pending upload handshakes waiting for PC acceptance
 const pendingHandshakes = new Map();
-
+// Real-time radar rooms grouped by public client IP
+const radarRooms = new Map();
 
 // ─── Utility Functions ──────────────────────────────────────
+function getClientIp(req) {
+  if (!req || !req.headers) return '127.0.0.1';
+  if (req.headers['cf-connecting-ip']) {
+    return String(req.headers['cf-connecting-ip']).trim();
+  }
+  if (req.headers['x-real-ip']) {
+    return String(req.headers['x-real-ip']).trim();
+  }
+  if (req.headers['x-forwarded-for']) {
+    return String(req.headers['x-forwarded-for']).split(',')[0].trim();
+  }
+  return (req.socket && req.socket.remoteAddress) || '127.0.0.1';
+}
+
 function generateToken() {
   return crypto.randomBytes(TOKEN_LENGTH).toString('base64url').slice(0, TOKEN_LENGTH);
 }
@@ -133,6 +200,67 @@ wss.on('connection', (ws, req) => {
     }
 
     switch (msg.type) {
+      case 'announce-host': {
+        const clientIp = getClientIp(req);
+        if (!radarRooms.has(clientIp)) radarRooms.set(clientIp, new Map());
+        const room = radarRooms.get(clientIp);
+        const hostId = msg.host || uuidv4();
+        
+        room.set(hostId, {
+          host: msg.host,
+          name: msg.name || 'AiroDrop PC',
+          platform: msg.platform || 'windows',
+          pin: msg.pin || '',
+          https: msg.https !== false,
+          updatedAt: Date.now(),
+          ws
+        });
+        
+        ws.radarHostId = hostId;
+        ws.radarRoomIp = clientIp;
+
+        log('info', 'Radar host announced', { clientIp, host: msg.host, name: msg.name });
+
+        // Broadcast to all devices in the same local room
+        wss.clients.forEach(client => {
+          if (client !== ws && client.readyState === WebSocket.OPEN && client.radarRoomIp === clientIp) {
+            safeSend(client, {
+              type: 'radar-beacon',
+              host: msg.host,
+              name: msg.name,
+              platform: msg.platform,
+              pin: msg.pin,
+              https: msg.https
+            });
+          }
+        });
+        break;
+      }
+
+      case 'discover-radar-probe': {
+        const clientIp = getClientIp(req);
+        ws.radarRoomIp = clientIp;
+        const room = radarRooms.get(clientIp);
+        if (room) {
+          const now = Date.now();
+          for (const [id, hostData] of room.entries()) {
+            if (now - hostData.updatedAt < 60000) {
+              safeSend(ws, {
+                type: 'radar-beacon',
+                host: hostData.host,
+                name: hostData.name,
+                platform: hostData.platform,
+                pin: hostData.pin,
+                https: hostData.https
+              });
+            } else {
+              room.delete(id);
+            }
+          }
+        }
+        break;
+      }
+
       case 'auth': {
         sessionKey = msg.sessionKey;
         if (!sessionKey) {
@@ -333,6 +461,14 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
+    if (ws.radarRoomIp && ws.radarHostId) {
+      const room = radarRooms.get(ws.radarRoomIp);
+      if (room) {
+        room.delete(ws.radarHostId);
+        if (room.size === 0) radarRooms.delete(ws.radarRoomIp);
+      }
+    }
+
     if (sessionKey) {
       log('info', 'PC disconnected', { sessionKey: sessionKey.slice(0, 8) + '...' });
       sessions.delete(sessionKey);
