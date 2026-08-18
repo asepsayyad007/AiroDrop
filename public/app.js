@@ -1607,50 +1607,11 @@
               </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-              ${isPaired ? `
-                <button class="btn btn-unpair-device" data-token="${escapeAttr(dev.token || '')}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-                  Unpair Device
-                </button>
-              ` : `
-                <button class="btn btn-unpair-device" data-token="${escapeAttr(dev.token || dev.ip || '')}" style="padding: 7px 14px; font-size: 0.76rem; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  Disconnect
-                </button>
-              `}
-            </div>
           </div>
         `;
       });
 
       container.innerHTML = html;
-
-      $$('.btn-unpair-device').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const token = btn.getAttribute('data-token');
-          if (confirm("Revoke access for this device?")) {
-            try {
-              const res = await doFetch('/api/auth/unpair', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token })
-              });
-              if (res && res.ok) {
-                showToast('Device access revoked', 'success');
-                renderPairedDevicesTab();
-                renderRightPanelConnectedDevices();
-              } else {
-                showToast('Device connection reset', 'info');
-                renderPairedDevicesTab();
-                renderRightPanelConnectedDevices();
-              }
-            } catch {
-              showToast('Network error while unpairing', 'error');
-            }
-          }
-        });
-      });
     } catch (e) {
       console.warn('Error fetching paired devices:', e);
     }
@@ -2948,8 +2909,7 @@
       });
     }
 
-    const btnUnpairAll = $('#btnUnpairAllDevices');
-    if (btnUnpairAll) {
+    $$('.btn-unpair-all, #btnUnpairAllDevices, #btnUnpairAllDevicesTab').forEach(btnUnpairAll => {
       btnUnpairAll.addEventListener('click', async () => {
         if (confirm("Are you sure you want to unpair all authorized devices? All active mobile connections will be revoked.")) {
           try {
@@ -2967,7 +2927,7 @@
           }
         }
       });
-    }
+    });
 
     const btnFilesBrowse = $('#btnFilesTabBrowse');
     if (btnFilesBrowse) {
