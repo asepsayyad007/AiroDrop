@@ -1492,7 +1492,7 @@
   }
 
   // ─── No Router / Mobile Hotspot & USB Tethering Guide Modal ────────
-  let _isDirectQrActive = false;
+  let _isDirectQrActive = true;
 
   function openHotspotModal() {
     const modal = $('#hotspotGuideModal');
@@ -1517,19 +1517,28 @@
     const ip = (serverInfo && serverInfo.ip) ? serverInfo.ip : '127.0.0.1';
 
     if (activeModeEl) activeModeEl.textContent = netMode.label;
+    const activeModeBadge = $('#hotspotActiveModeBadge');
+    if (activeModeBadge) activeModeBadge.textContent = netMode.label;
     if (activeIpPill) activeIpPill.textContent = ip;
     if (statusDot) {
-      statusDot.style.background = netMode.isHotspot ? '#10b981' : '#3b82f6';
-      statusDot.style.boxShadow = netMode.isHotspot ? '0 0 8px rgba(16, 185, 129, 0.6)' : '0 0 8px rgba(59, 130, 246, 0.6)';
+      statusDot.style.background = netMode.isHotspot ? '#10b981' : '#ff5500';
+      statusDot.style.boxShadow = netMode.isHotspot ? '0 0 8px rgba(16, 185, 129, 0.6)' : '0 0 8px rgba(255, 85, 0, 0.6)';
     }
 
-    // Auto-select tab based on mode
+    // Auto-select tab if a specific tethering mode is active, otherwise default to active or hotspot-qr
     if (netMode.mode === 'iphone-hotspot') {
-      selectHotspotTab('iphone-cable');
+      selectHotspotTab('hotspot-ios');
+      switchHotspotSubtab('ios', 'cable');
     } else if (netMode.mode === 'android-usb-tether') {
-      selectHotspotTab('android-cable');
+      selectHotspotTab('hotspot-android');
+      switchHotspotSubtab('android', 'cable');
     } else if (netMode.mode === 'android-hotspot') {
-      selectHotspotTab('android-wifi');
+      selectHotspotTab('hotspot-android');
+      switchHotspotSubtab('android', 'wifi');
+    } else {
+      const activeBtn = document.querySelector('#hotspotGuideModal .hotspot-tab-btn.active');
+      const currentTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'hotspot-qr';
+      selectHotspotTab(currentTab || 'hotspot-qr');
     }
 
     // QR display
@@ -1544,45 +1553,81 @@
       }
       if (qrTitle) qrTitle.textContent = 'Direct Offline Mode';
       if (qrSub) qrSub.textContent = directUrl;
-      if (btnToggle) btnToggle.textContent = 'Switch to Cloud QR';
+      const toggleTextSpan = $('#btnToggleHotspotQrModeText');
+      if (toggleTextSpan) {
+        toggleTextSpan.textContent = 'Switch to Cloud QR';
+      } else if (btnToggle) {
+        btnToggle.textContent = 'Switch to Cloud QR';
+      }
       if (offlineWarning) offlineWarning.style.display = 'block';
     } else {
       const cloudUrl = getCloudPairingUrl(); // 'https://airodrop.site/install'
       if (qrImg) qrImg.src = getThemedQrUrl(cloudUrl);
       if (qrTitle) qrTitle.textContent = 'Cloud Radar Pairing (Recommended)';
       if (qrSub) qrSub.textContent = 'https://airodrop.site/install';
-      if (btnToggle) btnToggle.textContent = 'Switch to Direct Offline QR';
+      const toggleTextSpan = $('#btnToggleHotspotQrModeText');
+      if (toggleTextSpan) {
+        toggleTextSpan.textContent = 'Switch to Direct Offline QR';
+      } else if (btnToggle) {
+        btnToggle.textContent = 'Switch to Direct Offline QR';
+      }
       if (offlineWarning) offlineWarning.style.display = 'none';
     }
   }
 
   function selectHotspotTab(tabId) {
-    $$('.hotspot-tab-btn').forEach(btn => {
+    if (!tabId) tabId = 'hotspot-qr';
+    const modal = document.getElementById('hotspotGuideModal');
+    if (!modal) return;
+
+    modal.querySelectorAll('.hotspot-tab-btn').forEach(btn => {
       if (btn.getAttribute('data-tab') === tabId) {
         btn.classList.add('active');
-        btn.style.background = 'rgba(59, 130, 246, 0.25)';
-        btn.style.color = '#93c5fd';
       } else {
         btn.classList.remove('active');
-        btn.style.background = 'transparent';
-        btn.style.color = '#94a3b8';
       }
     });
 
-    $$('.hotspot-tab-pane').forEach(pane => {
+    modal.querySelectorAll('.hotspot-tab-pane').forEach(pane => {
       if (pane.id === `pane-${tabId}`) {
         pane.style.display = 'block';
+        pane.classList.add('active');
       } else {
         pane.style.display = 'none';
+        pane.classList.remove('active');
       }
     });
   }
+  window.selectHotspotTab = selectHotspotTab;
+
+  function switchHotspotSubtab(os, method) {
+    const modal = document.getElementById('hotspotGuideModal');
+    if (!modal) return;
+
+    modal.querySelectorAll(`.hotspot-subtab-btn[data-os="${os}"]`).forEach(btn => {
+      if (btn.getAttribute('data-subtab') === method) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    modal.querySelectorAll(`.hotspot-subview[data-os="${os}"]`).forEach(view => {
+      if (view.getAttribute('data-subview') === method) {
+        view.style.display = 'block';
+      } else {
+        view.style.display = 'none';
+      }
+    });
+  }
+  window.switchHotspotSubtab = switchHotspotSubtab;
 
   function setupHotspotGuideModal() {
     const modal = $('#hotspotGuideModal');
     const btnClose = $('#btnCloseHotspotGuide');
     const btnDismiss = $('#btnDismissHotspotGuide');
     const btnToggle = $('#btnToggleHotspotQrMode');
+    const btnCopy = $('#btnCopyHotspotUrl');
 
     if (!modal) return;
 
@@ -1594,10 +1639,19 @@
     if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
 
     // Tab buttons
-    $$('.hotspot-tab-btn').forEach(btn => {
+    modal.querySelectorAll('.hotspot-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.getAttribute('data-tab');
         if (tab) selectHotspotTab(tab);
+      });
+    });
+
+    // Subtab buttons inside iOS & Android
+    modal.querySelectorAll('.hotspot-subtab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const os = btn.getAttribute('data-os');
+        const subtab = btn.getAttribute('data-subtab');
+        if (os && subtab) switchHotspotSubtab(os, subtab);
       });
     });
 
@@ -1606,6 +1660,19 @@
       btnToggle.addEventListener('click', () => {
         _isDirectQrActive = !_isDirectQrActive;
         updateHotspotModalUI();
+      });
+    }
+
+    // Copy pairing link button
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => {
+        const qrSub = $('#hotspotQrSub');
+        const urlToCopy = (qrSub && qrSub.textContent) ? qrSub.textContent.trim() : 'https://airodrop.site/install';
+        navigator.clipboard.writeText(urlToCopy).then(() => {
+          const originalHtml = btnCopy.innerHTML;
+          btnCopy.innerText = 'Copied!';
+          setTimeout(() => { btnCopy.innerHTML = originalHtml; }, 1800);
+        }).catch(() => {});
       });
     }
 
@@ -5236,26 +5303,28 @@
       });
     }
 
-    // Dedicated Page Tab Navigation Handler
-    const winNavItems = document.querySelectorAll('.win-nav-item');
-    const winSections = document.querySelectorAll('.win-section-group');
+    // Dedicated Page Tab Navigation Handler (Scoped strictly to Settings Modal)
+    if (settingsModal) {
+      const winNavItems = settingsModal.querySelectorAll('.win-nav-item');
+      const winSections = settingsModal.querySelectorAll('.win-section-group');
 
-    if (winNavItems.length > 0) {
-      winNavItems.forEach(item => {
-        item.addEventListener('click', () => {
-          winNavItems.forEach(nav => nav.classList.remove('active'));
-          item.classList.add('active');
-          const targetId = item.getAttribute('data-target');
+      if (winNavItems.length > 0) {
+        winNavItems.forEach(item => {
+          item.addEventListener('click', () => {
+            winNavItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            const targetId = item.getAttribute('data-target');
 
-          winSections.forEach(sec => {
-            if (sec.id === targetId) {
-              sec.style.display = 'flex';
-            } else {
-              sec.style.display = 'none';
-            }
+            winSections.forEach(sec => {
+              if (sec.id === targetId) {
+                sec.style.display = 'flex';
+              } else {
+                sec.style.display = 'none';
+              }
+            });
           });
         });
-      });
+      }
     }
 
     if (btnStartUpdateDownload) {

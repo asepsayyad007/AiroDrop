@@ -5,6 +5,20 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.86] - 2026-09-05
+
+### Added
+- **Unified OS Architecture in Direct Link / No Router Mode** — Redesigned the `#hotspotGuideModal` setup dialog into a streamlined 3-tab navigation hierarchy: **Pairing & QR**, **Apple iOS**, and **Android**.
+- **Interactive Segmented Sub-Mode Switchers** — Integrated responsive glassmorphism segmented pill controls within both iOS and Android panes, allowing instant toggling between **USB Cable (Fastest / Ultra Stable)** and **Wireless Hotspot** without modal scrolling or navigation clutter.
+- **Direct Offline Pairing as Default Experience** — Reordered the modal sidebar to place the **Pairing & QR** tab at the top as the default active view. Initializes immediately in Direct Offline Mode with local address resolution (`https://<IP>:3478/m`), direct QR code generation, certificate bypass guidance, and a 1-click toggle to Cloud Radar Pairing (`https://airodrop.site/install`).
+- **Context-Aware Adapter & Sub-Mode Auto-Selection** — Enhanced dynamic network monitoring to auto-select the matching OS tab and specific connection method (`cable` vs `wifi`) whenever an active USB tethering or mobile hotspot network interface is detected on the Windows host.
+
+### Changed
+- **Modal Aesthetics & UI Consistency** — Aligned the Direct Link modal visual language with the Windows 11 Fluent dark glassmorphism design system, utilizing curated SVG vectors and signature orange focus states.
+- **Sidebar Tab Consolidation** — Reduced sidebar items from 5 separate options down to 3 intuitive categories, significantly improving discoverability and reducing cognitive overhead.
+
+---
+
 ## [6.4.85] - 2026-09-04
 
 ### Added

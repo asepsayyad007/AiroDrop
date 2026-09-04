@@ -107,7 +107,7 @@
               <div class="dashboard-status-title">Ready to receive &amp; send</div>
             </div>
             <!-- Hotspot / USB Tether Mode Active Badge -->
-            <div id="hotspotModeBadge" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; margin-left: 10px; cursor: pointer; transition: all 0.2s ease;" title="Click for Hotspot &amp; USB Tethering Guide">
+            <div id="hotspotModeBadge" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: none; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(16, 185, 129, 0.38); border-top: 1px solid rgba(255, 255, 255, 0.3); color: #34d399; margin-left: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2); transition: all 0.2s ease;" title="Click for Hotspot &amp; USB Tethering Guide">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               <span id="hotspotBadgeText">Hotspot Active</span>
             </div>
@@ -115,8 +115,8 @@
 
           <div class="dashboard-actions-group" style="display: flex; gap: 8px;">
             <!-- Button: Hotspot / Cable Mode Guide -->
-            <button class="btn" id="btnHotspotGuide" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 12px; background: rgba(59, 130, 246, 0.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; cursor: pointer; transition: all 0.25s ease;" title="Direct phone-to-PC connection via mobile hotspot or USB cable without a router">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+            <button class="btn" id="btnHotspotGuide" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: flex; align-items: center; gap: 7px; padding: 9px 15px; font-size: 0.82rem; font-weight: 600; border-radius: 12px; background: rgba(59, 130, 246, 0.12); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(96, 165, 250, 0.3); border-top: 1px solid rgba(255, 255, 255, 0.25); color: #93c5fd; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 14px rgba(0, 0, 0, 0.25); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);" title="Direct phone-to-PC connection via mobile hotspot or USB cable without a router">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
               <span>No Router Mode</span>
             </button>
 
@@ -892,7 +892,7 @@
                 <span>AiroDrop Settings &amp; Preferences</span>
               </h2>
             </div>
-            <span class="win-app-version-badge" id="appVersionTag">v6.4.85</span>
+            <span class="win-app-version-badge" id="appVersionTag">v6.4.86</span>
           </div>
 
           <!-- Windows Settings Body Layout -->
@@ -1421,132 +1421,383 @@
     </div>
   </div>
 
-  <!-- ─── No Router / Mobile Hotspot & USB Tethering Guide Modal ───────────── -->
-  <div id="hotspotGuideModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); z-index: 2100; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); align-items: center; justify-content: center; padding: 16px;">
-    <div id="hotspotGuideCard" class="modal-content" style="width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; background: #0c1017; border: 1px solid rgba(59, 130, 246, 0.35); border-top: 2px solid #3b82f6; border-radius: 24px; padding: 24px; box-sizing: border-box; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(59, 130, 246, 0.15); position: relative; display: flex; flex-direction: column;">
+  <!-- ─── No Router / Mobile Hotspot & USB Tethering Guide Modal (Settings & Preferences Theme) ─── -->
+  <div id="hotspotGuideModal" class="modal win-modal-overlay" style="display: none;">
+    <div id="hotspotGuideCard" class="win-app-window" style="width: 840px; max-width: 95vw; height: 570px; max-height: 90vh;">
       
-      <!-- Close Button -->
-      <button id="btnCloseHotspotGuide" style="position: absolute; top: 16px; right: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); color: #ffffff; font-size: 1.2rem; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; margin: 0; padding: 0;">&times;</button>
-      
-      <!-- Header -->
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-        <div style="width: 44px; height: 44px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+      <!-- Windows Title Bar -->
+      <div class="win-app-titlebar">
+        <div class="win-app-title-left">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff5500" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
           </svg>
+          <span class="win-app-title-text">AiroDrop Direct Link &amp; No Router Mode</span>
         </div>
-        <div>
-          <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 2px 0;">No Router? Use Hotspot or Cable</h3>
-          <p style="font-size: 0.74rem; color: #94a3b8; margin: 0;">Connect PC and Phone directly without a home Wi-Fi router</p>
-        </div>
-      </div>
-
-      <!-- Current Adapter Status Pill -->
-      <div id="hotspotCurrentStatusPill" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 14px; border-radius: 12px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span id="hotspotStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); display: inline-block;"></span>
-          <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Active Mode:</span>
-          <span id="hotspotActiveModeName" style="font-size: 0.78rem; font-weight: 700; color: #ffffff;">Detecting...</span>
-        </div>
-        <span id="hotspotActiveIpPill" style="font-size: 0.75rem; font-weight: 700; color: #60a5fa; font-family: var(--font-mono, monospace);">127.0.0.1</span>
-      </div>
-
-      <!-- Tab Navigation -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(0, 0, 0, 0.35); padding: 4px; border-radius: 12px; margin-bottom: 16px;">
-        <button class="hotspot-tab-btn active" data-tab="iphone-cable" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: rgba(59, 130, 246, 0.25); color: #93c5fd; transition: all 0.2s;">
-          🍎 iPhone Cable
-        </button>
-        <button class="hotspot-tab-btn" data-tab="iphone-wifi" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
-          🍎 iPhone Wi-Fi
-        </button>
-        <button class="hotspot-tab-btn" data-tab="android-cable" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
-          🤖 Android Cable
-        </button>
-        <button class="hotspot-tab-btn" data-tab="android-wifi" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
-          🤖 Android Wi-Fi
-        </button>
-      </div>
-
-      <!-- Tab Content Area -->
-      <div id="hotspotTabContents" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-        
-        <!-- Tab 1: iPhone Cable -->
-        <div class="hotspot-tab-pane" id="pane-iphone-cable" style="display: block;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px;">RECOMMENDED FOR IPHONE</span>
-            <span style="font-size: 0.70rem; color: #94a3b8;">Zero setup &amp; maximum speed</span>
-          </div>
-          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
-            <li>Plug your iPhone into your PC using a <strong>Lightning or USB-C cable</strong>.</li>
-            <li>On iPhone, go to <strong>Settings ➔ Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON. (Tap <em>Trust This Computer</em> on iPhone if prompted).</li>
-            <li>On your iPhone Safari browser, visit <strong>https://airodrop.site/install</strong>. The app auto-discovers your PC at <code style="color: #60a5fa;">172.20.10.2</code> instantly!</li>
-          </ol>
-        </div>
-
-        <!-- Tab 2: iPhone Wi-Fi -->
-        <div class="hotspot-tab-pane" id="pane-iphone-wifi" style="display: none;">
-          <div style="font-size: 0.72rem; font-weight: 800; color: #60a5fa; margin-bottom: 10px;">WIRELESS IPHONE CONNECTION</div>
-          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
-            <li>On iPhone, open <strong>Settings ➔ Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON.</li>
-            <li>On your PC, open Wi-Fi settings and connect to your iPhone's Hotspot name.</li>
-            <li>On your iPhone Safari browser, visit <strong>https://airodrop.site/install</strong>. Your PC will be found automatically.</li>
-          </ol>
-        </div>
-
-        <!-- Tab 3: Android Cable -->
-        <div class="hotspot-tab-pane" id="pane-android-cable" style="display: none;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px;">ULTRA STABLE</span>
-            <span style="font-size: 0.70rem; color: #94a3b8;">USB Tethering</span>
-          </div>
-          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
-            <li>Connect Android phone to PC with a <strong>USB cable</strong>.</li>
-            <li>On Android, go to <strong>Settings ➔ Network &amp; Internet (or Connections) ➔ Hotspot &amp; Tethering</strong>.</li>
-            <li>Turn <strong>USB tethering</strong> ON. (PC will immediately detect the phone network).</li>
-            <li>On Android Chrome, visit <strong>https://airodrop.site/install</strong>.</li>
-          </ol>
-        </div>
-
-        <!-- Tab 4: Android Wi-Fi -->
-        <div class="hotspot-tab-pane" id="pane-android-wifi" style="display: none;">
-          <div style="font-size: 0.72rem; font-weight: 800; color: #60a5fa; margin-bottom: 10px;">WIRELESS ANDROID HOTSPOT</div>
-          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
-            <li>On Android, turn ON <strong>Mobile Hotspot</strong> in quick settings or Settings.</li>
-            <li>On your PC, connect to the Android Hotspot Wi-Fi network.</li>
-            <li>On Android Chrome, visit <strong>https://airodrop.site/install</strong>.</li>
-          </ol>
-        </div>
-
-      </div>
-
-      <!-- QR Code Section with Clean Online vs Direct Offline Toggle -->
-      <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
-        
-        <!-- Toggle Bar -->
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 12px;">
-          <div style="display: flex; flex-direction: column;">
-            <span id="hotspotQrTitle" style="font-size: 0.80rem; font-weight: 700; color: #ffffff;">Cloud Radar Pairing (Recommended)</span>
-            <span id="hotspotQrSub" style="font-size: 0.68rem; color: #94a3b8;">https://airodrop.site/install</span>
-          </div>
-          <button id="btnToggleHotspotQrMode" style="padding: 6px 12px; font-size: 0.70rem; font-weight: 700; border-radius: 8px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; cursor: pointer; transition: all 0.2s;">
-            Switch to Direct Offline QR
+        <div class="win-app-controls">
+          <span class="win-app-version-badge" id="hotspotActiveModeBadge" style="margin-right: 12px;">Detecting...</span>
+          <button class="win-app-close-btn" id="btnCloseHotspotGuide" title="Close Guide">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
+      </div>
 
-        <!-- QR Code Container -->
-        <div style="background: #ffffff; padding: 10px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 8px;">
-          <img id="hotspotGuideQrImg" src="" alt="Pairing QR" style="width: 170px; height: 170px; object-fit: contain; display: block;">
+      <!-- Windows Settings Body Layout (Sidebar + Content Pane) -->
+      <div class="win-settings-body" style="flex: 1; min-height: 0;">
+        
+        <!-- Left Fluent Navigation Sidebar -->
+        <div class="win-settings-sidebar">
+          <nav class="win-sidebar-nav">
+            <!-- Item 1: Pairing & QR Code -->
+            <button class="win-nav-item hotspot-tab-btn active" data-tab="hotspot-qr" title="Pairing &amp; QR Code">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                <rect x="7" y="7" width="3" height="3" fill="currentColor"/>
+                <rect x="14" y="7" width="3" height="3" fill="currentColor"/>
+                <rect x="7" y="14" width="3" height="3" fill="currentColor"/>
+                <rect x="14" y="14" width="3" height="3" fill="currentColor"/>
+              </svg>
+              <span>Pairing &amp; QR</span>
+            </button>
+
+            <!-- Item 2: Apple iOS -->
+            <button class="win-nav-item hotspot-tab-btn" data-tab="hotspot-ios" title="Apple iOS (iPhone / iPad)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="3"/>
+                <line x1="10" y1="5" x2="14" y2="5"/>
+                <circle cx="12" cy="18" r="0.75" fill="currentColor"/>
+              </svg>
+              <span>Apple iOS</span>
+            </button>
+
+            <!-- Item 3: Android -->
+            <button class="win-nav-item hotspot-tab-btn" data-tab="hotspot-android" title="Android Devices">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2.5"/>
+                <circle cx="12" cy="5" r="0.75" fill="currentColor"/>
+                <line x1="10" y1="19" x2="14" y2="19"/>
+              </svg>
+              <span>Android</span>
+            </button>
+          </nav>
         </div>
 
-        <div id="hotspotOfflineWarningNotice" style="display: none; font-size: 0.70rem; color: #f59e0b; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box; text-align: center; margin-top: 6px;">
-          ⚠️ Direct Mode: Connects directly without internet. If phone shows SSL warning, tap <strong>Advanced ➔ Proceed</strong>.
+        <!-- Right Main Viewport Content Pane -->
+        <div class="win-settings-content" style="overflow-y: auto;">
+
+          <!-- Pane 1: Pairing & QR Code (Default Direct Offline Mode) -->
+          <div class="hotspot-tab-pane active" id="pane-hotspot-qr" style="display: block;">
+            <div class="hotspot-section-group">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <h3 class="win-section-title">Quick Phone Pairing &amp; QR Code</h3>
+                <span class="win-app-version-badge" style="background: rgba(255, 85, 0, 0.15); color: #ff8833; border-color: rgba(255, 85, 0, 0.35);">Direct Offline</span>
+              </div>
+              <p class="win-section-subtitle">Point phone camera at the QR code to connect directly without router or internet</p>
+
+              <div class="win-card" style="margin-top: 10px; padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+                  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span id="hotspotQrTitle" style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Direct Offline Mode</span>
+                      <span class="win-app-version-badge" style="background: rgba(255, 85, 0, 0.15); color: #ff8833; border-color: rgba(255, 85, 0, 0.35);">DIRECT</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 12px;">
+                      <span id="hotspotQrSub" style="font-size: 0.82rem; color: #ff8833; font-family: var(--font-mono, monospace); font-weight: 600; word-break: break-all; flex: 1;">Detecting direct URL...</span>
+                      <button id="btnCopyHotspotUrl" title="Copy URL" style="background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff8833; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        <span>Copy</span>
+                      </button>
+                    </div>
+
+                    <div style="font-size: 0.76rem; color: var(--text-secondary, rgba(255, 255, 255, 0.6)); line-height: 1.5;">
+                      Scan this QR code with your mobile camera to establish an instant direct offline connection.
+                    </div>
+                    
+                    <div style="margin-top: 4px;">
+                      <button id="btnToggleHotspotQrMode" class="win-btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 0.74rem; font-weight: 600; border-radius: 8px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="17 1 21 5 17 9"/>
+                          <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                          <polyline points="7 23 3 19 7 15"/>
+                          <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                        <span id="btnToggleHotspotQrModeText">Switch to Cloud QR</span>
+                      </button>
+                    </div>
+
+                    <div id="hotspotOfflineWarningNotice" style="display: block; margin-top: 6px; font-size: 0.72rem; color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 12px; line-height: 1.4;">
+                      Direct Mode connects directly without internet. If phone browser displays a certificate warning, tap <strong>Advanced</strong> → <strong>Proceed</strong>.
+                    </div>
+                  </div>
+
+                  <!-- QR Code Bezel -->
+                  <div style="background: #ffffff; padding: 8px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); flex-shrink: 0;">
+                    <img id="hotspotGuideQrImg" src="" alt="Pairing QR" style="width: 130px; height: 130px; object-fit: contain; display: block; border-radius: 4px;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 2: Apple iOS (Combined Cable & Wi-Fi) -->
+          <div class="hotspot-tab-pane" id="pane-hotspot-ios" style="display: none;">
+            <div class="hotspot-section-group">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <h3 class="win-section-title">Apple iOS Connection Guide</h3>
+                <span class="win-app-version-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35);">Lightning / USB-C &amp; Wi-Fi</span>
+              </div>
+              <p class="win-section-subtitle">Connect your iPhone or iPad directly to this PC without any local Wi-Fi router</p>
+
+              <!-- Segmented Subnav Control -->
+              <div class="hotspot-subnav-track">
+                <button type="button" class="hotspot-subtab-btn active" data-os="ios" data-subtab="cable">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="15" rx="3"/>
+                    <line x1="10" y1="5" x2="14" y2="5"/>
+                    <path d="M12 17v4"/>
+                    <path d="M9 21h6"/>
+                  </svg>
+                  <span>USB Cable (Fastest)</span>
+                </button>
+                <button type="button" class="hotspot-subtab-btn" data-os="ios" data-subtab="wifi">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="11" height="17" rx="2.5"/>
+                    <line x1="7" y1="7" x2="10" y2="7"/>
+                    <path d="M17 7.5a4 4 0 0 1 0 5"/>
+                    <path d="M20 4.5a8 8 0 0 1 0 11"/>
+                  </svg>
+                  <span>Wireless Personal Hotspot</span>
+                </button>
+              </div>
+
+              <!-- Subview A: iOS Cable -->
+              <div class="hotspot-subview" data-os="ios" data-subview="cable" style="display: block;">
+                <div class="win-card">
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.35); color: #ff8833; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Connect Cable</span>
+                      <span class="win-setting-desc">Connect your iPhone to PC using an authentic Lightning or USB-C cable.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.35); color: #ff8833; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Enable Personal Hotspot</span>
+                      <span class="win-setting-desc">On iPhone: Open <strong>Settings</strong> → <strong>Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON. (Tap <em>Trust This Computer</em> on iPhone if prompted).</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0;">
+                      <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 85, 0, 0.15); border: 1px solid rgba(255, 85, 0, 0.35); color: #ff8833; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</div>
+                      <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                        <span class="win-setting-title">Open Pairing Link</span>
+                        <span class="win-setting-desc">On iPhone Safari, visit <strong style="color: #ff8833;">https://airodrop.site/install</strong>. AiroDrop auto-connects to PC at <code>172.20.10.2</code>.</span>
+                      </div>
+                    </div>
+                    <div class="win-setting-control" style="flex-shrink: 0;">
+                      <button class="win-btn-secondary" onclick="if(window.selectHotspotTab) window.selectHotspotTab('hotspot-qr');" style="padding: 6px 14px; font-size: 0.74rem; font-weight: 600; border-radius: 8px; background: rgba(255, 85, 0, 0.12); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff8833; cursor: pointer; transition: all 0.2s ease;">View QR Code →</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 14px; background: rgba(255, 85, 0, 0.06); border: 1px solid rgba(255, 85, 0, 0.18); border-radius: 8px; font-size: 0.73rem; color: #ffaa66;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Pro Tip: Cable tethering delivers max Gigabit/USB 2.0 throughput and prevents battery drain during gigabyte file transfers.</span>
+                </div>
+              </div>
+
+              <!-- Subview B: iOS Wi-Fi -->
+              <div class="hotspot-subview" data-os="ios" data-subview="wifi" style="display: none;">
+                <div class="win-card">
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Enable Personal Hotspot</span>
+                      <span class="win-setting-desc">On iPhone: Open <strong>Settings</strong> → <strong>Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Connect PC to iPhone Hotspot</span>
+                      <span class="win-setting-desc">On PC: Click the Wi-Fi icon in the Windows taskbar, select your iPhone Wi-Fi network, and connect.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0;">
+                      <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</div>
+                      <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                        <span class="win-setting-title">Open Pairing Link</span>
+                        <span class="win-setting-desc">On iPhone Safari, visit <strong style="color: #ff8833;">https://airodrop.site/install</strong> to pair instantly.</span>
+                      </div>
+                    </div>
+                    <div class="win-setting-control" style="flex-shrink: 0;">
+                      <button class="win-btn-secondary" onclick="if(window.selectHotspotTab) window.selectHotspotTab('hotspot-qr');" style="padding: 6px 14px; font-size: 0.74rem; font-weight: 600; border-radius: 8px; background: rgba(255, 85, 0, 0.12); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff8833; cursor: pointer; transition: all 0.2s ease;">View QR Code →</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 14px; background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; font-size: 0.73rem; color: #93c5fd;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Pro Tip: If cellular mobile data is turned off on your iPhone, AiroDrop still communicates completely offline at full Wi-Fi speed.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 3: Android (Combined Cable & Wi-Fi) -->
+          <div class="hotspot-tab-pane" id="pane-hotspot-android" style="display: none;">
+            <div class="hotspot-section-group">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <h3 class="win-section-title">Android Connection Guide</h3>
+                <span class="win-app-version-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(96, 165, 250, 0.35);">USB-C &amp; Portable Hotspot</span>
+              </div>
+              <p class="win-section-subtitle">Connect your Android device directly to this PC without any local Wi-Fi router</p>
+
+              <!-- Segmented Subnav Control -->
+              <div class="hotspot-subnav-track">
+                <button type="button" class="hotspot-subtab-btn active" data-os="android" data-subtab="cable">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="14" rx="2"/>
+                    <circle cx="12" cy="4.5" r="0.75" fill="currentColor"/>
+                    <path d="M10 16v3h4v-3"/>
+                    <path d="M12 19v3.5"/>
+                    <line x1="9" y1="22.5" x2="15" y2="22.5"/>
+                  </svg>
+                  <span>USB Tethering (Ultra Stable)</span>
+                </button>
+                <button type="button" class="hotspot-subtab-btn" data-os="android" data-subtab="wifi">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                    <path d="M16.24 7.76a6 6 0 0 1 0 8.48"/>
+                    <path d="M7.76 16.24a6 6 0 0 1 0-8.48"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    <path d="M4.93 19.07a10 10 0 0 1 0-14.14"/>
+                  </svg>
+                  <span>Mobile Hotspot (Wireless)</span>
+                </button>
+              </div>
+
+              <!-- Subview A: Android Cable -->
+              <div class="hotspot-subview" data-os="android" data-subview="cable" style="display: block;">
+                <div class="win-card">
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Connect Cable</span>
+                      <span class="win-setting-desc">Connect your Android phone to PC using a USB cable.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Enable USB Tethering</span>
+                      <span class="win-setting-desc">On Android: Open <strong>Settings</strong> → <strong>Network &amp; Internet</strong> (or Connections) → <strong>Hotspot &amp; Tethering</strong> and turn <strong>USB tethering</strong> ON.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0;">
+                      <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</div>
+                      <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                        <span class="win-setting-title">Open Pairing Link</span>
+                        <span class="win-setting-desc">On Android Chrome, visit <strong style="color: #ff8833;">https://airodrop.site/install</strong>. AiroDrop auto-connects to PC.</span>
+                      </div>
+                    </div>
+                    <div class="win-setting-control" style="flex-shrink: 0;">
+                      <button class="win-btn-secondary" onclick="if(window.selectHotspotTab) window.selectHotspotTab('hotspot-qr');" style="padding: 6px 14px; font-size: 0.74rem; font-weight: 600; border-radius: 8px; background: rgba(255, 85, 0, 0.12); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff8833; cursor: pointer; transition: all 0.2s ease;">View QR Code →</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 14px; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; font-size: 0.73rem; color: #6ee7b7;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Pro Tip: If USB tethering is greyed out, make sure the USB mode popup on your phone is set to "File Transfer" or "Tethering".</span>
+                </div>
+              </div>
+
+              <!-- Subview B: Android Wi-Fi -->
+              <div class="hotspot-subview" data-os="android" data-subview="wifi" style="display: none;">
+                <div class="win-card">
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">1</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Turn ON Mobile Hotspot</span>
+                      <span class="win-setting-desc">On Android: Swipe down and turn ON <strong>Mobile Hotspot</strong> (or Settings → Connections → Mobile Hotspot).</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">2</div>
+                    <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                      <span class="win-setting-title">Connect PC to Phone Hotspot</span>
+                      <span class="win-setting-desc">On PC: In Windows Wi-Fi settings, connect to your Android Hotspot network.</span>
+                    </div>
+                  </div>
+                  <div class="win-setting-row" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px;">
+                    <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0;">
+                      <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;">3</div>
+                      <div class="win-setting-info" style="flex: 1; min-width: 0;">
+                        <span class="win-setting-title">Open Pairing Link</span>
+                        <span class="win-setting-desc">On Android Chrome, visit <strong style="color: #ff8833;">https://airodrop.site/install</strong> to pair instantly.</span>
+                      </div>
+                    </div>
+                    <div class="win-setting-control" style="flex-shrink: 0;">
+                      <button class="win-btn-secondary" onclick="if(window.selectHotspotTab) window.selectHotspotTab('hotspot-qr');" style="padding: 6px 14px; font-size: 0.74rem; font-weight: 600; border-radius: 8px; background: rgba(255, 85, 0, 0.12); border: 1px solid rgba(255, 85, 0, 0.3); color: #ff8833; cursor: pointer; transition: all 0.2s ease;">View QR Code →</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 14px; background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; font-size: 0.73rem; color: #93c5fd;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Pro Tip: Set your Android Hotspot AP band to 5 GHz in phone settings for transfer speeds reaching 300+ Mbps!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Action Button -->
-      <button id="btnDismissHotspotGuide" class="btn" style="width: 100%; padding: 12px; border-radius: 12px; font-size: 0.84rem; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);">
-        ✓ Got It, Close Guide
-      </button>
+      <!-- Settings Command Footer Bar -->
+      <div class="win-app-footer">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="hotspotStatusDot" class="win-status-dot"></span>
+          <span style="font-size: 0.76rem; color: var(--text-secondary, rgba(255, 255, 255, 0.6)); font-weight: 600;">Active Adapter:</span>
+          <span id="hotspotActiveModeName" style="font-size: 0.80rem; font-weight: 700; color: #ffffff;">Detecting...</span>
+          <span id="hotspotActiveIpPill" class="win-app-version-badge" style="font-family: var(--font-mono, monospace); font-size: 0.72rem;">127.0.0.1</span>
+        </div>
+        <div class="win-footer-actions">
+          <button class="win-btn-primary" id="btnDismissHotspotGuide">Got It, Close Guide</button>
+        </div>
+      </div>
 
     </div>
   </div>
