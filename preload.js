@@ -45,7 +45,8 @@ const ALLOWED_ON_CHANNELS = [
   'screencast-stop',
   'mic-offer',
   'mic-ice-candidate',
-  'mic-stop'
+  'mic-stop',
+  'network-ip-changed'
 ];
 
 contextBridge.exposeInMainWorld('electronAPI', {

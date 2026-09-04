@@ -1316,12 +1316,13 @@
           return { host: cleanHost, name: data.name || 'AiroDrop PC', version: data.version, proto };
         }
 
-        // Test 2: If port 3478, test port 3479 (HTTP fallback bypasses self-signed TLS cert failure)
+        // Test 2: If port 3478, probe port 3479 (HTTP probe quickly confirms PC is alive)
         if (cleanHost.includes(':3478')) {
           const fallbackHost = cleanHost.replace(':3478', ':3479');
           data = await fetchCandidate(`http://${fallbackHost}/api/discovery`);
           if (data) {
-            return { host: fallbackHost, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+            // PC is confirmed alive — connect via HTTPS on 3478 to enable PC mic & screen mirror
+            return { host: cleanHost, name: data.name || 'AiroDrop PC', version: data.version, proto: 'https:' };
           }
         } else if (!cleanHost.includes(':')) {
           data = await fetchCandidate(`http://${cleanHost}:3479/api/discovery`);

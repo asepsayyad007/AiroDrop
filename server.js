@@ -124,6 +124,18 @@ app.get(['/install', '/installer'], (req, res) => {
   res.redirect('/m');
 });
 
+// POST /api/settings/test-ip-change — Trigger simulated IP change warning for testing
+app.post('/api/settings/test-ip-change', (req, res) => {
+  try {
+    const ipMonitor = require('./src/ipMonitor');
+    const fakeIp = req.body && req.body.fakeIP ? req.body.fakeIP : '192.168.1.99';
+    const payload = ipMonitor.triggerSimulatedChange(fakeIp);
+    res.json({ success: true, payload });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/health — Production health check endpoint
 app.get('/api/health', (req, res) => {
   const memUsage = process.memoryUsage();
@@ -212,6 +224,7 @@ function init(userDataPath) {
   state.SHARE_DIR = path.join(userDataPath, 'shared');
   state.KEY_FILE = path.join(userDataPath, 'key.pem');
   state.CERT_FILE = path.join(userDataPath, 'cert.pem');
+  state.LAST_KNOWN_IP_FILE = path.join(userDataPath, 'last_known_ip.json');
 
   // Load and validate config.json
   let rawConfig = {};
@@ -393,6 +406,14 @@ function startServer(portCallback) {
         const radarBeacon = require('./src/radarBeacon');
         radarBeacon.startBeacon();
       } catch (_) {}
+
+      // Start real-time IP change detector to alert dashboard if router reassigns IP
+      try {
+        const ipMonitor = require('./src/ipMonitor');
+        ipMonitor.startIpMonitor((payload) => {
+          serverEvents.emit('network-ip-changed', payload);
+        });
+      } catch (_) {}
     });
 
     setupWebSocket(state.serverInstance, serverEvents);
@@ -512,10 +533,14 @@ function stopServer(callback) {
     state.wss = null;
   }
 
-  // Stop cloud radar beacon
+  // Stop cloud radar beacon & IP monitor
   try {
     const radarBeacon = require('./src/radarBeacon');
     radarBeacon.stopBeacon();
+  } catch (_) {}
+  try {
+    const ipMonitor = require('./src/ipMonitor');
+    ipMonitor.stopIpMonitor();
   } catch (_) {}
 
   // 2. Close SSE connections

@@ -9,6 +9,8 @@ const state = {
   CERT_FILE: '',
   PAIRED_DEVICES_FILE: '',
   CLIPBOARD_VAULT_FILE: '',
+  LAST_KNOWN_IP_FILE: '',
+  PENDING_IP_CHANGE: null,
 
   // Server Settings
   PORT: 3478,

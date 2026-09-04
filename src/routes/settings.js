@@ -312,7 +312,8 @@ router.get('/info', async (req, res) => {
       drives,
       allIps,
       temporaryMode: state.TEMPORARY_MODE,
-      pairingToken: ''
+      pairingToken: '',
+      ipChangePending: state.PENDING_IP_CHANGE || null
     });
   } catch {
     res.json({
@@ -329,9 +330,16 @@ router.get('/info', async (req, res) => {
       drives,
       allIps,
       temporaryMode: state.TEMPORARY_MODE,
-      pairingToken: ''
+      pairingToken: '',
+      ipChangePending: state.PENDING_IP_CHANGE || null
     });
   }
+});
+
+// POST /api/settings/acknowledge-ip-change — Dismiss pending IP change alert
+router.post('/settings/acknowledge-ip-change', (req, res) => {
+  state.PENDING_IP_CHANGE = null;
+  res.json({ success: true });
 });
 
 // GET /api/qr.png

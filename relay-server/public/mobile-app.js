@@ -246,20 +246,36 @@
 
     let _isScanningSubnetOnDisconnect = false;
     async function attemptBackgroundLanRecovery() {
+      if (_isScanningSubnetOnDisconnect) return;
+      _isScanningSubnetOnDisconnect = true;
+
       const currentHost = window.location.host;
       const m = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
-      const subnet = m ? m[1] : '192.168.1';
-      const port = window.location.port === '3478' ? '3479' : (window.location.port || '3479');
+      const subnetsToProbe = [];
+      if (m) subnetsToProbe.push(m[1]);
+      ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+        if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
+      });
 
-      const found = await scanSubnetForAiroDrop(subnet, port, 300);
-      if (found && found.host !== currentHost) {
-        localStorage.setItem('airodrop_paired_host', found.host);
-        localStorage.setItem('airodrop_paired_proto', found.proto);
-        if (found.name) localStorage.setItem('airodrop_paired_name', found.name);
-        showToast(`PC found at ${found.host}. Reconnecting...`);
+      let foundHost = null;
+      for (const subnet of subnetsToProbe.slice(0, 2)) {
+        foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
+        if (foundHost) break;
+      }
+
+      _isScanningSubnetOnDisconnect = false;
+
+      if (foundHost) {
+        // ALWAYS preserve HTTPS on port 3478 for Mobile UI (Mic streaming, WebRTC, Screen Mirroring)
+        const targetHost = foundHost.host.replace(':3479', ':3478');
+        const targetProto = 'https:';
+        localStorage.setItem('airodrop_paired_host', targetHost);
+        localStorage.setItem('airodrop_paired_proto', targetProto);
+        if (foundHost.name) localStorage.setItem('airodrop_paired_name', foundHost.name);
+        showToast(`PC found at ${targetHost}. Reconnecting...`);
         setTimeout(() => {
-          window.location.replace(`${found.proto}//${found.host}/m`);
-        }, 800);
+          window.location.replace(`${targetProto}//${targetHost}/m`);
+        }, 600);
       }
     }
 
@@ -645,6 +661,9 @@
           _reconnectTimer = setInterval(() => {
             _reconnectCountdown--;
             if (text) text.innerHTML = `No connection (${_reconnectCountdown}s) · <a href="/install" style="color:#ff6a00; font-weight:700; text-decoration:none;">Locate PC</a>`;
+            if (_reconnectCountdown % 5 === 0) {
+              attemptBackgroundLanRecovery();
+            }
             if (_reconnectCountdown <= 0) {
               _reconnectCountdown = 15;
               checkConnection();

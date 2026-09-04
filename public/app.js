@@ -154,6 +154,15 @@
     runSetup('UniversalRefresh', setupUniversalRefresh);
     runSetup('PCWebRTCScreencast', setupPCWebRTCScreencast);
     runSetup('QuickPairQrModal', setupQuickPairQrModal);
+    runSetup('IpChangedModal', setupIpChangedModal);
+
+    if (isElectron && window.electronAPI && window.electronAPI.on) {
+      window.electronAPI.on('network-ip-changed', (event, data) => {
+        if (data && typeof showIpChangedModal === 'function') {
+          showIpChangedModal(data.oldIP, data.newIP);
+        }
+      });
+    }
 
     // Immediate initial fallback QR code for right panel pairing card
     const rightPanelQrImg = $('#rightPanelQrImg');
@@ -468,6 +477,11 @@
 
     // Update temporary mode badge on dashboard
     updateTemporaryModeBadge(info.temporaryMode);
+
+    // If an IP change was detected between launches or via DHCP, display warning modal
+    if (info && info.ipChangePending && typeof showIpChangedModal === 'function') {
+      showIpChangedModal(info.ipChangePending.oldIP, info.ipChangePending.newIP);
+    }
   }
 
   function updateTemporaryModeBadge(temporaryMode) {
@@ -649,6 +663,17 @@
     });
 
 
+
+    sseSource.addEventListener('network-ip-changed', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data && typeof showIpChangedModal === 'function') {
+          showIpChangedModal(data.oldIP, data.newIP);
+        }
+      } catch (err) {
+        console.error('Failed to parse network-ip-changed event:', err);
+      }
+    });
 
     sseSource.addEventListener('device-change', () => {
       fetchPairedDevicesCount();
@@ -1360,6 +1385,89 @@
       cardTrigger.addEventListener('click', (e) => openQuickPairQrModal(e));
     }
     if (btnClose) btnClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+    });
+  }
+
+  // ─── Wi-Fi / DHCP IP Change Warning Modal ───────────────────
+  function showIpChangedModal(oldIP, newIP) {
+    const modal = $('#ipChangedWarningModal');
+    if (!modal) return;
+
+    const oldIpEl = $('#ipWarningOldIp');
+    const newIpEl = $('#ipWarningNewIp');
+    const qrImg = $('#ipWarningQrImg');
+    const pinEl = $('#ipWarningPinCode');
+
+    if (oldIpEl) oldIpEl.textContent = oldIP || '127.0.0.1';
+    if (newIpEl) newIpEl.textContent = newIP || 'Active IP';
+
+    const pairUrl = getCloudPairingUrl(); // 'https://airodrop.site/install'
+    if (qrImg) qrImg.src = getThemedQrUrl(pairUrl);
+
+    const activePin = (serverInfo && (serverInfo.pinCode || serverInfo.pin)) || '1405';
+    if (pinEl) pinEl.textContent = activePin;
+
+    playPingSound();
+    modal.style.display = 'flex';
+  }
+  window.showIpChangedModal = showIpChangedModal;
+
+  function setupIpChangedModal() {
+    const modal = $('#ipChangedWarningModal');
+    const btnClose = $('#btnCloseIpChangedWarning');
+    const btnDismiss = $('#btnDismissIpChangedWarning');
+    const btnOpenSetup = $('#btnOpenSetupFromIpWarning');
+    const btnTest = $('#btnTestIpChangeWarning');
+
+    if (!modal) return;
+
+    function closeModal() {
+      modal.style.display = 'none';
+      if (serverInfo) {
+        serverInfo.ipChangePending = null;
+        const newIp = $('#ipWarningNewIp') ? $('#ipWarningNewIp').textContent.trim() : null;
+        if (newIp && newIp !== 'Active IP') {
+          serverInfo.ip = newIp;
+          updateServerInfoUI(serverInfo);
+        }
+      }
+      doFetch('/api/settings/acknowledge-ip-change', { method: 'POST' }).catch(() => {});
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
+    if (btnOpenSetup) {
+      btnOpenSetup.addEventListener('click', () => {
+        closeModal();
+        openSetupModal();
+      });
+    }
+
+    if (btnTest) {
+      btnTest.addEventListener('click', async () => {
+        triggerHaptic(25);
+        try {
+          const res = await doFetch('/api/settings/test-ip-change', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fakeIP: '192.168.1.99' })
+          });
+          if (res.ok) {
+            showToast('Simulated IP change triggered!', 'info');
+          } else {
+            showIpChangedModal(serverInfo ? serverInfo.ip : '192.168.1.33', '192.168.1.99');
+          }
+        } catch (_) {
+          showIpChangedModal(serverInfo ? serverInfo.ip : '192.168.1.33', '192.168.1.99');
+        }
+      });
+    }
+
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });

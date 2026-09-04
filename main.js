@@ -183,6 +183,23 @@ app.whenReady().then(() => {
     processCommandLineArgs(process.argv);
   });
 
+  server.serverEvents.on('network-ip-changed', (data) => {
+    if (mainWindow && mainWindow.webContents) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+      mainWindow.webContents.send('network-ip-changed', data);
+    }
+    try {
+      const notifier = require('node-notifier');
+      notifier.notify({
+        title: 'AiroDrop — Wi-Fi IP Changed',
+        message: `Local IP changed from ${data.oldIP} to ${data.newIP}. Phone needs to reconnect.`,
+        icon: path.join(__dirname, 'public', 'logo.png')
+      });
+    } catch (_) {}
+  });
+
   createWindow();
   createTray();
   setupAutoUpdater();

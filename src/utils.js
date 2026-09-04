@@ -183,13 +183,23 @@ function getLocalIP() {
     
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        let priority = 1;
-        if (lowerName.includes('wi-fi') || lowerName.includes('wlan')) {
-          priority = 10;
-        } else if (lowerName.includes('ethernet') || lowerName.includes('lan') || lowerName.includes('local area')) {
-          priority = 5;
+        const addr = iface.address;
+        // Ignore APIPA link-local, loopback, or invalid addresses
+        if (!addr || addr.startsWith('169.254.') || addr.startsWith('127.') || addr === '0.0.0.0') {
+          continue;
         }
-        candidates.push({ address: iface.address, priority });
+
+        let priority = 1;
+        // Check if address is a standard private LAN range (RFC 1918)
+        const isPrivate = addr.startsWith('192.168.') || addr.startsWith('10.') || /^172\.(1[6-9]|2\d|3[01])\./.test(addr);
+        if (isPrivate) priority += 20;
+
+        if (lowerName.includes('wi-fi') || lowerName.includes('wlan')) {
+          priority += 10;
+        } else if (lowerName.includes('ethernet') || lowerName.includes('lan') || lowerName.includes('local area')) {
+          priority += 8;
+        }
+        candidates.push({ address: addr, priority });
       }
     }
   }
