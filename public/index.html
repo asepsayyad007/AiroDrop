@@ -892,7 +892,7 @@
                 <span>AiroDrop Settings &amp; Preferences</span>
               </h2>
             </div>
-            <span class="win-app-version-badge" id="appVersionTag">v6.4.86</span>
+            <span class="win-app-version-badge" id="appVersionTag">v6.4.87</span>
           </div>
 
           <!-- Windows Settings Body Layout -->
@@ -901,27 +901,27 @@
             <!-- Left Fluent Navigation Sidebar -->
             <div class="win-settings-sidebar">
               <nav class="win-sidebar-nav">
-                <button class="win-nav-item active" data-target="win-sec-device-security">
+                <button type="button" class="win-nav-item active" data-target="win-sec-device-security" onclick="if(window.selectSettingsTab) window.selectSettingsTab('win-sec-device-security');">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   <span>Device Security</span>
                 </button>
 
-                <button class="win-nav-item" data-target="win-sec-system">
+                <button type="button" class="win-nav-item" data-target="win-sec-system" onclick="if(window.selectSettingsTab) window.selectSettingsTab('win-sec-system');">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
                   <span>Server &amp; Network</span>
                 </button>
 
-                <button class="win-nav-item" data-target="win-sec-storage">
+                <button type="button" class="win-nav-item" data-target="win-sec-storage" onclick="if(window.selectSettingsTab) window.selectSettingsTab('win-sec-storage');">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                   <span>Storage &amp; Folders</span>
                 </button>
 
-                <button class="win-nav-item" data-target="win-sec-security">
+                <button type="button" class="win-nav-item" data-target="win-sec-security" onclick="if(window.selectSettingsTab) window.selectSettingsTab('win-sec-security');">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   <span>Security &amp; Alerts</span>
                 </button>
 
-                <button class="win-nav-item" data-target="win-sec-updates">
+                <button type="button" class="win-nav-item" data-target="win-sec-updates" onclick="if(window.selectSettingsTab) window.selectSettingsTab('win-sec-updates');">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                   <span>Update Hub</span>
                 </button>
@@ -1035,7 +1035,7 @@
               </div>
 
               <!-- Section 3: Device Security -->
-              <div class="win-section-group" id="win-sec-device-security">
+              <div class="win-section-group" id="win-sec-device-security" style="display: flex;">
                 <h3 class="win-section-title" style="margin-bottom: 14px;">Device Security &amp; Authorization</h3>
                 
                 <div class="win-card" style="display: flex; flex-direction: column; gap: 4px; padding: 6px 16px; background: rgba(18, 18, 26, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;">

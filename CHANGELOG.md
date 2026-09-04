@@ -5,6 +5,17 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.87] - 2026-09-05
+
+### Fixed
+- **Settings Sidebar Suboptions Navigation** — Resolved issue where Settings sidebar suboptions (**Device Security**, **Server & Network**, **Storage & Folders**, **Security & Alerts**, **Update Hub**) failed to respond to clicks due to a legacy modal selector reference. Added dedicated `selectSettingsTab()` and `setupSettingsNavigation()` controllers targeting `#tab-settings-view` with fail-safe inline bindings.
+- **Settings Focus Ring Artifacts** — Refined `.win-nav-item` focus state in `style.css` to prevent browser focus outlines on click while maintaining keyboard accessibility.
+
+### Changed
+- **Updated Project Banner** — Refreshed GitHub `banner.png` with updated branding graphics.
+
+---
+
 ## [6.4.86] - 2026-09-05
 
 ### Added

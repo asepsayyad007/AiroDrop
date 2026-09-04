@@ -147,6 +147,7 @@
     
     runSetup('ShortcutsModal', setupShortcutsModal);
     runSetup('SettingsModal', setupSettingsModal);
+    runSetup('SettingsNav', setupSettingsNavigation);
     runSetup('LogsModal', setupLogsModal);
     runSetup('TextModal', setupTextModal);
     runSetup('ServiceDropdown', setupServiceDropdown);
@@ -1727,7 +1728,51 @@
       renderClipboardVaultTab();
     } else if (tabName === 'remote') {
       renderRemoteStudioTab();
+    } else if (tabName === 'settings') {
+      const activeNav = document.querySelector('#tab-settings-view .win-nav-item.active');
+      const targetId = activeNav ? activeNav.getAttribute('data-target') : 'win-sec-device-security';
+      selectSettingsTab(targetId);
     }
+  }
+
+  function selectSettingsTab(targetId) {
+    if (!targetId) targetId = 'win-sec-device-security';
+    const settingsContainer = document.getElementById('tab-settings-view') || document.getElementById('settingsModal');
+    if (!settingsContainer) return;
+
+    const winNavItems = settingsContainer.querySelectorAll('.win-nav-item');
+    const winSections = settingsContainer.querySelectorAll('.win-section-group');
+
+    winNavItems.forEach(nav => {
+      if (nav.getAttribute('data-target') === targetId) {
+        nav.classList.add('active');
+      } else {
+        nav.classList.remove('active');
+      }
+    });
+
+    winSections.forEach(sec => {
+      if (sec.id === targetId) {
+        sec.style.display = 'flex';
+      } else {
+        sec.style.display = 'none';
+      }
+    });
+  }
+  window.selectSettingsTab = selectSettingsTab;
+
+  function setupSettingsNavigation() {
+    const settingsContainer = document.getElementById('tab-settings-view') || document.getElementById('settingsModal');
+    if (!settingsContainer) return;
+
+    const winNavItems = settingsContainer.querySelectorAll('.win-nav-item');
+    winNavItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = item.getAttribute('data-target');
+        if (targetId) selectSettingsTab(targetId);
+      });
+    });
   }
 
   async function renderPairedDevicesTab() {
@@ -5303,29 +5348,8 @@
       });
     }
 
-    // Dedicated Page Tab Navigation Handler (Scoped strictly to Settings Modal)
-    if (settingsModal) {
-      const winNavItems = settingsModal.querySelectorAll('.win-nav-item');
-      const winSections = settingsModal.querySelectorAll('.win-section-group');
-
-      if (winNavItems.length > 0) {
-        winNavItems.forEach(item => {
-          item.addEventListener('click', () => {
-            winNavItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
-            const targetId = item.getAttribute('data-target');
-
-            winSections.forEach(sec => {
-              if (sec.id === targetId) {
-                sec.style.display = 'flex';
-              } else {
-                sec.style.display = 'none';
-              }
-            });
-          });
-        });
-      }
-    }
+    // Dedicated Page Tab Navigation Handler
+    setupSettingsNavigation();
 
     if (btnStartUpdateDownload) {
       btnStartUpdateDownload.addEventListener('click', () => {
