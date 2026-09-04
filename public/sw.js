@@ -1,6 +1,4 @@
-// Progressive Web App Service Worker for AiroDrop
-// Cache version is tied to the app version — update this on each release
-const APP_VERSION = '6.4.6';
+const APP_VERSION = '6.5.3';
 const CACHE_NAME = `airodrop-v${APP_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
@@ -11,15 +9,32 @@ const PRECACHE_ASSETS = [
   '/logo.svg',
   '/logo.png',
   '/logo-192.png',
-  '/style.css'
+  '/install',
+  '/installer',
+  '/installer.html',
+  '/m',
+  '/mobile.html',
+  '/mobile-app.js',
+  '/keyboard.js'
 ];
 
-// Installation event: Pre-cache critical assets and activate immediately
+// Installation event: Resiliently pre-cache critical assets and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
       console.log(`[SW] Installing v${APP_VERSION}, pre-caching assets`);
-      return cache.addAll(PRECACHE_ASSETS);
+      await Promise.allSettled(
+        PRECACHE_ASSETS.map(async (url) => {
+          try {
+            const res = await fetch(url, { cache: 'no-cache' });
+            if (res.ok) {
+              await cache.put(url, res);
+            }
+          } catch (err) {
+            console.warn(`[SW] Pre-cache skipped for ${url}:`, err.message);
+          }
+        })
+      );
     }).then(() => self.skipWaiting())
   );
 });
@@ -84,6 +99,8 @@ self.addEventListener('fetch', (event) => {
   const isDocument = event.request.mode === 'navigate' || 
                      url.pathname.endsWith('.html') || 
                      url.pathname === '/' ||
+                     url.pathname === '/install' ||
+                     url.pathname === '/installer' ||
                      url.pathname === '/m' ||
                      url.pathname === '/mobile.html';
 
@@ -97,9 +114,29 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          return caches.match(event.request)
-            .then((cachedResponse) => cachedResponse || caches.match(OFFLINE_URL));
+        .catch(async () => {
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) return cachedResponse;
+
+          if (url.pathname.includes('install') || url.pathname === '/') {
+            const instRes = (await caches.match('/installer.html')) || 
+                            (await caches.match('/install')) ||
+                            (await caches.match('/installer'));
+            if (instRes) return instRes;
+          }
+
+          if (url.pathname === '/m' || url.pathname === '/mobile.html') {
+            const mobRes = (await caches.match('/mobile.html')) || 
+                           (await caches.match('/m'));
+            if (mobRes) return mobRes;
+          }
+
+          const offlineRes = await caches.match(OFFLINE_URL);
+          if (offlineRes) return offlineRes;
+
+          return new Response('<h1>Offline</h1><p>AiroDrop is currently offline.</p>', {
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
         })
     );
     return;

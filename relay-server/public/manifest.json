@@ -1,9 +1,9 @@
 {
-  "id": "/m",
+  "id": "/install",
   "name": "AiroDrop — Send to PC",
   "short_name": "AiroDrop",
   "description": "Transfer text, images, and files between your phone and PC over local WiFi.",
-  "start_url": "/m",
+  "start_url": "/install",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",

@@ -3,26 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>AiroDrop</title>
-  <meta name="theme-color" content="#06060c">
+  <title>AiroDrop — Connect</title>
+  <meta name="theme-color" content="#07090e">
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="alternate icon" type="image/png" href="/logo.png">
   <link rel="manifest" href="/manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
   <style>
     :root {
       --bg: #07090e;
-      --card-bg: rgba(16, 20, 30, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --glass-highlight: rgba(255, 255, 255, 0.2);
-      --accent-gradient: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+      --card-bg: rgba(15, 20, 32, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-highlight: rgba(255, 255, 255, 0.15);
+      --accent-orange: #ff6a00;
+      --accent-pink: #ee0979;
       --text-primary: #ffffff;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
@@ -34,22 +35,31 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
       background: var(--bg);
       color: var(--text-primary);
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+      min-height: 100%;
+      min-height: 100dvh;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 106, 0, 0.12) 0%, transparent 55%),
+        radial-gradient(circle at 90% 100%, rgba(238, 9, 121, 0.07) 0%, transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px;
-      overflow-x: hidden;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
       position: relative;
     }
 
-    /* Ambient Aurora Glow */
-    .aurora-bg {
+    /* Ambient Background Glow */
+    .ambient-glow-container {
       position: fixed;
       inset: 0;
       pointer-events: none;
@@ -57,427 +67,768 @@
       overflow: hidden;
     }
 
-    .orb-1 {
+    .ambient-orb-1 {
       position: absolute;
-      top: -15%;
-      left: 15%;
-      width: 380px;
-      height: 380px;
+      top: -10%;
+      left: 20%;
+      width: 450px;
+      height: 450px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 106, 0, 0.15) 0%, transparent 70%);
-      filter: blur(60px);
+      background: radial-gradient(circle, rgba(255, 106, 0, 0.09) 0%, transparent 70%);
+      filter: blur(80px);
+      animation: floatOrb 16s infinite alternate ease-in-out;
     }
 
-    .orb-2 {
+    .ambient-orb-2 {
       position: absolute;
-      bottom: -15%;
+      bottom: -10%;
       right: 15%;
-      width: 400px;
-      height: 400px;
+      width: 420px;
+      height: 420px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(238, 9, 121, 0.13) 0%, transparent 70%);
-      filter: blur(60px);
+      background: radial-gradient(circle, rgba(238, 9, 121, 0.07) 0%, transparent 70%);
+      filter: blur(80px);
+      animation: floatOrb 20s infinite alternate-reverse ease-in-out;
     }
 
-    /* Main Responsive Card Container */
-    .installer-container {
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(20px, 25px); }
+    }
+
+    /* Main Container Shell */
+    .app-card-wrapper {
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 400px;
-      margin: auto;
-      animation: fadeIn 0.35s ease-out;
+      max-width: 416px;
+      margin: auto 0;
+      animation: cardFadeIn 0.3s ease-out;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .glass-card {
+    .main-glass-panel {
       background: var(--card-bg);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      border: 1px solid var(--glass-border);
-      border-top: 1px solid var(--glass-highlight);
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(40px) saturate(190%);
+      -webkit-backdrop-filter: blur(40px) saturate(190%);
+      border: 1px solid var(--card-border);
+      border-top: 1px solid var(--card-highlight);
+      border-radius: 26px;
+      padding: 22px 18px 20px 18px;
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    /* Header Bar */
-    .header-bar {
+    /* ─── Header Branding ─── */
+    .panel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
+      padding: 0 2px;
     }
 
-    .brand-group {
+    .brand-title-group {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .brand-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: var(--accent-gradient);
+    .brand-logo-frame {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       flex-shrink: 0;
-      box-shadow: 0 4px 14px rgba(255, 106, 0, 0.35);
     }
 
-    .brand-name {
-      font-size: 1.12rem;
+    .brand-logo-img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .brand-text-name {
+      font-size: 1.2rem;
       font-weight: 800;
-      letter-spacing: -0.02em;
       color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1;
     }
 
-    .status-pill {
+    .live-status-pill {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      padding: 3px 8px;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.22);
+      padding: 5px 11px;
       border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
+      font-size: 0.72rem;
+      font-weight: 600;
       color: #4ade80;
+      transition: all 0.2s ease;
     }
 
-    .status-dot {
-      width: 6px;
-      height: 6px;
+    .status-beacon-dot {
+      width: 6.5px;
+      height: 6.5px;
       border-radius: 50%;
       background: #22c55e;
-      box-shadow: 0 0 6px #22c55e;
-      animation: pulseDot 2s infinite;
+      box-shadow: 0 0 7px #22c55e;
+      animation: beaconPulse 2s infinite ease-in-out;
     }
 
-    @keyframes pulseDot {
+    .status-beacon-dot.scanning {
+      background: #ff6a00;
+      box-shadow: 0 0 9px #ff6a00;
+      animation: beaconPulseScan 1s infinite ease-in-out;
+    }
+
+    @keyframes beaconPulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 0.45; transform: scale(0.85); }
     }
 
-    /* Compact Sleek Radar Box */
-    .radar-box {
+    @keyframes beaconPulseScan {
+      0%, 100% { opacity: 1; transform: scale(1.1); }
+      50% { opacity: 0.3; transform: scale(0.7); }
+    }
+
+    /* ─── Minimalist Pro Radar ─── */
+    .radar-container {
       position: relative;
       width: 100%;
-      height: 150px;
+      height: 130px;
       border-radius: 18px;
-      background: rgba(8, 11, 18, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(10, 14, 22, 0.8) 80%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
     }
 
-    .radar-ring {
+    .radar-grid-line-h {
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.1), transparent);
+    }
+
+    .radar-grid-line-v {
+      position: absolute;
+      width: 1px;
+      height: 100%;
+      background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.1), transparent);
+    }
+
+    .radar-ring-circle {
       position: absolute;
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      pointer-events: none;
+      border: 1px dashed rgba(148, 163, 184, 0.13);
     }
 
-    .ring-1 { width: 50px; height: 50px; }
-    .ring-2 { width: 100px; height: 100px; }
-    .ring-3 { width: 150px; height: 150px; }
+    .radar-ring-1 { width: 46px; height: 46px; }
+    .radar-ring-2 { width: 88px; height: 88px; }
+    .radar-ring-3 { width: 130px; height: 130px; }
 
-    .radar-pulse-wave {
+    .radar-rotating-beam {
       position: absolute;
-      width: 60px;
-      height: 60px;
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
-      border: 1.5px solid rgba(255, 106, 0, 0.45);
-      animation: radarPulse 2.8s infinite ease-out;
-      pointer-events: none;
+      background: conic-gradient(from 0deg, transparent 0deg 280deg, rgba(255, 106, 0, 0.32) 360deg);
+      animation: radarBeamSpin 3s linear infinite;
     }
 
-    @keyframes radarPulse {
-      0% { width: 30px; height: 30px; opacity: 0.9; }
-      100% { width: 180px; height: 180px; opacity: 0; }
+    @keyframes radarBeamSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
-    .radar-center-node {
-      position: relative;
-      z-index: 2;
+    .radar-sonar-wave {
+      position: absolute;
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: var(--accent-gradient);
+      border: 1.5px solid rgba(255, 106, 0, 0.4);
+      animation: sonarWave 2.6s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    }
+
+    @keyframes sonarWave {
+      0% { width: 30px; height: 30px; opacity: 0.95; }
+      100% { width: 160px; height: 160px; opacity: 0; }
+    }
+
+    .radar-center-logo {
+      position: relative;
+      z-index: 2;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(14, 18, 28, 0.95);
+      border: 1.5px solid rgba(255, 106, 0, 0.45);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 0 20px rgba(255, 106, 0, 0.4);
+      box-shadow: 0 0 16px rgba(255, 106, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
-    /* Discovered Devices List */
-    .devices-list {
+    .radar-center-logo img {
+      width: 21px;
+      height: 21px;
+      object-fit: contain;
+    }
+
+    /* ─── Section Header ─── */
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1px;
+      margin-bottom: -7px;
+      padding: 0 4px;
+    }
+
+    .section-tag-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ─── Search Progress Card ─── */
+    .search-progress-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .search-progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .search-progress-bar-bg {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 99px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .search-progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff6a00, #ee0979);
+      border-radius: 99px;
+      transition: width 0.12s linear;
+    }
+
+    /* ─── Clean Minimal Device Card ─── */
+    .devices-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       width: 100%;
     }
 
     .device-card {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 14px;
-      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 20px;
+      padding: 16px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      cursor: pointer;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      flex-direction: column;
+      gap: 13px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .device-card:hover, .device-card:active {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.25);
-      transform: translateY(-2px);
+    .device-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
     }
 
-    .device-left {
+    .card-top-info-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-width: 0;
+      gap: 13px;
+      width: 100%;
     }
 
-    .device-icon-box {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
+    .device-avatar-wrapper {
+      position: relative;
+      width: 42px;
+      height: 42px;
       flex-shrink: 0;
     }
 
-    .device-info {
+    .device-avatar-box {
+      width: 100%;
+      height: 100%;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .avatar-online-dot {
+      position: absolute;
+      bottom: -1.5px;
+      right: -1.5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid #0e121c;
+      box-shadow: 0 0 7px #22c55e;
+    }
+
+    .device-text-group {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 3px;
+      flex: 1;
       min-width: 0;
     }
 
-    .device-name {
-      font-size: 0.9rem;
+    .device-title-text {
+      font-size: 1.05rem;
       font-weight: 700;
       color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      letter-spacing: -0.015em;
+      line-height: 1.2;
     }
 
-    .device-meta {
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
+    .device-meta-row {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      line-height: 1.2;
     }
 
-    /* ─── Pure Transparent Frosted Glass Buttons ─── */
-    .btn-primary, .connect-action-btn, #btnManualConnect {
-      position: relative;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-top: 1px solid rgba(255, 255, 255, 0.28);
-      color: #ffffff;
-      cursor: pointer;
-      overflow: hidden;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      text-decoration: none;
+    .dot-sep {
+      opacity: 0.35;
+      font-size: 0.7rem;
     }
 
-    .btn-primary::after, .connect-action-btn::after, #btnManualConnect::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 100%);
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-    }
-
-    .btn-primary:hover, .connect-action-btn:hover, #btnManualConnect:hover {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-      border-color: rgba(255, 255, 255, 0.35);
-      border-top-color: rgba(255, 255, 255, 0.55);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    }
-
-    .btn-primary:hover::after, .connect-action-btn:hover::after, #btnManualConnect:hover::after {
-      opacity: 1;
-    }
-
-    .btn-primary:active, .connect-action-btn:active, #btnManualConnect:active {
-      transform: translateY(0);
-      background: rgba(255, 255, 255, 0.06);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 13px 18px;
-      border-radius: 14px;
-      font-size: 0.92rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-
-    .connect-action-btn {
-      padding: 7px 13px;
-      border-radius: 9px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .btn-secondary {
-      width: 100%;
-      position: relative;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    .paired-tag-text {
       color: #cbd5e1;
+      font-family: var(--font);
+      font-weight: 500;
+      font-size: 0.72rem;
+    }
+
+    /* ─── Prominent Connect Button Below ─── */
+    .btn-connect-below {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
       padding: 11px 16px;
-      border-radius: 12px;
-      font-size: 0.82rem;
+      border-radius: 13px;
+      font-size: 0.86rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 7px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .btn-secondary:hover {
+    .btn-connect-below:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-connect-below:active {
+      transform: translateY(0);
       background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.25);
-      transform: translateY(-2px);
+    }
+
+    /* ─── Auto-Connecting Button & Progress Bar ─── */
+    .btn-auto-connecting {
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(255, 106, 0, 0.45) !important;
+      background: rgba(255, 106, 0, 0.12) !important;
+      justify-content: space-between !important;
+      padding: 8px 10px 8px 14px !important;
+      box-shadow: 0 0 16px rgba(255, 106, 0, 0.22) !important;
+    }
+
+    .auto-connect-progress-track {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+
+    .auto-connect-progress-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(255, 106, 0, 0.32), rgba(238, 9, 121, 0.32));
+      transition: width 0.1s linear;
+    }
+
+    .auto-connect-label {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.86rem;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-cancel-autoconnect {
+      position: relative;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-cancel-autoconnect:hover {
+      background: rgba(239, 68, 68, 0.28);
+      border-color: rgba(239, 68, 68, 0.55);
       color: #ffffff;
     }
 
-    .btn-secondary:active {
+    .spin-icon {
+      animation: spin 1.4s infinite linear;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Search Network Primary Button ─── */
+    .btn-glass-primary {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      padding: 13px 16px;
+      border-radius: 15px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .btn-glass-primary:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .btn-glass-primary:active {
       transform: translateY(0);
       background: rgba(255, 255, 255, 0.05);
     }
 
-    .btn-glass-sm {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      color: #94a3b8;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      cursor: pointer;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: all 0.2s;
+    .btn-stop-search {
+      background: rgba(239, 68, 68, 0.1) !important;
+      border: 1px solid rgba(239, 68, 68, 0.28) !important;
+      color: #fca5a5 !important;
     }
 
-    .btn-glass-sm:hover {
-      background: rgba(255, 255, 255, 0.09);
-      border-color: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
+    .btn-stop-search:hover {
+      background: rgba(239, 68, 68, 0.2) !important;
+      border-color: rgba(239, 68, 68, 0.4) !important;
+      color: #ffffff !important;
     }
 
-    /* Minimal Step Hint Strip */
-    .step-hint-box {
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 10px 12px;
+    /* ─── Manual Input ─── */
+    .manual-connect-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 14px;
+      margin-top: 1px;
+    }
+
+    .input-field-wrap {
+      flex: 1;
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.76rem;
-      color: #94a3b8;
-      line-height: 1.3;
     }
 
-    .step-hint-badge {
-      padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 6px;
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.7rem;
-      flex-shrink: 0;
+    .input-prefix-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
     }
 
-    /* Minimal Manual Input Box */
-    .manual-input-box {
-      display: flex;
-      gap: 6px;
+    .input-host-text {
       width: 100%;
-      border-top: 1px solid rgba(255, 255, 255, 0.07);
-      padding-top: 12px;
-    }
-
-    .manual-input {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 9px 12px 9px 34px;
       color: #ffffff;
       font-family: var(--font-mono);
       font-size: 0.8rem;
       outline: none;
+      transition: all 0.2s ease;
     }
 
-    .manual-input:focus {
-      border-color: rgba(255, 255, 255, 0.3);
+    .input-host-text:focus {
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.05);
     }
 
-    /* Minimal Success Screen */
-    .success-check-badge {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
+    .btn-pill-action {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      padding: 9px 14px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .btn-pill-action:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ─── Help Box ─── */
+    .troubleshoot-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .troubleshoot-header {
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ─── OS Guide Cards ─── */
+    .install-step-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 15px;
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .step-number-pill {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      box-shadow: 0 0 24px rgba(34, 197, 94, 0.4);
+      font-weight: 700;
+      font-size: 0.76rem;
+      flex-shrink: 0;
+    }
+
+    .success-icon-bubble {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.14);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4ade80;
+      box-shadow: 0 0 28px rgba(34, 197, 94, 0.2);
       margin: 0 auto;
+    }
+
+    /* ─── Floating Safari Pointer (iOS Safari) ─── */
+    .ios-safari-pointer-floating {
+      position: fixed;
+      bottom: max(16px, env(safe-area-inset-bottom, 16px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      pointer-events: auto;
+      max-width: calc(100vw - 32px);
+      animation: floatIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes floatIn {
+      from { opacity: 0; transform: translate(-50%, 15px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    .safari-pointer-pill {
+      background: rgba(15, 20, 32, 0.9);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid rgba(255, 106, 0, 0.35);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(255, 106, 0, 0.15);
+      border-radius: 99px;
+      padding: 8px 12px 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .safari-pointer-icon-box {
+      color: #ff6a00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .safari-pointer-text {
+      font-size: 0.78rem;
+      color: #f1f5f9;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .safari-pointer-text strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .safari-pointer-close {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #94a3b8;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-left: 2px;
+      transition: all 0.2s;
+    }
+
+    .safari-pointer-close:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+    }
+
+    .safari-pointer-arrow-bounce {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounceDown 1.4s infinite ease-in-out;
+      filter: drop-shadow(0 2px 8px rgba(255, 106, 0, 0.6));
+    }
+
+    @keyframes bounceDown {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* ─── PWA Standalone Mode ─── */
+    body.pwa-standalone #iosSafariPointer {
+      display: none !important;
+    }
+
+    body.pwa-standalone #viewInstall,
+    body.pwa-standalone #sectionAndroid,
+    body.pwa-standalone #sectionIos {
+      display: none !important;
+    }
+
+    .standalone-pill {
+      background: rgba(56, 189, 248, 0.1) !important;
+      border-color: rgba(56, 189, 248, 0.3) !important;
+      color: #38bdf8 !important;
     }
 
     .hidden { display: none !important; }
@@ -485,135 +836,282 @@
 </head>
 <body>
 
-  <div class="aurora-bg">
-    <div class="orb-1"></div>
-    <div class="orb-2"></div>
+  <!-- Ambient Animated Glowing Mesh -->
+  <div class="ambient-glow-container">
+    <div class="ambient-orb-1"></div>
+    <div class="ambient-orb-2"></div>
   </div>
 
-  <div class="installer-container">
+  <div class="app-card-wrapper">
 
-    <!-- ─── VIEW 1: RADAR DISCOVERY ─── -->
-    <div id="viewRadar" class="glass-card">
+    <!-- ════════════════ VIEW 1: RADAR & LAN DISCOVERY ════════════════ -->
+    <div id="viewRadar" class="main-glass-panel">
       
-      <div class="header-bar">
-        <div class="brand-group">
-          <div class="brand-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+      <!-- Top Brand Header -->
+      <div class="panel-header">
+        <div class="brand-title-group">
+          <div class="brand-logo-frame">
+            <img src="/logo.svg" alt="AiroDrop" class="brand-logo-img">
           </div>
-          <h1 class="brand-name">AiroDrop</h1>
+          <h1 class="brand-text-name">AiroDrop</h1>
         </div>
-        <div class="status-pill">
-          <span class="status-dot"></span>
-          <span>Radar Active</span>
-        </div>
-      </div>
 
-      <!-- Radar Animation Box -->
-      <div class="radar-box">
-        <div class="radar-ring ring-1"></div>
-        <div class="radar-ring ring-2"></div>
-        <div class="radar-ring ring-3"></div>
-        <div class="radar-pulse-wave"></div>
-        <div class="radar-center-node">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+        <div id="radarStatusPill" class="live-status-pill">
+          <span id="radarStatusDot" class="status-beacon-dot"></span>
+          <span id="radarStatusText">Ready</span>
         </div>
       </div>
 
-      <!-- Discovered Devices List -->
-      <div id="discoveredDevicesList" class="devices-list"></div>
+      <!-- Radar Centerpiece -->
+      <div class="radar-container">
+        <div class="radar-grid-line-h"></div>
+        <div class="radar-grid-line-v"></div>
+        <div class="radar-ring-circle radar-ring-1"></div>
+        <div class="radar-ring-circle radar-ring-2"></div>
+        <div class="radar-ring-circle radar-ring-3"></div>
+        <div class="radar-rotating-beam"></div>
+        <div class="radar-sonar-wave"></div>
+        
+        <div class="radar-center-logo">
+          <img src="/logo.svg" alt="AiroDrop">
+        </div>
+      </div>
 
-      <!-- Manual IP Fallback -->
-      <div class="manual-input-box">
-        <input type="text" id="manualIpInput" class="manual-input" placeholder="Enter IP (e.g. 192.168.1.22:3478)">
-        <button id="btnManualConnect" class="connect-action-btn">Connect</button>
+      <!-- Section Title -->
+      <div class="section-title-row">
+        <span class="section-tag-label">Nearby</span>
+      </div>
+
+      <!-- Progressive Search Progress Card -->
+      <div id="scanProgressCard" class="search-progress-card hidden">
+        <div class="search-progress-meta">
+          <span id="scanStatusSubnet">Searching Wi-Fi...</span>
+          <span id="scanPercentText" style="font-family: var(--font-mono); color: #ffffff;">0%</span>
+        </div>
+        <div class="search-progress-bar-bg">
+          <div id="scanProgressBarFill" class="search-progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Discovered Device Cards Stack -->
+      <div id="discoveredDevicesList" class="devices-stack"></div>
+
+      <!-- Action Button (Unified State) -->
+      <button id="btnTriggerScan" class="btn-glass-primary">
+        <svg id="scanIconSearch" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <svg id="scanIconStop" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        <span id="scanBtnText">Search Wi-Fi</span>
+      </button>
+
+      <!-- Manual IP / Hostname Input Row -->
+      <div class="manual-connect-row">
+        <div class="input-field-wrap">
+          <svg class="input-prefix-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          <input type="text" id="manualIpInput" class="input-host-text" placeholder="Enter IP (e.g. 192.168.1.20)">
+        </div>
+        <button id="btnManualConnect" class="btn-pill-action">
+          <span>Connect</span>
+        </button>
+      </div>
+
+      <!-- Help / Diagnostic Guide -->
+      <div id="troubleshootBox" class="troubleshoot-box hidden">
+        <div class="troubleshoot-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>Can't find computer?</span>
+        </div>
+        <p>• Make sure AiroDrop is open on computer.</p>
+        <p>• Make sure both devices are on same Wi-Fi.</p>
+        <p>• Or enter IP address directly above.</p>
       </div>
 
     </div>
 
-    <!-- ─── VIEW 2: OS-AWARE PWA INSTALLATION ─── -->
-    <div id="viewInstall" class="glass-card hidden">
+    <!-- ════════════════ VIEW 2: OS-AWARE INSTALLATION ════════════════ -->
+    <div id="viewInstall" class="main-glass-panel hidden">
       
-      <div class="header-bar">
-        <div class="brand-group">
-          <div class="brand-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+      <div class="panel-header">
+        <div class="brand-title-group">
+          <div class="brand-logo-frame">
+            <img src="/logo.svg" alt="AiroDrop" class="brand-logo-img">
           </div>
-          <h1 class="brand-name">Install App</h1>
+          <h1 class="brand-text-name">Install AiroDrop</h1>
         </div>
-        <button id="btnBackToRadar" class="btn-glass-sm">← Change PC</button>
+        <button id="btnBackToRadar" class="btn-pill-action">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span>Back</span>
+        </button>
       </div>
 
-      <!-- Target Host Pill -->
-      <div style="background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="status-dot"></span>
-          <span style="font-size: 0.82rem; font-weight: 700; color: #ffffff;" id="targetDeviceName">AsepPC</span>
+      <!-- Target PC Card -->
+      <div style="background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <span style="width: 7.5px; height: 7.5px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+          <span style="font-size: 0.94rem; font-weight: 700; color: #ffffff;" id="targetDeviceName">Desktop PC</span>
         </div>
-        <span style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono);" id="targetDeviceHost">192.168.1.22:3478</span>
+        <span style="font-size: 0.76rem; color: var(--text-secondary); font-family: var(--font-mono);" id="targetDeviceHost">192.168.1.20:3478</span>
       </div>
 
       <!-- Android Flow -->
       <div id="sectionAndroid" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
-        <button id="btnInstallPwaAndroid" class="btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Install AiroDrop (1-Tap)</span>
+        <button id="btnInstallPwaAndroid" class="btn-glass-primary">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Install App</span>
         </button>
 
-        <div class="step-hint-box">
-          <span class="step-hint-badge">Menu</span>
-          <span>Or tap Chrome (⋮) → <strong>Install app</strong></span>
+        <div class="install-step-card">
+          <div class="step-number-pill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </div>
+          <span>Or tap Chrome menu (<strong>⋮</strong>) &rarr; <strong>Install app</strong></span>
         </div>
       </div>
 
       <!-- Apple iOS Flow -->
-      <div id="sectionIos" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="step-hint-box">
-          <span class="step-hint-badge">Safari</span>
-          <span>Tap <strong>Share (⎋)</strong> → <strong>Add to Home Screen</strong></span>
+      <div id="sectionIos" class="hidden" style="display: flex; flex-direction: column; gap: 9px;">
+        <div class="install-step-card">
+          <div class="step-number-pill">1</div>
+          <div style="flex: 1;">Tap <strong>Share</strong> button in Safari</div>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
         </div>
 
-        <button id="btnConfirmIosInstall" class="btn-primary">
-          <span>I Added the App</span>
+        <div class="install-step-card">
+          <div class="step-number-pill">2</div>
+          <div style="flex: 1;">Select <strong>Add to Home Screen</strong></div>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </div>
+
+        <div class="install-step-card">
+          <div class="step-number-pill">3</div>
+          <div style="flex: 1;">Tap <strong>Add</strong> in top right corner</div>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+
+        <button id="btnConfirmIosInstall" class="btn-glass-primary" style="margin-top: 2px;">
+          <span>I've Added the App</span>
         </button>
       </div>
 
-      <!-- Fallback Launch in Browser -->
-      <button id="btnLaunchInBrowser" class="btn-secondary">
+      <!-- Direct Launch -->
+      <button id="btnLaunchInBrowser" class="btn-glass-primary" style="background: rgba(255, 255, 255, 0.02); border-color: rgba(255, 255, 255, 0.07);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
         <span>Open in Browser</span>
       </button>
 
     </div>
 
-    <!-- ─── VIEW 3: SUCCESS GUIDANCE ─── -->
-    <div id="viewSuccess" class="glass-card hidden" style="text-align: center;">
+    <!-- ════════════════ VIEW 3: SUCCESS GUIDANCE ════════════════ -->
+    <div id="viewSuccess" class="main-glass-panel hidden" style="text-align: center;">
       
-      <div class="success-check-badge">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div class="success-icon-bubble">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <h2 style="font-size: 1.05rem; font-weight: 800; color: #ffffff;">Ready on Home Screen</h2>
-        <p style="font-size: 0.78rem; color: var(--text-secondary);">Close this tab and open <strong>AiroDrop</strong> from your Home Screen.</p>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Ready on Home Screen</h2>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+          Open <strong>AiroDrop</strong> from your Home Screen for instant transfers.
+        </p>
       </div>
 
-      <button id="btnOpenWebPortalSuccess" class="btn-secondary">
-        <span>Open in Browser Anyway</span>
+      <button id="btnOpenWebPortalSuccess" class="btn-glass-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        <span>Open in Browser</span>
       </button>
 
     </div>
 
   </div>
 
+  <!-- ════════════════ FLOATING SAFARI POINTER (iOS) ════════════════ -->
+  <div id="iosSafariPointer" class="ios-safari-pointer-floating hidden">
+    <div class="safari-pointer-pill">
+      <div class="safari-pointer-icon-box">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="safari-pointer-text">
+        <span>Tap <strong>Share</strong> below, then <strong>"Add to Home Screen"</strong></span>
+      </div>
+      <button class="safari-pointer-close" id="btnCloseSafariPointer" aria-label="Dismiss">✕</button>
+    </div>
+    <div class="safari-pointer-arrow-bounce">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <polyline points="19 12 12 19 5 12"></polyline>
+      </svg>
+    </div>
+  </div>
+
   <script>
+    // ─── Register Service Worker for 100% Offline Capability ───
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+
     (function() {
       let targetHost = '';
-      let targetName = 'AsepPC';
+      let targetName = 'AiroDrop PC';
       let targetPin = '';
+      let targetProto = 'http:';
       let deferredPrompt = null;
+      let scanAbortController = null;
+      let isScanning = false;
+      const discoveredHostsMap = new Map();
 
+      // Standalone Mode Detection
+      const isStandalone = window.navigator.standalone === true || 
+                           window.matchMedia('(display-mode: standalone)').matches;
+
+      // Auto-Connect State Management
+      let autoConnectTimer = null;
+      let autoConnectTargetHost = null;
+      let autoConnectCancelled = false;
+
+      // UI Element References
       const viewRadar = document.getElementById('viewRadar');
       const viewInstall = document.getElementById('viewInstall');
       const viewSuccess = document.getElementById('viewSuccess');
+
+      const radarStatusDot = document.getElementById('radarStatusDot');
+      const radarStatusText = document.getElementById('radarStatusText');
+
+      const scanProgressCard = document.getElementById('scanProgressCard');
+      const scanStatusSubnet = document.getElementById('scanStatusSubnet');
+      const scanPercentText = document.getElementById('scanPercentText');
+      const scanProgressBarFill = document.getElementById('scanProgressBarFill');
+      const btnTriggerScan = document.getElementById('btnTriggerScan');
+      const scanIconSearch = document.getElementById('scanIconSearch');
+      const scanIconStop = document.getElementById('scanIconStop');
+      const scanBtnText = document.getElementById('scanBtnText');
+      const troubleshootBox = document.getElementById('troubleshootBox');
 
       const discoveredDevicesList = document.getElementById('discoveredDevicesList');
       const manualIpInput = document.getElementById('manualIpInput');
@@ -629,10 +1127,25 @@
       const btnLaunchInBrowser = document.getElementById('btnLaunchInBrowser');
       const btnOpenWebPortalSuccess = document.getElementById('btnOpenWebPortalSuccess');
 
+      if (isStandalone) {
+        document.body.classList.add('pwa-standalone');
+        const radarStatusPill = document.getElementById('radarStatusPill');
+        if (radarStatusPill) {
+          radarStatusPill.classList.add('standalone-pill');
+          radarStatusPill.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>App Mode</span>
+          `;
+        }
+      }
+
+      // Native PWA Install Prompt
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (btnInstallPwaAndroid) {
+        if (btnInstallPwaAndroid && !isStandalone) {
           btnInstallPwaAndroid.style.display = 'inline-flex';
         }
       });
@@ -642,58 +1155,232 @@
         showSuccessView();
       });
 
-      const discoveredHostsMap = new Map();
+      // ─── Auto-Connect Controllers ───────────────────────────────
+      function stopAutoConnect() {
+        if (autoConnectTimer) {
+          clearInterval(autoConnectTimer);
+          autoConnectTimer = null;
+        }
+      }
 
-      function renderDiscoveredDevice(dev) {
-        if (!dev || !dev.host) return;
-        discoveredHostsMap.set(dev.host, dev);
+      window.cancelAutoConnect = function(e) {
+        if (e) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        stopAutoConnect();
+        autoConnectCancelled = true;
+        autoConnectTargetHost = null;
+        refreshDevicesList();
+      };
+
+      function startAutoConnectTimer(targetDev) {
+        if (autoConnectCancelled || !targetDev || !targetDev.host) return;
+        if (autoConnectTimer && autoConnectTargetHost === targetDev.host) return;
+
+        stopAutoConnect();
+        autoConnectTargetHost = targetDev.host;
+
+        const totalMs = 1200;
+        let remainingMs = totalMs;
+        const intervalMs = 100;
+
+        const bar = document.getElementById('autoConnectBar');
+        const countdownText = document.getElementById('autoConnectCountdown');
+        if (bar) bar.style.width = '100%';
+        if (countdownText) countdownText.textContent = '1.2s';
+
+        autoConnectTimer = setInterval(() => {
+          remainingMs -= intervalMs;
+          const pct = Math.max(0, (remainingMs / totalMs) * 100);
+          const b = document.getElementById('autoConnectBar');
+          const txt = document.getElementById('autoConnectCountdown');
+          if (b) b.style.width = `${pct}%`;
+          if (txt) txt.textContent = `${(Math.max(0, remainingMs) / 1000).toFixed(1)}s`;
+
+          if (remainingMs <= 0) {
+            stopAutoConnect();
+            selectDevice(targetDev.host, targetDev.name, targetDev.pin || '', targetDev.proto || 'http:');
+          }
+        }, intervalMs);
+      }
+
+      // ─── Render Device Card with Auto-Connect / Connect Button Below ──
+      function refreshDevicesList() {
+        const onlineList = Array.from(discoveredHostsMap.values()).filter(d => d.isOnline && !d.isUnreachable);
+        // Auto-connect executes in Standalone PWA mode so browser users have time to add to Home Screen!
+        const shouldAutoConnect = isStandalone && (onlineList.length === 1 && !autoConnectCancelled);
 
         let html = '';
         discoveredHostsMap.forEach(d => {
-          html += `
-            <div class="device-card" onclick="selectDevice('${escapeAttr(d.host)}', '${escapeAttr(d.name)}', '${escapeAttr(d.pin || '')}')">
-              <div class="device-left">
-                <div class="device-icon-box">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          let pairedBadge = '';
+          if (d.isUnreachable) {
+            pairedBadge = `<span class="dot-sep">•</span><span class="paired-tag-text" style="color:#ef4444; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.1);">Offline</span>`;
+          } else if (d.isLastKnown) {
+            pairedBadge = `<span class="dot-sep">•</span><span class="paired-tag-text">Paired</span>`;
+          }
+
+          let actionBtn = '';
+          if (d.isUnreachable) {
+            actionBtn = `<button class="btn-connect-below" style="background:rgba(255,106,0,0.15); border-color:rgba(255,106,0,0.3);" onclick="startLanDiscovery()">
+                 <span>Locate on Wi-Fi</span>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+               </button>`;
+          } else if (shouldAutoConnect && d.host === onlineList[0].host) {
+            actionBtn = `
+              <button class="btn-connect-below btn-auto-connecting" onclick="selectDevice('${escapeAttr(d.host)}', '${escapeAttr(d.name)}', '${escapeAttr(d.pin || '')}', '${escapeAttr(d.proto || 'http:')}')">
+                <div class="auto-connect-progress-track">
+                  <div id="autoConnectBar" class="auto-connect-progress-bar"></div>
                 </div>
-                <div class="device-info">
-                  <span class="device-name">${escapeHtml(d.name)}</span>
-                  <span class="device-meta">
-                    <span style="width:5px; height:5px; border-radius:50%; background:#22c55e; display:inline-block;"></span>
-                    ${escapeHtml(d.host)}
-                  </span>
+                <div class="auto-connect-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  <span>Connecting in <strong id="autoConnectCountdown">1.2s</strong></span>
+                </div>
+                <span class="btn-cancel-autoconnect" onclick="cancelAutoConnect(event)">Cancel</span>
+              </button>
+            `;
+          } else {
+            actionBtn = `<button class="btn-connect-below" onclick="selectDevice('${escapeAttr(d.host)}', '${escapeAttr(d.name)}', '${escapeAttr(d.pin || '')}', '${escapeAttr(d.proto || 'http:')}')">
+                 <span>${isStandalone ? 'Connect' : 'Connect in Browser'}</span>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+               </button>`;
+          }
+
+          html += `
+            <div class="device-card" ${d.isUnreachable ? 'style="border-color:rgba(239,68,68,0.25);"' : ''}>
+              <div class="card-top-info-row">
+                <div class="device-avatar-wrapper">
+                  <div class="device-avatar-box" ${d.isUnreachable ? 'style="background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.2);"' : ''}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </div>
+                  <span class="avatar-online-dot" ${d.isUnreachable ? 'style="background:#ef4444; box-shadow:0 0 8px rgba(239,68,68,0.6);"' : ''}></span>
+                </div>
+                <div class="device-text-group">
+                  <div class="device-title-text">${escapeHtml(d.name)}</div>
+                  <div class="device-meta-row">
+                    <span>${escapeHtml(d.host)}</span>
+                    ${pairedBadge}
+                  </div>
                 </div>
               </div>
-              <button class="connect-action-btn">
-                <span>Connect</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
+              ${actionBtn}
             </div>
           `;
         });
 
         discoveredDevicesList.innerHTML = html;
+
+        if (shouldAutoConnect) {
+          startAutoConnectTimer(onlineList[0]);
+        } else {
+          stopAutoConnect();
+        }
       }
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const paramLan = urlParams.get('lan') || urlParams.get('ip') || '';
-      const paramName = urlParams.get('name') || '';
-      const paramPin = urlParams.get('pin') || '';
-
-      if (paramLan) {
-        targetHost = paramLan;
-        if (paramName) targetName = paramName;
-        if (paramPin) targetPin = paramPin;
-
-        renderDiscoveredDevice({
-          name: targetName,
-          host: targetHost,
-          pin: targetPin
-        });
+      function renderDiscoveredDevice(dev) {
+        if (!dev || !dev.host) return;
+        discoveredHostsMap.set(dev.host, dev);
+        refreshDevicesList();
       }
 
-      startRadarScanning();
+      // ─── Strategy A: Probe Host (Multi-Port & Safe HTTP Fallback) ───
+      async function testHost(host, proto = 'http:') {
+        if (!host) return null;
+        const cleanHost = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        const timeoutMs = 800;
 
+        async function fetchCandidate(targetUrl) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            const res = await fetch(targetUrl, {
+              signal: controller.signal,
+              mode: 'cors'
+            });
+            clearTimeout(timer);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.service === 'airodrop') {
+                return data;
+              }
+            }
+          } catch (_) {}
+          return null;
+        }
+
+        // Test 1: Direct specified URL
+        let data = await fetchCandidate(`${proto}//${cleanHost}/api/discovery`);
+        if (data) {
+          return { host: cleanHost, name: data.name || 'AiroDrop PC', version: data.version, proto };
+        }
+
+        // Test 2: If port 3478, test port 3479 (HTTP fallback bypasses self-signed TLS cert failure)
+        if (cleanHost.includes(':3478')) {
+          const fallbackHost = cleanHost.replace(':3478', ':3479');
+          data = await fetchCandidate(`http://${fallbackHost}/api/discovery`);
+          if (data) {
+            return { host: fallbackHost, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+          }
+        } else if (!cleanHost.includes(':')) {
+          data = await fetchCandidate(`http://${cleanHost}:3479/api/discovery`);
+          if (data) {
+            return { host: `${cleanHost}:3479`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+          }
+          data = await fetchCandidate(`http://${cleanHost}:3478/api/discovery`);
+          if (data) {
+            return { host: `${cleanHost}:3478`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+          }
+        }
+
+        return null;
+      }
+
+      async function checkLastKnownHost() {
+        const lastHost = localStorage.getItem('airodrop_paired_host');
+        const lastName = localStorage.getItem('airodrop_paired_name') || 'AiroDrop PC';
+        const lastProto = localStorage.getItem('airodrop_paired_proto') || 'http:';
+
+        if (lastHost) {
+          renderDiscoveredDevice({
+            name: lastName,
+            host: lastHost,
+            proto: lastProto,
+            isLastKnown: true
+          });
+
+          const result = await testHost(lastHost, lastProto);
+          if (result) {
+            renderDiscoveredDevice({
+              name: result.name,
+              host: result.host,
+              proto: result.proto,
+              version: result.version,
+              isLastKnown: true,
+              isOnline: true
+            });
+            localStorage.setItem('airodrop_paired_host', result.host);
+            localStorage.setItem('airodrop_paired_proto', result.proto);
+            localStorage.setItem('airodrop_paired_name', result.name);
+          } else {
+            // Not reachable at last known address: show warning card + auto-trigger discovery
+            renderDiscoveredDevice({
+              name: lastName,
+              host: lastHost,
+              proto: lastProto,
+              isLastKnown: true,
+              isUnreachable: true
+            });
+            // Auto start LAN scan in background to find new DHCP IP
+            setTimeout(() => {
+              startLanDiscovery();
+            }, 600);
+          }
+        }
+      }
+
+      // ─── Strategy B: Cloud Radar WebSocket ─────────────────────
       function startRadarScanning() {
         let ws = null;
         let probeInterval = null;
@@ -710,25 +1397,40 @@
                 if (ws && ws.readyState === WebSocket.OPEN) {
                   ws.send(JSON.stringify({ type: 'discover-radar-probe' }));
                 }
-              }, 2500);
+              }, 3000);
             };
 
             ws.onmessage = (event) => {
               try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'radar-beacon' && msg.host) {
+                  const proto = msg.https ? 'https:' : 'http:';
                   renderDiscoveredDevice({
                     name: msg.name || 'AiroDrop PC',
                     host: msg.host,
-                    pin: msg.pin || ''
+                    pin: msg.pin || '',
+                    proto: proto,
+                    isOnline: true
                   });
+
+                  localStorage.setItem('airodrop_paired_host', msg.host);
+                  localStorage.setItem('airodrop_paired_proto', proto);
+                  localStorage.setItem('airodrop_paired_name', msg.name || 'AiroDrop PC');
+                  if (msg.pin) localStorage.setItem('airodrop_auth_pin', msg.pin);
+
+                  if (!targetHost) {
+                    targetHost = msg.host;
+                    targetName = msg.name || 'AiroDrop PC';
+                    targetPin = msg.pin || '';
+                    targetProto = proto;
+                  }
                 }
               } catch (e) {}
             };
 
             ws.onclose = () => {
               if (probeInterval) clearInterval(probeInterval);
-              setTimeout(connectWs, 4000);
+              setTimeout(connectWs, 5000);
             };
 
             ws.onerror = () => {
@@ -740,25 +1442,184 @@
         connectWs();
       }
 
-      window.selectDevice = function(host, name, pin) {
+      // ─── Strategy C: Progressive Subnet Scanner ────────────────
+      function setSearchingUIState(searching) {
+        isScanning = searching;
+        if (searching) {
+          scanProgressCard.classList.remove('hidden');
+          btnTriggerScan.classList.add('btn-stop-search');
+          scanIconSearch.classList.add('hidden');
+          scanIconStop.classList.remove('hidden');
+          scanBtnText.textContent = 'Stop Search';
+          radarStatusDot.classList.add('scanning');
+          radarStatusText.textContent = 'Searching...';
+        } else {
+          scanProgressCard.classList.add('hidden');
+          btnTriggerScan.classList.remove('btn-stop-search');
+          scanIconSearch.classList.remove('hidden');
+          scanIconStop.classList.add('hidden');
+          scanBtnText.textContent = 'Search Wi-Fi';
+          radarStatusDot.classList.remove('scanning');
+          radarStatusText.textContent = 'Ready';
+        }
+      }
+
+      async function scanSubnet(subnetPrefix, abortSignal) {
+        const concurrency = 16;
+        const totalIps = 254;
+        let scannedCount = 0;
+
+        setSearchingUIState(true);
+        scanStatusSubnet.textContent = `Scanning (${subnetPrefix}.x)...`;
+
+        // Probe port 3479 (designated HTTP discovery port) which avoids self-signed TLS cert issues
+        const ipList = [];
+        for (let i = 1; i <= totalIps; i++) {
+          ipList.push(`${subnetPrefix}.${i}:3479`);
+        }
+
+        let index = 0;
+
+        async function worker() {
+          while (index < ipList.length) {
+            if (abortSignal.aborted) return;
+            const currentHost = ipList[index++];
+            
+            try {
+              const res = await testHost(currentHost, 'http:');
+              if (res) {
+                renderDiscoveredDevice({
+                  name: res.name,
+                  host: res.host,
+                  proto: res.proto,
+                  version: res.version,
+                  isOnline: true
+                });
+              }
+            } catch (_) {}
+
+            scannedCount++;
+            const pct = Math.round((scannedCount / totalIps) * 100);
+            scanPercentText.textContent = `${pct}%`;
+            scanProgressBarFill.style.width = `${pct}%`;
+          }
+        }
+
+        const workers = Array.from({ length: concurrency }, () => worker());
+        await Promise.all(workers);
+
+        if (!abortSignal.aborted) {
+          scanStatusSubnet.textContent = 'Complete';
+          setTimeout(() => {
+            setSearchingUIState(false);
+            if (discoveredHostsMap.size === 0) {
+              troubleshootBox.classList.remove('hidden');
+            }
+          }, 600);
+        }
+      }
+
+      function getLikelySubnets() {
+        const subnets = [];
+        const lastHost = localStorage.getItem('airodrop_paired_host') || '';
+        const match = lastHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
+        if (match) {
+          subnets.push(match[1]);
+        }
+        ['192.168.1', '192.168.0', '192.168.10', '10.0.0', '172.16.0'].forEach(s => {
+          if (!subnets.includes(s)) subnets.push(s);
+        });
+        return subnets;
+      }
+
+      async function startLanDiscovery() {
+        if (scanAbortController) {
+          scanAbortController.abort();
+        }
+        scanAbortController = new AbortController();
+        const subnets = getLikelySubnets();
+        troubleshootBox.classList.add('hidden');
+
+        for (const subnet of subnets.slice(0, 3)) {
+          if (scanAbortController.signal.aborted) break;
+          await scanSubnet(subnet, scanAbortController.signal);
+          const hasOnline = Array.from(discoveredHostsMap.values()).some(d => d.isOnline && !d.isUnreachable);
+          if (hasOnline) break;
+        }
+      }
+
+      function stopLanDiscovery() {
+        if (scanAbortController) {
+          scanAbortController.abort();
+          scanAbortController = null;
+        }
+        setSearchingUIState(false);
+      }
+
+      window.startLanDiscovery = startLanDiscovery;
+      window.stopLanDiscovery = stopLanDiscovery;
+
+      btnTriggerScan.addEventListener('click', () => {
+        if (isScanning) {
+          stopLanDiscovery();
+        } else {
+          startLanDiscovery();
+        }
+      });
+
+      // ─── Strategy D: Manual Connection ────────────────────────
+      btnManualConnect.addEventListener('click', async () => {
+        const val = manualIpInput.value.trim();
+        if (!val) return;
+
+        btnManualConnect.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s infinite linear;"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        `;
+        btnManualConnect.disabled = true;
+
+        const cleanHost = val.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        let testRes = null;
+        let finalHost = cleanHost;
+        if (!cleanHost.includes(':')) {
+          testRes = await testHost(`${cleanHost}:3479`, 'http:');
+          if (testRes) {
+            finalHost = `${cleanHost}:3479`;
+          } else {
+            testRes = await testHost(`${cleanHost}:3478`, 'http:');
+            finalHost = `${cleanHost}:3478`;
+          }
+        } else {
+          testRes = await testHost(cleanHost, 'http:');
+        }
+
+        const finalName = testRes ? testRes.name : 'Desktop PC';
+        const finalProto = testRes ? testRes.proto : (finalHost.includes('3479') ? 'http:' : 'http:');
+
+        btnManualConnect.innerHTML = `<span>Connect</span>`;
+        btnManualConnect.disabled = false;
+
+        selectDevice(finalHost, finalName, '', finalProto);
+      });
+
+      // ─── Device Selection & Direct Connect ──────────────────────
+      window.selectDevice = function(host, name, pin, proto) {
+        stopAutoConnect();
+        const pointerEl = document.getElementById('iosSafariPointer');
+        if (pointerEl) pointerEl.classList.add('hidden');
+
         targetHost = host;
         targetName = name || 'AiroDrop PC';
         targetPin = pin || '';
+        targetProto = proto || (host && host.includes('3479') ? 'http:' : 'http:');
 
         localStorage.setItem('airodrop_paired_host', targetHost);
+        localStorage.setItem('airodrop_paired_proto', targetProto);
         localStorage.setItem('airodrop_paired_name', targetName);
         if (targetPin) localStorage.setItem('airodrop_auth_pin', targetPin);
 
-        showInstallView();
+        // Direct 1-click connect to local PC portal
+        window.location.href = `${targetProto}//${targetHost}/m`;
       };
-
-      btnManualConnect.addEventListener('click', () => {
-        const val = manualIpInput.value.trim();
-        if (val) {
-          const cleanHost = val.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-          selectDevice(cleanHost, 'Desktop PC', '');
-        }
-      });
 
       btnBackToRadar.addEventListener('click', () => {
         viewInstall.classList.add('hidden');
@@ -817,9 +1678,10 @@
       }
 
       function navigateToPortal() {
-        if (targetHost) {
-          const proto = targetHost.includes('3478') ? 'https:' : window.location.protocol;
-          window.location.href = `${proto}//${targetHost}/m`;
+        const host = targetHost || localStorage.getItem('airodrop_paired_host');
+        const proto = targetProto || localStorage.getItem('airodrop_paired_proto') || 'http:';
+        if (host) {
+          window.location.href = `${proto}//${host}/m`;
         } else {
           window.location.href = '/m';
         }
@@ -834,6 +1696,34 @@
         if (!str) return '';
         return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
+
+      // ─── Floating Safari Pointer Setup ───────────────────────────
+      function setupSafariPointer() {
+        const ua = navigator.userAgent || '';
+        const isIos = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+        const isDismissed = sessionStorage.getItem('safari_pointer_dismissed') === 'true';
+        const pointerEl = document.getElementById('iosSafariPointer');
+        const btnClose = document.getElementById('btnCloseSafariPointer');
+
+        if (pointerEl && isIos && isSafari && !isStandalone && !isDismissed) {
+          pointerEl.classList.remove('hidden');
+        }
+
+        if (btnClose && pointerEl) {
+          btnClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pointerEl.classList.add('hidden');
+            sessionStorage.setItem('safari_pointer_dismissed', 'true');
+          });
+        }
+      }
+
+      // ─── Initialization ─────────────────────────────────────────
+      setupSafariPointer();
+      checkLastKnownHost();
+      startRadarScanning();
+
     })();
   </script>
 </body>

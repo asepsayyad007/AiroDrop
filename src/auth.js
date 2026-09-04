@@ -325,6 +325,8 @@ function authMiddleware(req, res, next) {
     p.startsWith('/u/') || 
     p.startsWith('/d/') ||
     p.startsWith('/api/auth/') ||
+    p === '/api/discovery' ||
+    p === '/api/health' ||
     p === '/favicon.ico' ||
     p === '/logo.png' ||
     p === '/logo.ico' ||

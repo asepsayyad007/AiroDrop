@@ -115,6 +115,7 @@ function registerMiddleware(app) {
     if (
       cleanPath === '/api/events' ||
       cleanPath === '/api/health' ||
+      cleanPath === '/api/discovery' ||
       cleanPath === '/api/control' ||
       cleanPath.startsWith('/api/control/') ||
       cleanPath === '/' ||
@@ -235,8 +236,13 @@ function registerMiddleware(app) {
     }
     // If origin is present but not allowed, don't set the header (browser will block)
 
+    // Support Chrome/Chromium Private Network Access (PNA) Preflights
+    if (req.headers['access-control-request-private-network']) {
+      res.header('Access-Control-Allow-Private-Network', 'true');
+    }
+
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-AiroDrop-Token, X-Filename');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-AiroDrop-Token, X-Filename, Access-Control-Request-Private-Network');
     res.header('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
     res.header('Access-Control-Max-Age', '86400'); // Cache preflight for 24h
 
@@ -368,6 +374,11 @@ function isAllowedOrigin(origin) {
   try {
     const url = new URL(origin);
     const hostname = url.hostname;
+
+    // Whitelist public AiroDrop domain for PWA pairing
+    if (hostname === 'airodrop.site' || hostname.endsWith('.airodrop.site')) {
+      return true;
+    }
 
     // Allow localhost variants
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {

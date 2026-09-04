@@ -23,6 +23,7 @@ const filesRouter = require('./src/routes/files');
 const clipboardRouter = require('./src/routes/clipboard');
 const settingsRouter = require('./src/routes/settings');
 const authRouter = require('./src/routes/auth');
+const discoveryRouter = require('./src/routes/discovery');
 const auth = require('./src/auth');
 
 const serverEvents = new EventEmitter();
@@ -43,6 +44,7 @@ app.use('/api/files', filesRouter);
 app.use('/api', clipboardRouter);
 app.use('/api', settingsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api', discoveryRouter);
 
 // GET /auth-pin — Mobile/Web PIN Lock Screen
 app.get('/auth-pin', (req, res) => {
@@ -105,9 +107,21 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
 // GET /m — Mobile setup page (separate from SPA fallback)
 app.get('/m', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
+});
+
+// GET /install or /installer — Forward to /m for local PC
+app.get(['/install', '/installer'], (req, res) => {
+  res.redirect('/m');
 });
 
 // GET /api/health — Production health check endpoint

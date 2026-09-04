@@ -97,6 +97,11 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  // Helper: Strictly point to clean web pairing installer URL
+  function getCloudPairingUrl() {
+    return 'https://airodrop.site/install';
+  }
+
   function getShareLinkElements() {
     const isReceiveMode = $('#receiveModeContainer') && $('#receiveModeContainer').style.display !== 'none';
     if (isReceiveMode) {
@@ -153,7 +158,7 @@
     // Immediate initial fallback QR code for right panel pairing card
     const rightPanelQrImg = $('#rightPanelQrImg');
     if (rightPanelQrImg) {
-      rightPanelQrImg.src = getThemedQrUrl(window.location.origin + '/m');
+      rightPanelQrImg.src = getThemedQrUrl(getCloudPairingUrl());
     }
 
     // Server may still be starting – retry fetchServerInfo up to 5 times with 800ms delay
@@ -297,8 +302,7 @@
     const homepageQr = $('#homepageQrContainer');
     const rightPanelQrImg = $('#rightPanelQrImg');
     if (serverInfo) {
-      const baseUrl = serverInfo.url;
-      const urlWithToken = `${baseUrl}/m`;
+      const urlWithToken = getCloudPairingUrl();
       if (qrContainer) {
         qrContainer.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
       }
@@ -446,11 +450,11 @@
       ccPortalLink.textContent = `${baseUrl}/m`;
     }
 
-    // Setup QR code for mobile
+    // Setup QR code for mobile pointing to trusted cloud installer
     const qrContainer = $('#mobileQrContainer');
     const homepageQr = $('#homepageQrContainer');
     const rightPanelQrImg = $('#rightPanelQrImg');
-    const urlWithToken = `${baseUrl}/m`;
+    const urlWithToken = getCloudPairingUrl();
     
     if (qrContainer) {
       qrContainer.innerHTML = `<img src="${getThemedQrUrl(urlWithToken)}" alt="Setup QR Code" width="110" height="110" style="display: block;">`;
@@ -1280,10 +1284,9 @@
 
     if (serverInfo) {
       const infoIPSetup = $('#infoIPSetup');
-      const proto = serverInfo.protocol || (serverInfo.https !== false ? 'https' : 'http');
-      $$('.infoIPSetupText').forEach(el => el.textContent = `${proto}://${serverInfo.ip}:${serverInfo.port || 3478}/m`);
+      $$('.infoIPSetupText').forEach(el => el.textContent = 'https://airodrop.site/install');
       $$('.infoPortSetupText').forEach(el => el.textContent = parseInt(serverInfo.port || 3478, 10) + 1);
-      $$('.infoShortcutUrlText').forEach(el => el.textContent = `http://${serverInfo.ip}:${parseInt(serverInfo.port || 3478, 10) + 1}`);
+      $$('.infoShortcutUrlText').forEach(el => el.textContent = 'https://airodrop.site/install');
 
       const infoHostDeviceName = $('#infoHostDeviceName');
       if (infoHostDeviceName && serverInfo.deviceName) {
@@ -1295,7 +1298,7 @@
       }
 
       if (imgQuickPairHostQr) {
-        const pairUrl = `${proto}://${serverInfo.ip}:${serverInfo.port || 3478}/m`;
+        const pairUrl = getCloudPairingUrl();
         imgQuickPairHostQr.src = getThemedQrUrl(pairUrl);
       }
     }
@@ -1314,52 +1317,48 @@
     shortcutsModal.style.display = 'flex';
   }
 
-  function setupQuickPairQrModal() {
-    const trigger = $('#rightPanelQrContainer');
+  async function openQuickPairQrModal(e) {
+    if (e) e.stopPropagation();
     const modal = $('#quickPairQrModal');
     const card = $('#quickPairQrCard');
-    const btnClose = $('#btnCloseQuickPairQr');
     const enlargedQrImg = $('#enlargedQrImg');
     const enlargedPinDisplay = $('#enlargedPinDisplay');
     const enlargedQrUrlText = $('#enlargedQrUrlText');
+    if (!modal) return;
 
-    if (!trigger || !modal) return;
-
-    async function openModal() {
-      const baseUrl = serverInfo ? serverInfo.url : window.location.origin;
-      const urlWithToken = `${baseUrl}/m`;
-      if (enlargedQrImg) enlargedQrImg.src = getThemedQrUrl(urlWithToken);
-      if (enlargedQrUrlText) enlargedQrUrlText.textContent = `${baseUrl}/m`;
-      
-      const pinCodeEl = $('#pinDisplayCode');
-      if (enlargedPinDisplay && pinCodeEl && pinCodeEl.textContent.trim()) {
-        enlargedPinDisplay.textContent = pinCodeEl.textContent.trim();
-      } else if (enlargedPinDisplay) {
-        try {
-          const res = await doFetch('/api/auth/status');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.pin) enlargedPinDisplay.textContent = data.pin;
-          }
-        } catch (_) {}
-      }
-
-      modal.style.display = 'flex';
-      requestAnimationFrame(() => {
-        modal.style.opacity = '1';
-        if (card) card.style.transform = 'translateY(0)';
-      });
+    const urlWithToken = getCloudPairingUrl();
+    if (enlargedQrImg) enlargedQrImg.src = getThemedQrUrl(urlWithToken);
+    if (enlargedQrUrlText) enlargedQrUrlText.textContent = urlWithToken;
+    
+    const pinCodeEl = $('#pinDisplayCode');
+    if (enlargedPinDisplay && pinCodeEl && pinCodeEl.textContent.trim()) {
+      enlargedPinDisplay.textContent = pinCodeEl.textContent.trim();
+    } else if (enlargedPinDisplay && serverInfo && serverInfo.pinCode) {
+      enlargedPinDisplay.textContent = serverInfo.pinCode;
     }
+
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+  }
+  window.openQuickPairQrModal = openQuickPairQrModal;
+
+  function setupQuickPairQrModal() {
+    const trigger = $('#rightPanelQrContainer');
+    const cardTrigger = $('#rightPanelPairingCard');
+    const modal = $('#quickPairQrModal');
+    const btnClose = $('#btnCloseQuickPairQr');
+
+    if (!modal) return;
 
     function closeModal() {
-      modal.style.opacity = '0';
-      if (card) card.style.transform = 'translateY(20px)';
-      setTimeout(() => {
-        modal.style.display = 'none';
-      }, 300);
+      modal.style.display = 'none';
     }
 
-    trigger.addEventListener('click', openModal);
+    if (trigger) trigger.addEventListener('click', (e) => openQuickPairQrModal(e));
+    if (cardTrigger) {
+      cardTrigger.style.cursor = 'pointer';
+      cardTrigger.addEventListener('click', (e) => openQuickPairQrModal(e));
+    }
     if (btnClose) btnClose.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
@@ -1368,6 +1367,8 @@
       if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
     });
   }
+
+  window.openSetupModal = openSetupModal;
 
   function openSettingsModal() {
     switchDesktopTab('settings');
@@ -4370,11 +4371,20 @@
   // ─── Quick Device Pairing & Setup Modal ──────────────────
   function setupShortcutsModal() {
     const btnHeaderSetup = $('#btnHeaderSetup');
+    const btnDashSetupGuide = $('#btnDashSetupGuide');
     const shortcutsModal = $('#shortcutsModal');
     const closeModal = $('#closeModal');
 
-    if (btnHeaderSetup && shortcutsModal) {
-      btnHeaderSetup.addEventListener('click', () => {
+    if (btnHeaderSetup) {
+      btnHeaderSetup.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSetupModal();
+      });
+    }
+
+    if (btnDashSetupGuide) {
+      btnDashSetupGuide.addEventListener('click', (e) => {
+        e.preventDefault();
         openSetupModal();
       });
     }

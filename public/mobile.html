@@ -1638,16 +1638,21 @@
     </div>
     <div class="pwa-text">
       <strong>Add to Home Screen</strong>
-      <span>Quick access anytime</span>
+      <span>Fullscreen app mode (Zero browser bars)</span>
     </div>
     <button class="pwa-add" id="pwaAdd">Add</button>
     <button class="pwa-close" id="pwaClose">&times;</button>
   </div>
 
-
-
-  <script src="mobile-app.js?v=6.4.5.2"></script>
-  <script src="keyboard.js?v=6.4.5.2"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
+      });
+    }
+  </script>
+  <script src="mobile-app.js?v=6.5.2"></script>
+  <script src="keyboard.js?v=6.5.2"></script>
   <script>
     // Timeout fallback: if app doesn't initialize within 8s, show error state
     setTimeout(function() {

@@ -31,6 +31,12 @@ const TOKEN_LENGTH = 12;
 // ─── App Setup ──────────────────────────────────────────────
 const app = express();
 app.use(cors());
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.header('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
 app.set('trust proxy', true);
 
 // Serve static public assets
@@ -535,6 +541,23 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Discovery endpoint for relay server
+app.get(['/api/discovery', '/discovery'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.json({
+    service: 'airodrop',
+    role: 'relay-server',
+    version: '6.4.80',
+    activeSessions: sessions.size,
+    uptime: Math.floor(process.uptime()),
+    capabilities: {
+      radarDiscovery: true,
+      p2pTunnel: true,
+      instantShare: true
+    }
+  });
+});
+
 
 
 // File metadata preview
@@ -947,7 +970,7 @@ server.on('upgrade', (request, socket, head) => {
     request.headers.connection = request.headers.connection.split(',')[0].trim();
   }
 
-  if (p === '/ws' || p === '/ws/' || p === '/') {
+  if (p === '/ws' || p === '/ws/' || p === '/' || p === '/trackpad') {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
     });

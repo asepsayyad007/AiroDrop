@@ -85,8 +85,189 @@
       return null;
     }
 
+    // ─── Instant LAN Host Bridge for PWA ─────────────────────────
+    async function scanSubnetForAiroDrop(subnetPrefix, port = 3479, timeoutMs = 300) {
+      const ips = [];
+      for (let i = 1; i <= 254; i++) {
+        ips.push(`${subnetPrefix}.${i}:${port}`);
+      }
+
+      let found = null;
+      let idx = 0;
+      const concurrency = 20;
+
+      async function probeWorker() {
+        while (idx < ips.length && !found) {
+          const current = ips[idx++];
+          try {
+            const c = new AbortController();
+            const timer = setTimeout(() => c.abort(), timeoutMs);
+            const r = await fetch(`http://${current}/api/discovery`, {
+              signal: c.signal,
+              mode: 'cors'
+            });
+            clearTimeout(timer);
+            if (r.ok) {
+              const d = await r.json();
+              if (d && d.service === 'airodrop') {
+                const proto = (d.protocol === 'https' && !current.includes('3479')) ? 'https:' : 'http:';
+                found = { host: current, name: d.name || 'AiroDrop PC', proto };
+                return;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      await Promise.all(Array.from({ length: concurrency }, () => probeWorker()));
+      return found;
+    }
+
+    async function resolveAiroDropHost() {
+      const isCloudOrigin = window.location.hostname === 'airodrop.site' || window.location.hostname.endsWith('.airodrop.site');
+      
+      // If running on a local IP origin (e.g. from a Home Screen shortcut), verify server is alive:
+      if (!isCloudOrigin) {
+        let isLocalAlive = false;
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 400);
+          const r = await fetch('/api/discovery', { signal: ctrl.signal, mode: 'cors' });
+          clearTimeout(t);
+          if (r.ok) {
+            const d = await r.json();
+            if (d && d.service === 'airodrop') {
+              isLocalAlive = true;
+            }
+          }
+        } catch (_) {}
+
+        if (isLocalAlive) {
+          return true; // Host is alive and well!
+        }
+
+        // Host at this IP is dead (DHCP assigned a new IP to PC)!
+        // Scan subnet immediately to find PC's new IP:
+        const currentSubnetMatch = window.location.hostname.match(/^(\d+\.\d+\.\d+)\.\d+/);
+        const subnetsToProbe = [];
+        if (currentSubnetMatch) subnetsToProbe.push(currentSubnetMatch[1]);
+        ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+          if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
+        });
+
+        for (const subnet of subnetsToProbe.slice(0, 2)) {
+          const foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
+          if (foundHost) {
+            localStorage.setItem('airodrop_paired_host', foundHost.host);
+            localStorage.setItem('airodrop_paired_proto', foundHost.proto);
+            if (foundHost.name) localStorage.setItem('airodrop_paired_name', foundHost.name);
+            window.location.replace(`${foundHost.proto}//${foundHost.host}/m`);
+            return false;
+          }
+        }
+
+        // Fallback to official cloud radar:
+        window.location.replace('https://airodrop.site/install');
+        return false;
+      }
+
+      const lastHost = localStorage.getItem('airodrop_paired_host');
+      const lastProto = localStorage.getItem('airodrop_paired_proto') || 'http:';
+
+      // 1. Instant test to last paired PC
+      if (lastHost) {
+        try {
+          const cleanHost = lastHost.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 400);
+          const res = await fetch(`${lastProto}//${cleanHost}/api/discovery`, {
+            signal: ctrl.signal,
+            mode: 'cors'
+          });
+          clearTimeout(t);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.service === 'airodrop') {
+              window.location.replace(`${lastProto}//${cleanHost}/m`);
+              return false;
+            }
+          }
+        } catch (_) {}
+
+        // If port was 3478 (HTTPS), try HTTP fallback on 3479
+        if (lastHost.includes(':3478')) {
+          try {
+            const altHost = lastHost.replace(':3478', ':3479').replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 400);
+            const res = await fetch(`http://${altHost}/api/discovery`, {
+              signal: ctrl.signal,
+              mode: 'cors'
+            });
+            clearTimeout(t);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.service === 'airodrop') {
+                localStorage.setItem('airodrop_paired_host', altHost);
+                localStorage.setItem('airodrop_paired_proto', 'http:');
+                window.location.replace(`http://${altHost}/m`);
+                return false;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      // 2. Fast background scan across common local subnets if last IP changed
+      const likelySubnets = [];
+      if (lastHost) {
+        const m = lastHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
+        if (m) likelySubnets.push(m[1]);
+      }
+      ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+        if (!likelySubnets.includes(s)) likelySubnets.push(s);
+      });
+
+      for (const subnet of likelySubnets.slice(0, 2)) {
+        const foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
+        if (foundHost) {
+          localStorage.setItem('airodrop_paired_host', foundHost.host);
+          localStorage.setItem('airodrop_paired_proto', foundHost.proto);
+          if (foundHost.name) localStorage.setItem('airodrop_paired_name', foundHost.name);
+          window.location.replace(`${foundHost.proto}//${foundHost.host}/m`);
+          return false;
+        }
+      }
+
+      // 3. Fallback: navigate to radar installer
+      window.location.replace('/install');
+      return false;
+    }
+
+    let _isScanningSubnetOnDisconnect = false;
+    async function attemptBackgroundLanRecovery() {
+      const currentHost = window.location.host;
+      const m = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
+      const subnet = m ? m[1] : '192.168.1';
+      const port = window.location.port === '3478' ? '3479' : (window.location.port || '3479');
+
+      const found = await scanSubnetForAiroDrop(subnet, port, 300);
+      if (found && found.host !== currentHost) {
+        localStorage.setItem('airodrop_paired_host', found.host);
+        localStorage.setItem('airodrop_paired_proto', found.proto);
+        if (found.name) localStorage.setItem('airodrop_paired_name', found.name);
+        showToast(`PC found at ${found.host}. Reconnecting...`);
+        setTimeout(() => {
+          window.location.replace(`${found.proto}//${found.host}/m`);
+        }, 800);
+      }
+    }
+
     // ─── Init ─────────────────────────────────────
     async function init() {
+      const ready = await resolveAiroDropHost();
+      if (!ready) return;
+
       let token = localStorage.getItem('deviceToken');
       if (!token || token === 'public-device') {
         const sessionCookie = getCookie('airodrop_session');
@@ -420,6 +601,15 @@
         if (folderEl) folderEl.textContent = info.saveDir || info.shareDir || 'Downloads/AiroDrop';
         document.querySelectorAll('.mobileSetupIpCode').forEach(el => el.textContent = info.ip || '...');
 
+        // Persist successful connection host and device name
+        if (info.ip) {
+          const currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+          const pairedHost = (currentPort === '80' || currentPort === '443') ? info.ip : `${info.ip}:${currentPort}`;
+          localStorage.setItem('airodrop_paired_host', pairedHost);
+          localStorage.setItem('airodrop_paired_proto', window.location.protocol);
+          if (info.deviceName) localStorage.setItem('airodrop_paired_name', info.deviceName);
+        }
+
         // Home Tab Connection Card updates
         const homeIpEl = document.getElementById('homeConnIp');
         if (homeIpEl) homeIpEl.textContent = info.ip || 'Local Network';
@@ -440,7 +630,7 @@
         dot.className = 'dot err';
         const homeStatusText = document.getElementById('homeConnStatusText');
         if (homeStatusText) {
-          homeStatusText.textContent = 'PC Offline';
+          homeStatusText.innerHTML = 'PC Offline · <a href="/install" style="color:var(--accent-light); text-decoration:underline;">Find PC</a>';
           homeStatusText.style.color = 'var(--text-muted)';
         }
         const homeBadge = document.getElementById('homeConnBadge');
@@ -454,12 +644,20 @@
           _reconnectCountdown = 15;
           _reconnectTimer = setInterval(() => {
             _reconnectCountdown--;
-            if (text) text.textContent = `No connection — retrying in ${_reconnectCountdown}s`;
+            if (text) text.innerHTML = `No connection (${_reconnectCountdown}s) · <a href="/install" style="color:#ff6a00; font-weight:700; text-decoration:none;">Locate PC</a>`;
             if (_reconnectCountdown <= 0) {
               _reconnectCountdown = 15;
               checkConnection();
             }
           }, 1000);
+
+          // Auto-discover if PC IP changed on local subnet
+          if (!_isScanningSubnetOnDisconnect) {
+            _isScanningSubnetOnDisconnect = true;
+            attemptBackgroundLanRecovery().finally(() => {
+              _isScanningSubnetOnDisconnect = false;
+            });
+          }
         }
       }
     }
@@ -903,6 +1101,7 @@
 
       const handleInstallTrigger = async () => {
         triggerHaptic(20);
+
         const promptEvent = deferredPrompt || window._pwaDeferredPrompt;
         if (promptEvent) {
           try {
