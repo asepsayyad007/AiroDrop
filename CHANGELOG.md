@@ -5,6 +5,26 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.85] - 2026-09-04
+
+### Added
+- **Persistent IP Change Detection & Alert System** — Created an active network interface watcher with disk persistence (`last_known_ip.json` in user data folder). Detects live DHCP IP reassignment or network switches across reboots.
+- **PC Dashboard Warning Window (`#ipChangedWarningModal`)** — Prominent frosted-glass warning window on PC dashboard alerting the user when their local IP changes, showing previous vs new IP, active pairing PIN, clean pairing QR code (`https://airodrop.site/install`), and dismiss controls.
+- **State-Synchronized Alert Dismissal** — Added `GET /api/info` pending alert persistence and `POST /api/settings/acknowledge-ip-change` to ensure the warning is reliably displayed upon dashboard launch or refresh until explicitly acknowledged.
+- **Background Mobile LAN Recovery** — Integrated `attemptBackgroundLanRecovery()` into mobile PWA connectivity checks. Automatically sweeps local subnets (`192.168.1.x`, `192.168.0.x`, etc.) on port 3479 upon heartbeat loss and re-establishes connection to the new IP on HTTPS port 3478.
+- **Strict HTTPS Mobile Preservation** — Probing continues over HTTP port 3479 to prevent self-signed TLS handshake deadlocks during network scans, while all mobile UI sessions strictly target `https://${host}:3478/m` to maintain WebRTC microphone streaming, camera access, and desktop screen mirroring.
+- **Zero-Tap Auto-Connect & Safari Pointer** — Deployed 1.5s countdown auto-connect when exactly one PC is discovered, and an interactive Safari tooltip guide for iOS PWA installation.
+- **Experimental "No Router Mode" (Beta — Known Limitations)** — Added adapter and subnet detection for Phone Hotspot and USB Cable Tethering (`172.20.10.x`, `192.168.43.x`, `192.168.42.x`), with a 4-tab setup modal on the PC dashboard. *Note: Mobile hotspot direct routing is currently experimental with known bugs due to cellular carrier client/AP isolation and direct-IP certificate restrictions on certain mobile devices.*
+
+### Changed
+- **Subnet Probe Concurrency Upgrade** — Accelerated PWA LAN scanner to 25 parallel workers for rapid discovery (< 300ms across typical `/24` subnets).
+- **Relay Cloud Radar Synchronization** — Updated discovery handlers on `airodrop.site` relay to seamlessly map port 3479 discovery to port 3478 HTTPS.
+
+### Known Issues
+- **No Router Mode (Mobile Hotspot)** — Direct peer-to-peer routing between phone browsers and connected PCs over cellular hotspot is subject to carrier AP isolation and self-signed certificate constraints. Work is ongoing for future releases to provide alternative zero-router synchronization mechanisms.
+
+---
+
 ## [6.4.80] - 2026-08-17
 
 ### Added

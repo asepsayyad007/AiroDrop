@@ -1310,6 +1310,16 @@
           return null;
         }
 
+        // If host contains port 3479 (HTTP probe port), probe on 3479 but connect via HTTPS 3478
+        if (cleanHost.includes(':3479')) {
+          const targetHost = cleanHost.replace(':3479', ':3478');
+          const d = await fetchCandidate(`http://${cleanHost}/api/discovery`);
+          if (d) {
+            return { host: targetHost, name: d.name || 'AiroDrop PC', version: d.version, proto: 'https:' };
+          }
+          return null;
+        }
+
         // Test 1: Direct specified URL
         let data = await fetchCandidate(`${proto}//${cleanHost}/api/discovery`);
         if (data) {
@@ -1327,11 +1337,11 @@
         } else if (!cleanHost.includes(':')) {
           data = await fetchCandidate(`http://${cleanHost}:3479/api/discovery`);
           if (data) {
-            return { host: `${cleanHost}:3479`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+            return { host: `${cleanHost}:3478`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'https:' };
           }
           data = await fetchCandidate(`http://${cleanHost}:3478/api/discovery`);
           if (data) {
-            return { host: `${cleanHost}:3478`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'http:' };
+            return { host: `${cleanHost}:3478`, name: data.name || 'AiroDrop PC', version: data.version, proto: 'https:' };
           }
         }
 
@@ -1426,12 +1436,12 @@
                     targetProto = proto;
                   }
                 }
-              } catch (e) {}
+              } catch (_) {}
             };
 
             ws.onclose = () => {
               if (probeInterval) clearInterval(probeInterval);
-              setTimeout(connectWs, 5000);
+              setTimeout(connectWs, 3000);
             };
 
             ws.onerror = () => {
@@ -1466,7 +1476,7 @@
       }
 
       async function scanSubnet(subnetPrefix, abortSignal) {
-        const concurrency = 16;
+        const concurrency = 25;
         const totalIps = 254;
         let scannedCount = 0;
 
@@ -1475,7 +1485,12 @@
 
         // Probe port 3479 (designated HTTP discovery port) which avoids self-signed TLS cert issues
         const ipList = [];
+        if (subnetPrefix === '172.20.10') {
+          // iPhone Hotspot & USB cable priority IP
+          ipList.push('172.20.10.2:3479');
+        }
         for (let i = 1; i <= totalIps; i++) {
+          if (subnetPrefix === '172.20.10' && i === 2) continue;
           ipList.push(`${subnetPrefix}.${i}:3479`);
         }
 
@@ -1527,7 +1542,7 @@
         if (match) {
           subnets.push(match[1]);
         }
-        ['192.168.1', '192.168.0', '192.168.10', '10.0.0', '172.16.0'].forEach(s => {
+        ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0', '172.16.0'].forEach(s => {
           if (!subnets.includes(s)) subnets.push(s);
         });
         return subnets;
@@ -1541,7 +1556,7 @@
         const subnets = getLikelySubnets();
         troubleshootBox.classList.add('hidden');
 
-        for (const subnet of subnets.slice(0, 3)) {
+        for (const subnet of subnets.slice(0, 5)) {
           if (scanAbortController.signal.aborted) break;
           await scanSubnet(subnet, scanAbortController.signal);
           const hasOnline = Array.from(discoveredHostsMap.values()).some(d => d.isOnline && !d.isUnreachable);

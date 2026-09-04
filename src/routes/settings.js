@@ -291,49 +291,42 @@ router.get('/info', async (req, res) => {
   const allIps = utils.getAllIPs();
   const osName = getRealOsCaption();
   const drives = getSystemDrives();
+  const netMode = utils.detectNetworkMode(ip);
+  const directHotspotUrl = `${protocol}://${ip}:${state.PORT}/m`;
+
+  let qrDataUrl = null;
+  let directQrDataUrl = null;
 
   try {
-    const qrDataUrl = await QRCode.toDataURL(mobileUrl, {
+    qrDataUrl = await QRCode.toDataURL(mobileUrl, {
       width: 300,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     });
-    res.json({
-      ip,
-      port: state.PORT,
-      url,
-      https: state.HTTPS_ENABLED !== false,
-      protocol,
-      qrDataUrl,
-      saveDir: state.SAVE_DIR,
-      uptime: process.uptime(),
-      deviceName: state.DEVICE_NAME,
-      osName,
-      drives,
-      allIps,
-      temporaryMode: state.TEMPORARY_MODE,
-      pairingToken: '',
-      ipChangePending: state.PENDING_IP_CHANGE || null
-    });
-  } catch {
-    res.json({
-      ip,
-      port: state.PORT,
-      url,
-      https: state.HTTPS_ENABLED !== false,
-      protocol,
-      qrDataUrl: null,
-      saveDir: state.SAVE_DIR,
-      uptime: process.uptime(),
-      deviceName: state.DEVICE_NAME,
-      osName,
-      drives,
-      allIps,
-      temporaryMode: state.TEMPORARY_MODE,
-      pairingToken: '',
-      ipChangePending: state.PENDING_IP_CHANGE || null
-    });
-  }
+    directQrDataUrl = qrDataUrl;
+  } catch {}
+
+  res.json({
+    ip,
+    port: state.PORT,
+    url,
+    https: state.HTTPS_ENABLED !== false,
+    protocol,
+    qrDataUrl,
+    directQrDataUrl,
+    directHotspotUrl,
+    networkMode: netMode,
+    isHotspot: netMode.isHotspot,
+    saveDir: state.SAVE_DIR,
+    uptime: process.uptime(),
+    deviceName: state.DEVICE_NAME,
+    osName,
+    drives,
+    allIps,
+    temporaryMode: state.TEMPORARY_MODE,
+    pairingToken: '',
+    ipChangePending: state.PENDING_IP_CHANGE || null
+  });
 });
 
 // POST /api/settings/acknowledge-ip-change — Dismiss pending IP change alert

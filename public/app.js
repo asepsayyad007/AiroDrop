@@ -155,6 +155,7 @@
     runSetup('PCWebRTCScreencast', setupPCWebRTCScreencast);
     runSetup('QuickPairQrModal', setupQuickPairQrModal);
     runSetup('IpChangedModal', setupIpChangedModal);
+    runSetup('HotspotGuideModal', setupHotspotGuideModal);
 
     if (isElectron && window.electronAPI && window.electronAPI.on) {
       window.electronAPI.on('network-ip-changed', (event, data) => {
@@ -477,6 +478,20 @@
 
     // Update temporary mode badge on dashboard
     updateTemporaryModeBadge(info.temporaryMode);
+
+    // Update Hotspot / USB Tether Mode active indicator
+    const hotspotModeBadge = $('#hotspotModeBadge');
+    const hotspotBadgeText = $('#hotspotBadgeText');
+    if (hotspotModeBadge) {
+      if (info && info.isHotspot) {
+        hotspotModeBadge.style.display = 'inline-flex';
+        if (hotspotBadgeText && info.networkMode) {
+          hotspotBadgeText.textContent = info.networkMode.label || 'Hotspot Active';
+        }
+      } else {
+        hotspotModeBadge.style.display = 'none';
+      }
+    }
 
     // If an IP change was detected between launches or via DHCP, display warning modal
     if (info && info.ipChangePending && typeof showIpChangedModal === 'function') {
@@ -1465,6 +1480,132 @@
         } catch (_) {
           showIpChangedModal(serverInfo ? serverInfo.ip : '192.168.1.33', '192.168.1.99');
         }
+      });
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+    });
+  }
+
+  // ─── No Router / Mobile Hotspot & USB Tethering Guide Modal ────────
+  let _isDirectQrActive = false;
+
+  function openHotspotModal() {
+    const modal = $('#hotspotGuideModal');
+    if (!modal) return;
+
+    updateHotspotModalUI();
+    modal.style.display = 'flex';
+  }
+  window.openHotspotModal = openHotspotModal;
+
+  function updateHotspotModalUI() {
+    const activeModeEl = $('#hotspotActiveModeName');
+    const activeIpPill = $('#hotspotActiveIpPill');
+    const statusDot = $('#hotspotStatusDot');
+    const qrImg = $('#hotspotGuideQrImg');
+    const qrTitle = $('#hotspotQrTitle');
+    const qrSub = $('#hotspotQrSub');
+    const btnToggle = $('#btnToggleHotspotQrMode');
+    const offlineWarning = $('#hotspotOfflineWarningNotice');
+
+    const netMode = (serverInfo && serverInfo.networkMode) ? serverInfo.networkMode : { mode: 'lan-router', label: 'Wi-Fi Router / LAN', isHotspot: false };
+    const ip = (serverInfo && serverInfo.ip) ? serverInfo.ip : '127.0.0.1';
+
+    if (activeModeEl) activeModeEl.textContent = netMode.label;
+    if (activeIpPill) activeIpPill.textContent = ip;
+    if (statusDot) {
+      statusDot.style.background = netMode.isHotspot ? '#10b981' : '#3b82f6';
+      statusDot.style.boxShadow = netMode.isHotspot ? '0 0 8px rgba(16, 185, 129, 0.6)' : '0 0 8px rgba(59, 130, 246, 0.6)';
+    }
+
+    // Auto-select tab based on mode
+    if (netMode.mode === 'iphone-hotspot') {
+      selectHotspotTab('iphone-cable');
+    } else if (netMode.mode === 'android-usb-tether') {
+      selectHotspotTab('android-cable');
+    } else if (netMode.mode === 'android-hotspot') {
+      selectHotspotTab('android-wifi');
+    }
+
+    // QR display
+    if (_isDirectQrActive) {
+      const directUrl = (serverInfo && serverInfo.directHotspotUrl) || `https://${ip}:3478/m`;
+      if (qrImg) {
+        if (serverInfo && serverInfo.directQrDataUrl) {
+          qrImg.src = serverInfo.directQrDataUrl;
+        } else {
+          qrImg.src = getThemedQrUrl(directUrl);
+        }
+      }
+      if (qrTitle) qrTitle.textContent = 'Direct Offline Mode';
+      if (qrSub) qrSub.textContent = directUrl;
+      if (btnToggle) btnToggle.textContent = 'Switch to Cloud QR';
+      if (offlineWarning) offlineWarning.style.display = 'block';
+    } else {
+      const cloudUrl = getCloudPairingUrl(); // 'https://airodrop.site/install'
+      if (qrImg) qrImg.src = getThemedQrUrl(cloudUrl);
+      if (qrTitle) qrTitle.textContent = 'Cloud Radar Pairing (Recommended)';
+      if (qrSub) qrSub.textContent = 'https://airodrop.site/install';
+      if (btnToggle) btnToggle.textContent = 'Switch to Direct Offline QR';
+      if (offlineWarning) offlineWarning.style.display = 'none';
+    }
+  }
+
+  function selectHotspotTab(tabId) {
+    $$('.hotspot-tab-btn').forEach(btn => {
+      if (btn.getAttribute('data-tab') === tabId) {
+        btn.classList.add('active');
+        btn.style.background = 'rgba(59, 130, 246, 0.25)';
+        btn.style.color = '#93c5fd';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.color = '#94a3b8';
+      }
+    });
+
+    $$('.hotspot-tab-pane').forEach(pane => {
+      if (pane.id === `pane-${tabId}`) {
+        pane.style.display = 'block';
+      } else {
+        pane.style.display = 'none';
+      }
+    });
+  }
+
+  function setupHotspotGuideModal() {
+    const modal = $('#hotspotGuideModal');
+    const btnClose = $('#btnCloseHotspotGuide');
+    const btnDismiss = $('#btnDismissHotspotGuide');
+    const btnToggle = $('#btnToggleHotspotQrMode');
+
+    if (!modal) return;
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
+
+    // Tab buttons
+    $$('.hotspot-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        if (tab) selectHotspotTab(tab);
+      });
+    });
+
+    // Toggle QR mode between Clean Cloud URL and Direct Offline URL
+    if (btnToggle) {
+      btnToggle.addEventListener('click', () => {
+        _isDirectQrActive = !_isDirectQrActive;
+        updateHotspotModalUI();
       });
     }
 

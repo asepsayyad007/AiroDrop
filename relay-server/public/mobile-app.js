@@ -88,13 +88,18 @@
     // ─── Instant LAN Host Bridge for PWA ─────────────────────────
     async function scanSubnetForAiroDrop(subnetPrefix, port = 3479, timeoutMs = 300) {
       const ips = [];
+      if (subnetPrefix === '172.20.10') {
+        // iPhone Hotspot & USB Cable always assigns 172.20.10.2 to the connected PC!
+        ips.push(`172.20.10.2:${port}`);
+      }
       for (let i = 1; i <= 254; i++) {
+        if (subnetPrefix === '172.20.10' && i === 2) continue;
         ips.push(`${subnetPrefix}.${i}:${port}`);
       }
 
       let found = null;
       let idx = 0;
-      const concurrency = 20;
+      const concurrency = 25;
 
       async function probeWorker() {
         while (idx < ips.length && !found) {
@@ -110,8 +115,9 @@
             if (r.ok) {
               const d = await r.json();
               if (d && d.service === 'airodrop') {
-                const proto = (d.protocol === 'https' && !current.includes('3479')) ? 'https:' : 'http:';
-                found = { host: current, name: d.name || 'AiroDrop PC', proto };
+                // ALWAYS map target to port 3478 HTTPS so microphone & screen mirror work
+                const targetHost = current.replace(`:${port}`, ':3478');
+                found = { host: targetHost, name: d.name || 'AiroDrop PC', proto: 'https:' };
                 return;
               }
             }
@@ -151,11 +157,11 @@
         const currentSubnetMatch = window.location.hostname.match(/^(\d+\.\d+\.\d+)\.\d+/);
         const subnetsToProbe = [];
         if (currentSubnetMatch) subnetsToProbe.push(currentSubnetMatch[1]);
-        ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+        ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
           if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
         });
 
-        for (const subnet of subnetsToProbe.slice(0, 2)) {
+        for (const subnet of subnetsToProbe.slice(0, 4)) {
           const foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
           if (foundHost) {
             localStorage.setItem('airodrop_paired_host', foundHost.host);
@@ -224,11 +230,11 @@
         const m = lastHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
         if (m) likelySubnets.push(m[1]);
       }
-      ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+      ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
         if (!likelySubnets.includes(s)) likelySubnets.push(s);
       });
 
-      for (const subnet of likelySubnets.slice(0, 2)) {
+      for (const subnet of likelySubnets.slice(0, 4)) {
         const foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
         if (foundHost) {
           localStorage.setItem('airodrop_paired_host', foundHost.host);
@@ -253,12 +259,12 @@
       const m = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
       const subnetsToProbe = [];
       if (m) subnetsToProbe.push(m[1]);
-      ['192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+      ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
         if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
       });
 
       let foundHost = null;
-      for (const subnet of subnetsToProbe.slice(0, 2)) {
+      for (const subnet of subnetsToProbe.slice(0, 4)) {
         foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
         if (foundHost) break;
       }

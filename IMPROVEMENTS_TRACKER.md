@@ -12,6 +12,7 @@ This document tracks the specification, implementation, and verification of the 
 | **2** | **Animated Safari Pointer**<br>Pulsing downward arrow & tooltip pointing to iOS Safari Share button | iOS (Safari browser) | 🟢 Implemented & Deployed | `relay-server/pages/installer.html`<br>`relay-server/public/installer.html` |
 | **3** | **Standalone PWA Auto-Detection**<br>Detect installed PWA mode, suppress install banners & fast-track | iOS, Android (Installed PWA) | 🟢 Implemented & Deployed | `relay-server/pages/installer.html`<br>`relay-server/public/installer.html`<br>`public/mobile-app.js` |
 | **4** | **PC IP Change Detection & Warning Window**<br>Detect DHCP IP change, show alert modal with reconnect QR | Windows (PC Dashboard) | 🟢 Implemented | `src/ipMonitor.js`<br>`server.js`<br>`main.js`<br>`public/index.html`<br>`public/app.js` |
+| **5** | **No Router Mode (Mobile Hotspot & USB Tethering)**<br>Connect via Phone Hotspot or USB Cable without router | Windows & Mobile | 🟡 Experimental / Has Bugs | `src/utils.js`<br>`src/routes/settings.js`<br>`public/app.js`<br>`public/index.html`<br>`public/mobile-app.js` |
 
 ---
 
@@ -72,6 +73,23 @@ This document tracks the specification, implementation, and verification of the 
 
 ---
 
+### 5. No Router Mode (Mobile Hotspot & USB Tethering) — [Experimental / Has Bugs]
+- **Goal**: Enable PC and mobile devices to discover and transfer files directly over a Phone Wi-Fi Hotspot or USB Cable Tethering when a local Wi-Fi router is unavailable.
+- **Implemented Foundation**:
+  - Adapter & subnet detection (`172.20.10.x` for iPhone, `192.168.43.x` for Android Wi-Fi, `192.168.42.x` for Android USB).
+  - Priority subnet probing for `172.20.10.x` in mobile scanner and relay installer.
+  - Dashboard "No Router Mode" visual guide modal with 4 tabs and Direct Offline QR toggle.
+- **Current Bugs & Known Limitations (Tracked for Future Work)**:
+  1. **Hotspot Client IP Assignment Variance**: iPhone hotspot does not always assign `172.20.10.2` to the PC; in live testing it assigned `172.20.10.6`. Scanning the full `/28` range or querying gateway ARP tables is required.
+  2. **Carrier AP & Client Isolation**: Many mobile carrier networks enforce AP/client isolation on cellular personal hotspots. In these cases, the phone OS drops direct inbound TCP packets from the mobile browser to connected Wi-Fi clients (`http://172.20.10.x:3479` or `https://172.20.10.x:3478`).
+  3. **Direct-IP TLS / Certificate Block**: Without a valid hostname or internet connection to reach public cloud relays, mobile browsers (Safari/Chrome) reject self-signed IP certs or fail WebSocket upgrades on direct raw IPs.
+  4. **Future Solution Under Investigation**:
+     - Local mDNS / Bonjour broadcast resolution over USB.
+     - Reverse USB tunnel / ADB / usbmuxd port forwarding helper.
+     - WebRTC peer-to-peer data channels via a lightweight signaling handshake.
+
+---
+
 ## 🛠️ Verification Checklist
 - [x] Auto-connect starts smoothly when 1 device is discovered.
 - [x] Clicking "Cancel" stops the countdown and preserves manual connection.
@@ -86,3 +104,5 @@ This document tracks the specification, implementation, and verification of the 
 - [x] Mobile UI preserves HTTPS on port 3478 for WebRTC mic and screen mirroring.
 - [x] Subnet scan automatically detects PC on new IP and reconnects mobile phone.
 - [x] Remote deployment to `myserver` (`airodrop-relay` container) updated and verified via HTTPS.
+- [ ] No Router Mode (Mobile Hotspot & USB Tethering) — Requires further architectural investigation due to carrier hotspot isolation.
+

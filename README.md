@@ -1,4 +1,4 @@
-# AiroDrop v6.4.80
+# AiroDrop v6.4.85
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@
 
 Official Website **[AiroDrop Hub](https://airodrop.site/)** | Developer **[Asep Sayyad](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.4.80-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.4.85-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-100%25_Local_Network-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows-blue.svg?style=flat-square&logo=windows)
@@ -17,11 +17,11 @@ Official Website **[AiroDrop Hub](https://airodrop.site/)** | Developer **[Asep 
 
 ---
 
-## Downloads (v6.4.80)
+## Downloads (v6.4.85)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.4.80)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.80/AiroDrop.Setup.6.4.80.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.4.80)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.80/AiroDrop-Portable-6.4.80.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.4.85)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.85/AiroDrop.Setup.6.4.85.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.4.85)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.85/AiroDrop-Portable-6.4.85.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
@@ -74,6 +74,11 @@ AiroDrop operates as a high-performance local HTTP/WebSocket gateway on your Win
 * **100% Local Subnet Privacy:** Zero cloud routing, zero data retention, and zero external tracking.
 * **Granular Security Controls:** Security Modes, optional Access PIN lock, and iOS Secret Access Key verification (`X-AiroDrop-Token`).
 * **Standalone Port Allocation:** Dual-port architecture separating HTTPS web portal (`3478`) and HTTP iOS Shortcut API (`3479`) for zero-friction setup.
+
+### Dynamic Network Monitoring & Auto-Recovery
+* **DHCP IP Change Detection:** Real-time monitoring and startup disk persistence (`last_known_ip.json`) alerts the user with a dashboard warning modal if the router reassigns the PC's local IP address.
+* **Background Mobile LAN Recovery:** Mobile PWAs automatically detect network disconnection, scan the local subnet on port 3479, and reconnect seamlessly to the PC over HTTPS port 3478 (preserving SSL for microphone streaming, camera, and WebRTC screen mirroring).
+* **Experimental No Router Mode (Beta — Known Limitations):** Preliminary support for Phone Hotspot and USB Cable Tethering. *Note: Currently in active beta with known limitations due to mobile carrier AP/client isolation and direct-IP certificate handshakes on certain mobile operating systems.*
 
 ---
 

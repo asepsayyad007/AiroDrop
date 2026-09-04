@@ -22,7 +22,7 @@ router.get('/discovery', (req, res) => {
 
   res.json({
     service: 'airodrop',
-    version: pkg.version || '6.4.80',
+    version: pkg.version || '6.4.85',
     name: devName,
     platform: process.platform,
     protocol: state.HTTPS_ENABLED ? 'https' : 'http',

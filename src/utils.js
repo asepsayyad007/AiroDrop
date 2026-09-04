@@ -194,7 +194,15 @@ function getLocalIP() {
         const isPrivate = addr.startsWith('192.168.') || addr.startsWith('10.') || /^172\.(1[6-9]|2\d|3[01])\./.test(addr);
         if (isPrivate) priority += 20;
 
-        if (lowerName.includes('wi-fi') || lowerName.includes('wlan')) {
+        // Give high priority to mobile hotspot & USB tethering subnets
+        if (addr.startsWith('172.20.10.') || addr.startsWith('192.168.43.') || addr.startsWith('192.168.42.')) {
+          priority += 15;
+        }
+
+        // Adapter type recognition
+        if (lowerName.includes('apple') || lowerName.includes('rndis') || lowerName.includes('tether') || lowerName.includes('ncm') || lowerName.includes('remote ndis')) {
+          priority += 12; // Dedicated USB phone tethering adapter
+        } else if (lowerName.includes('wi-fi') || lowerName.includes('wlan')) {
           priority += 10;
         } else if (lowerName.includes('ethernet') || lowerName.includes('lan') || lowerName.includes('local area')) {
           priority += 8;
@@ -210,6 +218,26 @@ function getLocalIP() {
   }
   
   return '127.0.0.1';
+}
+
+function detectNetworkMode(ip) {
+  const currentIp = ip || getLocalIP();
+  if (!currentIp || currentIp === '127.0.0.1') {
+    return { mode: 'offline', label: 'Offline', isHotspot: false, icon: 'wifi-off', defaultGateway: null };
+  }
+  if (currentIp.startsWith('172.20.10.')) {
+    return { mode: 'iphone-hotspot', label: 'iPhone Hotspot / USB Cable', isHotspot: true, icon: 'smartphone', defaultGateway: '172.20.10.1' };
+  }
+  if (currentIp.startsWith('192.168.43.')) {
+    return { mode: 'android-hotspot', label: 'Android Wi-Fi Hotspot', isHotspot: true, icon: 'wifi', defaultGateway: '192.168.43.1' };
+  }
+  if (currentIp.startsWith('192.168.42.')) {
+    return { mode: 'android-usb-tether', label: 'Android USB Tethering', isHotspot: true, icon: 'cable', defaultGateway: '192.168.42.129' };
+  }
+  if (currentIp.startsWith('192.168.225.')) {
+    return { mode: 'mobile-hotspot', label: 'Mobile Hotspot', isHotspot: true, icon: 'wifi', defaultGateway: '192.168.225.1' };
+  }
+  return { mode: 'lan-router', label: 'Wi-Fi Router / LAN', isHotspot: false, icon: 'router', defaultGateway: null };
 }
 
 function getAllIPs() {
@@ -518,5 +546,6 @@ module.exports = {
   handleIncomingText,
   updateWindowsContextMenu,
   trackActiveDevice,
-  getActiveDevices
+  getActiveDevices,
+  detectNetworkMode
 };

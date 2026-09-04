@@ -106,9 +106,20 @@
             <div>
               <div class="dashboard-status-title">Ready to receive &amp; send</div>
             </div>
+            <!-- Hotspot / USB Tether Mode Active Badge -->
+            <div id="hotspotModeBadge" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; margin-left: 10px; cursor: pointer; transition: all 0.2s ease;" title="Click for Hotspot &amp; USB Tethering Guide">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span id="hotspotBadgeText">Hotspot Active</span>
+            </div>
           </div>
 
-          <div class="dashboard-actions-group">
+          <div class="dashboard-actions-group" style="display: flex; gap: 8px;">
+            <!-- Button: Hotspot / Cable Mode Guide -->
+            <button class="btn" id="btnHotspotGuide" onclick="if(window.openHotspotModal) window.openHotspotModal();" style="display: flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 12px; background: rgba(59, 130, 246, 0.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; cursor: pointer; transition: all 0.25s ease;" title="Direct phone-to-PC connection via mobile hotspot or USB cable without a router">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              <span>No Router Mode</span>
+            </button>
+
             <button class="btn" id="btnDashSetupGuide" onclick="if(window.openSetupModal) window.openSetupModal();" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; background: rgba(239, 68, 68, 0.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(248, 113, 113, 0.35); color: #fca5a5; cursor: pointer; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.18); transition: all 0.25s ease;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
               <span>Mobile App Setup</span>
@@ -881,7 +892,7 @@
                 <span>AiroDrop Settings &amp; Preferences</span>
               </h2>
             </div>
-            <span class="win-app-version-badge" id="appVersionTag">v6.4.80</span>
+            <span class="win-app-version-badge" id="appVersionTag">v6.4.85</span>
           </div>
 
           <!-- Windows Settings Body Layout -->
@@ -1406,6 +1417,136 @@
           Setup Guide
         </button>
       </div>
+
+    </div>
+  </div>
+
+  <!-- ─── No Router / Mobile Hotspot & USB Tethering Guide Modal ───────────── -->
+  <div id="hotspotGuideModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); z-index: 2100; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); align-items: center; justify-content: center; padding: 16px;">
+    <div id="hotspotGuideCard" class="modal-content" style="width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; background: #0c1017; border: 1px solid rgba(59, 130, 246, 0.35); border-top: 2px solid #3b82f6; border-radius: 24px; padding: 24px; box-sizing: border-box; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(59, 130, 246, 0.15); position: relative; display: flex; flex-direction: column;">
+      
+      <!-- Close Button -->
+      <button id="btnCloseHotspotGuide" style="position: absolute; top: 16px; right: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); color: #ffffff; font-size: 1.2rem; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; margin: 0; padding: 0;">&times;</button>
+      
+      <!-- Header -->
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 14px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+        </div>
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0 0 2px 0;">No Router? Use Hotspot or Cable</h3>
+          <p style="font-size: 0.74rem; color: #94a3b8; margin: 0;">Connect PC and Phone directly without a home Wi-Fi router</p>
+        </div>
+      </div>
+
+      <!-- Current Adapter Status Pill -->
+      <div id="hotspotCurrentStatusPill" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 14px; border-radius: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="hotspotStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); display: inline-block;"></span>
+          <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">Active Mode:</span>
+          <span id="hotspotActiveModeName" style="font-size: 0.78rem; font-weight: 700; color: #ffffff;">Detecting...</span>
+        </div>
+        <span id="hotspotActiveIpPill" style="font-size: 0.75rem; font-weight: 700; color: #60a5fa; font-family: var(--font-mono, monospace);">127.0.0.1</span>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(0, 0, 0, 0.35); padding: 4px; border-radius: 12px; margin-bottom: 16px;">
+        <button class="hotspot-tab-btn active" data-tab="iphone-cable" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: rgba(59, 130, 246, 0.25); color: #93c5fd; transition: all 0.2s;">
+          🍎 iPhone Cable
+        </button>
+        <button class="hotspot-tab-btn" data-tab="iphone-wifi" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
+          🍎 iPhone Wi-Fi
+        </button>
+        <button class="hotspot-tab-btn" data-tab="android-cable" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
+          🤖 Android Cable
+        </button>
+        <button class="hotspot-tab-btn" data-tab="android-wifi" style="padding: 8px 4px; border-radius: 8px; font-size: 0.70rem; font-weight: 700; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s;">
+          🤖 Android Wi-Fi
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div id="hotspotTabContents" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+        
+        <!-- Tab 1: iPhone Cable -->
+        <div class="hotspot-tab-pane" id="pane-iphone-cable" style="display: block;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px;">RECOMMENDED FOR IPHONE</span>
+            <span style="font-size: 0.70rem; color: #94a3b8;">Zero setup &amp; maximum speed</span>
+          </div>
+          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
+            <li>Plug your iPhone into your PC using a <strong>Lightning or USB-C cable</strong>.</li>
+            <li>On iPhone, go to <strong>Settings ➔ Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON. (Tap <em>Trust This Computer</em> on iPhone if prompted).</li>
+            <li>On your iPhone Safari browser, visit <strong>https://airodrop.site/install</strong>. The app auto-discovers your PC at <code style="color: #60a5fa;">172.20.10.2</code> instantly!</li>
+          </ol>
+        </div>
+
+        <!-- Tab 2: iPhone Wi-Fi -->
+        <div class="hotspot-tab-pane" id="pane-iphone-wifi" style="display: none;">
+          <div style="font-size: 0.72rem; font-weight: 800; color: #60a5fa; margin-bottom: 10px;">WIRELESS IPHONE CONNECTION</div>
+          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
+            <li>On iPhone, open <strong>Settings ➔ Personal Hotspot</strong> and turn <strong>Allow Others to Join</strong> ON.</li>
+            <li>On your PC, open Wi-Fi settings and connect to your iPhone's Hotspot name.</li>
+            <li>On your iPhone Safari browser, visit <strong>https://airodrop.site/install</strong>. Your PC will be found automatically.</li>
+          </ol>
+        </div>
+
+        <!-- Tab 3: Android Cable -->
+        <div class="hotspot-tab-pane" id="pane-android-cable" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px;">ULTRA STABLE</span>
+            <span style="font-size: 0.70rem; color: #94a3b8;">USB Tethering</span>
+          </div>
+          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
+            <li>Connect Android phone to PC with a <strong>USB cable</strong>.</li>
+            <li>On Android, go to <strong>Settings ➔ Network &amp; Internet (or Connections) ➔ Hotspot &amp; Tethering</strong>.</li>
+            <li>Turn <strong>USB tethering</strong> ON. (PC will immediately detect the phone network).</li>
+            <li>On Android Chrome, visit <strong>https://airodrop.site/install</strong>.</li>
+          </ol>
+        </div>
+
+        <!-- Tab 4: Android Wi-Fi -->
+        <div class="hotspot-tab-pane" id="pane-android-wifi" style="display: none;">
+          <div style="font-size: 0.72rem; font-weight: 800; color: #60a5fa; margin-bottom: 10px;">WIRELESS ANDROID HOTSPOT</div>
+          <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
+            <li>On Android, turn ON <strong>Mobile Hotspot</strong> in quick settings or Settings.</li>
+            <li>On your PC, connect to the Android Hotspot Wi-Fi network.</li>
+            <li>On Android Chrome, visit <strong>https://airodrop.site/install</strong>.</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <!-- QR Code Section with Clean Online vs Direct Offline Toggle -->
+      <div style="display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+        
+        <!-- Toggle Bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 12px;">
+          <div style="display: flex; flex-direction: column;">
+            <span id="hotspotQrTitle" style="font-size: 0.80rem; font-weight: 700; color: #ffffff;">Cloud Radar Pairing (Recommended)</span>
+            <span id="hotspotQrSub" style="font-size: 0.68rem; color: #94a3b8;">https://airodrop.site/install</span>
+          </div>
+          <button id="btnToggleHotspotQrMode" style="padding: 6px 12px; font-size: 0.70rem; font-weight: 700; border-radius: 8px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; cursor: pointer; transition: all 0.2s;">
+            Switch to Direct Offline QR
+          </button>
+        </div>
+
+        <!-- QR Code Container -->
+        <div style="background: #ffffff; padding: 10px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 8px;">
+          <img id="hotspotGuideQrImg" src="" alt="Pairing QR" style="width: 170px; height: 170px; object-fit: contain; display: block;">
+        </div>
+
+        <div id="hotspotOfflineWarningNotice" style="display: none; font-size: 0.70rem; color: #f59e0b; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box; text-align: center; margin-top: 6px;">
+          ⚠️ Direct Mode: Connects directly without internet. If phone shows SSL warning, tap <strong>Advanced ➔ Proceed</strong>.
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="btnDismissHotspotGuide" class="btn" style="width: 100%; padding: 12px; border-radius: 12px; font-size: 0.84rem; font-weight: 700; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);">
+        ✓ Got It, Close Guide
+      </button>
 
     </div>
   </div>
