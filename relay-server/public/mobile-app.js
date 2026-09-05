@@ -2032,6 +2032,7 @@
     let isMicStreaming = false;
     let isTrackpadOpen = false;
     let audioOnlyStreamMode = false;
+    let streamActive = false;
     let syncAudioStates = function() {};
     let wakeLock = null;
 
@@ -2507,7 +2508,7 @@
       // ── Touch Trackpad Logic ──
       let touchpadMaxTouches = 0;
       let touchpadStartTime = 0;
-      let touchpadHasMoved = false;
+      let touchpadMaxDist = 0;
       let touchpadLastX = 0;
       let touchpadLastY = 0;
       let touchpadStartX = 0;
@@ -2515,18 +2516,17 @@
       let touchpadIsScrolling = false;
       let touchpadInitialScrollY = 0;
       let touchpadAccumulatedScrollY = 0;
-      let touchpadTapTimeout = null;
-      let touchpadLastTapTime = 0;
 
       touchpadArea.addEventListener('touchstart', (e) => {
         const touches = e.touches;
+        touchpadMaxTouches = touches.length;
+        touchpadStartTime = Date.now();
+        touchpadMaxDist = 0;
+        touchpadIsScrolling = false;
+
         if (touches.length === 1) {
-          touchpadMaxTouches = 1;
-          touchpadHasMoved = false;
-          touchpadIsScrolling = false;
           touchpadStartX = touchpadLastX = touches[0].clientX;
           touchpadStartY = touchpadLastY = touches[0].clientY;
-          touchpadStartTime = Date.now();
           
           // Visual Cursor Dot
           const rect = touchpadArea.getBoundingClientRect();
@@ -2537,7 +2537,6 @@
             dot.style.top = (touches[0].clientY - rect.top) + 'px';
           }
         } else if (touches.length === 2) {
-          touchpadMaxTouches = 2;
           touchpadIsScrolling = true;
           touchpadInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
           touchpadAccumulatedScrollY = 0;
@@ -2552,7 +2551,6 @@
         if (touches.length === 2) {
           e.preventDefault();
           const cy = (touches[0].clientY + touches[1].clientY) / 2;
-          // Auto-initialize if touchstart was missed or flags were reset
           if (!touchpadIsScrolling || !touchpadInitialScrollY) {
             touchpadIsScrolling = true;
             touchpadInitialScrollY = cy;
@@ -2562,30 +2560,26 @@
           touchpadAccumulatedScrollY += dy;
           touchpadInitialScrollY = cy;
 
-          // Discrete high-precision scrolling: 3px drag = 30 wheel units (smooth, responsive feel)
           while (touchpadAccumulatedScrollY > 3) {
-            touchpadHasMoved = true;
-            sendWS({ type: 'scroll', amount: -30 }); // Scroll Down
+            sendWS({ type: 'scroll', amount: -30 });
             touchpadAccumulatedScrollY -= 3;
           }
           while (touchpadAccumulatedScrollY < -3) {
-            touchpadHasMoved = true;
-            sendWS({ type: 'scroll', amount: 30 });  // Scroll Up
+            sendWS({ type: 'scroll', amount: 30 });
             touchpadAccumulatedScrollY += 3;
           }
         } else if (touches.length === 1 && !touchpadIsScrolling) {
-          // If in presentation mode, don't move cursor, wait for touchend tap
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) return;
 
           const cx = touches[0].clientX, cy = touches[0].clientY;
-          if (Math.abs(cx - touchpadStartX) > 6 || Math.abs(cy - touchpadStartY) > 6) {
-            touchpadHasMoved = true;
+          const distFromStart = Math.hypot(cx - touchpadStartX, cy - touchpadStartY);
+          if (distFromStart > touchpadMaxDist) {
+            touchpadMaxDist = distFromStart;
           }
           sendWS({ type: 'move', dx: (cx - touchpadLastX) * 1.8, dy: (cy - touchpadLastY) * 1.8 });
           touchpadLastX = cx; touchpadLastY = cy;
           
-          // Visual Cursor Dot
           const rect = touchpadArea.getBoundingClientRect();
           const dot = document.getElementById('touchpadCursorDot');
           if (dot) {
@@ -2598,24 +2592,23 @@
       touchpadArea.addEventListener('touchend', (e) => {
         const dot = document.getElementById('touchpadCursorDot');
         if (dot) dot.style.display = 'none';
-        if (e.touches.length > 0) return; // Wait until all fingers leave
+        if (e.touches.length > 0) return;
 
         const duration = Date.now() - touchpadStartTime;
 
         if (touchpadMaxTouches === 2) {
-          if (!touchpadHasMoved && duration < 250) {
+          if (!touchpadIsScrolling && duration < 350) {
             sendWS({ type: 'click', button: 'right' });
           }
           touchpadIsScrolling = false;
           return;
         }
 
-        if (!touchpadHasMoved && duration < 250) {
-          triggerHaptic(10);
+        if (touchpadMaxTouches === 1 && touchpadMaxDist < 14 && duration < 350) {
+          triggerHaptic(12);
 
           const presMode = document.getElementById('presentationModeToggle');
           if (presMode && presMode.checked) {
-            // Presentation mode tap logic
             const screenWidth = window.innerWidth;
             if (touchpadLastX < screenWidth / 2) {
               sendWS({ type: 'key', code: 37 }); // ArrowLeft
@@ -2625,19 +2618,7 @@
             return;
           }
 
-          const now = Date.now();
-          if (now - touchpadLastTapTime < 300) {
-            if (touchpadTapTimeout) clearTimeout(touchpadTapTimeout);
-            sendWS({ type: 'click', button: 'left' });
-            setTimeout(() => sendWS({ type: 'click', button: 'left' }), 50);
-            touchpadLastTapTime = 0;
-          } else {
-            touchpadLastTapTime = now;
-            touchpadTapTimeout = setTimeout(() => {
-              sendWS({ type: 'click', button: 'left' });
-              touchpadTapTimeout = null;
-            }, 220);
-          }
+          sendWS({ type: 'click', button: 'left' });
         }
       }, { passive: true });
 
@@ -2705,26 +2686,93 @@
       const overlay = document.getElementById('screencastOverlay');
       const frame = document.getElementById('liveScreenFrame');
       const btnClose = document.getElementById('btnCloseScreencast');
-      const btnMode = document.getElementById('btnScreencastMode');
-      const btnKeyboard = document.getElementById('btnScreencastKeyboard');
       const btnOpen = document.getElementById('btnOpenScreencast');
 
+      // Top HUD bar controls
+      const btnKeyboard = document.getElementById('btnScreencastKeyboard');
+      const btnAudio = document.getElementById('btnScreencastAudio');
+      const scAudioIcon = document.getElementById('scAudioIcon');
+      const btnScreencastMic = document.getElementById('btnScreencastMic');
+      const scMicIcon = document.getElementById('scMicIcon');
+      const btnTools = document.getElementById('btnScreencastTools');
+
+      // Tools Bottom Sheet
+      const toolsSheet = document.getElementById('screencastToolsSheet');
+      const toolsBackdrop = document.getElementById('screencastToolsBackdrop');
+      const btnCloseToolsSheet = document.getElementById('btnCloseToolsSheet');
+      const btnMode = document.getElementById('btnScreencastMode');
+      const scModeTitle = document.getElementById('scModeTitle');
+      const scModeDesc = document.getElementById('scModeDesc');
+      const scModeBadge = document.getElementById('scModeBadge');
+      const btnPiP = document.getElementById('btnScreencastPiP');
+
+      // Keyboard panel controls
       const keyboardPanel = document.getElementById('scKeyboardPanel');
+      const scMobileInputDrawer = document.getElementById('scMobileInputDrawer');
+      const btnToggleMobileKbdInput = document.getElementById('btnToggleMobileKbdInput');
       const scKeyboardInput = document.getElementById('scKeyboardInput');
       const btnScKeyboardClear = document.getElementById('btnScKeyboardClear');
       const btnScKeyboardClose = document.getElementById('btnScKeyboardClose');
       const viewHint = document.getElementById('scViewHint');
-      const btnFit = document.getElementById('btnScreencastFit');
-      const btnAudio = document.getElementById('btnScreencastAudio');
-      const btnScreencastMic = document.getElementById('btnScreencastMic');
-      const btnTools = document.getElementById('btnScreencastTools');
-      const btnSpeed = document.getElementById('btnScreencastSpeed');
-      const dropdownMenu = document.getElementById('screencastToolsDropdown');
-      const toolsArrow = document.getElementById('svgToolsArrow');
-      const btnPiP = document.getElementById('btnScreencastPiP');
 
-      const isPiPSupported = (document.pictureInPictureEnabled && frame.requestPictureInPicture) ||
-                             (frame.webkitSupportsPresentationMode && frame.webkitSupportsPresentationMode("picture-in-picture"));
+      // Screencast Integrated Trackpad controls
+      const scTrackpadSurface = document.getElementById('scTrackpadSurface');
+      const scTrackpadCursorDot = document.getElementById('scTrackpadCursorDot');
+      const btnScTrackpadLeft = document.getElementById('btnScTrackpadLeft');
+      const btnScTrackpadRight = document.getElementById('btnScTrackpadRight');
+
+      let isShiftActive = false;
+      let isCapsActive = false;
+
+      function updateKeyboardLabels() {
+        const isUpper = isShiftActive || isCapsActive;
+        document.querySelectorAll('.btn-sc-kbd[data-char]').forEach(btn => {
+          const normalChar = btn.getAttribute('data-char');
+          const shiftChar = btn.getAttribute('data-shift');
+          if (isShiftActive && shiftChar) {
+            btn.textContent = shiftChar;
+          } else if (isUpper && normalChar && normalChar.length === 1 && normalChar >= 'a' && normalChar <= 'z') {
+            btn.textContent = normalChar.toUpperCase();
+          } else if (normalChar) {
+            btn.textContent = normalChar;
+          }
+        });
+      }
+
+      function closeKeyboardPanel() {
+        if (keyboardPanel) {
+          keyboardPanel.style.display = 'none';
+        }
+        if (btnKeyboard) {
+          btnKeyboard.classList.remove('active-kbd');
+        }
+        if (scMobileInputDrawer) {
+          scMobileInputDrawer.style.display = 'none';
+        }
+        if (btnToggleMobileKbdInput) {
+          btnToggleMobileKbdInput.classList.remove('active');
+        }
+        if (scKeyboardInput) {
+          scKeyboardInput.blur();
+        }
+        isShiftActive = false;
+        document.querySelectorAll('.btn-sc-shift').forEach(sBtn => sBtn.classList.remove('active-toggle'));
+        updateKeyboardLabels();
+        updateScreencastViewport();
+      }
+
+      function openKeyboardPanel() {
+        if (keyboardPanel) {
+          keyboardPanel.style.display = 'block';
+        }
+        if (btnKeyboard) {
+          btnKeyboard.classList.add('active-kbd');
+        }
+        updateScreencastViewport();
+      }
+
+      const isPiPSupported = (document.pictureInPictureEnabled && frame && frame.requestPictureInPicture) ||
+                             (frame && frame.webkitSupportsPresentationMode && frame.webkitSupportsPresentationMode("picture-in-picture"));
 
       if (btnPiP && isPiPSupported) {
         btnPiP.addEventListener('click', async (e) => {
@@ -2745,10 +2793,67 @@
           } catch (err) {
             showToast(err.message, 'warning', 6000);
           }
-          dropdownMenu.style.display = 'none';
+          closeToolsSheet();
         });
       } else if (btnPiP) {
         btnPiP.style.display = 'none'; // hide if not supported
+      }
+
+      function openToolsSheet() {
+        const sheet = document.getElementById('screencastToolsSheet');
+        if (sheet) {
+          sheet.style.display = 'flex';
+        }
+        const btnT = document.getElementById('btnScreencastTools');
+        if (btnT) btnT.classList.add('active-tools');
+      }
+
+      function closeToolsSheet() {
+        const sheet = document.getElementById('screencastToolsSheet');
+        if (sheet) {
+          sheet.style.display = 'none';
+        }
+        const btnT = document.getElementById('btnScreencastTools');
+        if (btnT) btnT.classList.remove('active-tools');
+      }
+
+      if (btnTools) {
+        let lastToolsToggleTime = 0;
+        const handleToolsToggle = (e) => {
+          const now = Date.now();
+          if (now - lastToolsToggleTime < 250) return;
+          lastToolsToggleTime = now;
+          if (e) {
+            e.stopPropagation();
+          }
+          const sheet = document.getElementById('screencastToolsSheet');
+          const isOpen = sheet && sheet.style.display === 'flex';
+          if (isOpen) {
+            closeToolsSheet();
+          } else {
+            openToolsSheet();
+          }
+        };
+        btnTools.addEventListener('click', handleToolsToggle);
+        btnTools.addEventListener('touchend', handleToolsToggle);
+      }
+
+      if (btnCloseToolsSheet) {
+        const handleCloseSheet = (e) => {
+          if (e) e.stopPropagation();
+          closeToolsSheet();
+        };
+        btnCloseToolsSheet.addEventListener('click', handleCloseSheet);
+        btnCloseToolsSheet.addEventListener('touchend', handleCloseSheet);
+      }
+
+      if (toolsBackdrop) {
+        const handleBackdrop = (e) => {
+          if (e) e.stopPropagation();
+          closeToolsSheet();
+        };
+        toolsBackdrop.addEventListener('click', handleBackdrop);
+        toolsBackdrop.addEventListener('touchend', handleBackdrop);
       }
 
       const btnQuickAudio = document.getElementById('btnQuickAudioStream');
@@ -2757,10 +2862,21 @@
       syncAudioStates = function() {
         const isMuted = !frame || frame.muted || !frame.srcObject;
         if (btnAudio) {
-          btnAudio.innerHTML = isMuted ? 'Audio: Off' : 'Audio: On';
-          btnAudio.style.color = !isMuted ? '#22c55e' : 'white';
-          btnAudio.style.background = !isMuted ? 'rgba(34, 197, 94, 0.12)' : 'rgba(255,255,255,0.06)';
-          btnAudio.style.borderColor = !isMuted ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255,255,255,0.1)';
+          if (!isMuted) {
+            btnAudio.classList.add('active');
+            if (scAudioIcon) {
+              scAudioIcon.innerHTML = `<div style="display: flex; align-items: flex-end; gap: 2px; height: 16px; width: 18px; justify-content: center; color: #22c55e;">
+                <span style="width: 2.5px; background: currentColor; border-radius: 2px; animation: eqBar1 0.7s infinite ease-in-out;"></span>
+                <span style="width: 2.5px; background: currentColor; border-radius: 2px; animation: eqBar2 0.7s infinite ease-in-out 0.15s;"></span>
+                <span style="width: 2.5px; background: currentColor; border-radius: 2px; animation: eqBar3 0.7s infinite ease-in-out 0.3s;"></span>
+              </div>`;
+            }
+          } else {
+            btnAudio.classList.remove('active');
+            if (scAudioIcon) {
+              scAudioIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+            }
+          }
         }
         
         if (btnQuickAudio) {
@@ -2802,8 +2918,7 @@
       if (!overlay || !btnOpen) return;
 
       let interactiveMode = true;
-      let streamActive = false;
-      let controlStyle = 'cursor';
+      streamActive = false;
       let fitMode = 100; // 100, 90, 80, 70
       let virtualX = 0.5;
       let virtualY = 0.5;
@@ -2835,7 +2950,7 @@
           frame.style.transform = `translate(${zoomTranslateX}px, ${zoomTranslateY}px) scale(${zoomScale})`;
           
           if (btnResetZoom) {
-            btnResetZoom.style.display = zoomScale > 1.05 ? 'block' : 'none';
+            btnResetZoom.style.display = zoomScale > 1.05 ? 'inline-flex' : 'none';
           }
         }
       }
@@ -2907,8 +3022,11 @@
         zoomTranslateY = 0;
         applyZoomTransform();
 
-        // Restore keyboard button visibility (may have been hidden on previous close)
-        if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
+        // Restore keyboard button state
+        if (btnKeyboard) {
+          btnKeyboard.style.display = interactiveMode ? 'flex' : 'none';
+          btnKeyboard.classList.remove('active-kbd');
+        }
         updateWakeLockStatus();
         setTimeout(updateScreencastViewport, 100);
 
@@ -2917,16 +3035,32 @@
           audioOnlyStreamMode = false;
           sendWS({ type: 'screencast_start' });
         } else {
-          // Stream is already running (e.g. from quick audio streaming)
-          // Transition audioOnlyStreamMode to false (since the user is opening the full screenshare UI)
           audioOnlyStreamMode = false;
           syncAudioStates();
           showToast('Screencast active');
         }
       });
 
-      btnClose.addEventListener('click', () => {
+      btnClose.addEventListener('click', (e) => {
+        if (e) e.stopPropagation();
+
+        // 1. If Keyboard Panel is open, close ONLY the keyboard panel!
+        if (keyboardPanel && keyboardPanel.style.display !== 'none') {
+          closeKeyboardPanel();
+          return;
+        }
+
+        // 2. If Tools Sheet is open, close ONLY tools sheet!
+        const toolsSheetEl = document.getElementById('screencastToolsSheet');
+        if (toolsSheetEl && toolsSheetEl.style.display === 'flex') {
+          closeToolsSheet();
+          return;
+        }
+
+        // 3. Otherwise, close the screencast stream and overlay
         overlay.style.display = 'none';
+        closeToolsSheet();
+        closeKeyboardPanel();
         
         // Restore main layout tabs and bottom navigation
         const mainApp = document.getElementById('mainAppContainer');
@@ -2944,15 +3078,16 @@
         streamActive = false;
         interactiveMode = true;
         audioOnlyStreamMode = false;
-        if (dropdownMenu) dropdownMenu.style.display = 'none';
-        if (toolsArrow) toolsArrow.style.transform = '';
-        if (keyboardPanel) {
-          keyboardPanel.style.display = 'none';
-          updateScreencastViewport();
+        updateControlModeUI();
+
+        if (btnKeyboard) {
+          btnKeyboard.style.display = 'none';
+          btnKeyboard.classList.remove('active-kbd');
         }
-        if (btnKeyboard) btnKeyboard.style.display = 'none';
         cursorSpeed = 1.5;
-        if (btnSpeed) btnSpeed.textContent = 'Speed: 1.5x';
+        setCursorSpeed(1.5);
+        setFitMode(100);
+
         if (phonePC) {
           try { phonePC.close(); } catch(e) {}
           phonePC = null;
@@ -2970,40 +3105,15 @@
         updateWakeLockStatus();
       });
 
-      // ── Tools Dropdown Toggle ──
-      if (btnTools && dropdownMenu) {
-        btnTools.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isOpen = dropdownMenu.style.display === 'flex';
-          dropdownMenu.style.display = isOpen ? 'none' : 'flex';
-          if (toolsArrow) {
-            toolsArrow.style.transform = isOpen ? '' : 'rotate(180deg)';
-          }
+      // ── Segmented Fit Screen Control ──
+      function setFitMode(fit) {
+        fitMode = fit;
+        document.querySelectorAll('#scFitSegments .sc-segment-btn').forEach(btn => {
+          const f = parseInt(btn.getAttribute('data-fit'), 10);
+          btn.classList.toggle('active', f === fit);
         });
 
-        // Close dropdown when tapping anywhere else on screencast screen (but not when clicking controls/buttons)
-        overlay.addEventListener('click', (e) => {
-          if (e.target === overlay || e.target === frame) {
-            dropdownMenu.style.display = 'none';
-            if (toolsArrow) {
-              toolsArrow.style.transform = '';
-            }
-          }
-        });
-      }
-
-      // ── Fit Screen Toggle ──
-      if (btnFit) {
-        btnFit.addEventListener('click', () => {
-          if (fitMode === 100) fitMode = 90;
-          else if (fitMode === 90) fitMode = 80;
-          else if (fitMode === 80) fitMode = 70;
-          else fitMode = 100;
-
-          btnFit.textContent = `Fit: ${fitMode}%`;
-          btnFit.style.background = fitMode !== 100 ? 'rgba(255,85,0,0.35)' : 'rgba(255,255,255,0.08)';
-          btnFit.style.borderColor = fitMode !== 100 ? 'rgba(255,85,0,0.6)' : 'rgba(255,255,255,0.15)';
-          
+        if (frame) {
           if (fitMode === 100) {
             frame.style.width = '100%';
             frame.style.height = '100%';
@@ -3016,27 +3126,60 @@
             frame.style.top = `${offset}%`;
             frame.style.left = `${offset}%`;
           }
+        }
+      }
+
+      document.querySelectorAll('#scFitSegments .sc-segment-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const fit = parseInt(btn.getAttribute('data-fit'), 10);
+          if (fit) {
+            setFitMode(fit);
+            showToast(`Screen fit: ${fit}%`, 'info', 1200);
+          }
+        });
+      });
+
+      // ── Segmented Speed Control ──
+      function setCursorSpeed(speed) {
+        cursorSpeed = speed;
+        document.querySelectorAll('#scSpeedSegments .sc-segment-btn').forEach(btn => {
+          const s = parseFloat(btn.getAttribute('data-speed'));
+          btn.classList.toggle('active', Math.abs(s - speed) < 0.05);
         });
       }
 
-      // ── Audio Toggle ──
+      document.querySelectorAll('#scSpeedSegments .sc-segment-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const sp = parseFloat(btn.getAttribute('data-speed'));
+          if (sp) {
+            setCursorSpeed(sp);
+            showToast(`Cursor speed: ${sp.toFixed(1)}x`, 'info', 1200);
+          }
+        });
+      });
+
+      // ── Audio Toggle (Top Bar Button) ──
       if (btnAudio) {
-        btnAudio.addEventListener('click', () => {
+        btnAudio.addEventListener('click', (e) => {
+          e.stopPropagation();
           if (frame) {
             frame.muted = !frame.muted;
             syncAudioStates();
             if (!frame.muted) {
-              showToast('Screencast audio enabled');
+              showToast('Screencast audio enabled', 'success');
             } else {
-              showToast('Screencast audio muted');
+              showToast('Screencast audio muted', 'info');
             }
           }
         });
       }
 
-      // ── Mic Toggle in Tools ──
+      // ── Mic Toggle in Top Bar ──
       if (btnScreencastMic) {
-        btnScreencastMic.addEventListener('click', async () => {
+        btnScreencastMic.addEventListener('click', async (e) => {
+          e.stopPropagation();
           if (!isMicStreaming) {
             await startMicStreaming();
           } else {
@@ -3058,27 +3201,21 @@
 
           const isStreamActive = !!(frame && frame.srcObject);
           if (!isStreamActive) {
-            // Start stream in audio-only mode
             audioOnlyStreamMode = true;
             sendWS({ type: 'screencast_start' });
             showToast('Streaming system audio in background...');
           } else {
-            // Stream is already active
             if (frame.muted) {
-              // Unmute it
               frame.muted = false;
               audioOnlyStreamMode = true;
               showToast('PC system audio unmuted');
               syncAudioStates();
             } else {
-              // Mute/stop it
               if (overlay.style.display === 'flex') {
-                // Screencast is visible, so we just mute audio but keep screenshare
                 frame.muted = true;
                 syncAudioStates();
                 showToast('Audio muted');
               } else {
-                // Screencast is hidden, so stop the stream completely
                 btnClose.click();
               }
             }
@@ -3086,67 +3223,121 @@
         });
       }
 
-      // ── Controls Toggle (On/Off) ──
-      btnMode.addEventListener('click', () => {
-        interactiveMode = !interactiveMode;
-        btnMode.textContent = interactiveMode ? 'Controls: On' : 'Controls: Off';
-        btnMode.style.color = interactiveMode ? '#00d26a' : 'white';
-        btnMode.style.background = interactiveMode ? 'rgba(0,210,106,0.12)' : 'rgba(255,255,255,0.06)';
-        btnMode.style.borderColor = interactiveMode ? 'rgba(0,210,106,0.4)' : 'rgba(255,255,255,0.1)';
-        
-        frame.style.cursor = interactiveMode ? 'none' : 'default';
-        if (btnKeyboard) btnKeyboard.style.display = interactiveMode ? 'block' : 'none';
-        if (viewHint) viewHint.style.display = interactiveMode ? 'none' : 'block';
-        if (!interactiveMode && keyboardPanel) {
-          keyboardPanel.style.display = 'none';
-          updateScreencastViewport();
+      // ── Controls Mode Toggle (Interactive vs View-Only) ──
+      function updateControlModeUI() {
+        if (btnMode) {
+          btnMode.classList.toggle('active', interactiveMode);
         }
-        
-        if (interactiveMode) {
-          virtualX = 0.5;
-          virtualY = 0.5;
+        if (scModeTitle) {
+          scModeTitle.textContent = interactiveMode ? 'Interactive Controls: ON' : 'Interactive Controls: OFF';
         }
-        showToast(interactiveMode ? 'Controls enabled' : 'Controls disabled');
-      });
-
-      // ── Mouse Speed Toggle ──
-      if (btnSpeed) {
-        btnSpeed.addEventListener('click', () => {
-          if (cursorSpeed === 1.0) cursorSpeed = 1.5;
-          else if (cursorSpeed === 1.5) cursorSpeed = 2.0;
-          else if (cursorSpeed === 2.0) cursorSpeed = 2.5;
-          else if (cursorSpeed === 2.5) cursorSpeed = 3.0;
-          else cursorSpeed = 1.0;
-          
-          btnSpeed.textContent = `Speed: ${cursorSpeed.toFixed(1)}x`;
-          showToast(`Cursor speed set to ${cursorSpeed.toFixed(1)}x`);
-        });
+        if (scModeDesc) {
+          scModeDesc.textContent = interactiveMode ? 'Tap to click, drag to move PC cursor & scroll' : 'Touch to pan & pinch-zoom (inputs disabled)';
+        }
+        if (scModeBadge) {
+          scModeBadge.textContent = interactiveMode ? 'Active' : 'View-Only';
+          scModeBadge.style.background = interactiveMode ? '#00d26a' : 'rgba(255,255,255,0.08)';
+          scModeBadge.style.color = interactiveMode ? '#000000' : 'rgba(255,255,255,0.6)';
+        }
+        if (frame) {
+          frame.style.cursor = interactiveMode ? 'none' : 'default';
+        }
+        if (btnKeyboard) {
+          btnKeyboard.style.display = interactiveMode ? 'flex' : 'none';
+        }
+        if (viewHint) {
+          viewHint.style.display = interactiveMode ? 'none' : 'block';
+        }
       }
 
-      // ── Keyboard panel toggle ──
-      if (btnKeyboard) {
-        btnKeyboard.addEventListener('click', () => {
-          if (!keyboardPanel) return;
-          const isVisible = keyboardPanel.style.display !== 'none';
-          keyboardPanel.style.display = isVisible ? 'none' : 'block';
-          updateScreencastViewport();
-          if (!isVisible && scKeyboardInput) {
-            setTimeout(() => scKeyboardInput.focus(), 100);
-          }
-        });
-      }
-
-      // ── Close keyboard panel ──
-      if (btnScKeyboardClose) {
-        btnScKeyboardClose.addEventListener('click', () => {
-          if (keyboardPanel) {
+      if (btnMode) {
+        btnMode.addEventListener('click', (e) => {
+          e.stopPropagation();
+          interactiveMode = !interactiveMode;
+          updateControlModeUI();
+          if (!interactiveMode && keyboardPanel) {
             keyboardPanel.style.display = 'none';
+            if (btnKeyboard) btnKeyboard.classList.remove('active-kbd');
             updateScreencastViewport();
           }
+          if (interactiveMode) {
+            virtualX = 0.5;
+            virtualY = 0.5;
+          }
+          showToast(interactiveMode ? 'Controls enabled' : 'Controls disabled (View Only)');
         });
       }
 
-      // ── Synced Keyboard Input (Diff Typing) ──
+      // ── Windows Quick Shortcuts (1-Tap) ──
+      document.querySelectorAll('.sc-shortcut-btn[data-shortcut]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const shortcutType = btn.getAttribute('data-shortcut');
+          if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
+            if (shortcutType === 'win-d') {
+              sendWS({ type: 'shortcut', keys: [0x5B, 0x44] }); // Win + D
+              showToast('Show Desktop (Win+D)', 'info', 1200);
+            } else if (shortcutType === 'alt-tab') {
+              sendWS({ type: 'shortcut', keys: [0x12, 0x09] }); // Alt + Tab
+              showToast('Switch App (Alt+Tab)', 'info', 1200);
+            } else if (shortcutType === 'task-mgr') {
+              sendWS({ type: 'shortcut', keys: [0x11, 0x10, 0x1B] }); // Ctrl + Shift + Esc
+              showToast('Task Manager', 'info', 1200);
+            } else if (shortcutType === 'win-l') {
+              sendWS({ type: 'shortcut', keys: [0x5B, 0x4C] }); // Win + L
+              showToast('Lock PC (Win+L)', 'info', 1200);
+            }
+            triggerHaptic(20);
+          } else {
+            showToast('Not connected to PC', 'warning');
+          }
+        });
+      });
+
+      // ── Keyboard panel toggle (Top HUD icon) ──
+      if (btnKeyboard) {
+        btnKeyboard.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!keyboardPanel) return;
+          const isVisible = keyboardPanel.style.display === 'block' || (keyboardPanel.style.display !== 'none' && window.getComputedStyle(keyboardPanel).display !== 'none');
+          if (isVisible) {
+            closeKeyboardPanel();
+          } else {
+            openKeyboardPanel();
+          }
+        });
+      }
+
+      // ── Close keyboard panel button ──
+      if (btnScKeyboardClose) {
+        btnScKeyboardClose.addEventListener('click', (e) => {
+          if (e) e.stopPropagation();
+          closeKeyboardPanel();
+        });
+      }
+
+      // ── Optional Mobile Keyboard Input Drawer Toggle ──
+      if (btnToggleMobileKbdInput) {
+        btnToggleMobileKbdInput.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!scMobileInputDrawer) return;
+          const isDrawerOpen = scMobileInputDrawer.style.display === 'flex';
+          if (isDrawerOpen) {
+            scMobileInputDrawer.style.display = 'none';
+            btnToggleMobileKbdInput.classList.remove('active');
+            if (scKeyboardInput) scKeyboardInput.blur();
+          } else {
+            scMobileInputDrawer.style.display = 'flex';
+            btnToggleMobileKbdInput.classList.add('active');
+            if (scKeyboardInput) {
+              setTimeout(() => scKeyboardInput.focus(), 80);
+            }
+          }
+          updateScreencastViewport();
+        });
+      }
+
+      // ── Synced Keyboard Input (Diff Typing for Mobile Soft Keyboard) ──
       let scLastInputValue = '';
       if (scKeyboardInput) {
         scKeyboardInput.value = '';
@@ -3161,15 +3352,6 @@
           }
           scLastInputValue = val;
         });
-        
-        scKeyboardInput.addEventListener('focus', () => {
-          document.getElementById('scKeyboardPanel')?.classList.add('native-focus');
-          setTimeout(updateScreencastViewport, 150);
-        });
-        scKeyboardInput.addEventListener('blur', () => {
-          document.getElementById('scKeyboardPanel')?.classList.remove('native-focus');
-          setTimeout(updateScreencastViewport, 150);
-        });
       }
 
       if (btnScKeyboardClear && scKeyboardInput) {
@@ -3180,20 +3362,177 @@
         });
       }
 
-      // ── Virtual Key Grid (Screencast Keyboard) ──
+      // ── Virtual Key Grid (Full PC Keyboard) ──
       document.querySelectorAll('.btn-sc-kbd').forEach(btn => {
-        btn.addEventListener('click', () => {
+        const handleKeyPress = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          triggerHaptic(15);
+
           const code = parseInt(btn.getAttribute('data-code'), 10);
-          const char = btn.getAttribute('data-char');
+          const normalChar = btn.getAttribute('data-char');
+          const shiftChar = btn.getAttribute('data-shift');
+
+          // Caps Lock Key
+          if (code === 20) {
+            isCapsActive = !isCapsActive;
+            btn.classList.toggle('active-toggle', isCapsActive);
+            updateKeyboardLabels();
+            sendWS({ type: 'key', code: 20 });
+            return;
+          }
+
+          // Shift Key
+          if (code === 16) {
+            isShiftActive = !isShiftActive;
+            document.querySelectorAll('.btn-sc-shift').forEach(sBtn => {
+              sBtn.classList.toggle('active-toggle', isShiftActive);
+            });
+            updateKeyboardLabels();
+            return;
+          }
+
+          // Regular keys or modifier keys (Ctrl, Alt, Win, Del, Arrows, Fn, etc.)
           if (code) {
             sendWS({ type: 'key', code });
-          } else if (char) {
-            sendWS({ type: 'type', text: char });
+          } else if (normalChar) {
+            let sendChar = normalChar;
+            if (isShiftActive && shiftChar) {
+              sendChar = shiftChar;
+            } else if ((isShiftActive || isCapsActive) && normalChar.length === 1 && normalChar >= 'a' && normalChar <= 'z') {
+              sendChar = normalChar.toUpperCase();
+            }
+            sendWS({ type: 'type', text: sendChar });
+
+            // If Shift was active (single-press), release it after typing a character
+            if (isShiftActive) {
+              isShiftActive = false;
+              document.querySelectorAll('.btn-sc-shift').forEach(sBtn => {
+                sBtn.classList.remove('active-toggle');
+              });
+              updateKeyboardLabels();
+            }
           }
-          btn.style.background = 'rgba(255,255,255,0.25)';
-          setTimeout(() => { btn.style.background = ''; }, 120);
-        });
+
+          btn.classList.add('active-press');
+          setTimeout(() => { btn.classList.remove('active-press'); }, 120);
+        };
+
+        btn.addEventListener('touchstart', handleKeyPress, { passive: false });
+        btn.addEventListener('click', handleKeyPress);
       });
+
+      // ── Integrated Screencast Trackpad Touch & Gesture Handlers ──
+      if (scTrackpadSurface) {
+        let scTpStartX = 0, scTpStartY = 0;
+        let scTpLastX = 0, scTpLastY = 0;
+        let scTpStartTime = 0;
+        let scTpMaxTouches = 0;
+        let scTpMaxDist = 0;
+        let scTpIsScrolling = false;
+        let scTpInitialScrollY = 0;
+        let scTpAccumulatedScrollY = 0;
+
+        scTrackpadSurface.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const touches = e.touches;
+          scTpMaxTouches = touches.length;
+          scTpStartTime = Date.now();
+          scTpMaxDist = 0;
+          scTpIsScrolling = false;
+
+          if (touches.length === 1) {
+            scTpStartX = touches[0].clientX;
+            scTpStartY = touches[0].clientY;
+            scTpLastX = scTpStartX;
+            scTpLastY = scTpStartY;
+
+            if (scTrackpadCursorDot) {
+              const rect = scTrackpadSurface.getBoundingClientRect();
+              scTrackpadCursorDot.style.display = 'block';
+              scTrackpadCursorDot.style.left = (touches[0].clientX - rect.left) + 'px';
+              scTrackpadCursorDot.style.top = (touches[0].clientY - rect.top) + 'px';
+            }
+          } else if (touches.length === 2) {
+            scTpIsScrolling = true;
+            scTpInitialScrollY = (touches[0].clientY + touches[1].clientY) / 2;
+            scTpAccumulatedScrollY = 0;
+            if (scTrackpadCursorDot) scTrackpadCursorDot.style.display = 'none';
+          }
+        }, { passive: false });
+
+        scTrackpadSurface.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const touches = e.touches;
+          if (touches.length === 2) {
+            const cy = (touches[0].clientY + touches[1].clientY) / 2;
+            if (!scTpIsScrolling || !scTpInitialScrollY) {
+              scTpIsScrolling = true;
+              scTpInitialScrollY = cy;
+              scTpAccumulatedScrollY = 0;
+            }
+            const dy = cy - scTpInitialScrollY;
+            scTpAccumulatedScrollY += dy;
+            scTpInitialScrollY = cy;
+
+            while (scTpAccumulatedScrollY > 3) {
+              sendWS({ type: 'scroll', amount: -30 });
+              scTpAccumulatedScrollY -= 3;
+            }
+            while (scTpAccumulatedScrollY < -3) {
+              sendWS({ type: 'scroll', amount: 30 });
+              scTpAccumulatedScrollY += 3;
+            }
+          } else if (touches.length === 1 && !scTpIsScrolling) {
+            const cx = touches[0].clientX, cy = touches[0].clientY;
+            const deltaX = cx - scTpLastX;
+            const deltaY = cy - scTpLastY;
+            const distFromStart = Math.hypot(cx - scTpStartX, cy - scTpStartY);
+            if (distFromStart > scTpMaxDist) {
+              scTpMaxDist = distFromStart;
+            }
+            const speed = cursorSpeed || 1.5;
+            sendWS({ type: 'move', dx: deltaX * speed * 1.5, dy: deltaY * speed * 1.5 });
+            scTpLastX = cx;
+            scTpLastY = cy;
+
+            if (scTrackpadCursorDot) {
+              const rect = scTrackpadSurface.getBoundingClientRect();
+              scTrackpadCursorDot.style.left = (cx - rect.left) + 'px';
+              scTrackpadCursorDot.style.top = (cy - rect.top) + 'px';
+            }
+          }
+        }, { passive: false });
+
+        scTrackpadSurface.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (scTrackpadCursorDot) scTrackpadCursorDot.style.display = 'none';
+          if (e.touches.length > 0) return;
+
+          const duration = Date.now() - scTpStartTime;
+
+          // 2-Finger Tap = Right Click
+          if (scTpMaxTouches === 2) {
+            if (!scTpIsScrolling && duration < 350) {
+              triggerHaptic(15);
+              sendWS({ type: 'click', button: 'right' });
+            }
+            scTpIsScrolling = false;
+            return;
+          }
+
+          // 1-Finger Tap = Single Left Click (Immediate, direct text cursor positioning & normal clicks)
+          if (scTpMaxTouches === 1 && scTpMaxDist < 14 && duration < 350) {
+            triggerHaptic(12);
+            sendWS({ type: 'click', button: 'left' });
+          }
+        }, { passive: false });
+      }
 
 
 
@@ -3354,7 +3693,6 @@
         if (scMaxTouches === 2) {
           if (!scHasMoved && duration < 250) {
             sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'right' });
-            showToast('Right Click', 600);
           }
           scIsTwoFinger = false;
           return;
@@ -3368,13 +3706,11 @@
             setTimeout(() => {
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
             }, 50);
-            showToast('Double Click', 600);
             scLastTapTime = 0;
           } else {
             scLastTapTime = now;
             scTapTimeout = setTimeout(() => {
               sendWS({ type: 'click_abs', xRatio: clickX, yRatio: clickY, button: 'left' });
-              showToast('Left Click', 600);
               scTapTimeout = null;
             }, 200);
           }
@@ -3534,11 +3870,15 @@
         if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Stop Microphone Stream';
 
         const btnScreencastMic = document.getElementById('btnScreencastMic');
+        const scMicIcon = document.getElementById('scMicIcon');
         if (btnScreencastMic) {
-          btnScreencastMic.textContent = 'Mic: On';
-          btnScreencastMic.style.color = '#ef4444';
-          btnScreencastMic.style.background = 'rgba(239,68,68,0.12)';
-          btnScreencastMic.style.borderColor = 'rgba(239,68,68,0.4)';
+          btnScreencastMic.classList.add('active-mic');
+          if (scMicIcon) {
+            scMicIcon.innerHTML = `<div style="position: relative; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; color: #ef4444;">
+              <span style="position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid #ef4444; animation: micRadarExpand 1.2s infinite ease-out;"></span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </div>`;
+          }
         }
 
         showToast('Microphone stream active!', 'success');
@@ -3589,11 +3929,12 @@
       if (btnMicStreamLabel) btnMicStreamLabel.textContent = 'Start Microphone Stream';
 
       const btnScreencastMic = document.getElementById('btnScreencastMic');
+      const scMicIcon = document.getElementById('scMicIcon');
       if (btnScreencastMic) {
-        btnScreencastMic.textContent = 'Mic: Off';
-        btnScreencastMic.style.color = 'white';
-        btnScreencastMic.style.background = 'rgba(255,255,255,0.06)';
-        btnScreencastMic.style.borderColor = 'rgba(255,255,255,0.1)';
+        btnScreencastMic.classList.remove('active-mic');
+        if (scMicIcon) {
+          scMicIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`;
+        }
       }
 
       showToast('Microphone stream stopped.', 'info');

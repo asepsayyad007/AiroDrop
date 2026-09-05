@@ -547,7 +547,7 @@ app.get(['/api/discovery', '/discovery'], (req, res) => {
   res.json({
     service: 'airodrop',
     role: 'relay-server',
-    version: '6.4.87',
+    version: '6.4.88',
     activeSessions: sessions.size,
     uptime: Math.floor(process.uptime()),
     capabilities: {

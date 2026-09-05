@@ -1432,7 +1432,7 @@
           
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="color: var(--text3); font-weight: 500;">App Version</span>
-            <strong style="color: #a1a1aa; font-weight: 600;" id="mobileInfoAppVersion">v6.4.87</strong>
+            <strong style="color: #a1a1aa; font-weight: 600;" id="mobileInfoAppVersion">v6.4.88</strong>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 8px; margin-top: 2px;">
@@ -1921,174 +1921,313 @@
 
   <!-- Fullscreen Screencast Overlay -->
   <div id="screencastOverlay" style="display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; touch-action: none;">
-    <!-- Top Bar -->
-    <div style="position: absolute; top: 0; left: 0; right: 0; z-index: 502; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent); pointer-events: auto;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.8); animation: blink 1s infinite;"></div>
-        <span style="font-size: 0.8rem; font-weight: 600; color: white;">PC Screen</span>
+    <!-- Screencast Top HUD Bar -->
+    <div id="screencastTopBar" class="sc-top-bar">
+      <!-- Reset Zoom Button (Only visible when zoomed in) -->
+      <button id="btnResetZoom" class="sc-reset-zoom-btn" title="Reset Zoom">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+
+      <!-- Center Action Capsule (Pure Icons) -->
+      <div class="sc-hud-capsule">
+        <!-- Live Status Pulse -->
+        <span class="sc-status-dot" title="Live Screencast Active"></span>
+
+        <!-- Keyboard Toggle -->
+        <button id="btnScreencastKeyboard" class="sc-hud-btn" title="Toggle Virtual Keyboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="6" y1="8" x2="6" y2="8.01"/><line x1="10" y1="8" x2="10" y2="8.01"/><line x1="14" y1="8" x2="14" y2="8.01"/><line x1="18" y1="8" x2="18" y2="8.01"/><line x1="6" y1="12" x2="6" y2="12.01"/><line x1="10" y1="12" x2="10" y2="12.01"/><line x1="14" y1="12" x2="14" y2="12.01"/><line x1="18" y1="12" x2="18" y2="12.01"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+        </button>
+
+        <!-- Audio Toggle -->
+        <button id="btnScreencastAudio" class="sc-hud-btn" title="Toggle PC System Audio">
+          <span id="scAudioIcon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          </span>
+        </button>
+
+        <!-- Mic Toggle -->
+        <button id="btnScreencastMic" class="sc-hud-btn" title="Toggle Mobile Microphone Stream">
+          <span id="scMicIcon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
+        </button>
+
+        <!-- Tools Sheet Toggle Button (Pure Icon) -->
+        <button id="btnScreencastTools" class="sc-hud-btn" title="Screencast Tools & Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
       </div>
-      <!-- Close button on top-right -->
-      <button id="btnCloseScreencast" style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+
+      <!-- Close Button -->
+      <button id="btnCloseScreencast" class="sc-close-btn" title="Close Screencast">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
 
-    <!-- Reset Zoom Button -->
-    <button id="btnResetZoom" style="display: none; position: absolute; top: calc(60px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 506; background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); pointer-events: auto;">Reset Zoom</button>
+    <!-- Screencast Tools Bottom Sheet / Modal -->
+    <div id="screencastToolsSheet" class="sc-tools-sheet" style="display: none;">
+      <div id="screencastToolsBackdrop" class="sc-tools-backdrop"></div>
+      <div class="sc-tools-card">
+        <!-- Drag Handle Indicator -->
+        <div class="sc-sheet-handle"></div>
 
-    <!-- Tools Dropdown Menu (Floating on right side) -->
-    <div style="position: absolute; right: 14px; top: calc(54px + env(safe-area-inset-top, 0px)); z-index: 502; display: flex; flex-direction: column; align-items: flex-end;">
-      <!-- Main Tools Button -->
-      <button id="btnScreencastTools" style="background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 14px; border-radius: 8px; font-size: 0.76rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); pointer-events: auto; outline: none;">
-        <span>Tools</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s;" id="svgToolsArrow"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      
-      <!-- Dropdown Items List -->
-      <div id="screencastToolsDropdown" style="display: none; flex-direction: column; gap: 6px; margin-top: 8px; background: rgba(15,15,15,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px; min-width: 130px; box-shadow: 0 4px 16px rgba(0,0,0,0.6); pointer-events: auto; backdrop-filter: blur(10px);">
-        <!-- Fit screen toggle (Always shown) -->
-        <button id="btnScreencastFit" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Fit: 100%</button>
-        <!-- PiP toggle -->
-        <button id="btnScreencastPiP" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Picture in Picture</button>
-        <!-- Controls (On/Off) toggle -->
-        <button id="btnScreencastMode" style="background: rgba(0,210,106,0.12); border: 1px solid rgba(0,210,106,0.4); color: #00d26a; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Controls: On</button>
-        <!-- Keyboard toggle (only shown in interactive mode) -->
-        <button id="btnScreencastKeyboard" style="display:block; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Keyboard</button>
-        <!-- Mouse Speed toggle -->
-        <button id="btnScreencastSpeed" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Speed: 1.5x</button>
-        <!-- Audio toggle -->
-        <button id="btnScreencastAudio" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Audio: Off</button>
-        <!-- Mic toggle -->
-        <button id="btnScreencastMic" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 500; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; outline: none;">Mic: Off</button>
+        <!-- Sheet Header -->
+        <div class="sc-sheet-header">
+          <div>
+            <h3 class="sc-sheet-title">Screencast Settings</h3>
+          </div>
+          <button id="btnCloseToolsSheet" class="sc-sheet-close-btn" title="Close Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- Section 1: Interaction Mode Toggle -->
+        <div class="sc-sheet-section">
+          <div class="sc-section-label">TOUCH & MOUSE CONTROL</div>
+          <button id="btnScreencastMode" class="sc-mode-toggle-card active">
+            <div class="sc-mode-card-left">
+              <div class="sc-mode-icon-box" id="scModeIconBox">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 7 18 3-7 7-3L3 3z"/><path d="m13 13 6 6"/></svg>
+              </div>
+              <div class="sc-mode-text">
+                <div class="sc-mode-title" id="scModeTitle">Interactive Controls: ON</div>
+              </div>
+            </div>
+            <div class="sc-mode-badge" id="scModeBadge">Active</div>
+          </button>
+        </div>
+
+        <!-- Section 2: Cursor Sensitivity / Speed -->
+        <div class="sc-sheet-section">
+          <div class="sc-section-label">CURSOR SPEED / SENSITIVITY</div>
+          <div class="sc-segmented-row" id="scSpeedSegments">
+            <button class="sc-segment-btn" data-speed="1.0">1.0x</button>
+            <button class="sc-segment-btn active" data-speed="1.5">1.5x</button>
+            <button class="sc-segment-btn" data-speed="2.0">2.0x</button>
+            <button class="sc-segment-btn" data-speed="2.5">2.5x</button>
+            <button class="sc-segment-btn" data-speed="3.0">3.0x</button>
+          </div>
+          <button id="btnScreencastSpeed" style="display: none;">Speed: 1.5x</button>
+        </div>
+
+        <!-- Section 3: Screen Fit Scaling -->
+        <div class="sc-sheet-section">
+          <div class="sc-section-label">DISPLAY FIT & SCALING</div>
+          <div class="sc-segmented-row" id="scFitSegments">
+            <button class="sc-segment-btn active" data-fit="100">Fit 100%</button>
+            <button class="sc-segment-btn" data-fit="90">90%</button>
+            <button class="sc-segment-btn" data-fit="80">80%</button>
+            <button class="sc-segment-btn" data-fit="70">70%</button>
+          </div>
+          <button id="btnScreencastFit" style="display: none;">Fit: 100%</button>
+        </div>
+
+        <!-- Section 4: Picture-in-Picture & Quick Utility -->
+        <div class="sc-sheet-section">
+          <div class="sc-section-label">STREAM UTILITIES</div>
+          <div class="sc-tiles-grid">
+            <button id="btnScreencastPiP" class="sc-tile-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="12" width="8" height="6" rx="1"/></svg>
+              <span>Picture in Picture</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 5: Windows Hotkeys (One-Tap Shortcuts) -->
+        <div class="sc-sheet-section">
+          <div class="sc-section-label">WINDOWS SHORTCUTS (1-TAP)</div>
+          <div class="sc-shortcuts-grid">
+            <button class="sc-shortcut-btn" data-shortcut="win-d">
+              <span class="sc-shortcut-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </span>
+              <span>Show Desktop</span>
+            </button>
+            <button class="sc-shortcut-btn" data-shortcut="alt-tab">
+              <span class="sc-shortcut-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="14" rx="2"/><path d="M6 3h14a2 2 0 0 1 2 2v12"/></svg>
+              </span>
+              <span>Switch App</span>
+            </button>
+            <button class="sc-shortcut-btn" data-shortcut="task-mgr">
+              <span class="sc-shortcut-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </span>
+              <span>Task Manager</span>
+            </button>
+            <button class="sc-shortcut-btn" data-shortcut="win-l">
+              <span class="sc-shortcut-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <span>Lock PC</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Live Frame -->
     <video id="liveScreenFrame" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; display: block; position: absolute; inset: 0; z-index: 501; touch-action: none;"></video>
 
-
-
-    <!-- Keyboard Input Panel (slides up from bottom) -->
-    <div id="scKeyboardPanel" style="display: none; position: absolute; bottom: 0; left: 0; right: 0; z-index: 505; background: rgba(15,15,20,0.97); border-top: 1px solid rgba(255,255,255,0.12); padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px)); backdrop-filter: blur(20px);">
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
-        <span style="font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Type on PC</span>
-        <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
-        <button id="btnScKeyboardClose" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding: 0 4px;">&times;</button>
+    <!-- Keyboard & Trackpad Controls Panel (slides up from bottom) -->
+    <div id="scKeyboardPanel" class="sc-keyboard-panel" style="display: none;">
+      <!-- Controls Header -->
+      <div class="sc-kbd-header">
+        <div class="sc-kbd-title-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="10.01" y2="12"/><line x1="14" y1="12" x2="14.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+          <span>PC CONTROLS</span>
+        </div>
+        <div style="flex: 1;"></div>
+        <!-- Optional Phone Soft Keyboard Toggle -->
+        <button id="btnToggleMobileKbdInput" class="sc-kbd-pill-btn" title="Toggle Phone Keyboard Input">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Mobile Input</span>
+        </button>
+        <!-- Close Controls Panel Button -->
+        <button id="btnScKeyboardClose" class="sc-kbd-close-pill" title="Close Controls">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <input type="text" id="scKeyboardInput" placeholder="Type here — synced in real-time..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 16px; outline: none; caret-color: #ff5500;">
-        <button id="btnScKeyboardClear" style="padding: 10px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: white; font-size: 0.82rem; cursor: pointer;">✕</button>
+
+      <!-- Collapsible Mobile Text Input Drawer (Optional, hidden by default) -->
+      <div id="scMobileInputDrawer" class="sc-mobile-input-drawer" style="display: none;">
+        <input type="text" id="scKeyboardInput" placeholder="Type here using phone keyboard..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          class="sc-kbd-native-input">
+        <button id="btnScKeyboardClear" class="sc-kbd-clear-btn">✕</button>
       </div>
-      <!-- Full Keyboard Panel (scrollable) -->
-      <div id="scKeyboardRows" style="max-height: 185px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-right: 4px;">
-        <!-- Row 1: Fn/Number Row -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key mod" data-code="27" style="flex:0.7;">Esc</button>
-          <button class="btn-sc-kbd kbd-key" data-code="112" style="flex:0.6; font-size:0.58rem;">F1</button>
-          <button class="btn-sc-kbd kbd-key" data-code="113" style="flex:0.6; font-size:0.58rem;">F2</button>
-          <button class="btn-sc-kbd kbd-key" data-code="114" style="flex:0.6; font-size:0.58rem;">F3</button>
-          <button class="btn-sc-kbd kbd-key" data-code="115" style="flex:0.6; font-size:0.58rem;">F4</button>
-          <button class="btn-sc-kbd kbd-key" data-code="116" style="flex:0.6; font-size:0.58rem;">F5</button>
-          <button class="btn-sc-kbd kbd-key" data-code="117" style="flex:0.6; font-size:0.58rem;">F6</button>
-          <button class="btn-sc-kbd kbd-key" data-code="118" style="flex:0.6; font-size:0.58rem;">F7</button>
-          <button class="btn-sc-kbd kbd-key" data-code="119" style="flex:0.6; font-size:0.58rem;">F8</button>
-          <button class="btn-sc-kbd kbd-key" data-code="120" style="flex:0.6; font-size:0.58rem;">F9</button>
-          <button class="btn-sc-kbd kbd-key" data-code="121" style="flex:0.6; font-size:0.58rem;">F10</button>
-          <button class="btn-sc-kbd kbd-key" data-code="122" style="flex:0.6; font-size:0.58rem;">F11</button>
-          <button class="btn-sc-kbd kbd-key" data-code="123" style="flex:0.6; font-size:0.58rem;">F12</button>
+
+      <!-- Controls Body (Flex container: column in Portrait, row in Landscape) -->
+      <div class="sc-controls-body">
+        
+        <!-- Full PC Keyboard Layout (All 7 Rows Fully Viewable) -->
+        <div id="scKeyboardRows" class="sc-kbd-grid">
+          <!-- Row 1: Fn Row -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod" data-code="27" style="flex:1.1;">Esc</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="112">F1</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="113">F2</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="114">F3</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="115">F4</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="116">F5</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="117">F6</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="118">F7</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="119">F8</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="120">F9</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="121">F10</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="122">F11</button>
+            <button class="btn-sc-kbd kbd-key fn-key" data-code="123">F12</button>
+          </div>
+          <!-- Row 2: Numbers & Symbols -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key" data-char="`" data-shift="~">`</button>
+            <button class="btn-sc-kbd kbd-key" data-char="1" data-shift="!">1</button>
+            <button class="btn-sc-kbd kbd-key" data-char="2" data-shift="@">2</button>
+            <button class="btn-sc-kbd kbd-key" data-char="3" data-shift="#">3</button>
+            <button class="btn-sc-kbd kbd-key" data-char="4" data-shift="$">4</button>
+            <button class="btn-sc-kbd kbd-key" data-char="5" data-shift="%">5</button>
+            <button class="btn-sc-kbd kbd-key" data-char="6" data-shift="^">6</button>
+            <button class="btn-sc-kbd kbd-key" data-char="7" data-shift="&">7</button>
+            <button class="btn-sc-kbd kbd-key" data-char="8" data-shift="*">8</button>
+            <button class="btn-sc-kbd kbd-key" data-char="9" data-shift="(">9</button>
+            <button class="btn-sc-kbd kbd-key" data-char="0" data-shift=")">0</button>
+            <button class="btn-sc-kbd kbd-key" data-char="-" data-shift="_">-</button>
+            <button class="btn-sc-kbd kbd-key" data-char="=" data-shift="+">=</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="8" style="flex:1.4;">⌫</button>
+          </div>
+          <!-- Row 3: QWERTY -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod" data-code="9" style="flex:1.3;">Tab</button>
+            <button class="btn-sc-kbd kbd-key" data-char="q" data-shift="Q">Q</button>
+            <button class="btn-sc-kbd kbd-key" data-char="w" data-shift="W">W</button>
+            <button class="btn-sc-kbd kbd-key" data-char="e" data-shift="E">E</button>
+            <button class="btn-sc-kbd kbd-key" data-char="r" data-shift="R">R</button>
+            <button class="btn-sc-kbd kbd-key" data-char="t" data-shift="T">T</button>
+            <button class="btn-sc-kbd kbd-key" data-char="y" data-shift="Y">Y</button>
+            <button class="btn-sc-kbd kbd-key" data-char="u" data-shift="U">U</button>
+            <button class="btn-sc-kbd kbd-key" data-char="i" data-shift="I">I</button>
+            <button class="btn-sc-kbd kbd-key" data-char="o" data-shift="O">O</button>
+            <button class="btn-sc-kbd kbd-key" data-char="p" data-shift="P">P</button>
+            <button class="btn-sc-kbd kbd-key" data-char="[" data-shift="{">[</button>
+            <button class="btn-sc-kbd kbd-key" data-char="]" data-shift="}">]</button>
+            <button class="btn-sc-kbd kbd-key" data-char="\" data-shift="|">\</button>
+          </div>
+          <!-- Row 4: ASDF -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod" id="btnScKbdCaps" data-code="20" style="flex:1.5;">Caps</button>
+            <button class="btn-sc-kbd kbd-key" data-char="a" data-shift="A">A</button>
+            <button class="btn-sc-kbd kbd-key" data-char="s" data-shift="S">S</button>
+            <button class="btn-sc-kbd kbd-key" data-char="d" data-shift="D">D</button>
+            <button class="btn-sc-kbd kbd-key" data-char="f" data-shift="F">F</button>
+            <button class="btn-sc-kbd kbd-key" data-char="g" data-shift="G">G</button>
+            <button class="btn-sc-kbd kbd-key" data-char="h" data-shift="H">H</button>
+            <button class="btn-sc-kbd kbd-key" data-char="j" data-shift="J">J</button>
+            <button class="btn-sc-kbd kbd-key" data-char="k" data-shift="K">K</button>
+            <button class="btn-sc-kbd kbd-key" data-char="l" data-shift="L">L</button>
+            <button class="btn-sc-kbd kbd-key" data-char=";" data-shift=":">;</button>
+            <button class="btn-sc-kbd kbd-key" data-char="'" data-shift='"'>'</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="13" style="flex:1.7;">Enter</button>
+          </div>
+          <!-- Row 5: ZXCV -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod btn-sc-shift" data-code="16" style="flex:1.8;">Shift</button>
+            <button class="btn-sc-kbd kbd-key" data-char="z" data-shift="Z">Z</button>
+            <button class="btn-sc-kbd kbd-key" data-char="x" data-shift="X">X</button>
+            <button class="btn-sc-kbd kbd-key" data-char="c" data-shift="C">C</button>
+            <button class="btn-sc-kbd kbd-key" data-char="v" data-shift="V">V</button>
+            <button class="btn-sc-kbd kbd-key" data-char="b" data-shift="B">B</button>
+            <button class="btn-sc-kbd kbd-key" data-char="n" data-shift="N">N</button>
+            <button class="btn-sc-kbd kbd-key" data-char="m" data-shift="M">M</button>
+            <button class="btn-sc-kbd kbd-key" data-char="," data-shift="<">,</button>
+            <button class="btn-sc-kbd kbd-key" data-char="." data-shift=">">.</button>
+            <button class="btn-sc-kbd kbd-key" data-char="/" data-shift="?">/</button>
+            <button class="btn-sc-kbd kbd-key mod btn-sc-shift" data-code="16" style="flex:1.8;">Shift</button>
+          </div>
+          <!-- Row 6: Modifiers, Space & Arrows -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod" data-code="17" style="flex:1.1;">Ctrl</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="91" style="flex:1;">Win</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+            <button class="btn-sc-kbd kbd-key wide" data-code="32" style="flex:4.2;">Space</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="46" style="flex:1;">Del</button>
+            <button class="btn-sc-kbd kbd-key arrow-key" data-code="37" style="flex:0.85;">◀</button>
+            <button class="btn-sc-kbd kbd-key arrow-key" data-code="38" style="flex:0.85;">▲</button>
+            <button class="btn-sc-kbd kbd-key arrow-key" data-code="40" style="flex:0.85;">▼</button>
+            <button class="btn-sc-kbd kbd-key arrow-key" data-code="39" style="flex:0.85;">▶</button>
+          </div>
+          <!-- Row 7: Navigation & Utility -->
+          <div class="kbd-row">
+            <button class="btn-sc-kbd kbd-key mod" data-code="36">Home</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="35">End</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="33">PgUp</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="34">PgDn</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="44">PrtSc</button>
+            <button class="btn-sc-kbd kbd-key mod" data-code="45">Ins</button>
+          </div>
         </div>
-        <!-- Row 2: Numbers -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key" data-char="`">`</button>
-          <button class="btn-sc-kbd kbd-key" data-char="1">1</button>
-          <button class="btn-sc-kbd kbd-key" data-char="2">2</button>
-          <button class="btn-sc-kbd kbd-key" data-char="3">3</button>
-          <button class="btn-sc-kbd kbd-key" data-char="4">4</button>
-          <button class="btn-sc-kbd kbd-key" data-char="5">5</button>
-          <button class="btn-sc-kbd kbd-key" data-char="6">6</button>
-          <button class="btn-sc-kbd kbd-key" data-char="7">7</button>
-          <button class="btn-sc-kbd kbd-key" data-char="8">8</button>
-          <button class="btn-sc-kbd kbd-key" data-char="9">9</button>
-          <button class="btn-sc-kbd kbd-key" data-char="0">0</button>
-          <button class="btn-sc-kbd kbd-key" data-char="-">-</button>
-          <button class="btn-sc-kbd kbd-key" data-char="=">=</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="8" style="flex:1.4;">⌫</button>
+
+        <!-- Trackpad Section (Positioned below keyboard in Portrait, to the right in Landscape) -->
+        <div id="scTrackpadSection" class="sc-trackpad-section">
+          <div id="scTrackpadSurface" class="sc-trackpad-surface">
+            <!-- Animated Touch Cursor Dot -->
+            <div id="scTrackpadCursorDot" class="sc-touch-dot" style="display: none;"></div>
+            <div class="sc-trackpad-center-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="7"/>
+                <line x1="12" y1="6" x2="12" y2="10"/>
+              </svg>
+            </div>
+          </div>
         </div>
-        <!-- Row 3: QWERTY -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key mod" data-code="9" style="flex:1.3;">Tab</button>
-          <button class="btn-sc-kbd kbd-key" data-char="q">Q</button>
-          <button class="btn-sc-kbd kbd-key" data-char="w">W</button>
-          <button class="btn-sc-kbd kbd-key" data-char="e">E</button>
-          <button class="btn-sc-kbd kbd-key" data-char="r">R</button>
-          <button class="btn-sc-kbd kbd-key" data-char="t">T</button>
-          <button class="btn-sc-kbd kbd-key" data-char="y">Y</button>
-          <button class="btn-sc-kbd kbd-key" data-char="u">U</button>
-          <button class="btn-sc-kbd kbd-key" data-char="i">I</button>
-          <button class="btn-sc-kbd kbd-key" data-char="o">O</button>
-          <button class="btn-sc-kbd kbd-key" data-char="p">P</button>
-          <button class="btn-sc-kbd kbd-key" data-char="[">[</button>
-          <button class="btn-sc-kbd kbd-key" data-char="]">]</button>
-          <button class="btn-sc-kbd kbd-key" data-char="\">\</button>
-        </div>
-        <!-- Row 4: ASDF -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key mod" data-code="20" style="flex:1.6;">Caps</button>
-          <button class="btn-sc-kbd kbd-key" data-char="a">A</button>
-          <button class="btn-sc-kbd kbd-key" data-char="s">S</button>
-          <button class="btn-sc-kbd kbd-key" data-char="d">D</button>
-          <button class="btn-sc-kbd kbd-key" data-char="f">F</button>
-          <button class="btn-sc-kbd kbd-key" data-char="g">G</button>
-          <button class="btn-sc-kbd kbd-key" data-char="h">H</button>
-          <button class="btn-sc-kbd kbd-key" data-char="j">J</button>
-          <button class="btn-sc-kbd kbd-key" data-char="k">K</button>
-          <button class="btn-sc-kbd kbd-key" data-char="l">L</button>
-          <button class="btn-sc-kbd kbd-key" data-char=";">;</button>
-          <button class="btn-sc-kbd kbd-key" data-char="'">'</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="13" style="flex:1.6;">Enter</button>
-        </div>
-        <!-- Row 5: ZXCV -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
-          <button class="btn-sc-kbd kbd-key" data-char="z">Z</button>
-          <button class="btn-sc-kbd kbd-key" data-char="x">X</button>
-          <button class="btn-sc-kbd kbd-key" data-char="c">C</button>
-          <button class="btn-sc-kbd kbd-key" data-char="v">V</button>
-          <button class="btn-sc-kbd kbd-key" data-char="b">B</button>
-          <button class="btn-sc-kbd kbd-key" data-char="n">N</button>
-          <button class="btn-sc-kbd kbd-key" data-char="m">M</button>
-          <button class="btn-sc-kbd kbd-key" data-char=",">,</button>
-          <button class="btn-sc-kbd kbd-key" data-char=".">.</button>
-          <button class="btn-sc-kbd kbd-key" data-char="/">/</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="16" style="flex:2;">Shift</button>
-        </div>
-        <!-- Row 6: Bottom -->
-        <div class="kbd-row">
-          <button class="btn-sc-kbd kbd-key mod" data-code="17" style="flex:1.2;">Ctrl</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="91" style="flex:1;">Win</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
-          <button class="btn-sc-kbd kbd-key wide" data-code="32" style="flex:5;">Space</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="18" style="flex:1;">Alt</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="46" style="flex:1;">Del</button>
-          <button class="btn-sc-kbd kbd-key" data-code="37" style="flex:0.8;">◀</button>
-          <button class="btn-sc-kbd kbd-key" data-code="38" style="flex:0.8;">▲</button>
-          <button class="btn-sc-kbd kbd-key" data-code="40" style="flex:0.8;">▼</button>
-          <button class="btn-sc-kbd kbd-key" data-code="39" style="flex:0.8;">▶</button>
-        </div>
-        <!-- Extra Row -->
-        <div class="kbd-row" style="margin-top: 2px;">
-          <button class="btn-sc-kbd kbd-key mod" data-code="36">Home</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="35">End</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="33">PgUp</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="34">PgDn</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="44">PrtSc</button>
-          <button class="btn-sc-kbd kbd-key mod" data-code="45">Ins</button>
-        </div>
+
+      </div>
+
       </div>
     </div>
 
     <!-- Bottom Hint (view-only) -->
     <div id="scViewHint" style="position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.55); font-size: 0.65rem; padding: 5px 12px; border-radius: 20px; pointer-events: none; z-index: 503; white-space: nowrap; display: none;">
-      Enable Controls to control your PC
+      Enable Controls in Tools to control your PC
     </div>
 
     <style>
@@ -2099,6 +2238,393 @@
         transform-origin: center center;
         transition: transform 0.05s ease-out;
       }
+      
+      /* Top HUD Bar */
+      .sc-top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 502;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 14px;
+        padding-top: calc(10px + env(safe-area-inset-top, 0px));
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
+        pointer-events: none;
+      }
+      .sc-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+        animation: scPulseLive 1.5s infinite ease-in-out;
+        margin: 0 4px 0 6px;
+        flex-shrink: 0;
+      }
+      @keyframes scPulseLive {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+      }
+      .sc-reset-zoom-btn {
+        display: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 85, 0, 0.22);
+        border: 1px solid rgba(255, 85, 0, 0.5);
+        color: #ff8844;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 4px 14px rgba(255, 85, 0, 0.25);
+        outline: none;
+        pointer-events: auto;
+        transition: all 0.2s;
+      }
+      .sc-reset-zoom-btn:active {
+        transform: scale(0.92);
+      }
+
+      .sc-hud-capsule {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 5px;
+        background: rgba(18, 18, 26, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 28px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        pointer-events: auto;
+      }
+      .sc-hud-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: transparent;
+        border: 1px solid transparent;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .sc-hud-btn:active {
+        background: rgba(255, 255, 255, 0.14);
+        transform: scale(0.92);
+      }
+      .sc-hud-btn.active {
+        background: rgba(34, 197, 94, 0.18);
+        border-color: rgba(34, 197, 94, 0.5);
+        color: #22c55e;
+      }
+      .sc-hud-btn.active-mic {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #ef4444;
+      }
+      .sc-hud-btn.active-kbd {
+        background: rgba(118, 92, 255, 0.22);
+        border-color: rgba(118, 92, 255, 0.5);
+        color: #9d8cff;
+      }
+      .sc-hud-btn.active-tools {
+        background: rgba(255, 85, 0, 0.2);
+        border-color: rgba(255, 85, 0, 0.5);
+        color: #ff8844;
+      }
+
+      .sc-close-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.18);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #f87171;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+        pointer-events: auto;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .sc-close-btn:active {
+        background: rgba(239, 68, 68, 0.35);
+        transform: scale(0.92);
+      }
+
+      /* Screencast Tools Sheet Modal */
+      .sc-tools-sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        pointer-events: auto;
+        touch-action: auto;
+      }
+      .sc-tools-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        cursor: pointer;
+        pointer-events: auto;
+        animation: scFadeIn 0.2s ease-out;
+      }
+      @keyframes scFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .sc-tools-card {
+        position: relative;
+        z-index: 1001;
+        background: rgba(18, 18, 26, 0.96);
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+        padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+        max-height: 82vh;
+        overflow-y: auto;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+        backdrop-filter: blur(32px);
+        -webkit-backdrop-filter: blur(32px);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.75);
+        animation: scSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: auto;
+      }
+      @keyframes scSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .sc-sheet-handle {
+        width: 38px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.25);
+        margin: 0 auto 12px;
+      }
+      .sc-sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .sc-sheet-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 2px 0;
+        letter-spacing: -0.2px;
+      }
+      .sc-sheet-subtitle {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin: 0;
+      }
+      .sc-sheet-close-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .sc-sheet-section {
+        margin-bottom: 14px;
+      }
+      .sc-section-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        color: rgba(255, 255, 255, 0.45);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+      
+      /* Mode toggle card */
+      .sc-mode-toggle-card {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        text-align: left;
+      }
+      .sc-mode-toggle-card.active {
+        background: rgba(0, 210, 106, 0.1);
+        border-color: rgba(0, 210, 106, 0.35);
+      }
+      .sc-mode-card-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .sc-mode-icon-box {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sc-mode-toggle-card.active .sc-mode-icon-box {
+        background: rgba(0, 210, 106, 0.18);
+        color: #00d26a;
+      }
+      .sc-mode-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #ffffff;
+      }
+      .sc-mode-desc {
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 1px;
+      }
+      .sc-mode-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .sc-mode-toggle-card.active .sc-mode-badge {
+        background: #00d26a;
+        color: #000000;
+      }
+
+      /* Segmented Controls */
+      .sc-segmented-row {
+        display: flex;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 4px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .sc-segment-btn {
+        flex: 1;
+        padding: 9px 4px;
+        border-radius: 9px;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .sc-segment-btn.active {
+        background: rgba(255, 85, 0, 0.25);
+        color: #ff8844;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 85, 0, 0.4);
+      }
+      .sc-segment-btn:active {
+        transform: scale(0.96);
+      }
+
+      /* Utilities Grid */
+      .sc-tiles-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .sc-tile-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .sc-tile-btn:active {
+        background: rgba(255, 255, 255, 0.12);
+        transform: scale(0.98);
+      }
+
+      /* Shortcuts Grid */
+      .sc-shortcuts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .sc-shortcut-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.74rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        text-align: left;
+      }
+      .sc-shortcut-btn:active {
+        background: rgba(118, 92, 255, 0.25);
+        border-color: rgba(118, 92, 255, 0.5);
+        transform: scale(0.96);
+      }
+      .sc-shortcut-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        color: rgba(255, 255, 255, 0.85);
+        flex-shrink: 0;
+      }
+
       .sc-quick-key {
         padding: 6px 12px;
         background: rgba(255,255,255,0.07);
@@ -2115,21 +2641,277 @@
         background: rgba(255,85,0,0.3);
         border-color: rgba(255,85,0,0.5);
       }
-      #scKeyboardPanel.native-focus #scKeyboardRows {
-        display: none !important;
+      /* Screencast Controls Panel Styles (Keyboard & Trackpad) */
+      .sc-keyboard-panel {
+        display: none;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 505;
+        background: rgba(12, 12, 18, 0.98);
+        border-top: 1px solid rgba(255, 255, 255, 0.14);
+        padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
+        touch-action: auto;
+        max-height: 60vh;
+        overflow-y: auto;
       }
-      #scKeyboardPanel.native-focus {
-        padding-bottom: 10px !important;
+      .sc-kbd-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        padding: 0 2px;
       }
+      .sc-kbd-title-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+      .sc-kbd-pill-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.7rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .sc-kbd-pill-btn:active, .sc-kbd-pill-btn.active {
+        background: rgba(118, 92, 255, 0.25);
+        border-color: rgba(118, 92, 255, 0.6);
+        color: #a78bfa;
+      }
+      .sc-kbd-close-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #f87171;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .sc-kbd-close-pill:active {
+        background: rgba(239, 68, 68, 0.35);
+        transform: scale(0.92);
+      }
+      .sc-mobile-input-drawer {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .sc-kbd-native-input {
+        flex: 1;
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        outline: none;
+        caret-color: #ff5500;
+      }
+      .sc-kbd-clear-btn {
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        color: white;
+        font-size: 0.78rem;
+        cursor: pointer;
+      }
+
+      /* Controls Body Container */
+      .sc-controls-body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+      }
+
+      /* Trackpad Section */
+      .sc-trackpad-section {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .sc-trackpad-surface {
+        position: relative;
+        width: 100%;
+        height: 105px;
+        min-height: 90px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1.5px dashed rgba(255, 255, 255, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        cursor: crosshair;
+        user-select: none;
+        -webkit-user-select: none;
+        overflow: hidden;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .sc-trackpad-surface:active {
+        border-color: rgba(255, 106, 0, 0.5);
+        background: rgba(255, 106, 0, 0.05);
+      }
+      .sc-touch-dot {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 106, 0, 0.8) 0%, rgba(255, 106, 0, 0.2) 60%, transparent 80%);
+        border: 1.5px solid rgba(255, 255, 255, 0.8);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(255, 106, 0, 0.6);
+        z-index: 10;
+      }
+      .sc-trackpad-center-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.22);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, transform 0.2s;
+      }
+      .sc-trackpad-surface:active .sc-trackpad-center-icon {
+        color: rgba(255, 106, 0, 0.5);
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+
+      /* Keyboard Grid */
+      .sc-kbd-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+      }
+      .kbd-row {
+        display: flex;
+        gap: 2px;
+        width: 100%;
+      }
+      .btn-sc-kbd {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 5px;
+        color: #e0e0e0;
+        font-size: 0.70rem;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        min-height: 27px;
+        height: 27px;
+        flex: 1;
+        max-width: 48px;
+        transition: background 0.1s, transform 0.05s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        padding: 0 1px;
+      }
+      .btn-sc-kbd:active, .btn-sc-kbd.active-press {
+        background: rgba(255, 85, 0, 0.35) !important;
+        border-color: rgba(255, 85, 0, 0.6) !important;
+        color: #ffffff !important;
+        transform: scale(0.94);
+      }
+      .btn-sc-kbd.wide {
+        max-width: none;
+      }
+      .btn-sc-kbd.mod {
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+        font-size: 0.60rem;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .btn-sc-kbd.active-toggle {
+        background: rgba(118, 92, 255, 0.4) !important;
+        border-color: rgba(118, 92, 255, 0.8) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 10px rgba(118, 92, 255, 0.5) !important;
+      }
+      .fn-key {
+        font-size: 0.54rem !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+      }
+      .arrow-key {
+        font-size: 0.60rem !important;
+      }
+
+      /* Horizontal / Landscape Mode: Split Side-by-Side */
       @media (orientation: landscape) {
-        #scKeyboardRows {
-          display: none !important;
+        .sc-keyboard-panel {
+          padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+          max-height: 80vh !important;
         }
-        #scKeyboardPanel {
-          padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        .sc-kbd-header {
+          margin-bottom: 3px !important;
         }
-        #scKeyboardPanel > div {
-          margin-bottom: 4px !important;
+        .sc-controls-body {
+          flex-direction: row !important;
+          gap: 12px !important;
+          align-items: stretch !important;
+          min-height: 160px !important;
+        }
+        .sc-kbd-grid {
+          flex: 1 !important;
+          min-width: 0 !important;
+        }
+        .sc-trackpad-section {
+          width: 230px !important;
+          min-width: 190px !important;
+          flex-shrink: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          height: auto !important;
+          align-self: stretch !important;
+        }
+        .sc-trackpad-surface {
+          flex: 1 !important;
+          height: 100% !important;
+          min-height: 160px !important;
+        }
+        .btn-sc-kbd {
+          min-height: 20px !important;
+          height: 20px !important;
+          font-size: 0.52rem !important;
+          border-radius: 4px !important;
+        }
+        .btn-sc-kbd.mod {
+          font-size: 0.48rem !important;
+        }
+        .fn-key {
+          font-size: 0.44rem !important;
         }
       }
     </style>

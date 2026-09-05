@@ -5,6 +5,23 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.88] - 2026-09-05
+
+### Added
+- **Minimalist Trackpad Canvas & Centered Mouse Indicator** — Modernized the mobile trackpad surface into a sleek, edge-to-edge touch canvas with a glowing ambient mouse icon in the center, removing visual clutter and physical button barriers.
+- **Adaptive Responsive Trackpad Ergonomics** — Optimized trackpad positioning based on device orientation:
+  - **Portrait Mode**: Positioned below the virtual keyboard for natural thumb reach.
+  - **Landscape Mode**: Positioned to the right of the keyboard with expanded vertical canvas height for fluid pointer glide.
+
+### Fixed
+- **Single-Tap Click & Text Selection Bug** — Fixed issue where single-tap left click failed or required double-tapping, which inadvertently caused word selection instead of moving the cursor. Single-tap now triggers an immediate, accurate left-click at the current pointer position without synthetic delays.
+- **Screencast Keyboard Opening Lag** — Fixed bug where opening the Screencast virtual keyboard required two clicks on first launch due to initial style mismatch. Keyboard panel now appears instantly on the first tap.
+
+### Changed
+- **Screencast Tools Menu Polish** — Cleaned up action cards in the Screencast Tools sheet by removing redundant subtext descriptions for a more modern, streamlined mobile interface.
+
+---
+
 ## [6.4.87] - 2026-09-05
 
 ### Fixed

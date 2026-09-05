@@ -1,4 +1,4 @@
-# AiroDrop v6.4.87
+# AiroDrop v6.4.88
 
 ![AiroDrop Banner](banner.png)
 
@@ -8,7 +8,7 @@
 
 Official Website **[AiroDrop Hub](https://airodrop.site/)** | Developer **[Asep Sayyad](https://asepsayyad007.in/)**
 
-![Version](https://img.shields.io/badge/version-6.4.87-orange.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-6.4.88-orange.svg?style=flat-square)
 ![Privacy](https://img.shields.io/badge/Privacy-100%25_Local_Network-green.svg?style=flat-square)
 ![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue.svg?style=flat-square&logo=node.js)
 ![Platform Support](https://img.shields.io/badge/platform-windows-blue.svg?style=flat-square&logo=windows)
@@ -17,11 +17,11 @@ Official Website **[AiroDrop Hub](https://airodrop.site/)** | Developer **[Asep 
 
 ---
 
-## Downloads (v6.4.87)
+## Downloads (v6.4.88)
 
 Get the latest pre-compiled binaries for Windows:
-* **[Download Setup Installer (v6.4.87)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.87/AiroDrop.Setup.6.4.87.exe)** — Standard Windows wizard installation.
-* **[Download Portable Version (v6.4.87)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.87/AiroDrop-Portable-6.4.87.exe)** — Standalone execution without installation.
+* **[Download Setup Installer (v6.4.88)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.88/AiroDrop.Setup.6.4.88.exe)** — Standard Windows wizard installation.
+* **[Download Portable Version (v6.4.88)](https://github.com/asepsayyad007/AiroDrop/releases/download/v6.4.88/AiroDrop-Portable-6.4.88.exe)** — Standalone execution without installation.
 
 For a detailed history of changes, see the [CHANGELOG.md](CHANGELOG.md).
 
