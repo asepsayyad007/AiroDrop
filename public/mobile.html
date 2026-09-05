@@ -1652,7 +1652,7 @@
     }
   </script>
   <script src="mobile-app.js?v=6.5.2"></script>
-  <script src="keyboard.js?v=6.5.2"></script>
+  <script src="keyboard.js?v=7.0"></script>
   <script>
     // Timeout fallback: if app doesn't initialize within 8s, show error state
     setTimeout(function() {
@@ -1668,84 +1668,549 @@
   </div>
 
   <!-- Dedicated Fullscreen Remote Keyboard Overlay -->
-  <div id="remoteKeyboardOverlay" style="display: none; position: fixed; inset: 0; background: #0a0a0f; z-index: 250; flex-direction: column; padding: max(14px, env(safe-area-inset-top, 14px)) 16px max(14px, env(safe-area-inset-bottom, 14px)); box-sizing: border-box; overflow-y: auto;">
-    
-    <!-- Overlay Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); display: flex; align-items: center; justify-content: center; color: #06b6d4;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+  <div id="remoteKeyboardOverlay" class="rk-overlay" style="display: none;">
+    <style>
+      .rk-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 15, 0.96);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        z-index: 250;
+        display: flex;
+        flex-direction: column;
+        padding: max(10px, env(safe-area-inset-top, 10px)) 10px max(10px, env(safe-area-inset-bottom, 10px));
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      .rk-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+      }
+      .rk-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .rk-header-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(6, 182, 212, 0.15);
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #06b6d4;
+        flex-shrink: 0;
+      }
+      .rk-header-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.2;
+      }
+      .rk-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rk-icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .rk-icon-btn:active, .rk-icon-btn.active {
+        background: rgba(6, 182, 212, 0.25);
+        border-color: rgba(6, 182, 212, 0.6);
+        color: #22d3ee;
+        box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+      }
+      .rk-close-btn {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #f87171;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        cursor: pointer;
+        outline: none;
+        margin: 0;
+        padding: 0;
+        transition: all 0.2s;
+      }
+      .rk-close-btn:active {
+        background: rgba(239, 68, 68, 0.35);
+        transform: scale(0.92);
+      }
+      .rk-mobile-input-drawer {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+        flex-shrink: 0;
+      }
+      .rk-native-input {
+        flex: 1;
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 14px;
+        outline: none;
+        caret-color: #06b6d4;
+      }
+      .rk-clear-btn {
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+      .rk-body {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        flex: 1;
+        min-height: 0;
+        justify-content: space-between;
+        contain: layout;
+      }
+
+      /* Trackpad Section (Operational Trackpad filling upper flexible space) */
+      .rk-trackpad-section {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        flex: 1;
+        min-height: 110px;
+        touch-action: none;
+      }
+      .rk-trackpad-surface {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        flex: 1;
+        min-height: 110px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(6,182,212,0.07) 0%, rgba(255,255,255,0.02) 100%);
+        border: 1.5px solid rgba(6, 182, 212, 0.32);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        cursor: crosshair;
+        user-select: none;
+        -webkit-user-select: none;
+        overflow: hidden;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(6,182,212,0.06);
+        will-change: transform;
+      }
+      .rk-trackpad-surface:active {
+        border-color: rgba(6, 182, 212, 0.85);
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
+        box-shadow: 0 0 32px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      }
+      .rk-touch-dot {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(6, 182, 212, 0.9) 0%, rgba(6, 182, 212, 0.25) 60%, transparent 80%);
+        border: 1.5px solid rgba(255, 255, 255, 0.85);
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 12px rgba(6, 182, 212, 0.8);
+        z-index: 10;
+      }
+      .rk-trackpad-center-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(6, 182, 212, 0.35);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, transform 0.2s;
+      }
+      .rk-trackpad-surface:active .rk-trackpad-center-icon {
+        color: rgba(6, 182, 212, 0.75);
+        transform: translate(-50%, -50%) scale(1.12);
+      }
+      .rk-trackpad-gestures-hint {
+        position: absolute;
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.58rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.45);
+        letter-spacing: 0.3px;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+
+      /* Quick PC Shortcuts Dropdown Section (Directly Above Keyboard) */
+      .rk-shortcuts-section {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .rk-shortcuts-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 9px;
+        cursor: pointer;
+        outline: none;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .rk-shortcuts-toggle-btn:active, .rk-shortcuts-toggle-btn.active {
+        background: rgba(255, 255, 255, 0.09);
+        border-color: rgba(245, 158, 11, 0.4);
+      }
+      .rk-shortcuts-arrow {
+        font-size: 0.62rem;
+        color: var(--text3);
+        transition: transform 0.2s ease;
+      }
+      .rk-shortcuts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        max-height: 170px;
+        overflow-y: auto;
+        padding: 2px 0;
+      }
+      .rk-sc-btn {
+        border-radius: 10px;
+        padding: 7px 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.15s, background 0.15s;
+        outline: none;
+      }
+      .rk-sc-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* Keyboard Grid (All the way bottom) */
+      .rk-kbd-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+        flex-shrink: 0;
+        margin-top: auto;
+      }
+      .rk-kbd-row {
+        display: flex;
+        gap: 3px;
+        width: 100%;
+        align-items: stretch;
+      }
+      .btn-rk-kbd {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.13), rgba(255,255,255,0.04));
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 7px;
+        color: #eaeaea;
+        font-size: 0.82rem;
+        font-weight: 650;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        min-height: 40px;
+        height: 40px;
+        flex: 1;
+        max-width: 52px;
+        transition: background 0.08s, transform 0.06s, box-shadow 0.08s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.09);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        padding: 0 2px;
+        will-change: transform;
+        letter-spacing: 0.01em;
+      }
+      .btn-rk-kbd:active, .btn-rk-kbd.active-press {
+        background: rgba(6,182,212,0.45) !important;
+        border-color: rgba(6,182,212,0.9) !important;
+        color: #ffffff !important;
+        transform: scale(0.88) !important;
+        box-shadow: 0 0 16px rgba(6,182,212,0.55), 0 2px 4px rgba(0,0,0,0.3) !important;
+      }
+      .btn-rk-kbd.wide {
+        max-width: none;
+      }
+      .btn-rk-kbd.mod {
+        background: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.88);
+      }
+      .btn-rk-kbd.active-toggle {
+        background: rgba(6,182,212,0.5) !important;
+        border-color: rgba(6,182,212,1) !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 18px rgba(6,182,212,0.65) !important;
+      }
+      .btn-rk-kbd.fn-key {
+        font-size: 0.62rem !important;
+        color: rgba(255,255,255,0.82) !important;
+      }
+      .btn-rk-kbd.arrow-key {
+        font-size: 0.7rem !important;
+      }
+
+      /* Horizontal / Landscape Mode for Full Keyboard & Trackpad */
+      @media (orientation: landscape) {
+        .rk-overlay {
+          padding: max(6px, env(safe-area-inset-top, 6px)) 10px max(6px, env(safe-area-inset-bottom, 6px)) !important;
+        }
+        .rk-header {
+          margin-bottom: 4px !important;
+          padding-bottom: 4px !important;
+        }
+        .rk-body {
+          flex-direction: row !important;
+          gap: 10px !important;
+          align-items: stretch !important;
+        }
+        .rk-kbd-grid {
+          flex: 1.6 !important;
+          margin-top: 0 !important;
+        }
+        .rk-shortcuts-section {
+          display: none !important;
+        }
+        .rk-trackpad-section {
+          flex: 1 !important;
+          height: 100% !important;
+        }
+        .rk-trackpad-surface {
+          height: 100% !important;
+          min-height: 130px !important;
+        }
+        .btn-rk-kbd {
+          min-height: 28px !important;
+          height: 28px !important;
+          font-size: 0.65rem !important;
+          border-radius: 5px !important;
+        }
+        .btn-rk-kbd.mod {
+          font-size: 0.57rem !important;
+        }
+        .btn-rk-kbd.fn-key {
+          font-size: 0.52rem !important;
+        }
+      }
+    </style>
+
+    <!-- Overlay Top Bar -->
+    <div class="rk-header">
+      <div class="rk-header-left">
+        <div class="rk-header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="10.01" y2="12"/><line x1="14" y1="12" x2="14.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
         </div>
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-size: 1.05rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Remote Keyboard</span>
-          <span style="font-size: 0.68rem; color: var(--text3);">Full PC hotkeys &amp; live typing</span>
+        <div>
+          <div class="rk-header-title">PC Keyboard</div>
         </div>
       </div>
-      <button id="btnCloseRemoteKeyboard" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #ffffff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; outline: none; margin: 0; padding: 0;">&times;</button>
-    </div>
-
-    <!-- Live Text Typing Section -->
-    <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 0.7rem; color: var(--text3); font-weight: 700; text-transform: uppercase;">Direct Text Input</span>
-        <button id="btnRkClearText" style="background: none; border: none; color: var(--text3); font-size: 0.72rem; cursor: pointer; font-weight: 600; padding: 0;">Clear</button>
-      </div>
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="rkInputText" placeholder="Type text to send to PC..." style="flex: 1; height: 42px; padding: 0 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #ffffff; outline: none; font-size: 0.9rem;">
-        <button id="btnRkSendText" style="height: 42px; padding: 0 14px; background: linear-gradient(135deg, #06b6d4, #3b82f6); border: none; border-radius: 10px; color: #ffffff; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Send</button>
+      
+      <div class="rk-header-actions">
+        <button id="btnRkToggleMobileInput" class="rk-icon-btn" title="Toggle Phone Soft Keyboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </button>
+        <button id="btnCloseRemoteKeyboard" class="rk-close-btn" title="Close Keyboard">&times;</button>
       </div>
     </div>
 
-    <!-- Quick PC Hotkeys Grid Section -->
-    <div style="margin-bottom: 16px;">
-      <div style="font-size: 0.7rem; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Quick PC Shortcuts</div>
-      <div id="rkShortcutsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-        <!-- Dynamically rendered by keyboard.js -->
-      </div>
+
+    <!-- Collapsible Mobile Text Input Drawer -->
+    <div id="rkMobileInputDrawer" class="rk-mobile-input-drawer" style="display: none;">
+      <input type="text" id="rkInputText" placeholder="Type here using phone keyboard..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="rk-native-input">
+      <button id="btnRkClearText" class="rk-clear-btn" title="Clear text">✕</button>
     </div>
 
-    <!-- Sticky Modifier Toggles Section -->
-    <div style="margin-bottom: 16px;">
-      <div style="font-size: 0.7rem; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Modifier Keys (Tap to Hold)</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-        <button id="modBtn_ctrl" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; outline: none;">Ctrl</button>
-        <button id="modBtn_alt" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; outline: none;">Alt</button>
-        <button id="modBtn_shift" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; outline: none;">Shift</button>
-        <button id="modBtn_win" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: var(--text); font-size: 0.8rem; font-weight: 700; cursor: pointer; outline: none;">Win</button>
-      </div>
-    </div>
-
-    <!-- Function Keys Row (F1 - F12) -->
-    <div style="margin-bottom: 16px;">
-      <div style="font-size: 0.7rem; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Function Keys</div>
-      <div id="rkFKeysRow" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
-        <!-- Dynamically rendered by keyboard.js -->
-      </div>
-    </div>
-
-    <!-- Navigation & D-Pad Section -->
-    <div style="margin-bottom: 16px;">
-      <div style="font-size: 0.7rem; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Navigation &amp; System Keys</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px;">
-        <button id="rkKey_Esc" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,77,79,0.3); background: rgba(255,77,79,0.12); color: #ff4d4f; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Esc</button>
-        <button id="rkKey_Tab" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #ffffff; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Tab</button>
-        <button id="rkKey_Backspace" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #ffffff; font-size: 0.8rem; font-weight: 700; cursor: pointer;">⌫ Back</button>
-        <button id="rkKey_Delete" style="height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #ffffff; font-size: 0.8rem; font-weight: 700; cursor: pointer;">Del</button>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;">
-        <button id="rkKey_Space" style="height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #ffffff; font-size: 0.84rem; font-weight: 700; cursor: pointer;">Spacebar</button>
-        <button id="rkKey_Enter" style="height: 42px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #ffffff; font-size: 0.84rem; font-weight: 700; cursor: pointer;">↵ Enter</button>
-      </div>
-
-      <!-- Arrow D-Pad Grid -->
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px;">
-        <button id="rkKey_Up" style="width: 54px; height: 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.9rem; font-weight: 700; cursor: pointer;">▲</button>
-        <div style="display: flex; gap: 10px;">
-          <button id="rkKey_Left" style="width: 54px; height: 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.9rem; font-weight: 700; cursor: pointer;">◄</button>
-          <button id="rkKey_Down" style="width: 54px; height: 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.9rem; font-weight: 700; cursor: pointer;">▼</button>
-          <button id="rkKey_Right" style="width: 54px; height: 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.08); color: #ffffff; font-size: 0.9rem; font-weight: 700; cursor: pointer;">►</button>
+    <!-- Keyboard Scrollable Container / Body -->
+    <div class="rk-body">
+      
+      <!-- 1. Trackpad Section (Operational Trackpad filling upper area) -->
+      <div id="rkTrackpadSection" class="rk-trackpad-section">
+        <div id="rkTrackpadSurface" class="rk-trackpad-surface">
+          <!-- Animated Touch Cursor Dot -->
+          <div id="rkTrackpadCursorDot" class="rk-touch-dot" style="display: none;"></div>
+          <!-- Centered Glowing Mouse Icon -->
+          <div class="rk-trackpad-center-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="7"/>
+              <line x1="12" y1="6" x2="12" y2="10"/>
+            </svg>
+          </div>
+          <!-- Subtle Gestures Guide for Convenience -->
+          <div class="rk-trackpad-gestures-hint">
+            <span>1-Finger Move</span> &bull; <span>Tap to Click</span> &bull; <span>2-Finger Scroll</span>
+          </div>
         </div>
       </div>
+
+      <!-- 2. Quick PC Shortcuts Dropdown Section (Directly Above Keyboard) -->
+      <div id="rkShortcutsSection" class="rk-shortcuts-section">
+        <button id="btnToggleRkShortcuts" class="rk-shortcuts-toggle-btn" type="button">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span style="font-size: 0.68rem; color: rgba(255, 255, 255, 0.7); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Quick PC Shortcuts</span>
+          </div>
+          <span id="rkShortcutsToggleArrow" class="rk-shortcuts-arrow" style="display:inline-flex;align-items:center;transition:transform 0.2s ease;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </button>
+        <div id="rkShortcutsGrid" class="rk-shortcuts-grid" style="display: none;">
+          <!-- Dynamically populated by keyboard.js -->
+        </div>
+      </div>
+
+      <!-- 3. Full PC Keyboard Layout (All 7 Rows Anchored at the Bottom) -->
+      <div id="rkKeyboardRows" class="rk-kbd-grid">
+        <!-- Row 1: Fn Row -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod" data-code="27" style="flex:1.1;">Esc</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="112">F1</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="113">F2</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="114">F3</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="115">F4</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="116">F5</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="117">F6</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="118">F7</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="119">F8</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="120">F9</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="121">F10</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="122">F11</button>
+          <button class="btn-rk-kbd kbd-key fn-key" data-code="123">F12</button>
+        </div>
+        <!-- Row 2: Numbers & Symbols -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key" data-char="`" data-shift="~">`</button>
+          <button class="btn-rk-kbd kbd-key" data-char="1" data-shift="!">1</button>
+          <button class="btn-rk-kbd kbd-key" data-char="2" data-shift="@">2</button>
+          <button class="btn-rk-kbd kbd-key" data-char="3" data-shift="#">3</button>
+          <button class="btn-rk-kbd kbd-key" data-char="4" data-shift="$">4</button>
+          <button class="btn-rk-kbd kbd-key" data-char="5" data-shift="%">5</button>
+          <button class="btn-rk-kbd kbd-key" data-char="6" data-shift="^">6</button>
+          <button class="btn-rk-kbd kbd-key" data-char="7" data-shift="&amp;">7</button>
+          <button class="btn-rk-kbd kbd-key" data-char="8" data-shift="*">8</button>
+          <button class="btn-rk-kbd kbd-key" data-char="9" data-shift="(">9</button>
+          <button class="btn-rk-kbd kbd-key" data-char="0" data-shift=")">0</button>
+          <button class="btn-rk-kbd kbd-key" data-char="-" data-shift="_">-</button>
+          <button class="btn-rk-kbd kbd-key" data-char="=" data-shift="+">=</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="8" style="flex:1.4;">Bksp</button>
+        </div>
+        <!-- Row 3: QWERTY -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod" data-code="9" style="flex:1.3;">Tab</button>
+          <button class="btn-rk-kbd kbd-key" data-char="q" data-shift="Q">Q</button>
+          <button class="btn-rk-kbd kbd-key" data-char="w" data-shift="W">W</button>
+          <button class="btn-rk-kbd kbd-key" data-char="e" data-shift="E">E</button>
+          <button class="btn-rk-kbd kbd-key" data-char="r" data-shift="R">R</button>
+          <button class="btn-rk-kbd kbd-key" data-char="t" data-shift="T">T</button>
+          <button class="btn-rk-kbd kbd-key" data-char="y" data-shift="Y">Y</button>
+          <button class="btn-rk-kbd kbd-key" data-char="u" data-shift="U">U</button>
+          <button class="btn-rk-kbd kbd-key" data-char="i" data-shift="I">I</button>
+          <button class="btn-rk-kbd kbd-key" data-char="o" data-shift="O">O</button>
+          <button class="btn-rk-kbd kbd-key" data-char="p" data-shift="P">P</button>
+          <button class="btn-rk-kbd kbd-key" data-char="[" data-shift="{">[</button>
+          <button class="btn-rk-kbd kbd-key" data-char="]" data-shift="}">]</button>
+          <button class="btn-rk-kbd kbd-key" data-char="\" data-shift="|">\</button>
+        </div>
+        <!-- Row 4: ASDF -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod" id="btnRkKbdCaps" data-code="20" style="flex:1.5;">Caps</button>
+          <button class="btn-rk-kbd kbd-key" data-char="a" data-shift="A">A</button>
+          <button class="btn-rk-kbd kbd-key" data-char="s" data-shift="S">S</button>
+          <button class="btn-rk-kbd kbd-key" data-char="d" data-shift="D">D</button>
+          <button class="btn-rk-kbd kbd-key" data-char="f" data-shift="F">F</button>
+          <button class="btn-rk-kbd kbd-key" data-char="g" data-shift="G">G</button>
+          <button class="btn-rk-kbd kbd-key" data-char="h" data-shift="H">H</button>
+          <button class="btn-rk-kbd kbd-key" data-char="j" data-shift="J">J</button>
+          <button class="btn-rk-kbd kbd-key" data-char="k" data-shift="K">K</button>
+          <button class="btn-rk-kbd kbd-key" data-char="l" data-shift="L">L</button>
+          <button class="btn-rk-kbd kbd-key" data-char=";" data-shift=":">;</button>
+          <button class="btn-rk-kbd kbd-key" data-char="'" data-shift='"'>'</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="13" style="flex:1.7;">Enter</button>
+        </div>
+        <!-- Row 5: ZXCV -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod btn-rk-shift" data-code="16" style="flex:1.8;">Shift</button>
+          <button class="btn-rk-kbd kbd-key" data-char="z" data-shift="Z">Z</button>
+          <button class="btn-rk-kbd kbd-key" data-char="x" data-shift="X">X</button>
+          <button class="btn-rk-kbd kbd-key" data-char="c" data-shift="C">C</button>
+          <button class="btn-rk-kbd kbd-key" data-char="v" data-shift="V">V</button>
+          <button class="btn-rk-kbd kbd-key" data-char="b" data-shift="B">B</button>
+          <button class="btn-rk-kbd kbd-key" data-char="n" data-shift="N">N</button>
+          <button class="btn-rk-kbd kbd-key" data-char="m" data-shift="M">M</button>
+          <button class="btn-rk-kbd kbd-key" data-char="," data-shift="&lt;">,</button>
+          <button class="btn-rk-kbd kbd-key" data-char="." data-shift="&gt;">.</button>
+          <button class="btn-rk-kbd kbd-key" data-char="/" data-shift="?">/</button>
+          <button class="btn-rk-kbd kbd-key mod btn-rk-shift" data-code="16" style="flex:1.8;">Shift</button>
+        </div>
+        <!-- Row 6: Modifiers, Space & Arrows -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod btn-rk-mod" id="rkMod_ctrl" data-code="17" style="flex:1.1;">Ctrl</button>
+          <button class="btn-rk-kbd kbd-key mod btn-rk-mod" id="rkMod_win" data-code="91" style="flex:1;">Win</button>
+          <button class="btn-rk-kbd kbd-key mod btn-rk-mod" id="rkMod_alt" data-code="18" style="flex:1;">Alt</button>
+          <button class="btn-rk-kbd kbd-key wide" data-code="32" style="flex:4.2;">Space</button>
+          <button class="btn-rk-kbd kbd-key mod btn-rk-mod" id="rkMod_alt_r" data-code="18" style="flex:1;">Alt</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="46" style="flex:1;">Del</button>
+          <button class="btn-rk-kbd kbd-key arrow-key" data-code="37" style="flex:0.85;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="btn-rk-kbd kbd-key arrow-key" data-code="38" style="flex:0.85;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <button class="btn-rk-kbd kbd-key arrow-key" data-code="40" style="flex:0.85;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <button class="btn-rk-kbd kbd-key arrow-key" data-code="39" style="flex:0.85;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <!-- Row 7: Navigation & Utility -->
+        <div class="rk-kbd-row">
+          <button class="btn-rk-kbd kbd-key mod" data-code="36">Home</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="35">End</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="33">PgUp</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="34">PgDn</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="44">PrtSc</button>
+          <button class="btn-rk-kbd kbd-key mod" data-code="45">Ins</button>
+        </div>
+      </div>
+
     </div>
   </div>
 

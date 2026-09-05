@@ -129,16 +129,203 @@
       return found;
     }
 
+    // ─── IP Changed Alert & Reinstallation Page Controller ────────
+    let _isIpChangedScreenInitialized = false;
+
+    function showIpChangedReinstallScreen(targetHost, isManual = false) {
+      const fallback = document.getElementById('appLoadingFallback');
+      if (fallback) fallback.style.display = 'none';
+
+      const mainApp = document.getElementById('mainAppContainer');
+      const bottomNav = document.getElementById('bottomNavContainer');
+      if (mainApp) mainApp.style.display = 'none';
+      if (bottomNav) bottomNav.style.display = 'none';
+
+      const screen = document.getElementById('ipChangedReinstallScreen');
+      if (!screen) return;
+      screen.style.display = 'flex';
+
+      const displayHost = targetHost || window.location.host;
+      const hostEl = document.getElementById('reinstallOldHostDisplay');
+      if (hostEl) {
+        hostEl.textContent = `${window.location.protocol}//${displayHost}`;
+      }
+
+      // Telemetry fields
+      const diagUrl = document.getElementById('diagConfiguredUrl');
+      if (diagUrl) diagUrl.textContent = window.location.href;
+
+      const diagSeen = document.getElementById('diagLastSeen');
+      const lastTs = localStorage.getItem('airodrop_last_alive_ts');
+      if (diagSeen) {
+        if (lastTs) {
+          try {
+            diagSeen.textContent = new Date(parseInt(lastTs, 10)).toLocaleString();
+          } catch (_) {
+            diagSeen.textContent = 'Previous Session';
+          }
+        } else {
+          diagSeen.textContent = 'Previous Session';
+        }
+      }
+
+      const diagOnline = document.getElementById('diagOnlineStatus');
+      if (diagOnline) {
+        diagOnline.textContent = navigator.onLine ? 'Online (Device Wi-Fi / Cellular Active)' : 'Offline (No Internet / Wi-Fi)';
+        diagOnline.style.color = navigator.onLine ? '#22c55e' : '#ef4444';
+      }
+
+      const diagPwa = document.getElementById('diagPwaStandalone');
+      if (diagPwa) {
+        const isStandalone = (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches);
+        diagPwa.textContent = isStandalone ? 'Yes (Standalone Home Screen PWA)' : 'Browser Tab';
+      }
+
+      const closeBtn = document.getElementById('btnCloseReinstallScreen');
+      if (closeBtn) {
+        closeBtn.style.display = isManual ? 'flex' : 'none';
+      }
+
+      initIpChangedScreen();
+    }
+
+    function hideIpChangedReinstallScreen() {
+      const screen = document.getElementById('ipChangedReinstallScreen');
+      if (screen) screen.style.display = 'none';
+      const mainApp = document.getElementById('mainAppContainer');
+      const bottomNav = document.getElementById('bottomNavContainer');
+      if (mainApp) mainApp.style.display = 'block';
+      if (bottomNav) bottomNav.style.display = 'flex';
+    }
+
+    function initIpChangedScreen() {
+      if (_isIpChangedScreenInitialized) return;
+      _isIpChangedScreenInitialized = true;
+
+      // Close button (only available if opened manually from Settings)
+      const closeBtn = document.getElementById('btnCloseReinstallScreen');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          hideIpChangedReinstallScreen();
+        });
+      }
+
+      // Tab switcher: iOS vs Android
+      const tabIos = document.getElementById('btnReinstallTabIos');
+      const tabAndroid = document.getElementById('btnReinstallTabAndroid');
+      const paneIos = document.getElementById('reinstallGuideIosPane');
+      const paneAndroid = document.getElementById('reinstallGuideAndroidPane');
+
+      if (tabIos && tabAndroid && paneIos && paneAndroid) {
+        tabIos.addEventListener('click', () => {
+          tabIos.style.background = 'rgba(255,106,0,0.2)';
+          tabIos.style.borderColor = 'rgba(255,106,0,0.4)';
+          tabIos.style.color = '#ffffff';
+
+          tabAndroid.style.background = 'transparent';
+          tabAndroid.style.borderColor = 'transparent';
+          tabAndroid.style.color = '#a1a1aa';
+
+          paneIos.style.display = 'block';
+          paneAndroid.style.display = 'none';
+        });
+
+        tabAndroid.addEventListener('click', () => {
+          tabAndroid.style.background = 'rgba(25,216,121,0.18)';
+          tabAndroid.style.borderColor = 'rgba(25,216,121,0.4)';
+          tabAndroid.style.color = '#ffffff';
+
+          tabIos.style.background = 'transparent';
+          tabIos.style.borderColor = 'transparent';
+          tabIos.style.color = '#a1a1aa';
+
+          paneIos.style.display = 'none';
+          paneAndroid.style.display = 'block';
+        });
+      }
+
+      // Retry Connection button
+      const retryBtn = document.getElementById('btnReinstallRetry');
+      const retryIcon = document.getElementById('reinstallRetryIcon');
+      const retryText = document.getElementById('reinstallRetryText');
+
+      if (retryBtn) {
+        retryBtn.addEventListener('click', async () => {
+          triggerHaptic(20);
+          retryBtn.disabled = true;
+          if (retryIcon) {
+            retryIcon.style.animation = 'spin 0.8s linear infinite';
+          }
+          if (retryText) retryText.textContent = 'Testing Connection...';
+
+          let alive = false;
+          try {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 600);
+            const res = await fetch('/api/discovery', { signal: ctrl.signal, mode: 'cors' });
+            clearTimeout(t);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.service === 'airodrop') alive = true;
+            }
+          } catch (_) {}
+
+          if (alive) {
+            localStorage.setItem('airodrop_last_alive_ts', Date.now().toString());
+            showToast('PC Reconnected successfully!', 'success');
+            hideIpChangedReinstallScreen();
+            initAppComponents();
+            return;
+          }
+
+          // If not alive at configured host, perform a fast scan across local subnets
+          if (retryText) retryText.textContent = 'Scanning Local Network...';
+          const currentHost = window.location.host;
+          const m = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+/);
+          const subnetsToProbe = [];
+          if (m) subnetsToProbe.push(m[1]);
+          ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
+            if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
+          });
+
+          let foundHost = null;
+          for (const subnet of subnetsToProbe.slice(0, 4)) {
+            foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
+            if (foundHost) break;
+          }
+
+          retryBtn.disabled = false;
+          if (retryIcon) retryIcon.style.animation = '';
+          if (retryText) retryText.textContent = 'Retry Connection';
+
+          if (foundHost) {
+            const targetHost = foundHost.host.replace(':3479', ':3478');
+            const targetProto = 'https:';
+            const hostEl = document.getElementById('reinstallOldHostDisplay');
+            if (hostEl) {
+              hostEl.innerHTML = `<span style="color: #22c55e; font-weight: bold;">PC Found at:</span> ${targetProto}//${targetHost}`;
+            }
+            showToast(`PC found at ${targetHost}! Redirecting...`, 'success');
+            setTimeout(() => {
+              window.location.replace(`${targetProto}//${targetHost}/m`);
+            }, 800);
+          } else {
+            showToast('PC is still unreachable. Please reinstall using PC QR Code.', 'error');
+          }
+        });
+      }
+    }
+
     async function resolveAiroDropHost() {
       const isCloudOrigin = window.location.hostname === 'airodrop.site' || window.location.hostname.endsWith('.airodrop.site');
       
-      // If running on a local IP origin (e.g. from a Home Screen shortcut), verify server is alive:
+      // If running on a local IP origin (e.g. from a Home Screen shortcut or direct browser), verify server is alive:
       if (!isCloudOrigin) {
         let isLocalAlive = false;
         try {
           const ctrl = new AbortController();
-          const t = setTimeout(() => ctrl.abort(), 400);
-          const r = await fetch('/api/discovery', { signal: ctrl.signal, mode: 'cors' });
+          const t = setTimeout(() => ctrl.abort(), 2500);
+          const r = await fetch('/api/discovery', { signal: ctrl.signal });
           clearTimeout(t);
           if (r.ok) {
             const d = await r.json();
@@ -149,31 +336,20 @@
         } catch (_) {}
 
         if (isLocalAlive) {
+          localStorage.setItem('airodrop_last_alive_ts', Date.now().toString());
+          localStorage.setItem('airodrop_paired_host', window.location.host);
           return true; // Host is alive and well!
         }
 
-        // Host at this IP is dead (DHCP assigned a new IP to PC)!
-        // Scan subnet immediately to find PC's new IP:
-        const currentSubnetMatch = window.location.hostname.match(/^(\d+\.\d+\.\d+)\.\d+/);
-        const subnetsToProbe = [];
-        if (currentSubnetMatch) subnetsToProbe.push(currentSubnetMatch[1]);
-        ['172.20.10', '192.168.43', '192.168.42', '192.168.225', '192.168.1', '192.168.0', '192.168.10', '10.0.0'].forEach(s => {
-          if (!subnetsToProbe.includes(s)) subnetsToProbe.push(s);
-        });
-
-        for (const subnet of subnetsToProbe.slice(0, 4)) {
-          const foundHost = await scanSubnetForAiroDrop(subnet, 3479, 300);
-          if (foundHost) {
-            localStorage.setItem('airodrop_paired_host', foundHost.host);
-            localStorage.setItem('airodrop_paired_proto', foundHost.proto);
-            if (foundHost.name) localStorage.setItem('airodrop_paired_name', foundHost.name);
-            window.location.replace(`${foundHost.proto}//${foundHost.host}/m`);
-            return false;
-          }
+        // Check if running in standalone PWA mode (Home Screen shortcut)
+        const isStandalone = (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches);
+        if (!isStandalone) {
+          // In standard browser window, allow UI initialization so user sees live connection state
+          return true;
         }
 
-        // Fallback to official cloud radar:
-        window.location.replace('https://airodrop.site/install');
+        // In standalone PWA, if local host is dead, display dedicated offline PC IP Changed & Reinstallation alert screen:
+        showIpChangedReinstallScreen(window.location.host, false);
         return false;
       }
 
@@ -615,6 +791,7 @@
         document.querySelectorAll('.fallbackUrlText').forEach(el => el.textContent = `${info.url}/api/send`);
         const ipEl = document.getElementById('mobileInfoIp');
         if (ipEl) ipEl.textContent = info.ip || '...';
+        // Detect if PC local IP changed from the PWA's current origin IP
         const nameEl = document.getElementById('mobileInfoDeviceName');
         if (nameEl) nameEl.textContent = info.deviceName || 'PC';
         const verEl = document.getElementById('mobileInfoAppVersion');
@@ -798,6 +975,15 @@
       if (btnAndroidRefresh) btnAndroidRefresh.addEventListener('click', () => handleRefresh(btnAndroidRefresh));
       if (btnAndroidCopyUrl) btnAndroidCopyUrl.addEventListener('click', handleCopyUrl);
       if (btnAndroidLogout) btnAndroidLogout.addEventListener('click', handleLogout);
+
+      // PC IP Changed / Reinstallation Guide trigger from Settings
+      const btnOpenIpReinstallGuide = document.getElementById('btnOpenIpReinstallGuide');
+      if (btnOpenIpReinstallGuide) {
+        btnOpenIpReinstallGuide.addEventListener('click', () => {
+          triggerHaptic(20);
+          showIpChangedReinstallScreen(window.location.host, true);
+        });
+      }
     }
 
     // ─── Receive from PC ──────────────────────────────────────
@@ -1477,6 +1663,16 @@
 
       sse.addEventListener('new-item', () => {
         fetchPending(true);
+      });
+
+      // Real-time IP change notification from PC
+      sse.addEventListener('network-ip-changed', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          showIpChangedReinstallScreen(data.newIP || data.oldIP || window.location.host);
+        } catch (err) {
+          console.error('[SSE] Failed to parse network-ip-changed event', err);
+        }
       });
 
       sse.onerror = () => {
@@ -2162,6 +2358,9 @@
         wsConnecting = false;
         wsReconnectDelay = 200; // Reset backoff on successful connection
         trackpadSocket = ws;
+        window.trackpadSocket = ws;
+        window.sendWS = sendWS;
+        window.connectWS = connectWS;
         updateUniversalConnectButton('connected');
         showToast('Connected to PC Services');
         let mobileName = 'Mobile Device';
@@ -2370,10 +2569,14 @@
       if (trackpadSocket) {
         const ws = trackpadSocket;
         trackpadSocket = null;
+        window.trackpadSocket = null;
         ws.close();
       }
       updateUniversalConnectButton('disconnected');
     }
+
+    window.sendWS = sendWS;
+    window.connectWS = connectWS;
 
     function sendWS(msg) {
       if (trackpadSocket && trackpadSocket.readyState === WebSocket.OPEN) {
