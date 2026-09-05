@@ -5,6 +5,18 @@ All notable changes to AiroDrop are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.89] - 2026-09-05
+
+### Added
+- **Virtual Keyboard v7.0 Design & Larger Keys** — Redesigned the virtual keyboard layout with significantly larger touch targets, refined key typography, and responsive key sizing for enhanced typing accuracy on mobile screens.
+- **Interactive Touch Feedback & Dynamic Key States** — Added fluid touch animations, active key depression states, and tactile responsiveness on keystrokes.
+- **Keyboard Module Sync for Relay Server** — Added standalone `relay-server/public/keyboard.js` module to ensure an identical, fully featured virtual keyboard experience when connected via remote relay or PWA mode.
+
+### Changed
+- **Cleaner Keyboard UI Header** — Removed legacy keyboard status indicator dot for a cleaner, unified header presentation.
+
+---
+
 ## [6.4.88] - 2026-09-05
 
 ### Added
